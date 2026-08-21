@@ -104,7 +104,7 @@
 <script>
 
 const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
+  "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec?action=expense&text=MBCC%20100%20Jabi&callback=test";
 
 
 let recognition;
@@ -254,6 +254,16 @@ function sendExpense() {
     "&callback=" + callbackName;
 
   document.body.appendChild(script);
+  setTimeout(function() {
+
+  if (isSaving) {
+    isSaving = false;
+
+    document.getElementById("status").innerText =
+      "❌ Could not connect to Google Sheets";
+  }
+
+}, 10000);
 }
 
 
