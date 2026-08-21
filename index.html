@@ -141,15 +141,20 @@ function startListening() {
 
   recognition.onresult = function(event) {
 
-    const text =
-      event.results[0][0].transcript;
+  const text =
+    event.results[0][0].transcript;
 
-    document.getElementById("expenseText").value =
-      text;
+  document.getElementById("expenseText").value =
+    text;
 
-    document.getElementById("status").innerText =
-      "✅ Heard";
-  };
+  document.getElementById("status").innerText =
+    "✅ Heard — adding expense...";
+
+  // Automatically save after speech recognition finishes
+  setTimeout(function() {
+    sendExpense();
+  }, 500);
+};
 
 
   recognition.onerror = function(event) {
@@ -174,40 +179,40 @@ function startListening() {
   recognition.start();
 }
 
-
+let isSaving = false;
 
 function sendExpense() {
+
+  // Prevent duplicate submissions
+  if (isSaving) return;
 
   const text =
     document.getElementById("expenseText")
       .value
       .trim();
 
-
   if (!text) {
-
     document.getElementById("status").innerText =
       "Speak an expense first.";
-
     return;
   }
 
+  isSaving = true;
 
   document.getElementById("status").innerText =
     "Saving...";
 
-
   const callbackName =
     "expenseCallback_" + Date.now();
 
-
   window[callbackName] = function(result) {
+
+    isSaving = false;
 
     document.getElementById("status").innerText =
       result.success
         ? "✅ Expense added"
         : "❌ " + (result.error || "Error");
-
 
     if (result.success) {
 
@@ -220,13 +225,10 @@ function sendExpense() {
           }
         );
 
-
       const box =
         document.getElementById("result");
 
-
       box.style.display = "block";
-
 
       box.innerHTML =
         "<strong>Added</strong><br>" +
@@ -239,20 +241,15 @@ function sendExpense() {
           ? " • " + result.payment
           : "");
 
-
-      document.getElementById("expenseText").value =
-        "";
+      document.getElementById("expenseText").value = "";
     }
-
 
     delete window[callbackName];
     script.remove();
   };
 
-
   const script =
     document.createElement("script");
-
 
   script.src =
     APPS_SCRIPT_URL +
@@ -260,9 +257,9 @@ function sendExpense() {
     "&text=" + encodeURIComponent(text) +
     "&callback=" + callbackName;
 
-
   document.body.appendChild(script);
 }
+
 
 </script>
 
