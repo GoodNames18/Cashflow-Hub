@@ -109,11 +109,13 @@
   </div>
 
 
-  <!-- VOICE TEXT -->
   <textarea
-    id="expenseText"
-    placeholder="Your expense will appear here..."
-  ></textarea>
+  id="expenseText"
+  placeholder="Type or speak your expense..."
+  autofocus
+  inputmode="text"
+  autocomplete="off"
+></textarea>
 
 
   <!-- MANUAL BACKUP BUTTON -->
@@ -130,6 +132,25 @@
 
 
 <script>
+
+  // ========================================================
+// AUTO FOCUS EXPENSE INPUT WHEN APP OPENS
+// ========================================================
+
+window.addEventListener("load", function() {
+
+  setTimeout(function() {
+
+    const expenseInput =
+      document.getElementById("expenseText");
+
+    if (expenseInput) {
+      expenseInput.focus();
+    }
+
+  }, 300);
+
+});
 
 // ========================================================
 // GOOGLE APPS SCRIPT BACKEND
