@@ -139,21 +139,17 @@ function startListening() {
     "🎤 Listening...";
 
 
-  recognition.onresult = function(event) {
+recognition.onresult = function(event) {
 
-  const text =
-    event.results[0][0].transcript;
+  const text = event.results[0][0].transcript;
 
-  document.getElementById("expenseText").value =
-    text;
+  document.getElementById("expenseText").value = text;
 
   document.getElementById("status").innerText =
-    "✅ Heard — adding expense...";
+    "✅ Heard — adding...";
 
-  // Automatically save after speech recognition finishes
-  setTimeout(function() {
-    sendExpense();
-  }, 500);
+  // Automatically add to Google Sheets
+  sendExpense();
 };
 
 
