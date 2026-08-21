@@ -2,7 +2,11 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  >
 
   <title>Expense</title>
 
@@ -19,6 +23,7 @@
     }
 
     .box {
+      width: 100%;
       max-width: 380px;
       margin: 10px auto;
       background: white;
@@ -30,7 +35,7 @@
 
     h1 {
       margin: 0 0 15px;
-      font-size: 24px;
+      font-size: 27px;
     }
 
     button {
@@ -40,6 +45,7 @@
       border: 0;
       border-radius: 10px;
       font-size: 18px;
+      cursor: pointer;
     }
 
     #micButton {
@@ -48,7 +54,7 @@
 
     textarea {
       width: 100%;
-      height: 80px;
+      height: 85px;
       margin-top: 12px;
       padding: 10px;
       font-size: 17px;
@@ -58,9 +64,9 @@
     }
 
     #status {
-      margin: 10px 0 0;
-      min-height: 20px;
-      font-size: 14px;
+      margin: 12px 0 0;
+      min-height: 22px;
+      font-size: 15px;
     }
 
     #result {
@@ -71,6 +77,7 @@
       padding: 12px;
       border-radius: 10px;
       line-height: 1.6;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -81,34 +88,61 @@
 
   <h1>💰 Expense</h1>
 
+
+  <!-- MICROPHONE BUTTON -->
   <button id="micButton" onclick="startListening()">
     🎤 Tap to Speak
   </button>
 
-  <div id="status">Ready</div>
 
+  <!-- STATUS -->
+  <div id="status">
+    Ready
+  </div>
+
+
+  <!-- VOICE TEXT -->
   <textarea
     id="expenseText"
     placeholder="Your expense will appear here..."
   ></textarea>
 
-  <button onclick="sendExpense()">
+
+  <!-- MANUAL BACKUP BUTTON -->
+  <button id="addButton" onclick="sendExpense()">
     Add Expense
   </button>
 
+
+  <!-- RESULT -->
   <div id="result"></div>
 
 </div>
 
 
+
 <script>
 
-const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec?action=expense&text=MBCC%20100%20Jabi&callback=test";
+// ========================================================
+// GOOGLE APPS SCRIPT BACKEND
+// IMPORTANT:
+// ONLY /exec goes here.
+// ========================================================
 
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUVIGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
+
+
+// Prevent duplicate submissions
+let isSaving = false;
 
 let recognition;
 
+
+
+// ========================================================
+// START MICROPHONE
+// ========================================================
 
 function startListening() {
 
@@ -120,7 +154,7 @@ function startListening() {
   if (!SpeechRecognition) {
 
     document.getElementById("status").innerText =
-      "Speech recognition is not supported in this browser.";
+      "❌ Speech recognition is not supported.";
 
     return;
   }
@@ -128,35 +162,51 @@ function startListening() {
 
   recognition = new SpeechRecognition();
 
-  // Good default for Tagalog + Taglish
+
+  // Filipino works for Tagalog / Taglish / English
   recognition.lang = "fil-PH";
 
   recognition.interimResults = false;
+
   recognition.continuous = false;
+
+  recognition.maxAlternatives = 1;
 
 
   document.getElementById("status").innerText =
     "🎤 Listening...";
 
 
-recognition.onresult = function(event) {
+  recognition.onresult = function(event) {
 
-  const text = event.results[0][0].transcript;
+    const text =
+      event.results[0][0].transcript;
 
-  document.getElementById("expenseText").value = text;
 
-  document.getElementById("status").innerText =
-    "✅ Heard — adding...";
+    document.getElementById("expenseText").value =
+      text;
 
-  // Automatically add to Google Sheets
-  sendExpense();
-};
+
+    document.getElementById("status").innerText =
+      "✅ Heard — adding...";
+
+
+    // ====================================================
+    // AUTO SAVE
+    // ====================================================
+
+    setTimeout(function() {
+
+      sendExpense();
+
+    }, 300);
+  };
 
 
   recognition.onerror = function(event) {
 
     document.getElementById("status").innerText =
-      "Voice error: " + event.error;
+      "❌ Voice error: " + event.error;
   };
 
 
@@ -166,51 +216,107 @@ recognition.onresult = function(event) {
       document.getElementById("status").innerText ===
       "🎤 Listening..."
     ) {
+
       document.getElementById("status").innerText =
         "Ready";
     }
   };
 
 
-  recognition.start();
+  try {
+
+    recognition.start();
+
+  } catch (error) {
+
+    document.getElementById("status").innerText =
+      "❌ " + error.message;
+  }
 }
 
-let isSaving = false;
+
+
+// ========================================================
+// SEND EXPENSE TO GOOGLE SHEETS
+// ========================================================
 
 function sendExpense() {
 
-  // Prevent duplicate submissions
+  // Prevent double saving
   if (isSaving) return;
 
+
   const text =
-    document.getElementById("expenseText")
+    document
+      .getElementById("expenseText")
       .value
       .trim();
 
+
   if (!text) {
+
     document.getElementById("status").innerText =
-      "Speak an expense first.";
+      "Speak or type an expense first.";
+
     return;
   }
 
+
   isSaving = true;
+
 
   document.getElementById("status").innerText =
     "Saving...";
 
+
+  document.getElementById("addButton").disabled =
+    true;
+
+
+  document.getElementById("micButton").disabled =
+    true;
+
+
+
+  // ======================================================
+  // UNIQUE JSONP CALLBACK
+  // ======================================================
+
   const callbackName =
     "expenseCallback_" + Date.now();
 
+
+  let finished = false;
+
+
+
+  // ======================================================
+  // CALLBACK FROM APPS SCRIPT
+  // ======================================================
+
   window[callbackName] = function(result) {
+
+    finished = true;
 
     isSaving = false;
 
-    document.getElementById("status").innerText =
-      result.success
-        ? "✅ Expense added"
-        : "❌ " + (result.error || "Error");
 
-    if (result.success) {
+    document.getElementById("addButton").disabled =
+      false;
+
+    document.getElementById("micButton").disabled =
+      false;
+
+
+    // ====================================================
+    // SUCCESS
+    // ====================================================
+
+    if (result && result.success) {
+
+      document.getElementById("status").innerText =
+        "✅ Expense added";
+
 
       const amount =
         Number(result.amount).toLocaleString(
@@ -221,51 +327,173 @@ function sendExpense() {
           }
         );
 
-      const box =
+
+      const resultBox =
         document.getElementById("result");
 
-      box.style.display = "block";
 
-      box.innerHTML =
+      resultBox.style.display =
+        "block";
+
+
+      resultBox.innerHTML =
         "<strong>Added</strong><br>" +
+
         "₱" + amount + "<br>" +
+
         (result.merchant || "") +
+
         (result.category
           ? " • " + result.category
           : "") +
+
         (result.payment
           ? " • " + result.payment
           : "");
 
-      document.getElementById("expenseText").value = "";
+
+      // Clear input after successful save
+      document.getElementById("expenseText").value =
+        "";
     }
 
-    delete window[callbackName];
-    script.remove();
+
+    // ====================================================
+    // ERROR FROM APPS SCRIPT
+    // ====================================================
+
+    else {
+
+      document.getElementById("status").innerText =
+        "❌ " +
+        (
+          result && result.error
+            ? result.error
+            : "Could not add expense"
+        );
+    }
+
+
+    cleanup();
   };
+
+
+
+  // ======================================================
+  // CREATE REQUEST TO APPS SCRIPT
+  // ======================================================
 
   const script =
     document.createElement("script");
 
+
+  script.id =
+    "expenseRequest_" + Date.now();
+
+
   script.src =
     APPS_SCRIPT_URL +
+
     "?action=expense" +
-    "&text=" + encodeURIComponent(text) +
-    "&callback=" + callbackName;
 
-  document.body.appendChild(script);
-  setTimeout(function() {
+    "&text=" +
+    encodeURIComponent(text) +
 
-  if (isSaving) {
+    "&callback=" +
+    encodeURIComponent(callbackName) +
+
+    "&t=" +
+    Date.now();
+
+
+
+  // ======================================================
+  // NETWORK ERROR
+  // ======================================================
+
+  script.onerror = function() {
+
+    if (finished) return;
+
+
+    finished = true;
+
     isSaving = false;
+
+
+    document.getElementById("addButton").disabled =
+      false;
+
+    document.getElementById("micButton").disabled =
+      false;
+
 
     document.getElementById("status").innerText =
       "❌ Could not connect to Google Sheets";
+
+
+    cleanup();
+  };
+
+
+
+  // ======================================================
+  // CLEANUP
+  // ======================================================
+
+  function cleanup() {
+
+    try {
+
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+
+    } catch (e) {}
+
+
+    try {
+
+      delete window[callbackName];
+
+    } catch (e) {}
   }
 
-}, 10000);
-}
 
+
+  document.body.appendChild(script);
+
+
+
+  // ======================================================
+  // 15 SECOND TIMEOUT
+  // ======================================================
+
+  setTimeout(function() {
+
+    if (finished) return;
+
+
+    finished = true;
+
+    isSaving = false;
+
+
+    document.getElementById("addButton").disabled =
+      false;
+
+    document.getElementById("micButton").disabled =
+      false;
+
+
+    document.getElementById("status").innerText =
+      "❌ Could not connect to Google Sheets";
+
+
+    cleanup();
+
+  }, 15000);
+}
 
 </script>
 
