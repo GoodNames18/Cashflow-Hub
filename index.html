@@ -242,257 +242,68 @@ function startListening() {
 
 function sendExpense() {
 
-  // Prevent double saving
   if (isSaving) return;
 
-
   const text =
-    document
-      .getElementById("expenseText")
+    document.getElementById("expenseText")
       .value
       .trim();
 
-
   if (!text) {
-
     document.getElementById("status").innerText =
       "Speak or type an expense first.";
-
     return;
   }
 
-
   isSaving = true;
-
 
   document.getElementById("status").innerText =
     "Saving...";
 
-
-  document.getElementById("addButton").disabled =
-    true;
-
-
-  document.getElementById("micButton").disabled =
-    true;
+  document.getElementById("micButton").disabled = true;
+  document.getElementById("addButton").disabled = true;
 
 
-
-  // ======================================================
-  // UNIQUE JSONP CALLBACK
-  // ======================================================
-
-  const callbackName =
-    "expenseCallback_" + Date.now();
-
-
-  let finished = false;
-
-
-
-  // ======================================================
-  // CALLBACK FROM APPS SCRIPT
-  // ======================================================
-
-  window[callbackName] = function(result) {
-
-    finished = true;
-
-    isSaving = false;
-
-
-    document.getElementById("addButton").disabled =
-      false;
-
-    document.getElementById("micButton").disabled =
-      false;
-
-
-    // ====================================================
-    // SUCCESS
-    // ====================================================
-
-    if (result && result.success) {
-
-      document.getElementById("status").innerText =
-        "✅ Expense added";
-
-
-      const amount =
-        Number(result.amount).toLocaleString(
-          "en-PH",
-          {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }
-        );
-
-
-      const resultBox =
-        document.getElementById("result");
-
-
-      resultBox.style.display =
-        "block";
-
-
-      resultBox.innerHTML =
-        "<strong>Added</strong><br>" +
-
-        "₱" + amount + "<br>" +
-
-        (result.merchant || "") +
-
-        (result.category
-          ? " • " + result.category
-          : "") +
-
-        (result.payment
-          ? " • " + result.payment
-          : "");
-
-
-      // Clear input after successful save
-      document.getElementById("expenseText").value =
-        "";
-    }
-
-
-    // ====================================================
-    // ERROR FROM APPS SCRIPT
-    // ====================================================
-
-    else {
-
-      document.getElementById("status").innerText =
-        "❌ " +
-        (
-          result && result.error
-            ? result.error
-            : "Could not add expense"
-        );
-    }
-
-
-    cleanup();
-  };
-
-
-
-  // ======================================================
-  // CREATE REQUEST TO APPS SCRIPT
-  // ======================================================
-
-  const script =
-    document.createElement("script");
-
-
-  script.id =
-    "expenseRequest_" + Date.now();
-
-
-  script.src =
+  // Build Apps Script request
+  const requestUrl =
     APPS_SCRIPT_URL +
-
     "?action=expense" +
-
-    "&text=" +
-    encodeURIComponent(text) +
-
-    "&callback=" +
-    encodeURIComponent(callbackName) +
-
-    "&t=" +
-    Date.now();
+    "&text=" + encodeURIComponent(text) +
+    "&callback=expenseDone" +
+    "&t=" + Date.now();
 
 
+  // =====================================================
+  // SEND REQUEST USING HIDDEN IFRAME
+  // This avoids the GitHub -> Apps Script callback problem
+  // =====================================================
 
-  // ======================================================
-  // NETWORK ERROR
-  // ======================================================
+  const frame = document.createElement("iframe");
 
-  script.onerror = function() {
+  frame.style.display = "none";
+  frame.src = requestUrl;
 
-    if (finished) return;
-
-
-    finished = true;
-
-    isSaving = false;
+  document.body.appendChild(frame);
 
 
-    document.getElementById("addButton").disabled =
-      false;
-
-    document.getElementById("micButton").disabled =
-      false;
-
-
-    document.getElementById("status").innerText =
-      "❌ Could not connect to Google Sheets";
-
-
-    cleanup();
-  };
-
-
-
-  // ======================================================
-  // CLEANUP
-  // ======================================================
-
-  function cleanup() {
-
-    try {
-
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-
-    } catch (e) {}
-
-
-    try {
-
-      delete window[callbackName];
-
-    } catch (e) {}
-  }
-
-
-
-  document.body.appendChild(script);
-
-
-
-  // ======================================================
-  // 15 SECOND TIMEOUT
-  // ======================================================
-
+  // Give Apps Script time to save
   setTimeout(function() {
 
-    if (finished) return;
-
-
-    finished = true;
-
     isSaving = false;
 
-
-    document.getElementById("addButton").disabled =
-      false;
-
-    document.getElementById("micButton").disabled =
-      false;
-
+    document.getElementById("micButton").disabled = false;
+    document.getElementById("addButton").disabled = false;
 
     document.getElementById("status").innerText =
-      "❌ Could not connect to Google Sheets";
+      "✅ Expense sent";
 
+    document.getElementById("expenseText").value = "";
 
-    cleanup();
+    try {
+      frame.remove();
+    } catch (e) {}
 
-  }, 15000);
+  }, 2500);
 }
 
 </script>
