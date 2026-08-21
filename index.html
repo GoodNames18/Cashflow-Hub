@@ -137,18 +137,44 @@
 // AUTO FOCUS EXPENSE INPUT WHEN APP OPENS
 // ========================================================
 
+// ========================================================
+// OPEN KEYBOARD WHEN EXPENSE APP STARTS
+// ========================================================
+
+function openExpenseKeyboard() {
+
+  const expenseInput =
+    document.getElementById("expenseText");
+
+  if (!expenseInput) return;
+
+  expenseInput.focus();
+
+  // Chromium / Android Virtual Keyboard API
+  if ("virtualKeyboard" in navigator) {
+    try {
+      navigator.virtualKeyboard.show();
+    } catch (e) {
+      // Ignore if Android/browser blocks it
+    }
+  }
+}
+
+
 window.addEventListener("load", function() {
 
   setTimeout(function() {
+    openExpenseKeyboard();
+  }, 500);
 
-    const expenseInput =
-      document.getElementById("expenseText");
+});
 
-    if (expenseInput) {
-      expenseInput.focus();
-    }
 
-  }, 300);
+window.addEventListener("pageshow", function() {
+
+  setTimeout(function() {
+    openExpenseKeyboard();
+  }, 500);
 
 });
 
