@@ -46,7 +46,7 @@
     }
 
     body {
-      padding: 8px 10px 24px;
+      padding: 8px 10px 8px;
     }
 
     .app-shell {
@@ -201,6 +201,11 @@
       font-weight: 700;
     }
 
+    /* Cash In/Out dashboard totals */
+    .gcash-card .metric-value {
+      color: var(--secondary);
+    }
+
     .expense-value {
       color: var(--red);
     }
@@ -270,7 +275,7 @@
     .quick-custom-add-button {
       background: var(--green);
       color: #07110e;
-      border: 1px solid var(--green);
+      border: 1px solid var(--secondary);
     }
 
     .quick-amount-button:disabled,
@@ -352,13 +357,47 @@
     }
 
     .quick-amount-button {
-      border-color: #00F8B9;
-      color: #07110e;
+      border-color: var(--secondary);
+      color: var(--secondary);
     }
 
     .quick-custom-input:focus {
       border-color: #00F8B9;
       box-shadow: 0 0 0 2px rgba(0, 248, 185, .12);
+    }
+
+    /* ======================================================
+       CASH IN/OUT MONTH SUMMARY
+       ====================================================== */
+
+    .cash-month-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 2px 2px 10px;
+      min-width: 0;
+    }
+
+    .cash-month-summary .month-label {
+      margin: 0;
+      min-width: 0;
+    }
+
+    .cash-income-only {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      flex: 0 0 auto;
+      white-space: nowrap;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .cash-income-only strong {
+      color: var(--secondary);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     /* ======================================================
@@ -517,7 +556,10 @@
     }
 
     .recent-card {
+      height: auto;
+      min-height: 0;
       margin-top: 12px;
+      margin-bottom: 0;
       padding: 14px;
     }
 
@@ -701,11 +743,20 @@
           </div>
 
 
-          <div
-            id="gcashMonthLabel"
-            class="month-label"
-          >
-            Loading...
+          <div class="cash-month-summary">
+
+            <div
+              id="gcashMonthLabel"
+              class="month-label"
+            >
+              Loading...
+            </div>
+
+            <div class="cash-income-only">
+              <span>Total Income</span>
+              <strong id="gcashMonthlyIncomeOnly">—</strong>
+            </div>
+
           </div>
 
 
@@ -970,6 +1021,10 @@
     let currentAppPage = "gcash";
     let selectedGcashQuickCategory = "";
 
+    // One Recent Transactions limit for Cash In/Out, Expenses,
+    // and future tabs.
+    const RECENT_TRANSACTION_LIMIT = 10;
+
     let touchStartX = 0;
     let touchStartY = 0;
 
@@ -1000,6 +1055,9 @@
     // ========================================================
 
     function showAppPage(pageName, animate = true) {
+
+      const pageChanged =
+        currentAppPage !== pageName;
 
       const track =
         document.getElementById("pagesTrack");
@@ -1063,6 +1121,31 @@
                 track.style.transition = "";
               }
             );
+
+          }
+        );
+
+      }
+
+
+      // When changing Cash In/Out <-> Expenses,
+      // always open the destination page at the top.
+      if (pageChanged) {
+
+        requestAnimationFrame(
+          function() {
+
+            window.scrollTo(
+              0,
+              0
+            );
+
+            if (document.scrollingElement) {
+              document.scrollingElement.scrollTop = 0;
+            }
+
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
 
           }
         );
@@ -1418,6 +1501,13 @@
         .innerText =
           "Loading...";
 
+      document
+        .getElementById(
+          "gcashMonthlyIncomeOnly"
+        )
+        .innerText =
+          "—";
+
 
       jsonpRequest(
         {
@@ -1435,6 +1525,12 @@
             )
             .innerText =
               "Could not load dashboard";
+
+          document
+            .getElementById(
+              "gcashMonthlyIncomeOnly"
+            )
+            .innerText = "—";
 
           document
             .getElementById(
@@ -1492,6 +1588,14 @@
         )
         .innerText =
           data.monthLabel || "";
+
+
+      document
+        .getElementById(
+          "gcashMonthlyIncomeOnly"
+        )
+        .innerText =
+          formatPeso(data.totalIncome);
 
 
       document
@@ -1560,6 +1664,7 @@
 
       recentBox.innerHTML =
         transactions
+          .slice(0, RECENT_TRANSACTION_LIMIT)
           .map(function(item) {
 
             var metaParts = [];
@@ -2306,6 +2411,7 @@
 
       recentBox.innerHTML =
         transactions
+          .slice(0, RECENT_TRANSACTION_LIMIT)
           .map(
             function(item) {
 
