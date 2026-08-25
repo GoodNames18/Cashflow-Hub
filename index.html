@@ -115,7 +115,14 @@
     .app-page {
       width: 50%;
       flex: 0 0 50%;
+      min-height: calc(100dvh - 86px);
       padding: 0 2px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-page > .recent-card:last-child {
+      flex: 1 0 auto;
     }
 
     .pages-track.show-expenses {
@@ -268,20 +275,29 @@
 
     .quick-amount-button {
       background: #ffffff;
-      color: var(--secondary);
+      color: #000000;
       border: 1px solid var(--secondary);
     }
 
     .quick-custom-add-button {
       background: var(--green);
-      color: #07110e;
+      color: #000000;
       border: 1px solid var(--secondary);
     }
 
     .quick-amount-button:disabled,
     .quick-custom-add-button:disabled {
-      opacity: .38;
+      opacity: 1;
+      color: #000000;
       cursor: not-allowed;
+    }
+
+    .quick-amount-button:disabled {
+      background: rgba(230, 230, 250, .58);
+    }
+
+    .quick-custom-add-button:disabled {
+      background: rgba(0, 248, 185, .45);
     }
 
     .quick-custom-input {
@@ -350,15 +366,18 @@
 
     .app-tab.active,
     .quick-category-button.selected,
-    .quick-custom-add-button,
     #installButton,
     #saveButton {
       color: #07110e;
     }
 
+    .quick-custom-add-button {
+      color: #000000;
+    }
+
     .quick-amount-button {
       border-color: var(--secondary);
-      color: var(--secondary);
+      color: #000000;
     }
 
     .quick-custom-input:focus {
@@ -437,7 +456,7 @@
        ====================================================== */
 
     .gcash-page {
-      padding-bottom: 10px;
+      padding-bottom: 0;
     }
 
     .gcash-hero {
@@ -460,7 +479,7 @@
     }
 
     .gcash-card .metric-value {
-      color: var(--green);
+      color: var(--secondary);
     }
 
     .swipe-hint {
@@ -563,6 +582,10 @@
       padding: 14px;
     }
 
+    .app-page > .recent-card:last-child {
+      margin-bottom: 0;
+    }
+
     .recent-title {
       margin: 0 0 8px;
       font-size: 17px;
@@ -598,6 +621,7 @@
       align-self: center;
       font-size: 14px;
       font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .22);
     }
   </style>
 </head>
