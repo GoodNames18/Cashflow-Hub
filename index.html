@@ -135,7 +135,7 @@
         #ffffff 0%,
         var(--lavender) 175%
       );
-      border: 1px solid rgba(23, 117, 104, .10);
+      border: 1px solid rgba(23, 117, 104, .38);
       border-radius: 14px;
       box-shadow: 0 2px 9px rgba(0, 0, 0, .09);
     }
@@ -264,7 +264,7 @@
     .quick-amount-button {
       background: #ffffff;
       color: var(--secondary);
-      border: 1px solid var(--primary);
+      border: 1px solid var(--secondary);
     }
 
     .quick-custom-add-button {
@@ -287,15 +287,15 @@
       padding: 9px 11px;
       background: #ffffff;
       color: var(--text);
-      border: 1px solid #bdbdbd;
+      border: 1px solid var(--secondary);
       border-radius: 9px;
       font-size: 15px;
       outline: none;
     }
 
     .quick-custom-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(230, 230, 250, .85);
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(0, 248, 185, .18);
     }
 #gcashQuickStatus {
       min-height: 17px;
@@ -326,7 +326,7 @@
     }
 
     .quick-category-button {
-      border-color: rgba(23, 117, 104, .12);
+      border-color: var(--secondary);
     }
 
     .quick-category-button:not(.selected):hover {
@@ -456,7 +456,7 @@
       height: 90px;
       padding: 12px;
       background: #ffffff;
-      border: 1px solid #bdbdbd;
+      border: 1px solid var(--secondary);
       border-radius: 10px;
       resize: none;
       font-size: 16px;
@@ -464,8 +464,8 @@
     }
 
     textarea:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(230, 230, 250, .85);
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(0, 248, 185, .18);
     }
 
     button {
@@ -765,7 +765,20 @@
           </div>
 
 
+          <div class="recent-card">
 
+            <h2 class="recent-title">
+              Recent Transactions
+            </h2>
+
+            <div
+              id="gcashRecentTransactions"
+              class="dashboard-message"
+            >
+              Loading...
+            </div>
+
+          </div>
 
 
         </section>
@@ -1447,6 +1460,20 @@
             )
             .innerText = "—";
 
+          document
+            .getElementById(
+              "gcashRecentTransactions"
+            )
+            .className =
+              "dashboard-message";
+
+          document
+            .getElementById(
+              "gcashRecentTransactions"
+            )
+            .innerText =
+              "Could not load recent transactions.";
+
           console.log(error);
 
         }
@@ -1497,6 +1524,97 @@
         )
         .innerText =
           formatPeso(data.bills);
+
+
+      renderGcashRecentTransactions(
+        data.recentTransactions || []
+      );
+
+    }
+
+
+    function renderGcashRecentTransactions(
+      transactions
+    ) {
+
+      var recentBox =
+        document.getElementById(
+          "gcashRecentTransactions"
+        );
+
+
+      if (!transactions.length) {
+
+        recentBox.className =
+          "dashboard-message";
+
+        recentBox.innerText =
+          "No transactions yet.";
+
+        return;
+      }
+
+
+      recentBox.className = "";
+
+
+      recentBox.innerHTML =
+        transactions
+          .map(function(item) {
+
+            var metaParts = [];
+
+            if (item.date) {
+              metaParts.push(item.date);
+            }
+
+            if (item.time) {
+              metaParts.push(item.time);
+            }
+
+            if (item.description) {
+              metaParts.push(item.description);
+            }
+
+
+            var sign =
+              item.isExpense
+                ? "−"
+                : "+";
+
+            var valueClass =
+              item.isExpense
+                ? "expense-value"
+                : "income-value";
+
+
+            return (
+              '<div class="transaction-row">' +
+                "<div>" +
+                  '<div class="transaction-name">' +
+                    escapeHtml(
+                      item.category || "Cash In/Out"
+                    ) +
+                  "</div>" +
+                  '<div class="transaction-meta">' +
+                    escapeHtml(
+                      metaParts.join(" • ")
+                    ) +
+                  "</div>" +
+                "</div>" +
+                '<div class="transaction-amount ' +
+                  valueClass +
+                  '">' +
+                  sign +
+                  formatPeso(
+                    item.amount
+                  ) +
+                "</div>" +
+              "</div>"
+            );
+
+          })
+          .join("");
 
     }
 
