@@ -1,23 +1,17 @@
 {
+  "id": "/expense-voice/",
   "name": "Expenses Tracker",
   "short_name": "Expenses",
-  "start_url": "./",
-  "scope": "./",
+  "description": "Voice and text income and expense tracker.",
+  "start_url": "/expense-voice/",
+  "scope": "/expense-voice/",
   "display": "standalone",
-  "background_color": "#0b4f35",
-  "theme_color": "#0b4f35",
+  "background_color": "#f5f5f5",
+  "theme_color": "#0b5d3b",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"}
   ]
 }

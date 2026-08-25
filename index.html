@@ -1,367 +1,121 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-  >
-
-  <title>Expense</title>
-
-  <link rel="manifest" href="manifest.json">
-
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-
-<link rel="apple-touch-icon" href="icon-192.png">
-
-<meta name="theme-color" content="#0b4f35">
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#0b5d3b">
+  <title>Expenses Tracker</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 14px;
-      background: #f5f5f5;
-    }
-
-    .box {
-      width: 100%;
-      max-width: 380px;
-      margin: 10px auto;
-      background: white;
-      padding: 18px;
-      border-radius: 16px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.12);
-      text-align: center;
-    }
-
-    h1 {
-      margin: 0 0 15px;
-      font-size: 27px;
-    }
-
-    button {
-      width: 100%;
-      padding: 15px;
-      margin-top: 10px;
-      border: 0;
-      border-radius: 10px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    #micButton {
-      font-size: 21px;
-    }
-
-    textarea {
-      width: 100%;
-      height: 85px;
-      margin-top: 12px;
-      padding: 10px;
-      font-size: 17px;
-      border-radius: 10px;
-      border: 1px solid #bbb;
-      resize: none;
-    }
-
-    #status {
-      margin: 12px 0 0;
-      min-height: 22px;
-      font-size: 15px;
-    }
-
-    #result {
-      display: none;
-      text-align: left;
-      background: #f1f1f1;
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 10px;
-      line-height: 1.6;
-      font-size: 16px;
-    }
+    *{box-sizing:border-box} :root{--green:#0b5d3b;--green-light:#eaf5ef;--red:#c73b3b;--text:#1d1d1f;--muted:#70757a;--line:#e7e7e7}
+    html,body{margin:0;padding:0;width:100%;min-height:100%;background:#f5f5f5;color:var(--text);font-family:Arial,sans-serif}
+    body{padding:8px 10px 24px}.page{width:100%;max-width:420px;margin:0 auto}.hidden{display:none!important}
+    .box,.recent-card,.metric-card{background:#fff;border-radius:14px;box-shadow:0 2px 9px rgba(0,0,0,.09)}
+    .box{width:100%;padding:16px;text-align:center}h1{margin:0 0 12px;font-size:25px}#status{margin:8px 0;min-height:18px;font-size:14px}
+    textarea{width:100%;height:90px;padding:12px;border:1px solid #bdbdbd;border-radius:10px;resize:none;font-size:16px}
+    button{width:100%;margin-top:9px;padding:13px;border:0;border-radius:10px;font-size:16px;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+    #installButton{background:#fff;color:var(--green);border:1px solid var(--green);font-weight:700;margin:0 0 10px}
+    #speakButton{background:#eee}#saveButton{background:var(--green);color:#fff;font-weight:700}
+    #result{display:none;margin-top:11px;padding:10px;border-radius:9px;background:var(--green-light);text-align:left;font-size:14px}
+    #dashboardView{margin-top:14px}.dashboard-header{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px}.dashboard-header h1{margin:0}
+    .refresh-button{width:auto;margin:0;padding:9px 12px;background:#fff;border:1px solid var(--line);font-size:14px}.month-label{margin:-6px 2px 12px;color:var(--muted);font-size:14px}
+    .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.metric-card{min-height:98px;padding:13px 10px}.metric-icon{font-size:20px}
+    .metric-label{margin-top:6px;color:var(--muted);font-size:12px}.metric-value{margin-top:5px;overflow-wrap:anywhere;font-size:18px;font-weight:700}
+    .expense-value{color:var(--red)}.income-value{color:var(--green)}.recent-card{margin-top:12px;padding:14px}.recent-title{margin:0 0 8px;font-size:17px}
+    .transaction-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}.transaction-row:last-child{border-bottom:0}
+    .transaction-name{overflow:hidden;font-size:14px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.transaction-meta{margin-top:3px;color:var(--muted);font-size:12px}
+    .transaction-amount{align-self:center;font-size:14px;font-weight:700}.dashboard-message{padding:22px 8px;color:var(--muted);text-align:center;font-size:14px}
   </style>
 </head>
-
 <body>
+  <main class="page">
+    <button id="installButton" class="hidden" onclick="installExpenseApp()">⬇ Install Expenses App</button>
 
-<div class="box">
+    <section id="addView">
+      <div class="box">
+        <h1>💰 Expense</h1>
+        <button id="speakButton" onclick="startListening()">🎤 Tap to Speak</button>
+        <div id="status">Ready</div>
+        <textarea id="voiceText" placeholder="Type or speak your expense..." autocomplete="off"></textarea>
+        <button id="saveButton" onclick="saveExpense()">Add Expense</button>
+        <div id="result"></div>
+      </div>
+    </section>
 
-  <h1>💰 Expense</h1>
-
-
-  <!-- MICROPHONE BUTTON -->
-  <button id="micButton" onclick="startListening()">
-    🎤 Tap to Speak
-  </button>
-
-
-  <!-- STATUS -->
-  <div id="status">
-    Ready
-  </div>
-
-
-  <textarea
-  id="expenseText"
-  placeholder="Type or speak your expense..."
-  autofocus
-  inputmode="text"
-  autocomplete="off"
-></textarea>
-
-
-  <!-- MANUAL BACKUP BUTTON -->
-  <button id="addButton" onclick="sendExpense()">
-    Add Expense
-  </button>
-
-
-  <!-- RESULT -->
-  <div id="result"></div>
-
-</div>
-
-
+    <section id="dashboardView">
+      <div class="dashboard-header"><h1>📊 Dashboard</h1><button class="refresh-button" onclick="loadDashboard()">↻ Refresh</button></div>
+      <div id="monthLabel" class="month-label">Loading...</div>
+      <div class="metric-grid">
+        <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Monthly Expenses</div><div id="monthlyExpenses" class="metric-value expense-value">—</div></div>
+        <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Monthly Income</div><div id="monthlyIncome" class="metric-value income-value">—</div></div>
+        <div class="metric-card"><div class="metric-icon">⚖️</div><div class="metric-label">Balance</div><div id="balance" class="metric-value">—</div></div>
+        <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">All Transactions</div><div id="allTransactions" class="metric-value">—</div></div>
+        <div class="metric-card"><div class="metric-icon">📅</div><div class="metric-label">Today’s Expenses</div><div id="todayExpenses" class="metric-value expense-value">—</div></div>
+        <div class="metric-card"><div class="metric-icon">🔺</div><div class="metric-label">Highest Expense</div><div id="highestExpense" class="metric-value expense-value">—</div></div>
+      </div>
+      <div class="recent-card"><h2 class="recent-title">Recent Transactions</h2><div id="recentTransactions" class="dashboard-message">Loading...</div></div>
+    </section>
+  </main>
 
 <script>
+const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
+let recognition;let deferredInstallPrompt=null;
 
-  // ========================================================
-// AUTO FOCUS EXPENSE INPUT WHEN APP OPENS
-// ========================================================
+window.addEventListener("load",()=>{loadDashboard();if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js").catch(console.log)}});
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();deferredInstallPrompt=event;document.getElementById("installButton").classList.remove("hidden")});
+window.addEventListener("appinstalled",()=>{deferredInstallPrompt=null;document.getElementById("installButton").classList.add("hidden")});
+async function installExpenseApp(){if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();try{await deferredInstallPrompt.userChoice}catch(e){}deferredInstallPrompt=null;document.getElementById("installButton").classList.add("hidden")}
 
-// ========================================================
-// OPEN KEYBOARD WHEN EXPENSE APP STARTS
-// ========================================================
-
-function openExpenseKeyboard() {
-
-  const expenseInput =
-    document.getElementById("expenseText");
-
-  if (!expenseInput) return;
-
-  expenseInput.focus();
-
-  // Chromium / Android Virtual Keyboard API
-  if ("virtualKeyboard" in navigator) {
-    try {
-      navigator.virtualKeyboard.show();
-    } catch (e) {
-      // Ignore if Android/browser blocks it
-    }
-  }
+function jsonpRequest(params,onSuccess,onFailure){
+  const callbackName="expensePwaCallback_"+Date.now()+"_"+Math.floor(Math.random()*1000000);
+  const script=document.createElement("script");let finished=false;params.callback=callbackName;params.t=Date.now();
+  const query=Object.keys(params).map(k=>encodeURIComponent(k)+"="+encodeURIComponent(params[k])).join("&");
+  function cleanup(){if(script.parentNode)script.parentNode.removeChild(script);try{delete window[callbackName]}catch(e){window[callbackName]=undefined}}
+  window[callbackName]=data=>{if(finished)return;finished=true;cleanup();if(data&&data.success===false){if(onFailure)onFailure(new Error(data.error||"Request failed."));return}if(onSuccess)onSuccess(data)};
+  script.onerror=()=>{if(finished)return;finished=true;cleanup();if(onFailure)onFailure(new Error("Could not connect to Apps Script."))};
+  script.src=APPS_SCRIPT_URL+"?"+query;document.body.appendChild(script);
+  setTimeout(()=>{if(finished)return;finished=true;cleanup();if(onFailure)onFailure(new Error("Request timed out."))},15000);
 }
 
-
-window.addEventListener("load", function() {
-
-  setTimeout(function() {
-    openExpenseKeyboard();
-  }, 500);
-
-});
-
-
-window.addEventListener("pageshow", function() {
-
-  setTimeout(function() {
-    openExpenseKeyboard();
-  }, 500);
-
-});
-
-// ========================================================
-// GOOGLE APPS SCRIPT BACKEND
-// IMPORTANT:
-// ONLY /exec goes here.
-// ========================================================
-
-const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
-
-
-// Prevent duplicate submissions
-let isSaving = false;
-
-let recognition;
-
-
-
-// ========================================================
-// START MICROPHONE
-// ========================================================
-
-function startListening() {
-
-  const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
-
-
-  if (!SpeechRecognition) {
-
-    document.getElementById("status").innerText =
-      "❌ Speech recognition is not supported.";
-
-    return;
-  }
-
-
-  recognition = new SpeechRecognition();
-
-
-  // Filipino works for Tagalog / Taglish / English
-  recognition.lang = "fil-PH";
-
-  recognition.interimResults = false;
-
-  recognition.continuous = false;
-
-  recognition.maxAlternatives = 1;
-
-
-  document.getElementById("status").innerText =
-    "🎤 Listening...";
-
-
-  recognition.onresult = function(event) {
-
-    const text =
-      event.results[0][0].transcript;
-
-
-    document.getElementById("expenseText").value =
-      text;
-
-
-    document.getElementById("status").innerText =
-      "✅ Heard — adding...";
-
-
-    // ====================================================
-    // AUTO SAVE
-    // ====================================================
-
-    setTimeout(function() {
-
-      sendExpense();
-
-    }, 300);
-  };
-
-
-  recognition.onerror = function(event) {
-
-    document.getElementById("status").innerText =
-      "❌ Voice error: " + event.error;
-  };
-
-
-  recognition.onend = function() {
-
-    if (
-      document.getElementById("status").innerText ===
-      "🎤 Listening..."
-    ) {
-
-      document.getElementById("status").innerText =
-        "Ready";
-    }
-  };
-
-
-  try {
-
-    recognition.start();
-
-  } catch (error) {
-
-    document.getElementById("status").innerText =
-      "❌ " + error.message;
-  }
+function startListening(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){document.getElementById("status").innerText="Voice recognition is not supported.";return}
+  recognition=new SpeechRecognition();recognition.lang="fil-PH";recognition.interimResults=false;recognition.continuous=false;
+  document.getElementById("status").innerText="🎤 Listening...";
+  recognition.onresult=event=>{document.getElementById("voiceText").value=event.results[0][0].transcript;document.getElementById("status").innerText="✅ Heard"};
+  recognition.onerror=event=>{document.getElementById("status").innerText="Voice error: "+event.error};
+  recognition.onend=()=>{if(document.getElementById("status").innerText==="🎤 Listening...")document.getElementById("status").innerText="Ready"};
+  recognition.start();
 }
 
-
-
-// ========================================================
-// SEND EXPENSE TO GOOGLE SHEETS
-// ========================================================
-
-function sendExpense() {
-
-  if (isSaving) return;
-
-  const text =
-    document.getElementById("expenseText")
-      .value
-      .trim();
-
-  if (!text) {
-    document.getElementById("status").innerText =
-      "Speak or type an expense first.";
-    return;
-  }
-
-  isSaving = true;
-
-  document.getElementById("status").innerText =
-    "Saving...";
-
-  document.getElementById("micButton").disabled = true;
-  document.getElementById("addButton").disabled = true;
-
-
-  // Build Apps Script request
-  const requestUrl =
-    APPS_SCRIPT_URL +
-    "?action=expense" +
-    "&text=" + encodeURIComponent(text) +
-    "&callback=expenseDone" +
-    "&t=" + Date.now();
-
-
-  // =====================================================
-  // SEND REQUEST USING HIDDEN IFRAME
-  // This avoids the GitHub -> Apps Script callback problem
-  // =====================================================
-
-  const frame = document.createElement("iframe");
-
-  frame.style.display = "none";
-  frame.src = requestUrl;
-
-  document.body.appendChild(frame);
-
-
-  // Give Apps Script time to save
-  setTimeout(function() {
-
-    isSaving = false;
-
-    document.getElementById("micButton").disabled = false;
-    document.getElementById("addButton").disabled = false;
-
-    document.getElementById("status").innerText =
-      "✅ Expense sent";
-
-    document.getElementById("expenseText").value = "";
-
-    try {
-      frame.remove();
-    } catch (e) {}
-
-  }, 2500);
+function saveExpense(){
+  const text=document.getElementById("voiceText").value.trim();if(!text){document.getElementById("status").innerText="Speak or type an expense first.";return}
+  document.getElementById("status").innerText="Saving...";document.getElementById("saveButton").disabled=true;
+  jsonpRequest({action:"expense",text:text},result=>{
+    document.getElementById("status").innerText="✅ Expense added";document.getElementById("saveButton").disabled=false;
+    const resultBox=document.getElementById("result");resultBox.style.display="block";
+    resultBox.innerHTML="<strong>Added</strong><br>"+formatPeso(result.amount)+"<br>"+escapeHtml(result.merchant||"")+(result.category?" • "+escapeHtml(result.category):"")+(result.payment?" • "+escapeHtml(result.payment):"");
+    document.getElementById("voiceText").value="";loadDashboard();
+  },error=>{document.getElementById("status").innerText="❌ "+error.message;document.getElementById("saveButton").disabled=false});
 }
 
+function loadDashboard(){
+  document.getElementById("monthLabel").innerText="Loading...";
+  jsonpRequest({action:"dashboard"},renderDashboard,error=>{document.getElementById("monthLabel").innerText="Could not load dashboard";document.getElementById("recentTransactions").innerHTML='<div class="dashboard-message">❌ '+escapeHtml(error.message)+"</div>"});
+}
+
+function renderDashboard(data){
+  document.getElementById("monthLabel").innerText=data.monthLabel||"";
+  document.getElementById("monthlyExpenses").innerText=formatPeso(data.monthlyExpenses);document.getElementById("monthlyIncome").innerText=formatPeso(data.monthlyIncome);document.getElementById("balance").innerText=formatPeso(data.balance);
+  document.getElementById("allTransactions").innerText=Number(data.allTransactions||0).toLocaleString("en-PH");document.getElementById("todayExpenses").innerText=formatPeso(data.todayExpenses);document.getElementById("highestExpense").innerText=formatPeso(data.highestExpense);
+  const balance=document.getElementById("balance");balance.classList.toggle("income-value",Number(data.balance)>=0);balance.classList.toggle("expense-value",Number(data.balance)<0);
+  const recentBox=document.getElementById("recentTransactions"),transactions=data.recentTransactions||[];if(!transactions.length){recentBox.className="dashboard-message";recentBox.innerText="No transactions yet.";return}
+  recentBox.className="";recentBox.innerHTML=transactions.map(item=>{const sign=item.isIncome?"+":"−",valueClass=item.isIncome?"income-value":"expense-value",meta=item.date+" • "+item.category+(item.payment?" • "+item.payment:"");return '<div class="transaction-row"><div><div class="transaction-name">'+escapeHtml(item.merchant)+'</div><div class="transaction-meta">'+escapeHtml(meta)+'</div></div><div class="transaction-amount '+valueClass+'">'+sign+formatPeso(item.amount)+"</div></div>"}).join("");
+}
+function formatPeso(value){return "₱"+Number(value||0).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function escapeHtml(value){return String(value||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}
 </script>
-
 </body>
 </html>
