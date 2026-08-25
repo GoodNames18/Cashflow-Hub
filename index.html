@@ -48,7 +48,7 @@
     }
 
     body {
-      padding: 8px 10px 8px;
+      padding: 8px 10px 0;
     }
 
     .app-shell {
@@ -104,6 +104,7 @@
     .pages-viewport {
       width: 100%;
       overflow: hidden;
+      transition: height .20s ease;
     }
 
     .pages-track {
@@ -117,14 +118,7 @@
     .app-page {
       width: 50%;
       flex: 0 0 50%;
-      min-height: calc(100dvh - 86px);
       padding: 0 2px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .app-page > .recent-card:last-child {
-      flex: 1 0 auto;
     }
 
     .pages-track.show-expenses {
@@ -428,6 +422,8 @@
     .cash-month-summary .month-label {
       margin: 0;
       min-width: 0;
+      text-align: right;
+      white-space: nowrap;
     }
 
     .cash-income-only {
@@ -609,9 +605,6 @@
       padding: 14px;
     }
 
-    .app-page > .recent-card:last-child {
-      margin-bottom: 0;
-    }
 
     .recent-title {
       margin: 0 0 8px;
@@ -715,7 +708,7 @@
              PAGE 1: GCASH BUSINESS
              ================================================= -->
 
-        <section id="gcashPage" class="app-page gcash-page">
+        <section id="gcashPage" class="app-page gcash-page" data-page="gcash">
 
           <div class="gcash-hero">
 
@@ -805,16 +798,16 @@
 
           <div class="cash-month-summary">
 
+            <div class="cash-income-only">
+              <span>Total Income</span>
+              <strong id="gcashMonthlyIncomeOnly">—</strong>
+            </div>
+
             <div
               id="gcashMonthLabel"
               class="month-label"
             >
               Loading...
-            </div>
-
-            <div class="cash-income-only">
-              <span>Total Income</span>
-              <strong id="gcashMonthlyIncomeOnly">—</strong>
             </div>
 
           </div>
@@ -900,7 +893,7 @@
              Existing working page kept intact
              ================================================= -->
 
-        <section id="expensesPage" class="app-page">
+        <section id="expensesPage" class="app-page" data-page="expenses">
 
           <section id="addView">
 
@@ -1096,6 +1089,8 @@
 
     window.addEventListener("load", function() {
 
+      initializePageHeightSync();
+
       showAppPage("gcash", false);
 
       loadGcashDashboard();
@@ -1108,6 +1103,122 @@
       }
 
     });
+
+
+    // ========================================================
+    // ACTIVE PAGE HEIGHT
+    // Keeps the swipe viewport the exact height of the
+    // currently visible tab, so a taller hidden tab does not
+    // create blank space below the active tab.
+    //
+    // Future tabs only need:
+    // class="app-page" data-page="yourPageName"
+    // ========================================================
+
+    let appPageResizeObserver = null;
+
+
+    function getActiveAppPage() {
+
+      return document.querySelector(
+        '.app-page[data-page="' +
+        currentAppPage +
+        '"]'
+      );
+    }
+
+
+    function syncActivePageHeight() {
+
+      const viewport =
+        document.getElementById(
+          "pagesViewport"
+        );
+
+      const activePage =
+        getActiveAppPage();
+
+
+      if (
+        !viewport ||
+        !activePage
+      ) {
+        return;
+      }
+
+
+      requestAnimationFrame(
+        function() {
+
+          const height =
+            activePage.scrollHeight;
+
+          if (height > 0) {
+            viewport.style.height =
+              height + "px";
+          }
+
+        }
+      );
+    }
+
+
+    function initializePageHeightSync() {
+
+      if (
+        "ResizeObserver" in window
+      ) {
+
+        appPageResizeObserver =
+          new ResizeObserver(
+            function(entries) {
+
+              const activePage =
+                getActiveAppPage();
+
+              if (!activePage) {
+                return;
+              }
+
+
+              for (
+                const entry of entries
+              ) {
+
+                if (
+                  entry.target ===
+                  activePage
+                ) {
+
+                  syncActivePageHeight();
+                  break;
+                }
+              }
+
+            }
+          );
+
+
+        document
+          .querySelectorAll(
+            ".app-page"
+          )
+          .forEach(
+            function(page) {
+              appPageResizeObserver
+                .observe(page);
+            }
+          );
+      }
+
+
+      window.addEventListener(
+        "resize",
+        syncActivePageHeight
+      );
+
+      syncActivePageHeight();
+    }
 
 
     // ========================================================
@@ -1211,6 +1322,16 @@
         );
 
       }
+
+
+      // Match viewport to the destination tab immediately,
+      // then once more after the slide animation finishes.
+      syncActivePageHeight();
+
+      window.setTimeout(
+        syncActivePageHeight,
+        animate ? 280 : 0
+      );
 
     }
 
@@ -1694,6 +1815,8 @@
         data.recentTransactions || []
       );
 
+      syncActivePageHeight();
+
     }
 
 
@@ -1715,6 +1838,7 @@
         recentBox.innerText =
           "No transactions yet.";
 
+        syncActivePageHeight();
         return;
       }
 
@@ -1780,6 +1904,8 @@
 
           })
           .join("");
+
+      syncActivePageHeight();
 
     }
 
@@ -2461,6 +2587,7 @@
         recentBox.innerText =
           "No transactions yet.";
 
+        syncActivePageHeight();
         return;
       }
 
