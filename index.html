@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="theme-color" content="#0b5d3b">
+  <meta name="theme-color" content="#00F8B9">
 
-  <title>Expenses Tracker</title>
+  <title>Cash In/Out Tracker</title>
 
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -17,8 +17,15 @@
     }
 
     :root {
-      --green: #0b5d3b;
-      --green-light: #eaf5ef;
+      --primary: #00F8B9;
+      --primary-soft: #D9FFF5;
+      --secondary: #177568;
+      --lavender: #E6E6FA;
+
+      /* Backward-compatible names used by existing CSS */
+      --green: var(--primary);
+      --green-light: var(--primary-soft);
+
       --red: #c73b3b;
       --text: #1d1d1f;
       --muted: #70757a;
@@ -85,7 +92,7 @@
 
     .app-tab.active {
       background: var(--green);
-      color: #ffffff;
+      color: #07110e;
     }
 
     /* ======================================================
@@ -244,25 +251,26 @@
     }
 
     .quick-category-button.selected {
-      background: var(--green);
-      color: #ffffff;
+      background: var(--primary);
+      color: #063d35;
+      border-color: var(--secondary);
     }
 
     .quick-amount-button {
       background: #ffffff;
-      color: var(--green);
-      border: 1px solid var(--green);
+      color: var(--secondary);
+      border: 1px solid var(--primary);
     }
 
     .quick-custom-add-button {
       background: var(--green);
-      color: #ffffff;
+      color: #07110e;
       border: 1px solid var(--green);
     }
 
     .quick-amount-button:disabled,
     .quick-custom-add-button:disabled {
-      opacity: .35;
+      opacity: .38;
       cursor: not-allowed;
     }
 
@@ -281,7 +289,8 @@
     }
 
     .quick-custom-input:focus {
-      border-color: var(--green);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(230, 230, 250, .85);
     }
 
     .quick-custom-input:disabled {
@@ -295,6 +304,109 @@
       text-align: center;
       font-size: 11px;
       line-height: 1.3;
+    }
+
+    /* ======================================================
+       APP COLOR PALETTE
+       Primary   #00F8B9
+       Secondary #177568
+       Lavender  #E6E6FA
+       ====================================================== */
+
+    .gcash-title,
+    .dashboard-title,
+    .view-title {
+      color: var(--secondary);
+    }
+
+    .dashboard-header button,
+    #refreshButton {
+      border-color: var(--secondary);
+      color: var(--secondary);
+    }
+
+    .metric-card {
+      border: 1px solid rgba(23, 117, 104, .10);
+    }
+
+    .metric-card:nth-child(even) {
+      background: linear-gradient(
+        180deg,
+        #ffffff 0%,
+        var(--lavender) 180%
+      );
+    }
+
+    .recent-card {
+      border: 1px solid rgba(23, 117, 104, .10);
+    }
+
+    .quick-category-button {
+      border-color: rgba(23, 117, 104, .12);
+    }
+
+    .quick-category-button:not(.selected):hover {
+      background: var(--lavender);
+    }
+
+    .app-tab:not(.active):hover {
+      background: var(--lavender);
+      color: var(--secondary);
+    }
+
+    /* ======================================================
+       MAIN APP ACCENT
+       #00F8B9
+       ====================================================== */
+
+    .app-tab.active,
+    .quick-category-button.selected,
+    .quick-custom-add-button,
+    #installButton,
+    #saveButton {
+      color: #07110e;
+    }
+
+    .quick-amount-button {
+      border-color: #00F8B9;
+      color: #07110e;
+    }
+
+    .quick-custom-input:focus {
+      border-color: #00F8B9;
+      box-shadow: 0 0 0 2px rgba(0, 248, 185, .12);
+    }
+
+    /* ======================================================
+       GCASH / MAYA BRAND LOGOS
+       ====================================================== */
+
+    .brand-logo {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-logo-title {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-logo-metric {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .quick-category-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
     }
 
     /* ======================================================
@@ -381,8 +493,8 @@
     }
 
     #installButton {
-      background: #ffffff;
-      color: var(--green);
+      background: var(--green);
+      color: #07110e;
       border: 1px solid var(--green);
       font-weight: 700;
       margin: 0 0 10px;
@@ -394,7 +506,7 @@
 
     #saveButton {
       background: var(--green);
-      color: #ffffff;
+      color: #07110e;
       font-weight: 700;
     }
 
@@ -465,7 +577,7 @@
       class="hidden"
       onclick="installExpenseApp()"
     >
-      ⬇ Install Expenses App
+      ⬇ Install Cash In/Out App
     </button>
 
     <!-- ====================================================
@@ -480,7 +592,7 @@
         type="button"
         onclick="showAppPage('gcash')"
       >
-        💵 GCash Business
+        ↕️ Cash In/Out
       </button>
 
       <button
@@ -497,7 +609,7 @@
 
     <!-- ====================================================
          SWIPE VIEWPORT
-         Page 1 = GCash Business
+         Page 1 = Cash In/Out
          Page 2 = Expenses
          ==================================================== -->
 
@@ -514,11 +626,11 @@
           <div class="gcash-hero">
 
             <div class="gcash-title">
-              💵 GCash Business
+              Cash In/Out
             </div>
 
             <div class="gcash-subtitle">
-              Monthly transaction totals
+              Track your monthly business activity
             </div>
 
 
@@ -537,8 +649,12 @@
             >
 
             <div class="quick-category-grid">
-              <button id="quickCategoryGcash" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Gcash')">GCash</button>
-              <button id="quickCategoryMaya" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Maya')">Maya</button>
+              <button id="quickCategoryGcash" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Gcash')">
+                GCash
+              </button>
+              <button id="quickCategoryMaya" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Maya')">
+                Maya
+              </button>
               <button id="quickCategoryBills" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Bills')">Bills</button>
               <button id="quickCategoryLoad" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Load')">Load</button>
             </div>
@@ -604,7 +720,9 @@
           <div class="metric-grid">
 
             <div class="metric-card gcash-card">
-              <div class="metric-icon">💚</div>
+              <div class="metric-icon">
+                <img src="./gcash-logo.png" class="brand-logo-metric" alt="GCash">
+              </div>
               <div class="metric-label">GCash</div>
               <div
                 id="gcashMonthlyTotal"
@@ -616,7 +734,9 @@
 
 
             <div class="metric-card gcash-card">
-              <div class="metric-icon">🟣</div>
+              <div class="metric-icon">
+                <img src="./maya-logo.png" class="brand-logo-metric" alt="Maya">
+              </div>
               <div class="metric-label">Maya</div>
               <div
                 id="mayaMonthlyTotal"
@@ -851,7 +971,7 @@
 
     // ========================================================
     // APP START
-    // GCash Business is the default/main page.
+    // Cash In/Out is the default/main page.
     // ========================================================
 
     window.addEventListener("load", function() {
