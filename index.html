@@ -220,7 +220,13 @@
     }
 
     .income-value {
-      color: var(--green);
+      color: var(--secondary);
+    }
+
+    /* Shared dashboard income color for current + future tabs */
+    #monthlyIncome,
+    .dashboard-income-value {
+      color: var(--secondary) !important;
     }
 
     .dashboard-message {
@@ -355,14 +361,30 @@
       border-color: var(--secondary);
     }
 
-    .quick-category-button:not(.selected):hover {
-      background: var(--lavender);
+    .quick-category-button:not(.selected) {
+      background: #eeeeee;
+      color: var(--text);
     }
 
-    .app-tab:not(.active):hover {
-      background: var(--lavender);
-      color: var(--secondary);
+    @media (hover: hover) and (pointer: fine) {
+      .quick-category-button:not(.selected):hover {
+        background: var(--lavender);
+      }
+
+      .app-tab:not(.active):hover {
+        background: var(--lavender);
+        color: var(--secondary);
+      }
     }
+
+    /* ======================================================
+       SHARED TAB DESIGN RULES
+       New tabs should reuse:
+       .metric-card / .metric-value / .income-value
+       .recent-card / .transaction-amount
+       .quick-category-button / .quick-amount-button
+       so palette and mobile behavior stay consistent.
+       ====================================================== */
 
     /* ======================================================
        MAIN APP ACCENT
