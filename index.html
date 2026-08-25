@@ -292,12 +292,7 @@
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(230, 230, 250, .85);
     }
-
-    .quick-custom-input:disabled {
-      opacity: .55;
-    }
-
-    #gcashQuickStatus {
+#gcashQuickStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
@@ -639,12 +634,10 @@
             <input
               id="gcashCustomAmount"
               class="quick-custom-input"
-              type="number"
-              inputmode="decimal"
-              min="0.01"
-              step="0.01"
-              placeholder="Enter custom amount"
-              disabled
+              type="text"
+              inputmode="text"
+              maxlength="100"
+              placeholder="e.g. 30 gcash"
               oninput="updateGcashCustomAddButton()"
             >
 
@@ -686,7 +679,7 @@
             </div>
 
             <div id="gcashQuickStatus">
-              Select GCash, Maya, Bills, or Load first.
+              Type e.g. 30 gcash, or use the quick buttons.
             </div>
 
           </div>
@@ -1515,6 +1508,29 @@
 
     function selectGcashQuickCategory(category) {
 
+      // Tap the same selected category again = unselect it.
+      if (selectedGcashQuickCategory === category) {
+
+        selectedGcashQuickCategory = "";
+
+        document
+          .querySelectorAll(".quick-category-button")
+          .forEach(function(button) {
+            button.classList.remove("selected");
+          });
+
+        setQuickAmountButtonsDisabled(true);
+        updateGcashCustomAddButton();
+
+        document
+          .getElementById("gcashQuickStatus")
+          .innerText =
+            "Select GCash, Maya, Bills, or Load.";
+
+        return;
+      }
+
+
       selectedGcashQuickCategory = category;
 
       document
@@ -1533,12 +1549,12 @@
       }
 
       setQuickAmountButtonsDisabled(false);
-      setQuickCustomControlsDisabled(false);
+      updateGcashCustomAddButton();
 
       document
         .getElementById("gcashQuickStatus")
         .innerText =
-          category + " selected. Choose an amount.";
+          category + " selected.";
     }
 
 
@@ -1554,16 +1570,13 @@
 
     function setQuickCustomControlsDisabled(disabled) {
 
-      var input =
-        document.getElementById("gcashCustomAmount");
+      // Custom amount textbox stays editable at all times.
+      // Only the Add button is locked/unlocked.
+      document
+        .getElementById("gcashCustomAddButton")
+        .disabled = disabled;
 
-      input.disabled = disabled;
-
-      if (disabled) {
-        document
-          .getElementById("gcashCustomAddButton")
-          .disabled = true;
-      } else {
+      if (!disabled) {
         updateGcashCustomAddButton();
       }
     }
@@ -1571,19 +1584,16 @@
 
     function updateGcashCustomAddButton() {
 
-      var amount =
-        Number(
-          document
-            .getElementById("gcashCustomAmount")
-            .value
-        );
+      var command =
+        document
+          .getElementById("gcashCustomAmount")
+          .value
+          .trim();
 
       document
         .getElementById("gcashCustomAddButton")
         .disabled =
-          !selectedGcashQuickCategory ||
-          !Number.isFinite(amount) ||
-          amount <= 0;
+          command.length === 0;
     }
 
 
@@ -1598,7 +1608,6 @@
         });
 
       setQuickAmountButtonsDisabled(true);
-      setQuickCustomControlsDisabled(true);
 
       document
         .getElementById("gcashCustomAmount")
@@ -1610,28 +1619,56 @@
 
     function saveGcashCustomAmount() {
 
-      // Custom amount also requires a selected category.
-      if (!selectedGcashQuickCategory) {
-        return;
-      }
-
       var input =
         document.getElementById("gcashCustomAmount");
 
-      var amount =
-        Number(input.value);
+      var command =
+        input.value.trim();
 
-      if (!amount || amount <= 0) {
-
-        document
-          .getElementById("gcashQuickStatus")
-          .innerText =
-            "Enter a valid custom amount.";
-
+      if (!command) {
         return;
       }
 
-      saveGcashQuickEntry(amount);
+      document
+        .getElementById("gcashQuickStatus")
+        .innerText =
+          "Saving...";
+
+      document
+        .getElementById("gcashCustomAddButton")
+        .disabled = true;
+
+      jsonpRequest(
+        {
+          action: "gcashTextAdd",
+          text: command
+        },
+
+        function(result) {
+
+          document
+            .getElementById("gcashQuickStatus")
+            .innerText =
+              "✅ " +
+              formatPeso(result.amount) +
+              " · " +
+              result.category;
+
+          input.value = "";
+          updateGcashCustomAddButton();
+          loadGcashDashboard();
+        },
+
+        function(error) {
+
+          document
+            .getElementById("gcashQuickStatus")
+            .innerText =
+              "❌ " + error.message;
+
+          updateGcashCustomAddButton();
+        }
+      );
     }
 
 
@@ -1655,7 +1692,9 @@
           "...";
 
       setQuickAmountButtonsDisabled(true);
-      setQuickCustomControlsDisabled(true);
+      document
+        .getElementById("gcashCustomAddButton")
+        .disabled = true;
 
       jsonpRequest(
         {
@@ -1688,8 +1727,9 @@
 
           if (selectedGcashQuickCategory) {
             setQuickAmountButtonsDisabled(false);
-            setQuickCustomControlsDisabled(false);
           }
+
+          updateGcashCustomAddButton();
         }
       );
     }
