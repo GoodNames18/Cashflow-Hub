@@ -130,7 +130,12 @@
     .recent-card,
     .metric-card,
     .gcash-hero {
-      background: #ffffff;
+      background: linear-gradient(
+        180deg,
+        #ffffff 0%,
+        var(--lavender) 175%
+      );
+      border: 1px solid rgba(23, 117, 104, .10);
       border-radius: 14px;
       box-shadow: 0 2px 9px rgba(0, 0, 0, .09);
     }
@@ -320,22 +325,6 @@
       color: var(--secondary);
     }
 
-    .metric-card {
-      border: 1px solid rgba(23, 117, 104, .10);
-    }
-
-    .metric-card:nth-child(even) {
-      background: linear-gradient(
-        180deg,
-        #ffffff 0%,
-        var(--lavender) 180%
-      );
-    }
-
-    .recent-card {
-      border: 1px solid rgba(23, 117, 104, .10);
-    }
-
     .quick-category-button {
       border-color: rgba(23, 117, 104, .12);
     }
@@ -466,10 +455,17 @@
       width: 100%;
       height: 90px;
       padding: 12px;
+      background: #ffffff;
       border: 1px solid #bdbdbd;
       border-radius: 10px;
       resize: none;
       font-size: 16px;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(230, 230, 250, .85);
     }
 
     button {
@@ -496,7 +492,8 @@
     }
 
     #speakButton {
-      background: #eeeeee;
+      background: var(--lavender);
+      color: var(--secondary);
     }
 
     #saveButton {
@@ -636,9 +633,11 @@
               class="quick-custom-input"
               type="text"
               inputmode="text"
+              enterkeyhint="done"
               maxlength="100"
               placeholder="Enter transaction"
               oninput="updateGcashCustomAddButton()"
+              onkeydown="handleGcashTransactionEnter(event)"
             >
 
             <div class="quick-category-grid">
@@ -1614,6 +1613,28 @@
         .value = "";
 
       updateGcashCustomAddButton();
+    }
+
+
+    function handleGcashTransactionEnter(event) {
+
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      event.preventDefault();
+
+      var command =
+        document
+          .getElementById("gcashCustomAmount")
+          .value
+          .trim();
+
+      if (!command) {
+        return;
+      }
+
+      saveGcashCustomAmount();
     }
 
 
