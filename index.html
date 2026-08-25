@@ -210,38 +210,55 @@
 
     .quick-entry {
       margin-top: 14px;
-      padding: 14px;
-      background: #ffffff;
-      border-radius: 14px;
-      box-shadow: 0 2px 9px rgba(0, 0, 0, .09);
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .quick-entry-header {
+      margin-bottom: 10px;
     }
 
     .quick-entry-title {
-      margin: 0 0 6px;
+      margin: 0;
       font-size: 17px;
       font-weight: 700;
     }
 
     .quick-entry-subtitle {
-      margin-bottom: 11px;
+      margin-top: 4px;
       color: var(--muted);
       font-size: 12px;
+      line-height: 1.35;
     }
 
-    .quick-category-grid {
+    .quick-category-grid,
+    .quick-amount-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 7px;
     }
 
-    .quick-category-button {
+    .quick-amount-grid {
+      margin-top: 8px;
+    }
+
+    .quick-category-button,
+    .quick-amount-button,
+    .quick-custom-add-button {
+      width: 100%;
+      min-width: 0;
+      height: 40px;
       margin: 0;
-      padding: 10px 4px;
+      padding: 7px 3px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .quick-category-button {
       background: #eeeeee;
       color: var(--text);
       border: 1px solid transparent;
-      font-size: 12px;
-      font-weight: 700;
     }
 
     .quick-category-button.selected {
@@ -249,68 +266,52 @@
       color: #ffffff;
     }
 
-    .quick-amount-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 7px;
-      margin-top: 10px;
-    }
-
     .quick-amount-button {
-      margin: 0;
-      padding: 11px 4px;
       background: #ffffff;
       color: var(--green);
       border: 1px solid var(--green);
-      font-size: 13px;
-      font-weight: 700;
     }
 
-    .quick-amount-button:disabled {
+    .quick-custom-add-button {
+      background: var(--green);
+      color: #ffffff;
+      border: 1px solid var(--green);
+    }
+
+    .quick-amount-button:disabled,
+    .quick-custom-add-button:disabled {
       opacity: .35;
       cursor: not-allowed;
+    }
+
+    .quick-custom-input {
+      width: 100%;
+      height: 42px;
+      margin-top: 8px;
+      padding: 9px 11px;
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid #bdbdbd;
+      border-radius: 9px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .quick-custom-input:focus {
+      border-color: var(--green);
+    }
+
+    .quick-custom-input:disabled {
+      opacity: .55;
     }
 
     #gcashQuickStatus {
-      min-height: 18px;
-      margin-top: 10px;
+      min-height: 17px;
+      margin-top: 8px;
       color: var(--muted);
       text-align: center;
-      font-size: 12px;
-    }
-
-    .quick-custom-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 92px;
-      gap: 7px;
-      margin-top: 7px;
-    }
-
-    #gcashCustomAmount {
-      width: 100%;
-      height: 42px;
-      margin: 0;
-      padding: 8px 10px;
-      border: 1px solid #bdbdbd;
-      border-radius: 10px;
-      font-size: 15px;
-      text-align: left;
-    }
-
-    #gcashCustomAddButton {
-      width: 100%;
-      height: 42px;
-      margin: 0;
-      padding: 8px 6px;
-      background: var(--green);
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    #gcashCustomAddButton:disabled {
-      opacity: .35;
-      cursor: not-allowed;
+      font-size: 11px;
+      line-height: 1.3;
     }
 
     /* ======================================================
@@ -322,8 +323,8 @@
     }
 
     .gcash-hero {
-      padding: 17px 15px;
-      margin-bottom: 14px;
+      padding: 15px;
+      margin-bottom: 12px;
     }
 
     .gcash-title {
@@ -537,6 +538,67 @@
               Monthly transaction totals
             </div>
 
+
+          <div class="quick-entry">
+
+            <div class="quick-entry-header">
+              <div class="quick-entry-title">Enter custom amount</div>
+              <div class="quick-entry-subtitle">
+                Select a service first, then tap an amount.
+              </div>
+            </div>
+
+            <div class="quick-category-grid">
+              <button id="quickCategoryGcash" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Gcash')">GCash</button>
+              <button id="quickCategoryMaya" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Maya')">Maya</button>
+              <button id="quickCategoryBills" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Bills')">Bills</button>
+              <button id="quickCategoryLoad" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Load')">Load</button>
+            </div>
+
+            <div class="quick-amount-grid">
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(5)">₱5</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(10)">₱10</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(20)">₱20</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(30)">₱30</button>
+
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(40)">₱40</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(50)">₱50</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(60)">₱60</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(70)">₱70</button>
+
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(80)">₱80</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(90)">₱90</button>
+              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(100)">₱100</button>
+
+              <button
+                id="gcashCustomAddButton"
+                class="quick-custom-add-button"
+                type="button"
+                disabled
+                onclick="saveGcashCustomAmount()"
+              >
+                Add
+              </button>
+            </div>
+
+            <input
+              id="gcashCustomAmount"
+              class="quick-custom-input"
+              type="number"
+              inputmode="decimal"
+              min="0.01"
+              step="0.01"
+              placeholder="Enter custom amount"
+              disabled
+              oninput="updateGcashCustomAddButton()"
+            >
+
+            <div id="gcashQuickStatus">
+              Select GCash, Maya, Bills, or Load first.
+            </div>
+
+          </div>
+
           </div>
 
 
@@ -615,63 +677,7 @@
           </div>
 
 
-          <div class="quick-entry">
 
-            <div class="quick-entry-title">
-              ⚡ Quick Add Income
-            </div>
-
-            <div class="quick-entry-subtitle">
-              Choose GCash / Maya / Bills / Load first, then tap an amount.
-            </div>
-
-            <div class="quick-category-grid">
-              <button id="quickCategoryGcash" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Gcash')">GCash</button>
-              <button id="quickCategoryMaya" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Maya')">Maya</button>
-              <button id="quickCategoryBills" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Bills')">Bills</button>
-              <button id="quickCategoryLoad" class="quick-category-button" type="button" onclick="selectGcashQuickCategory('Load')">Load</button>
-            </div>
-
-            <div class="quick-amount-grid">
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(5)">₱5</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(10)">₱10</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(20)">₱20</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(30)">₱30</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(40)">₱40</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(50)">₱50</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(60)">₱60</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(70)">₱70</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(80)">₱80</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(90)">₱90</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(100)">₱100</button>
-            </div>
-
-            <div class="quick-custom-row">
-              <input
-                id="gcashCustomAmount"
-                type="number"
-                inputmode="decimal"
-                min="0.01"
-                step="0.01"
-                placeholder="Custom amount"
-                disabled
-              >
-
-              <button
-                id="gcashCustomAddButton"
-                type="button"
-                disabled
-                onclick="saveGcashCustomAmount()"
-              >
-                Add
-              </button>
-            </div>
-
-            <div id="gcashQuickStatus">
-              Choose a category first.
-            </div>
-
-          </div>
 
 
         </section>
@@ -1452,13 +1458,36 @@
 
     function setQuickCustomControlsDisabled(disabled) {
 
-      document
-        .getElementById("gcashCustomAmount")
-        .disabled = disabled;
+      var input =
+        document.getElementById("gcashCustomAmount");
+
+      input.disabled = disabled;
+
+      if (disabled) {
+        document
+          .getElementById("gcashCustomAddButton")
+          .disabled = true;
+      } else {
+        updateGcashCustomAddButton();
+      }
+    }
+
+
+    function updateGcashCustomAddButton() {
+
+      var amount =
+        Number(
+          document
+            .getElementById("gcashCustomAmount")
+            .value
+        );
 
       document
         .getElementById("gcashCustomAddButton")
-        .disabled = disabled;
+        .disabled =
+          !selectedGcashQuickCategory ||
+          !Number.isFinite(amount) ||
+          amount <= 0;
     }
 
 
@@ -1478,6 +1507,8 @@
       document
         .getElementById("gcashCustomAmount")
         .value = "";
+
+      updateGcashCustomAddButton();
     }
 
 
