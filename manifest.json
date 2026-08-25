@@ -1,17 +1,26 @@
 {
   "id": "/expense-voice/",
-  "name": "Expenses Tracker",
-  "short_name": "Expenses",
-  "description": "Voice and text income and expense tracker.",
+  "name": "Cash In/Out Tracker",
+  "short_name": "Cash In/Out",
+  "description": "Cash In/Out and expense tracker",
   "start_url": "/expense-voice/",
   "scope": "/expense-voice/",
   "display": "standalone",
-  "background_color": "#f5f5f5",
-  "theme_color": "#0b5d3b",
+  "background_color": "#F5F5F5",
+  "theme_color": "#00F8B9",
   "orientation": "portrait",
-  "prefer_related_applications": false,
   "icons": [
-    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
-    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
