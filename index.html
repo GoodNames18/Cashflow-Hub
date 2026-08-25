@@ -19,7 +19,9 @@
     :root {
       --primary: #00F8B9;
       --primary-soft: #D9FFF5;
-      --secondary: #177568;
+      --secondary: #1B1844;
+      --border-accent: var(--secondary);
+      --recent-money: var(--secondary);
       --lavender: #E6E6FA;
 
       /* Backward-compatible names used by existing CSS */
@@ -142,7 +144,7 @@
         #ffffff 0%,
         var(--lavender) 175%
       );
-      border: 1px solid rgba(23, 117, 104, .38);
+      border: 1px solid rgba(27, 24, 68, .38);
       border-radius: 14px;
       box-shadow: 0 2px 9px rgba(0, 0, 0, .09);
     }
@@ -330,11 +332,14 @@
     /* ======================================================
        APP COLOR PALETTE
        Primary   #00F8B9
-       Secondary #177568
+       Secondary #1B1844
        Lavender  #E6E6FA
        ====================================================== */
 
-    .gcash-title,
+    .gcash-title {
+      color: #000000;
+    }
+
     .dashboard-title,
     .view-title {
       color: var(--secondary);
@@ -621,9 +626,18 @@
       align-self: center;
       font-size: 14px;
       font-weight: 700;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, .22);
     }
-  </style>
+  
+    /* ======================================================
+       GLOBAL RECENT TRANSACTION MONEY
+       Applies to Cash In/Out, Expenses, and future tabs
+       ====================================================== */
+
+    .recent-card .transaction-amount {
+      color: var(--secondary) !important;
+    }
+
+</style>
 </head>
 
 <body>
