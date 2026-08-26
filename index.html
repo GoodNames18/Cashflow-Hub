@@ -548,6 +548,55 @@
       line-height: 1.3;
     }
 
+    .konek-autocomplete-wrap {
+      position: relative;
+    }
+
+    .konek-suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 40;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 4px;
+      border: 1px solid var(--secondary);
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: 0 5px 16px rgba(0, 0, 0, .14);
+    }
+
+    .konek-suggestions[hidden] {
+      display: none;
+    }
+
+    .konek-suggestion-button {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--secondary);
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.25;
+      cursor: pointer;
+    }
+
+    .konek-suggestion-button:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 1px;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .konek-suggestion-button:hover {
+        background: var(--lavender);
+      }
+    }
+
     .konek-quick-section {
       margin-top: 8px;
     }
@@ -1486,16 +1535,30 @@
 
             <div class="quick-entry">
 
-              <input
-                id="konekTransactionInput"
-                class="quick-custom-input"
-                type="text"
-                inputmode="text"
-                enterkeyhint="done"
-                maxlength="120"
-                required
-                placeholder="Description / note (required)"
-              >
+              <div class="konek-autocomplete-wrap">
+
+                <input
+                  id="konekTransactionInput"
+                  class="quick-custom-input"
+                  type="text"
+                  inputmode="text"
+                  enterkeyhint="done"
+                  maxlength="120"
+                  autocomplete="off"
+                  required
+                  aria-autocomplete="list"
+                  aria-controls="konekSuggestions"
+                  placeholder="Description / note (required)"
+                >
+
+                <div
+                  id="konekSuggestions"
+                  class="konek-suggestions"
+                  role="listbox"
+                  hidden
+                ></div>
+
+              </div>
 
               <div class="konek-quick-section">
                 <div id="konekIncomeButtons" class="konek-amount-grid"></div>
@@ -1581,6 +1644,9 @@
     let deferredInstallPrompt = null;
     let currentAppPage = "gcash";
     let selectedGcashQuickCategory = "";
+    let konekSuggestionNames = [];
+    let konekSuggestionsLoaded = false;
+    let konekSuggestionsLoading = false;
 
     const KONEK2CARD_PRESETS = {
       income: [7, 12, 22, 32, 52, 415],
@@ -1760,6 +1826,7 @@
     window.addEventListener("load", function() {
 
       renderKonek2CardQuickButtons();
+      setupKonek2CardAutocomplete();
       initializePageHeightSync();
 
       showAppPage("gcash", false);
@@ -2394,6 +2461,264 @@
     // KONEK2CARD QUICK ENTRY + DASHBOARD
     // ========================================================
 
+    function filterKonek2CardSuggestions(
+      query,
+      names,
+      limit
+    ) {
+
+      var normalizedQuery =
+        String(query || "")
+          .trim()
+          .toLowerCase();
+
+      var maxResults =
+        Math.max(
+          1,
+          Number(limit) || 8
+        );
+
+      if (!normalizedQuery) {
+        return [];
+      }
+
+      var prefixMatches = [];
+
+      (names || [])
+        .forEach(function(name) {
+
+          var displayName =
+            String(name || "")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          if (!displayName) {
+            return;
+          }
+
+          var lowerName =
+            displayName.toLowerCase();
+
+          if (
+            lowerName.indexOf(
+              normalizedQuery
+            ) === 0
+          ) {
+            prefixMatches.push(displayName);
+          }
+        });
+
+      return prefixMatches
+        .slice(0, maxResults);
+    }
+
+
+    function hideKonek2CardSuggestions() {
+
+      var box =
+        document.getElementById(
+          "konekSuggestions"
+        );
+
+      if (!box) {
+        return;
+      }
+
+      box.innerHTML = "";
+      box.hidden = true;
+    }
+
+
+    function renderKonek2CardSuggestions() {
+
+      var input =
+        document.getElementById(
+          "konekTransactionInput"
+        );
+
+      var box =
+        document.getElementById(
+          "konekSuggestions"
+        );
+
+      if (!input || !box) {
+        return;
+      }
+
+      var matches =
+        filterKonek2CardSuggestions(
+          input.value,
+          konekSuggestionNames,
+          8
+        );
+
+      box.innerHTML = "";
+
+      if (matches.length === 0) {
+        box.hidden = true;
+        return;
+      }
+
+      matches.forEach(function(name) {
+
+        var button =
+          document.createElement(
+            "button"
+          );
+
+        button.type = "button";
+        button.className =
+          "konek-suggestion-button";
+        button.setAttribute(
+          "role",
+          "option"
+        );
+        button.textContent = name;
+
+        button.addEventListener(
+          "click",
+          function() {
+            input.value = name;
+            hideKonek2CardSuggestions();
+            input.focus();
+          }
+        );
+
+        box.appendChild(button);
+      });
+
+      box.hidden = false;
+    }
+
+
+    function loadKonek2CardSuggestions() {
+
+      if (konekSuggestionsLoaded) {
+        renderKonek2CardSuggestions();
+        return;
+      }
+
+      if (konekSuggestionsLoading) {
+        return;
+      }
+
+      konekSuggestionsLoading = true;
+
+      jsonpRequest(
+        {
+          action: "konekSuggestions"
+        },
+
+        function(result) {
+          konekSuggestionsLoading = false;
+          konekSuggestionsLoaded = true;
+          konekSuggestionNames =
+            Array.isArray(result.suggestions)
+              ? result.suggestions
+              : [];
+          renderKonek2CardSuggestions();
+        },
+
+        function() {
+          konekSuggestionsLoading = false;
+          // Keep it retryable on the next focus/input.
+        }
+      );
+    }
+
+
+    function rememberKonek2CardSuggestion(name) {
+
+      var cleanName =
+        String(name || "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (!cleanName) {
+        return;
+      }
+
+      var lowerName =
+        cleanName.toLowerCase();
+
+      konekSuggestionNames =
+        [cleanName]
+          .concat(
+            konekSuggestionNames.filter(
+              function(existingName) {
+                return (
+                  String(existingName)
+                    .toLowerCase() !==
+                  lowerName
+                );
+              }
+            )
+          );
+    }
+
+
+    function setupKonek2CardAutocomplete() {
+
+      var input =
+        document.getElementById(
+          "konekTransactionInput"
+        );
+
+      var wrap =
+        input
+          ? input.closest(
+              ".konek-autocomplete-wrap"
+            )
+          : null;
+
+      if (!input || !wrap) {
+        return;
+      }
+
+      input.addEventListener(
+        "focus",
+        function() {
+          loadKonek2CardSuggestions();
+        }
+      );
+
+      input.addEventListener(
+        "input",
+        function() {
+          if (!input.value.trim()) {
+            hideKonek2CardSuggestions();
+            return;
+          }
+
+          if (!konekSuggestionsLoaded) {
+            loadKonek2CardSuggestions();
+            return;
+          }
+
+          renderKonek2CardSuggestions();
+        }
+      );
+
+      input.addEventListener(
+        "keydown",
+        function(event) {
+          if (event.key === "Escape") {
+            hideKonek2CardSuggestions();
+          }
+        }
+      );
+
+      document.addEventListener(
+        "click",
+        function(event) {
+          if (!wrap.contains(event.target)) {
+            hideKonek2CardSuggestions();
+          }
+        }
+      );
+    }
+
+
     function renderKonek2CardQuickButtons() {
 
       var incomeBox =
@@ -2507,7 +2832,14 @@
               " added";
           }
 
+          if (!result.bundle && result.description) {
+            rememberKonek2CardSuggestion(
+              result.description
+            );
+          }
+
           input.value = "";
+          hideKonek2CardSuggestions();
           setKonek2CardButtonsDisabled(false);
 
           if (pageDataState.konek) {
