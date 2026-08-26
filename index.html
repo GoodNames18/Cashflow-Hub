@@ -552,51 +552,6 @@
       position: relative;
     }
 
-    .konek-suggestions {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: calc(100% + 4px);
-      z-index: 40;
-      max-height: 220px;
-      overflow-y: auto;
-      padding: 4px;
-      border: 1px solid var(--secondary);
-      border-radius: 10px;
-      background: #ffffff;
-      box-shadow: 0 5px 16px rgba(0, 0, 0, .14);
-    }
-
-    .konek-suggestions[hidden] {
-      display: none;
-    }
-
-    .konek-suggestion-button {
-      display: block;
-      width: 100%;
-      margin: 0;
-      padding: 10px 12px;
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--secondary);
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.25;
-      cursor: pointer;
-    }
-
-    .konek-suggestion-button:focus-visible {
-      outline: 2px solid var(--primary);
-      outline-offset: 1px;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .konek-suggestion-button:hover {
-        background: var(--lavender);
-      }
-    }
-
     .konek-quick-section {
       margin-top: 8px;
     }
@@ -1546,17 +1501,9 @@
                   maxlength="120"
                   autocomplete="off"
                   required
-                  aria-autocomplete="list"
-                  aria-controls="konekSuggestions"
+                  aria-autocomplete="inline"
                   placeholder="Description / note (required)"
                 >
-
-                <div
-                  id="konekSuggestions"
-                  class="konek-suggestions"
-                  role="listbox"
-                  hidden
-                ></div>
 
               </div>
 
@@ -2461,140 +2408,134 @@
     // KONEK2CARD QUICK ENTRY + DASHBOARD
     // ========================================================
 
-    function filterKonek2CardSuggestions(
+    function normalizeKonek2CardSuggestionNames(names) {
+
+      var seen = {};
+      var uniqueNames = [];
+
+      (names || []).forEach(function(name) {
+
+        var cleanName =
+          String(name || "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (!cleanName) {
+          return;
+        }
+
+        var key = cleanName.toLowerCase();
+
+        if (seen[key]) {
+          return;
+        }
+
+        seen[key] = true;
+        uniqueNames.push(cleanName);
+      });
+
+      uniqueNames.sort(function(a, b) {
+        return a.localeCompare(
+          b,
+          "en",
+          {
+            numeric: true,
+            sensitivity: "base"
+          }
+        );
+      });
+
+      return uniqueNames;
+    }
+
+
+    function getKonek2CardInlineCompletion(
       query,
-      names,
-      limit
+      names
     ) {
 
-      var normalizedQuery =
-        String(query || "")
-          .trim()
-          .toLowerCase();
+      var typed =
+        String(query || "");
 
-      var maxResults =
-        Math.max(
-          1,
-          Number(limit) || 8
-        );
+      var normalizedQuery =
+        typed.toLowerCase();
 
       if (!normalizedQuery) {
-        return [];
+        return "";
       }
 
-      var prefixMatches = [];
-
-      (names || [])
-        .forEach(function(name) {
-
-          var displayName =
-            String(name || "")
-              .replace(/\s+/g, " ")
-              .trim();
-
-          if (!displayName) {
-            return;
-          }
-
-          var lowerName =
-            displayName.toLowerCase();
-
-          if (
-            lowerName.indexOf(
-              normalizedQuery
-            ) === 0
-          ) {
-            prefixMatches.push(displayName);
-          }
-        });
-
-      return prefixMatches
-        .slice(0, maxResults);
-    }
-
-
-    function hideKonek2CardSuggestions() {
-
-      var box =
-        document.getElementById(
-          "konekSuggestions"
+      var sortedNames =
+        normalizeKonek2CardSuggestionNames(
+          names
         );
 
-      if (!box) {
-        return;
+      for (
+        var i = 0;
+        i < sortedNames.length;
+        i++
+      ) {
+
+        var name = sortedNames[i];
+
+        if (
+          name.toLowerCase().indexOf(
+            normalizedQuery
+          ) === 0
+        ) {
+          return name;
+        }
       }
 
-      box.innerHTML = "";
-      box.hidden = true;
+      return "";
     }
 
 
-    function renderKonek2CardSuggestions() {
+    function applyKonek2CardInlineCompletion() {
 
       var input =
         document.getElementById(
           "konekTransactionInput"
         );
 
-      var box =
-        document.getElementById(
-          "konekSuggestions"
-        );
-
-      if (!input || !box) {
+      if (!input) {
         return;
       }
 
-      var matches =
-        filterKonek2CardSuggestions(
-          input.value,
-          konekSuggestionNames,
-          8
-        );
+      var typed = input.value;
 
-      box.innerHTML = "";
-
-      if (matches.length === 0) {
-        box.hidden = true;
+      if (!typed) {
         return;
       }
 
-      matches.forEach(function(name) {
-
-        var button =
-          document.createElement(
-            "button"
-          );
-
-        button.type = "button";
-        button.className =
-          "konek-suggestion-button";
-        button.setAttribute(
-          "role",
-          "option"
-        );
-        button.textContent = name;
-
-        button.addEventListener(
-          "click",
-          function() {
-            input.value = name;
-            hideKonek2CardSuggestions();
-            input.focus();
-          }
+      var completion =
+        getKonek2CardInlineCompletion(
+          typed,
+          konekSuggestionNames
         );
 
-        box.appendChild(button);
-      });
+      if (
+        !completion ||
+        completion.length <= typed.length
+      ) {
+        return;
+      }
 
-      box.hidden = false;
+      input.value = completion;
+
+      try {
+        input.setSelectionRange(
+          typed.length,
+          completion.length
+        );
+      } catch (error) {
+      }
     }
 
 
     function loadKonek2CardSuggestions() {
 
       if (konekSuggestionsLoaded) {
-        renderKonek2CardSuggestions();
+        applyKonek2CardInlineCompletion();
         return;
       }
 
@@ -2613,10 +2554,12 @@
           konekSuggestionsLoading = false;
           konekSuggestionsLoaded = true;
           konekSuggestionNames =
-            Array.isArray(result.suggestions)
-              ? result.suggestions
-              : [];
-          renderKonek2CardSuggestions();
+            normalizeKonek2CardSuggestionNames(
+              Array.isArray(result.suggestions)
+                ? result.suggestions
+                : []
+            );
+          applyKonek2CardInlineCompletion();
         },
 
         function() {
@@ -2638,22 +2581,12 @@
         return;
       }
 
-      var lowerName =
-        cleanName.toLowerCase();
-
       konekSuggestionNames =
-        [cleanName]
-          .concat(
-            konekSuggestionNames.filter(
-              function(existingName) {
-                return (
-                  String(existingName)
-                    .toLowerCase() !==
-                  lowerName
-                );
-              }
-            )
-          );
+        normalizeKonek2CardSuggestionNames(
+          konekSuggestionNames.concat(
+            [cleanName]
+          )
+        );
     }
 
 
@@ -2664,14 +2597,7 @@
           "konekTransactionInput"
         );
 
-      var wrap =
-        input
-          ? input.closest(
-              ".konek-autocomplete-wrap"
-            )
-          : null;
-
-      if (!input || !wrap) {
+      if (!input) {
         return;
       }
 
@@ -2685,8 +2611,8 @@
       input.addEventListener(
         "input",
         function() {
-          if (!input.value.trim()) {
-            hideKonek2CardSuggestions();
+
+          if (!input.value) {
             return;
           }
 
@@ -2695,25 +2621,7 @@
             return;
           }
 
-          renderKonek2CardSuggestions();
-        }
-      );
-
-      input.addEventListener(
-        "keydown",
-        function(event) {
-          if (event.key === "Escape") {
-            hideKonek2CardSuggestions();
-          }
-        }
-      );
-
-      document.addEventListener(
-        "click",
-        function(event) {
-          if (!wrap.contains(event.target)) {
-            hideKonek2CardSuggestions();
-          }
+          applyKonek2CardInlineCompletion();
         }
       );
     }
@@ -2839,7 +2747,6 @@
           }
 
           input.value = "";
-          hideKonek2CardSuggestions();
           setKonek2CardButtonsDisabled(false);
 
           if (pageDataState.konek) {
