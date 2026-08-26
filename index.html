@@ -72,7 +72,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 6px;
       margin-bottom: 10px;
       padding: 5px;
@@ -92,7 +92,7 @@
       border-radius: 10px;
       background: transparent;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
     }
@@ -114,33 +114,37 @@
 
     .pages-track {
       display: flex;
-      width: 400%;
+      width: 500%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 25%;
-      flex: 0 0 25%;
+      width: 20%;
+      flex: 0 0 20%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
 
-    .pages-track.show-twice {
+    .pages-track.show-konek {
       transform: translateX(0);
     }
 
+    .pages-track.show-twice {
+      transform: translateX(-20%);
+    }
+
     .pages-track.show-printing {
-      transform: translateX(-25%);
+      transform: translateX(-40%);
     }
 
     .pages-track.show-gcash {
-      transform: translateX(-50%);
+      transform: translateX(-60%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-75%);
+      transform: translateX(-80%);
     }
 
     /* ======================================================
@@ -534,13 +538,55 @@
     }
 
     #printingStatus,
-    #twiceStatus {
+    #twiceStatus,
+    #konekStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
       text-align: center;
       font-size: 11px;
       line-height: 1.3;
+    }
+
+    .konek-quick-section {
+      margin-top: 10px;
+    }
+
+    .konek-quick-label {
+      margin: 0 0 6px 2px;
+      color: var(--secondary);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .konek-amount-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    #konekExpenseButtons {
+      grid-template-columns: 1fr;
+    }
+
+    .konek-quick-button {
+      width: 100%;
+      min-width: 0;
+      height: 42px;
+      margin: 0;
+      padding: 8px 4px;
+      border: 1px solid var(--secondary);
+      border-radius: 9px;
+      background: var(--primary);
+      color: #07110e;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .konek-quick-button:disabled {
+      opacity: .55;
+      cursor: wait;
     }
 
     /* ======================================================
@@ -737,6 +783,15 @@
     <nav class="app-tabs" aria-label="Tracker pages">
 
       <button
+        id="konekTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('konek')"
+      >
+        Konek2Card
+      </button>
+
+      <button
         id="twiceTab"
         class="app-tab"
         type="button"
@@ -777,10 +832,11 @@
 
     <!-- ====================================================
          SWIPE VIEWPORT
-         Page 1 = TwiceAsNyce
-         Page 2 = Printing
-         Page 3 = Cash In/Out
-         Page 4 = Expenses
+         Page 1 = Konek2Card
+         Page 2 = TwiceAsNyce
+         Page 3 = Printing
+         Page 4 = Cash In/Out
+         Page 5 = Expenses
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -788,7 +844,108 @@
       <div id="pagesTrack" class="pages-track show-gcash">
 
         <!-- =================================================
-             PAGE 1: TWICEASNYCE
+             PAGE 1: KONEK2CARD
+             ================================================= -->
+
+        <section id="konekPage" class="app-page konek-page" data-page="konek">
+
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">
+              Konek2Card
+            </div>
+
+            <div class="gcash-subtitle">
+              Quick income and expense entry
+            </div>
+
+            <div class="quick-entry">
+
+              <input
+                id="konekTransactionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="120"
+                required
+                placeholder="Description / note (required)"
+              >
+
+              <div class="konek-quick-section">
+                <div class="konek-quick-label">Income</div>
+                <div id="konekIncomeButtons" class="konek-amount-grid"></div>
+              </div>
+
+              <div class="konek-quick-section">
+                <div class="konek-quick-label">Expenses</div>
+                <div id="konekExpenseButtons" class="konek-amount-grid"></div>
+              </div>
+
+              <div id="konekStatus"></div>
+
+            </div>
+
+          </div>
+
+          <div class="dashboard-header">
+
+            <h1>📊 Dashboard</h1>
+
+            <button
+              class="refresh-button"
+              type="button"
+              onclick="loadKonek2CardDashboard()"
+            >
+              ↻ Refresh
+            </button>
+
+          </div>
+
+          <div id="konekMonthLabel" class="month-label">
+            Loading...
+          </div>
+
+          <div class="metric-grid">
+
+            <div class="metric-card">
+              <div class="metric-icon">💰</div>
+              <div class="metric-label">Income</div>
+              <div id="konekIncome" class="metric-value income-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">💸</div>
+              <div class="metric-label">Expenses</div>
+              <div id="konekExpenses" class="metric-value expense-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">📈</div>
+              <div class="metric-label">Profit</div>
+              <div id="konekProfit" class="metric-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">🧾</div>
+              <div class="metric-label">Transactions</div>
+              <div id="konekTransactions" class="metric-value">—</div>
+            </div>
+
+          </div>
+
+          <div class="recent-card">
+            <h2 class="recent-title">Recent Transactions</h2>
+            <div id="konekRecentTransactions" class="dashboard-message">
+              Loading...
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PAGE 2: TWICEASNYCE
              ================================================= -->
 
         <section id="twicePage" class="app-page twice-page" data-page="twice">
@@ -927,7 +1084,7 @@
 
 
         <!-- =================================================
-             PAGE 2: PRINTING BUSINESS
+             PAGE 3: PRINTING BUSINESS
              ================================================= -->
 
         <section id="printingPage" class="app-page printing-page" data-page="printing">
@@ -1436,6 +1593,11 @@
     let currentAppPage = "gcash";
     let selectedGcashQuickCategory = "";
 
+    const KONEK2CARD_PRESETS = {
+      income: [7, 12, 22, 32, 52, 415],
+      expense: [415]
+    };
+
     // ========================================================
     // PAGE DATA PRELOAD REGISTRY
     // All registered dashboard + Recent Transactions loaders
@@ -1447,10 +1609,11 @@
       printing: loadPrintingDashboard,
       gcash: loadGcashDashboard,
       twice: loadTwiceAsNyceDashboard,
+      konek: loadKonek2CardDashboard,
       expenses: loadDashboard
     };
 
-    const startupPagePreloadOrder = ["gcash", "printing", "twice", "expenses"];
+    const startupPagePreloadOrder = ["gcash", "printing", "twice", "konek", "expenses"];
 
     const pageDataState = {};
 
@@ -1607,6 +1770,7 @@
 
     window.addEventListener("load", function() {
 
+      renderKonek2CardQuickButtons();
       initializePageHeightSync();
 
       showAppPage("gcash", false);
@@ -1756,6 +1920,9 @@
       const track =
         document.getElementById("pagesTrack");
 
+      const konekTab =
+        document.getElementById("konekTab");
+
       const twiceTab =
         document.getElementById("twiceTab");
 
@@ -1777,19 +1944,27 @@
 
 
       track.classList.remove(
+        "show-konek",
         "show-twice",
         "show-printing",
         "show-gcash",
         "show-expenses"
       );
 
+      konekTab.classList.remove("active");
       twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
       gcashTab.classList.remove("active");
       expensesTab.classList.remove("active");
 
 
-      if (pageName === "twice") {
+      if (pageName === "konek") {
+
+        currentAppPage = "konek";
+        track.classList.add("show-konek");
+        konekTab.classList.add("active");
+
+      } else if (pageName === "twice") {
 
         currentAppPage = "twice";
         track.classList.add("show-twice");
@@ -1872,7 +2047,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses
+    // Swipe order: Konek2Card <-> TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -1938,6 +2113,11 @@
         // Swipe LEFT
         if (deltaX < 0) {
 
+          if (currentAppPage === "konek") {
+            showAppPage("twice");
+            return;
+          }
+
           if (currentAppPage === "twice") {
             showAppPage("printing");
             return;
@@ -1970,6 +2150,11 @@
 
           if (currentAppPage === "printing") {
             showAppPage("twice");
+            return;
+          }
+
+          if (currentAppPage === "twice") {
+            showAppPage("konek");
           }
         }
 
@@ -2214,6 +2399,353 @@
     }
 
 
+
+
+    // ========================================================
+    // KONEK2CARD QUICK ENTRY + DASHBOARD
+    // ========================================================
+
+    function renderKonek2CardQuickButtons() {
+
+      var incomeBox =
+        document.getElementById(
+          "konekIncomeButtons"
+        );
+
+      var expenseBox =
+        document.getElementById(
+          "konekExpenseButtons"
+        );
+
+      if (!incomeBox || !expenseBox) {
+        return;
+      }
+
+      function buildButton(category, amount) {
+
+        var button =
+          document.createElement("button");
+
+        button.type = "button";
+        button.className =
+          "konek-quick-button";
+        button.textContent =
+          "₱" + String(amount);
+
+        button.addEventListener(
+          "click",
+          function() {
+            saveKonek2CardEntry(
+              category,
+              amount
+            );
+          }
+        );
+
+        return button;
+      }
+
+      incomeBox.innerHTML = "";
+      expenseBox.innerHTML = "";
+
+      KONEK2CARD_PRESETS.income
+        .forEach(function(amount) {
+          incomeBox.appendChild(
+            buildButton(
+              "Income",
+              amount
+            )
+          );
+        });
+
+      KONEK2CARD_PRESETS.expense
+        .forEach(function(amount) {
+          expenseBox.appendChild(
+            buildButton(
+              "Expense",
+              amount
+            )
+          );
+        });
+    }
+
+
+    function setKonek2CardButtonsDisabled(disabled) {
+
+      document
+        .querySelectorAll(
+          ".konek-quick-button"
+        )
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+    }
+
+
+    function saveKonek2CardEntry(
+      category,
+      amount
+    ) {
+
+      var input =
+        document.getElementById(
+          "konekTransactionInput"
+        );
+
+      var status =
+        document.getElementById(
+          "konekStatus"
+        );
+
+      var text =
+        input.value.trim();
+
+      if (!text) {
+        status.innerText =
+          "Description / note is required.";
+        input.focus();
+        return;
+      }
+
+      status.innerText = "Saving...";
+      setKonek2CardButtonsDisabled(true);
+
+      jsonpRequest(
+        {
+          action: "konekAdd",
+          text: text,
+          category: category,
+          amount: amount
+        },
+
+        function(result) {
+
+          status.innerText =
+            "✅ " +
+            result.category +
+            " " +
+            formatPeso(result.amount) +
+            " added";
+
+          input.value = "";
+          setKonek2CardButtonsDisabled(false);
+
+          if (pageDataState.konek) {
+            pageDataState.konek.status = "idle";
+            pageDataState.konek.promise = null;
+          }
+
+          ensurePageDataLoaded("konek");
+        },
+
+        function(error) {
+
+          status.innerText =
+            "❌ " + error.message;
+
+          setKonek2CardButtonsDisabled(false);
+        }
+      );
+    }
+
+
+    function loadKonek2CardDashboard() {
+
+      document
+        .getElementById(
+          "konekMonthLabel"
+        )
+        .innerText = "Loading...";
+
+      return new Promise(
+        function(resolve) {
+
+          jsonpRequest(
+            {
+              action: "konekDashboard"
+            },
+
+            function(data) {
+              renderKonek2CardDashboard(data);
+              resolve(true);
+            },
+
+            function(error) {
+
+              document
+                .getElementById(
+                  "konekMonthLabel"
+                )
+                .innerText =
+                  "Could not load dashboard";
+
+              document
+                .getElementById(
+                  "konekRecentTransactions"
+                )
+                .className =
+                  "dashboard-message";
+
+              document
+                .getElementById(
+                  "konekRecentTransactions"
+                )
+                .innerText =
+                  "Could not load recent transactions.";
+
+              console.log(error);
+              syncActivePageHeight();
+              resolve(false);
+            }
+          );
+        }
+      );
+    }
+
+
+    function renderKonek2CardDashboard(data) {
+
+      document
+        .getElementById(
+          "konekMonthLabel"
+        )
+        .innerText =
+          data.monthLabel || "";
+
+      document
+        .getElementById(
+          "konekIncome"
+        )
+        .innerText =
+          formatPeso(data.income);
+
+      document
+        .getElementById(
+          "konekExpenses"
+        )
+        .innerText =
+          formatPeso(data.expenses);
+
+      document
+        .getElementById(
+          "konekProfit"
+        )
+        .innerText =
+          formatPeso(data.profit);
+
+      document
+        .getElementById(
+          "konekTransactions"
+        )
+        .innerText =
+          Number(
+            data.transactions || 0
+          ).toLocaleString("en-PH");
+
+      var profit =
+        document.getElementById(
+          "konekProfit"
+        );
+
+      profit.classList.toggle(
+        "income-value",
+        Number(data.profit || 0) >= 0
+      );
+
+      profit.classList.toggle(
+        "expense-value",
+        Number(data.profit || 0) < 0
+      );
+
+      renderKonek2CardRecentTransactions(
+        data.recentTransactions || []
+      );
+
+      syncActivePageHeight();
+    }
+
+
+    function renderKonek2CardRecentTransactions(
+      recentTransactions
+    ) {
+
+      var recentBox =
+        document.getElementById(
+          "konekRecentTransactions"
+        );
+
+      var transactions =
+        Array.isArray(recentTransactions)
+          ? recentTransactions.slice(
+              0,
+              RECENT_TRANSACTION_LIMIT
+            )
+          : [];
+
+      if (!transactions.length) {
+
+        recentBox.className =
+          "dashboard-message";
+        recentBox.innerText =
+          "No transactions yet.";
+        syncActivePageHeight();
+        return;
+      }
+
+      recentBox.className = "";
+
+      recentBox.innerHTML =
+        transactions
+          .map(function(item) {
+
+            var metaParts = [];
+
+            if (item.date) {
+              metaParts.push(item.date);
+            }
+
+            if (item.time) {
+              metaParts.push(item.time);
+            }
+
+            if (item.category) {
+              metaParts.push(item.category);
+            }
+
+            var isExpense =
+              Boolean(item.isExpense);
+
+            return (
+              '<div class="transaction-row">' +
+                "<div>" +
+                  '<div class="transaction-name">' +
+                    escapeHtml(
+                      item.description ||
+                      item.category ||
+                      "Konek2Card"
+                    ) +
+                  "</div>" +
+                  '<div class="transaction-meta">' +
+                    escapeHtml(
+                      metaParts.join(" • ")
+                    ) +
+                  "</div>" +
+                "</div>" +
+                '<div class="transaction-amount ' +
+                  (isExpense
+                    ? "expense-value"
+                    : "income-value") +
+                  '">' +
+                  (isExpense ? "−" : "+") +
+                  formatPeso(item.amount) +
+                "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+      syncActivePageHeight();
+    }
 
 
     // ========================================================
