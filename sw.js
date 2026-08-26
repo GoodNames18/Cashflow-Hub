@@ -1,20 +1,6 @@
-const CACHE_NAME = "expenses-tracker-v1";
+const CACHE_NAME = "cashflow-hub-v13";
 
-const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png"
-];
-
-self.addEventListener("install", function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(APP_SHELL);
-    })
-  );
-
+self.addEventListener("install", function() {
   self.skipWaiting();
 });
 
@@ -43,22 +29,32 @@ self.addEventListener("fetch", function(event) {
 
   var url = new URL(request.url);
 
-  // Do not cache Apps Script or other external requests
+  // Do not touch Apps Script or other external requests.
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     fetch(request)
       .then(function(response) {
-        var copy = response.clone();
+        if (response && response.ok) {
+          var copy = response.clone();
 
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(request, copy);
-        });
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(request, copy);
+          });
+        }
 
         return response;
       })
       .catch(function() {
-        return caches.match(request);
+        return caches.match(request).then(function(cached) {
+          if (cached) return cached;
+
+          if (request.mode === "navigate") {
+            return fetch("/Cashflow-Hub/index.html?pwa=13");
+          }
+
+          return Response.error();
+        });
       })
   );
 });

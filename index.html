@@ -5,9 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="theme-color" content="#00F8B9">
 
-  <title>Cash In/Out Tracker</title>
+  <title>Cashflow Hub</title>
+  <meta name="application-name" content="Cashflow Hub">
+  <meta name="apple-mobile-web-app-title" content="Cashflow Hub">
+<meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 
-  <link rel="manifest" href="./manifest.json">
+
+  <link rel="manifest" href="/Cashflow-Hub/manifest.json?v=13">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
 
@@ -663,9 +668,7 @@
       id="installButton"
       class="hidden"
       onclick="installExpenseApp()"
-    >
-      ⬇ Install Cash In/Out App
-    </button>
+    >↓ Install Cashflow Hub</button>
 
     <!-- ====================================================
          APP TABS
@@ -1064,6 +1067,7 @@
 
 
   <script>
+    document.title = "Cashflow Hub";
 
     const APPS_SCRIPT_URL =
       "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
@@ -1073,6 +1077,43 @@
     let deferredInstallPrompt = null;
     let currentAppPage = "gcash";
     let selectedGcashQuickCategory = "";
+
+    // ========================================================
+    // LAZY TAB DATA
+    // Only fetch data when a tab is actually opened.
+    // Add future tabs here.
+    // ========================================================
+
+    const pageDataLoaded = {
+      gcash: false,
+      expenses: false
+    };
+
+
+    function ensurePageDataLoaded(pageName) {
+
+      if (pageName === "gcash") {
+
+        if (!pageDataLoaded.gcash) {
+          pageDataLoaded.gcash = true;
+          loadGcashDashboard();
+        }
+
+        return;
+      }
+
+
+      if (pageName === "expenses") {
+
+        if (!pageDataLoaded.expenses) {
+          pageDataLoaded.expenses = true;
+          loadDashboard();
+        }
+
+        return;
+      }
+
+    }
 
     // One Recent Transactions limit for Cash In/Out, Expenses,
     // and future tabs.
@@ -1093,12 +1134,16 @@
 
       showAppPage("gcash", false);
 
-      loadGcashDashboard();
-      loadDashboard();
+      // Cash In/Out is the default tab.
+      // Do NOT load hidden tabs at startup.
+      ensurePageDataLoaded("gcash");
 
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
-          .register("./sw.js")
+          .register("/Cashflow-Hub/sw.js?v=13", {
+            scope: "/Cashflow-Hub/",
+            updateViaCache: "none"
+          })
           .catch(console.log);
       }
 
@@ -1322,6 +1367,12 @@
         );
 
       }
+
+
+      // Load this tab only when it is actually opened.
+      ensurePageDataLoaded(
+        currentAppPage
+      );
 
 
       // Match viewport to the destination tab immediately,
