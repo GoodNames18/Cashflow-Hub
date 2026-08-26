@@ -32,8 +32,13 @@ self.addEventListener("fetch", function(event) {
   // Do not touch Apps Script or other external requests.
   if (url.origin !== self.location.origin) return;
 
+  var fetchOptions =
+    request.destination === "image"
+      ? { cache: "no-store" }
+      : undefined;
+
   event.respondWith(
-    fetch(request)
+    fetch(request, fetchOptions)
       .then(function(response) {
         if (response && response.ok) {
           var copy = response.clone();
