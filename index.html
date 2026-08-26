@@ -481,8 +481,12 @@
       display: block;
     }
 
-    .maya-logo-shadow {
-  filter: drop-shadow(0 2px 4px rgba(27, 24, 68, 0.35));
+   .maya-logo-stroke {
+  filter:
+    drop-shadow(1px 0 0 #1B1844)
+    drop-shadow(-1px 0 0 #1B1844)
+    drop-shadow(0 1px 0 #1B1844)
+    drop-shadow(0 -1px 0 #1B1844);
 }
 
     .quick-category-button {
@@ -1034,7 +1038,7 @@
 
             <div class="metric-card gcash-card">
               <div class="metric-icon">
-                <img src="./maya-logo.png" class="brand-logo-metric maya-logo-shadow" alt="Maya">
+                <img src="./maya-logo.png" class="brand-logo-metric maya-logo-stroke" alt="Maya">
               </div>
               <div class="metric-label">Maya</div>
               <div
