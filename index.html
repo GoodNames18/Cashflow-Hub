@@ -72,7 +72,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 6px;
       margin-bottom: 10px;
       padding: 5px;
@@ -114,29 +114,33 @@
 
     .pages-track {
       display: flex;
-      width: 300%;
+      width: 400%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 33.333333%;
-      flex: 0 0 33.333333%;
+      width: 25%;
+      flex: 0 0 25%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
 
-    .pages-track.show-printing {
+    .pages-track.show-twice {
       transform: translateX(0);
     }
 
+    .pages-track.show-printing {
+      transform: translateX(-25%);
+    }
+
     .pages-track.show-gcash {
-      transform: translateX(-33.333333%);
+      transform: translateX(-50%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-66.666667%);
+      transform: translateX(-75%);
     }
 
     /* ======================================================
@@ -481,6 +485,14 @@
       display: block;
     }
 
+    .maya-logo-stroke {
+      filter:
+        drop-shadow(1px 0 0 var(--secondary))
+        drop-shadow(-1px 0 0 var(--secondary))
+        drop-shadow(0 1px 0 var(--secondary))
+        drop-shadow(0 -1px 0 var(--secondary));
+    }
+
     .quick-category-button {
       display: flex;
       align-items: center;
@@ -521,7 +533,8 @@
       color: #07110e;
     }
 
-    #printingStatus {
+    #printingStatus,
+    #twiceStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
@@ -724,6 +737,15 @@
     <nav class="app-tabs" aria-label="Tracker pages">
 
       <button
+        id="twiceTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('twice')"
+      >
+        TwiceAsNyce
+      </button>
+
+      <button
         id="printingTab"
         class="app-tab"
         type="button"
@@ -755,9 +777,10 @@
 
     <!-- ====================================================
          SWIPE VIEWPORT
-         Page 1 = Printing
-         Page 2 = Cash In/Out
-         Page 3 = Expenses
+         Page 1 = TwiceAsNyce
+         Page 2 = Printing
+         Page 3 = Cash In/Out
+         Page 4 = Expenses
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -765,7 +788,146 @@
       <div id="pagesTrack" class="pages-track show-gcash">
 
         <!-- =================================================
-             PAGE 1: PRINTING BUSINESS
+             PAGE 1: TWICEASNYCE
+             ================================================= -->
+
+        <section id="twicePage" class="app-page twice-page" data-page="twice">
+
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">
+              TwiceAsNyce
+            </div>
+
+            <div class="gcash-subtitle">
+              Track income and expenses
+            </div>
+
+            <div class="quick-entry">
+
+              <input
+                id="twiceTransactionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="120"
+                placeholder="Enter transaction"
+              >
+
+              <div class="printing-entry-grid">
+                <button
+                  class="twice-entry-button printing-entry-button printing-income-button"
+                  type="button"
+                  onclick="saveTwiceAsNyceEntry('Income')"
+                >
+                  Income
+                </button>
+
+                <button
+                  class="twice-entry-button printing-entry-button printing-expense-button"
+                  type="button"
+                  onclick="saveTwiceAsNyceEntry('Expense')"
+                >
+                  Expense
+                </button>
+              </div>
+
+              <div id="twiceStatus"></div>
+
+            </div>
+
+          </div>
+
+          <div class="dashboard-header">
+
+            <h1>📊 Dashboard</h1>
+
+            <button
+              class="refresh-button"
+              type="button"
+              onclick="loadTwiceAsNyceDashboard()"
+            >
+              ↻ Refresh
+            </button>
+
+          </div>
+
+          <div
+            id="twiceMonthLabel"
+            class="month-label"
+          >
+            Loading...
+          </div>
+
+          <div class="metric-grid">
+
+            <div class="metric-card">
+              <div class="metric-icon">💰</div>
+              <div class="metric-label">Income</div>
+              <div
+                id="twiceIncome"
+                class="metric-value income-value"
+              >
+                —
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">💸</div>
+              <div class="metric-label">Expenses</div>
+              <div
+                id="twiceExpenses"
+                class="metric-value expense-value"
+              >
+                —
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">📈</div>
+              <div class="metric-label">Profit</div>
+              <div
+                id="twiceProfit"
+                class="metric-value"
+              >
+                —
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">🧾</div>
+              <div class="metric-label">Transactions</div>
+              <div
+                id="twiceTransactions"
+                class="metric-value"
+              >
+                —
+              </div>
+            </div>
+
+          </div>
+
+          <div class="recent-card">
+
+            <h2 class="recent-title">
+              Recent Transactions
+            </h2>
+
+            <div
+              id="twiceRecentTransactions"
+              class="dashboard-message"
+            >
+              Loading...
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PAGE 2: PRINTING BUSINESS
              ================================================= -->
 
         <section id="printingPage" class="app-page printing-page" data-page="printing">
@@ -904,7 +1066,7 @@
 
 
         <!-- =================================================
-             PAGE 2: GCASH BUSINESS
+             PAGE 3: GCASH BUSINESS
              ================================================= -->
 
         <section id="gcashPage" class="app-page gcash-page" data-page="gcash">
@@ -1030,7 +1192,7 @@
 
             <div class="metric-card gcash-card">
               <div class="metric-icon">
-                <img src="./maya-logo.png" class="brand-logo-metric" alt="Maya">
+                <img src="./maya-logo.png" class="brand-logo-metric maya-logo-stroke" alt="Maya">
               </div>
               <div class="metric-label">Maya</div>
               <div
@@ -1284,8 +1446,11 @@
     const pageDataLoaders = {
       printing: loadPrintingDashboard,
       gcash: loadGcashDashboard,
+      twice: loadTwiceAsNyceDashboard,
       expenses: loadDashboard
     };
+
+    const startupPagePreloadOrder = ["gcash", "printing", "twice", "expenses"];
 
     const pageDataState = {};
 
@@ -1399,13 +1564,24 @@
 
     function preloadAllPageData() {
 
+      const registeredPages =
+        Object.keys(pageDataLoaders);
+
       const pageNames =
-        ["gcash"].concat(
-          Object.keys(pageDataLoaders)
-            .filter(function(pageName) {
-              return pageName !== "gcash";
-            })
-        );
+        startupPagePreloadOrder
+          .filter(function(pageName) {
+            return !!pageDataLoaders[pageName];
+          })
+          .concat(
+            registeredPages.filter(
+              function(pageName) {
+                return (
+                  startupPagePreloadOrder
+                    .indexOf(pageName) === -1
+                );
+              }
+            )
+          );
 
       return runSequentialPagePreload_(
         pageNames,
@@ -1580,6 +1756,9 @@
       const track =
         document.getElementById("pagesTrack");
 
+      const twiceTab =
+        document.getElementById("twiceTab");
+
       const printingTab =
         document.getElementById("printingTab");
 
@@ -1598,17 +1777,25 @@
 
 
       track.classList.remove(
+        "show-twice",
         "show-printing",
         "show-gcash",
         "show-expenses"
       );
 
+      twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
       gcashTab.classList.remove("active");
       expensesTab.classList.remove("active");
 
 
-      if (pageName === "printing") {
+      if (pageName === "twice") {
+
+        currentAppPage = "twice";
+        track.classList.add("show-twice");
+        twiceTab.classList.add("active");
+
+      } else if (pageName === "printing") {
 
         currentAppPage = "printing";
         track.classList.add("show-printing");
@@ -1685,7 +1872,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: Printing <-> Cash In/Out <-> Expenses
+    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -1751,6 +1938,11 @@
         // Swipe LEFT
         if (deltaX < 0) {
 
+          if (currentAppPage === "twice") {
+            showAppPage("printing");
+            return;
+          }
+
           if (currentAppPage === "printing") {
             showAppPage("gcash");
             return;
@@ -1773,6 +1965,11 @@
 
           if (currentAppPage === "gcash") {
             showAppPage("printing");
+            return;
+          }
+
+          if (currentAppPage === "printing") {
+            showAppPage("twice");
           }
         }
 
@@ -2014,6 +2211,307 @@
         15000
       );
 
+    }
+
+
+
+
+    // ========================================================
+    // TWICEASNYCE ENTRY + DASHBOARD
+    // ========================================================
+
+    function setTwiceEntryButtonsDisabled(disabled) {
+
+      document
+        .querySelectorAll(
+          ".twice-entry-button"
+        )
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+    }
+
+
+    function saveTwiceAsNyceEntry(category) {
+
+      var input =
+        document.getElementById(
+          "twiceTransactionInput"
+        );
+
+      var text =
+        input.value.trim();
+
+      var status =
+        document.getElementById(
+          "twiceStatus"
+        );
+
+      if (!text) {
+        status.innerText =
+          "Enter a transaction first.";
+        return;
+      }
+
+      status.innerText =
+        "Saving...";
+
+      setTwiceEntryButtonsDisabled(
+        true
+      );
+
+      jsonpRequest(
+        {
+          action: "twiceAdd",
+          text: text,
+          category: category
+        },
+
+        function(result) {
+
+          status.innerText =
+            "✅ " +
+            result.category +
+            " " +
+            formatPeso(
+              result.amount
+            ) +
+            " added";
+
+          input.value = "";
+
+          setTwiceEntryButtonsDisabled(
+            false
+          );
+
+          loadTwiceAsNyceDashboard();
+        },
+
+        function(error) {
+
+          status.innerText =
+            "❌ " +
+            error.message;
+
+          setTwiceEntryButtonsDisabled(
+            false
+          );
+        }
+      );
+    }
+
+
+    function loadTwiceAsNyceDashboard() {
+
+      document
+        .getElementById(
+          "twiceMonthLabel"
+        )
+        .innerText =
+          "Loading...";
+
+      return new Promise(
+        function(resolve) {
+
+          jsonpRequest(
+            {
+              action: "twiceDashboard"
+            },
+
+            function(data) {
+              renderTwiceAsNyceDashboard(data);
+              resolve(true);
+            },
+
+            function(error) {
+
+              document
+                .getElementById(
+                  "twiceMonthLabel"
+                )
+                .innerText =
+                  "Could not load dashboard";
+
+              document
+                .getElementById(
+                  "twiceRecentTransactions"
+                )
+                .className =
+                  "dashboard-message";
+
+              document
+                .getElementById(
+                  "twiceRecentTransactions"
+                )
+                .innerText =
+                  "Could not load recent transactions.";
+
+              console.log(error);
+              syncActivePageHeight();
+              resolve(false);
+            }
+          );
+        }
+      );
+    }
+
+
+    function renderTwiceAsNyceDashboard(data) {
+
+      document
+        .getElementById(
+          "twiceMonthLabel"
+        )
+        .innerText =
+          data.monthLabel || "";
+
+      document
+        .getElementById(
+          "twiceIncome"
+        )
+        .innerText =
+          formatPeso(data.income);
+
+      document
+        .getElementById(
+          "twiceExpenses"
+        )
+        .innerText =
+          formatPeso(data.expenses);
+
+      document
+        .getElementById(
+          "twiceProfit"
+        )
+        .innerText =
+          formatPeso(data.profit);
+
+      document
+        .getElementById(
+          "twiceTransactions"
+        )
+        .innerText =
+          Number(
+            data.transactions || 0
+          ).toLocaleString(
+            "en-PH"
+          );
+
+      var profit =
+        document.getElementById(
+          "twiceProfit"
+        );
+
+      profit.classList.toggle(
+        "income-value",
+        Number(data.profit || 0) >= 0
+      );
+
+      profit.classList.toggle(
+        "expense-value",
+        Number(data.profit || 0) < 0
+      );
+
+      renderTwiceAsNyceRecentTransactions(
+        data.recentTransactions || []
+      );
+
+      syncActivePageHeight();
+    }
+
+
+    function renderTwiceAsNyceRecentTransactions(
+      recentTransactions
+    ) {
+
+      var recentBox =
+        document.getElementById(
+          "twiceRecentTransactions"
+        );
+
+      var transactions =
+        Array.isArray(recentTransactions)
+          ? recentTransactions.slice(
+              0,
+              RECENT_TRANSACTION_LIMIT
+            )
+          : [];
+
+      if (!transactions.length) {
+
+        recentBox.className =
+          "dashboard-message";
+
+        recentBox.innerText =
+          "No transactions yet.";
+
+        syncActivePageHeight();
+        return;
+      }
+
+      recentBox.className = "";
+
+      recentBox.innerHTML =
+        transactions
+          .map(function(item) {
+
+            var metaParts = [];
+
+            if (item.date) {
+              metaParts.push(item.date);
+            }
+
+            if (item.time) {
+              metaParts.push(item.time);
+            }
+
+            if (item.category) {
+              metaParts.push(item.category);
+            }
+
+            var isExpense =
+              Boolean(item.isExpense);
+
+            var sign =
+              isExpense
+                ? "−"
+                : "+";
+
+            var valueClass =
+              isExpense
+                ? "expense-value"
+                : "income-value";
+
+            return (
+              '<div class="transaction-row">' +
+                "<div>" +
+                  '<div class="transaction-name">' +
+                    escapeHtml(
+                      item.description ||
+                      item.category ||
+                      "TwiceAsNyce"
+                    ) +
+                  "</div>" +
+                  '<div class="transaction-meta">' +
+                    escapeHtml(
+                      metaParts.join(" • ")
+                    ) +
+                  "</div>" +
+                "</div>" +
+                '<div class="transaction-amount ' +
+                  valueClass +
+                  '">' +
+                  sign +
+                  formatPeso(
+                    item.amount
+                  ) +
+                "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+      syncActivePageHeight();
     }
 
 
