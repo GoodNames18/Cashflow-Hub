@@ -481,13 +481,13 @@
       display: block;
     }
 
-   .maya-logo-stroke {
-  filter:
-    drop-shadow(1px 0 0 #1B1844)
-    drop-shadow(-1px 0 0 #1B1844)
-    drop-shadow(0 1px 0 #1B1844)
-    drop-shadow(0 -1px 0 #1B1844);
-}
+    .maya-logo-stroke {
+      filter:
+        drop-shadow(1px 0 0 var(--secondary))
+        drop-shadow(-1px 0 0 var(--secondary))
+        drop-shadow(0 1px 0 var(--secondary))
+        drop-shadow(0 -1px 0 var(--secondary));
+    }
 
     .quick-category-button {
       display: flex;
@@ -1283,52 +1283,50 @@
     let selectedGcashQuickCategory = "";
 
     // ========================================================
-    // LAZY TAB DATA
-    // Only fetch data when a tab is actually opened.
-    // Add future tabs here.
+    // PAGE DATA PRELOAD REGISTRY
+    // All registered dashboard + Recent Transactions loaders
+    // start when the app opens. Future dashboard tabs only need
+    // one new entry here to join startup preloading.
     // ========================================================
 
-    const pageDataLoaded = {
-      printing: false,
-      gcash: false,
-      expenses: false
+    const pageDataLoaders = {
+      printing: loadPrintingDashboard,
+      gcash: loadGcashDashboard,
+      expenses: loadDashboard
     };
+
+    const pageDataLoaded = {};
+
+    Object.keys(pageDataLoaders)
+      .forEach(function(pageName) {
+        pageDataLoaded[pageName] = false;
+      });
 
 
     function ensurePageDataLoaded(pageName) {
 
-      if (pageName === "printing") {
+      const loader =
+        pageDataLoaders[pageName];
 
-        if (!pageDataLoaded.printing) {
-          pageDataLoaded.printing = true;
-          loadPrintingDashboard();
-        }
-
+      if (!loader) {
         return;
       }
 
-
-      if (pageName === "gcash") {
-
-        if (!pageDataLoaded.gcash) {
-          pageDataLoaded.gcash = true;
-          loadGcashDashboard();
-        }
-
+      if (pageDataLoaded[pageName]) {
         return;
       }
 
+      pageDataLoaded[pageName] = true;
+      loader();
+    }
 
-      if (pageName === "expenses") {
 
-        if (!pageDataLoaded.expenses) {
-          pageDataLoaded.expenses = true;
-          loadDashboard();
-        }
+    function preloadAllPageData() {
 
-        return;
-      }
-
+      Object.keys(pageDataLoaders)
+        .forEach(function(pageName) {
+          ensurePageDataLoaded(pageName);
+        });
     }
 
     // One Recent Transactions limit for Cash In/Out, Expenses,
@@ -1350,9 +1348,10 @@
 
       showAppPage("gcash", false);
 
-      // Cash In/Out is the default tab.
-      // Do NOT load hidden tabs at startup.
-      ensurePageDataLoaded("gcash");
+      // Cash In/Out stays visible by default, while every
+      // registered dashboard + Recent Transactions request
+      // starts immediately in the background.
+      preloadAllPageData();
 
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
@@ -1999,9 +1998,8 @@
             false
           );
 
-          pageDataLoaded.printing =
-            false;
-
+          // Refresh only Printing after a Printing save.
+          // Startup preloading already marks this page loaded.
           loadPrintingDashboard();
         },
 
