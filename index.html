@@ -2420,7 +2420,9 @@
           "click",
           function() {
             saveKonek2CardEntry(
-              "Income",
+              amount === 415
+                ? "Expense"
+                : "Income",
               amount
             );
           }
@@ -2470,7 +2472,10 @@
       var text =
         input.value.trim();
 
-      if (!text) {
+      if (
+        amount !== 415 &&
+        !text
+      ) {
         status.innerText =
           "Description / note is required.";
         input.focus();
@@ -2490,12 +2495,17 @@
 
         function(result) {
 
-          status.innerText =
-            "✅ " +
-            result.category +
-            " " +
-            formatPeso(result.amount) +
-            " added";
+          if (result.bundle) {
+            status.innerText =
+              "✅ ₱50 Loan rebate + ₱415 Loan payment added";
+          } else {
+            status.innerText =
+              "✅ " +
+              result.category +
+              " " +
+              formatPeso(result.amount) +
+              " added";
+          }
 
           input.value = "";
           setKonek2CardButtonsDisabled(false);
