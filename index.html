@@ -1295,11 +1295,14 @@
       expenses: loadDashboard
     };
 
-    const pageDataLoaded = {};
+    const pageDataState = {};
 
     Object.keys(pageDataLoaders)
       .forEach(function(pageName) {
-        pageDataLoaded[pageName] = false;
+        pageDataState[pageName] = {
+          status: "idle",
+          promise: null
+        };
       });
 
 
@@ -1308,25 +1311,117 @@
       const loader =
         pageDataLoaders[pageName];
 
-      if (!loader) {
-        return;
+      const state =
+        pageDataState[pageName];
+
+      if (!loader || !state) {
+        return Promise.resolve(false);
       }
 
-      if (pageDataLoaded[pageName]) {
-        return;
+      if (state.status === "loaded") {
+        return Promise.resolve(true);
       }
 
-      pageDataLoaded[pageName] = true;
-      loader();
+      if (
+        state.status === "loading" &&
+        state.promise
+      ) {
+        return state.promise;
+      }
+
+      state.status = "loading";
+
+      state.promise =
+        Promise.resolve()
+          .then(function() {
+            return loader();
+          })
+          .then(function(success) {
+
+            state.status =
+              success === false
+                ? "idle"
+                : "loaded";
+
+            state.promise = null;
+
+            return success !== false;
+          })
+          .catch(function(error) {
+
+            state.status = "idle";
+            state.promise = null;
+
+            console.log(error);
+            return false;
+          });
+
+      return state.promise;
+    }
+
+
+    function waitForPageRetry_(milliseconds) {
+
+      return new Promise(
+        function(resolve) {
+          setTimeout(
+            resolve,
+            milliseconds
+          );
+        }
+      );
+    }
+
+
+    function runSequentialPagePreload_(
+      pageNames,
+      loadPage,
+      waitForRetry
+    ) {
+
+      return pageNames.reduce(
+        function(chain, pageName) {
+
+          return chain.then(
+            function() {
+
+              return loadPage(pageName)
+                .then(function(success) {
+
+                  if (success) {
+                    return true;
+                  }
+
+                  return waitForRetry()
+                    .then(function() {
+                      return loadPage(pageName);
+                    });
+                });
+            }
+          );
+        },
+        Promise.resolve()
+      );
     }
 
 
     function preloadAllPageData() {
 
-      Object.keys(pageDataLoaders)
-        .forEach(function(pageName) {
-          ensurePageDataLoaded(pageName);
-        });
+      const pageNames =
+        ["gcash"].concat(
+          Object.keys(pageDataLoaders)
+            .filter(function(pageName) {
+              return pageName !== "gcash";
+            })
+        );
+
+      return runSequentialPagePreload_(
+        pageNames,
+        ensurePageDataLoaded,
+        function() {
+          return waitForPageRetry_(1000);
+        }
+      );
     }
 
     // One Recent Transactions limit for Cash In/Out, Expenses,
@@ -1348,9 +1443,9 @@
 
       showAppPage("gcash", false);
 
-      // Cash In/Out stays visible by default, while every
-      // registered dashboard + Recent Transactions request
-      // starts immediately in the background.
+      // Cash In/Out stays visible by default. The remaining
+      // dashboards + Recent Transactions preload automatically
+      // one at a time, with one startup retry on failure.
       preloadAllPageData();
 
       if ("serviceWorker" in navigator) {
@@ -2026,38 +2121,48 @@
         .innerText =
           "Loading...";
 
-      jsonpRequest(
-        {
-          action: "printingDashboard"
-        },
+      return new Promise(
+        function(resolve) {
 
-        renderPrintingDashboard,
+          jsonpRequest(
+            {
+              action: "printingDashboard"
+            },
 
-        function(error) {
+            function(data) {
 
-          document
-            .getElementById(
-              "printingMonthLabel"
-            )
-            .innerText =
-              "Could not load dashboard";
+              renderPrintingDashboard(data);
+              resolve(true);
+            },
 
-          document
-            .getElementById(
-              "printingRecentTransactions"
-            )
-            .className =
-              "dashboard-message";
+            function(error) {
 
-          document
-            .getElementById(
-              "printingRecentTransactions"
-            )
-            .innerText =
-              "Could not load recent transactions.";
+              document
+                .getElementById(
+                  "printingMonthLabel"
+                )
+                .innerText =
+                  "Could not load dashboard";
 
-          console.log(error);
-          syncActivePageHeight();
+              document
+                .getElementById(
+                  "printingRecentTransactions"
+                )
+                .className =
+                  "dashboard-message";
+
+              document
+                .getElementById(
+                  "printingRecentTransactions"
+                )
+                .innerText =
+                  "Could not load recent transactions.";
+
+              console.log(error);
+              syncActivePageHeight();
+              resolve(false);
+            }
+          );
         }
       );
     }
@@ -2239,69 +2344,78 @@
           "—";
 
 
-      jsonpRequest(
-        {
-          action:
-            "gcashDashboard"
-        },
+      return new Promise(
+        function(resolve) {
 
-        renderGcashDashboard,
+          jsonpRequest(
+            {
+              action:
+                "gcashDashboard"
+            },
 
-        function(error) {
+            function(data) {
 
-          document
-            .getElementById(
-              "gcashMonthLabel"
-            )
-            .innerText =
-              "Could not load dashboard";
+              renderGcashDashboard(data);
+              resolve(true);
+            },
 
-          document
-            .getElementById(
-              "gcashMonthlyIncomeOnly"
-            )
-            .innerText = "—";
+            function(error) {
 
-          document
-            .getElementById(
-              "gcashMonthlyTotal"
-            )
-            .innerText = "—";
+              document
+                .getElementById(
+                  "gcashMonthLabel"
+                )
+                .innerText =
+                  "Could not load dashboard";
 
-          document
-            .getElementById(
-              "mayaMonthlyTotal"
-            )
-            .innerText = "—";
+              document
+                .getElementById(
+                  "gcashMonthlyIncomeOnly"
+                )
+                .innerText = "—";
 
-          document
-            .getElementById(
-              "loadMonthlyTotal"
-            )
-            .innerText = "—";
+              document
+                .getElementById(
+                  "gcashMonthlyTotal"
+                )
+                .innerText = "—";
 
-          document
-            .getElementById(
-              "billsMonthlyTotal"
-            )
-            .innerText = "—";
+              document
+                .getElementById(
+                  "mayaMonthlyTotal"
+                )
+                .innerText = "—";
 
-          document
-            .getElementById(
-              "gcashRecentTransactions"
-            )
-            .className =
-              "dashboard-message";
+              document
+                .getElementById(
+                  "loadMonthlyTotal"
+                )
+                .innerText = "—";
 
-          document
-            .getElementById(
-              "gcashRecentTransactions"
-            )
-            .innerText =
-              "Could not load recent transactions.";
+              document
+                .getElementById(
+                  "billsMonthlyTotal"
+                )
+                .innerText = "—";
 
-          console.log(error);
+              document
+                .getElementById(
+                  "gcashRecentTransactions"
+                )
+                .className =
+                  "dashboard-message";
 
+              document
+                .getElementById(
+                  "gcashRecentTransactions"
+                )
+                .innerText =
+                  "Could not load recent transactions.";
+
+              console.log(error);
+              resolve(false);
+            }
+          );
         }
       );
 
@@ -2998,35 +3112,45 @@
           "Loading...";
 
 
-      jsonpRequest(
-        {
-          action:
-            "dashboard"
-        },
+      return new Promise(
+        function(resolve) {
 
-        renderDashboard,
+          jsonpRequest(
+            {
+              action:
+                "dashboard"
+            },
 
-        function(error) {
+            function(data) {
 
-          document
-            .getElementById(
-              "monthLabel"
-            )
-            .innerText =
-              "Could not load dashboard";
+              renderDashboard(data);
+              resolve(true);
+            },
+
+            function(error) {
+
+              document
+                .getElementById(
+                  "monthLabel"
+                )
+                .innerText =
+                  "Could not load dashboard";
 
 
-          document
-            .getElementById(
-              "recentTransactions"
-            )
-            .innerHTML =
-              '<div class="dashboard-message">❌ ' +
-              escapeHtml(
-                error.message
-              ) +
-              "</div>";
+              document
+                .getElementById(
+                  "recentTransactions"
+                )
+                .innerHTML =
+                  '<div class="dashboard-message">❌ ' +
+                  escapeHtml(
+                    error.message
+                  ) +
+                  "</div>";
 
+              resolve(false);
+            }
+          );
         }
       );
 
