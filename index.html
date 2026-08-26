@@ -1964,6 +1964,19 @@
 
     function selectGcashQuickCategory(category) {
 
+      var command =
+        document
+          .getElementById("gcashCustomAmount")
+          .value
+          .trim();
+
+      // If the textbox has a transaction, tapping a category
+      // saves immediately using that category.
+      if (command) {
+        saveGcashCustomAmount(category);
+        return;
+      }
+
       // Tap the same selected category again = unselect it.
       if (selectedGcashQuickCategory === category) {
 
@@ -2095,7 +2108,7 @@
     }
 
 
-    function saveGcashCustomAmount() {
+    function saveGcashCustomAmount(categoryOverride) {
 
       var input =
         document.getElementById("gcashCustomAmount");
@@ -2119,7 +2132,8 @@
       jsonpRequest(
         {
           action: "gcashTextAdd",
-          text: command
+          text: command,
+          category: categoryOverride || ""
         },
 
         function(result) {
