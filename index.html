@@ -72,7 +72,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
       margin-bottom: 10px;
       padding: 5px;
@@ -114,21 +114,29 @@
 
     .pages-track {
       display: flex;
-      width: 200%;
+      width: 300%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 50%;
-      flex: 0 0 50%;
-      /* Shared page spacing for Cash In/Out, Expenses, and future tabs. */
+      width: 33.333333%;
+      flex: 0 0 33.333333%;
+      /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
 
+    .pages-track.show-printing {
+      transform: translateX(0);
+    }
+
+    .pages-track.show-gcash {
+      transform: translateX(-33.333333%);
+    }
+
     .pages-track.show-expenses {
-      transform: translateX(-50%);
+      transform: translateX(-66.666667%);
     }
 
     /* ======================================================
@@ -481,6 +489,48 @@
     }
 
     /* ======================================================
+       PRINTING BUSINESS PAGE
+       ====================================================== */
+
+    .printing-entry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .printing-entry-button {
+      width: 100%;
+      min-width: 0;
+      height: 42px;
+      margin: 0;
+      padding: 8px 6px;
+      border: 1px solid var(--secondary);
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .printing-income-button {
+      background: var(--primary);
+      color: #07110e;
+    }
+
+    .printing-expense-button {
+      background: var(--lavender);
+      color: var(--secondary);
+    }
+
+    #printingStatus {
+      min-height: 17px;
+      margin-top: 8px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    /* ======================================================
        GCASH BUSINESS PAGE
        ====================================================== */
 
@@ -674,6 +724,15 @@
     <nav class="app-tabs" aria-label="Tracker pages">
 
       <button
+        id="printingTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('printing')"
+      >
+        🖨️ Printing
+      </button>
+
+      <button
         id="gcashTab"
         class="app-tab active"
         type="button"
@@ -696,16 +755,156 @@
 
     <!-- ====================================================
          SWIPE VIEWPORT
-         Page 1 = Cash In/Out
-         Page 2 = Expenses
+         Page 1 = Printing
+         Page 2 = Cash In/Out
+         Page 3 = Expenses
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
 
-      <div id="pagesTrack" class="pages-track">
+      <div id="pagesTrack" class="pages-track show-gcash">
 
         <!-- =================================================
-             PAGE 1: GCASH BUSINESS
+             PAGE 1: PRINTING BUSINESS
+             ================================================= -->
+
+        <section id="printingPage" class="app-page printing-page" data-page="printing">
+
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">
+              🖨️ Printing Business
+            </div>
+
+            <div class="gcash-subtitle">
+              Track printing income and expenses
+            </div>
+
+            <div class="quick-entry">
+
+              <input
+                id="printingTransactionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="120"
+                placeholder="Enter transaction"
+              >
+
+              <div class="printing-entry-grid">
+                <button
+                  class="printing-entry-button printing-income-button"
+                  type="button"
+                  onclick="savePrintingEntry('Income')"
+                >
+                  Income
+                </button>
+
+                <button
+                  class="printing-entry-button printing-expense-button"
+                  type="button"
+                  onclick="savePrintingEntry('Expense')"
+                >
+                  Expense
+                </button>
+              </div>
+
+              <div id="printingStatus"></div>
+
+            </div>
+
+          </div>
+
+          <div class="dashboard-header">
+
+            <h1>📊 Printing Dashboard</h1>
+
+            <button
+              class="refresh-button"
+              type="button"
+              onclick="loadPrintingDashboard()"
+            >
+              ↻ Refresh
+            </button>
+
+          </div>
+
+          <div
+            id="printingMonthLabel"
+            class="month-label"
+          >
+            Loading...
+          </div>
+
+          <div class="metric-grid">
+
+            <div class="metric-card">
+              <div class="metric-icon">💰</div>
+              <div class="metric-label">Income</div>
+              <div
+                id="printingIncome"
+                class="metric-value income-value"
+              >
+                —
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">💸</div>
+              <div class="metric-label">Expenses</div>
+              <div
+                id="printingExpenses"
+                class="metric-value expense-value"
+              >
+                —
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">📈</div>
+              <div class="metric-label">Profit</div>
+              <div
+                id="printingProfit"
+                class="metric-value"
+              >
+                —
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">🧾</div>
+              <div class="metric-label">Transactions</div>
+              <div
+                id="printingTransactions"
+                class="metric-value"
+              >
+                —
+              </div>
+            </div>
+
+          </div>
+
+          <div class="recent-card">
+
+            <h2 class="recent-title">
+              Recent Transactions
+            </h2>
+
+            <div
+              id="printingRecentTransactions"
+              class="dashboard-message"
+            >
+              Loading...
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PAGE 2: GCASH BUSINESS
              ================================================= -->
 
         <section id="gcashPage" class="app-page gcash-page" data-page="gcash">
@@ -889,7 +1088,7 @@
 
 
         <!-- =================================================
-             PAGE 2: EXPENSES
+             PAGE 3: EXPENSES
              Existing working page kept intact
              ================================================= -->
 
@@ -1082,12 +1281,24 @@
     // ========================================================
 
     const pageDataLoaded = {
+      printing: false,
       gcash: false,
       expenses: false
     };
 
 
     function ensurePageDataLoaded(pageName) {
+
+      if (pageName === "printing") {
+
+        if (!pageDataLoaded.printing) {
+          pageDataLoaded.printing = true;
+          loadPrintingDashboard();
+        }
+
+        return;
+      }
+
 
       if (pageName === "gcash") {
 
@@ -1275,6 +1486,9 @@
       const track =
         document.getElementById("pagesTrack");
 
+      const printingTab =
+        document.getElementById("printingTab");
+
       const gcashTab =
         document.getElementById("gcashTab");
 
@@ -1289,37 +1503,34 @@
       }
 
 
-      if (pageName === "expenses") {
+      track.classList.remove(
+        "show-printing",
+        "show-gcash",
+        "show-expenses"
+      );
+
+      printingTab.classList.remove("active");
+      gcashTab.classList.remove("active");
+      expensesTab.classList.remove("active");
+
+
+      if (pageName === "printing") {
+
+        currentAppPage = "printing";
+        track.classList.add("show-printing");
+        printingTab.classList.add("active");
+
+      } else if (pageName === "expenses") {
 
         currentAppPage = "expenses";
-
-        track.classList.add(
-          "show-expenses"
-        );
-
-        gcashTab.classList.remove(
-          "active"
-        );
-
-        expensesTab.classList.add(
-          "active"
-        );
+        track.classList.add("show-expenses");
+        expensesTab.classList.add("active");
 
       } else {
 
         currentAppPage = "gcash";
-
-        track.classList.remove(
-          "show-expenses"
-        );
-
-        expensesTab.classList.remove(
-          "active"
-        );
-
-        gcashTab.classList.add(
-          "active"
-        );
+        track.classList.add("show-gcash");
+        gcashTab.classList.add("active");
 
       }
 
@@ -1341,8 +1552,6 @@
       }
 
 
-      // When changing Cash In/Out <-> Expenses,
-      // always open the destination page at the top.
       if (pageChanged) {
 
         requestAnimationFrame(
@@ -1366,14 +1575,10 @@
       }
 
 
-      // Load this tab only when it is actually opened.
       ensurePageDataLoaded(
         currentAppPage
       );
 
-
-      // Match viewport to the destination tab immediately,
-      // then once more after the slide animation finishes.
       syncActivePageHeight();
 
       window.setTimeout(
@@ -1386,8 +1591,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe left: GCash -> Expenses
-    // Swipe right: Expenses -> GCash
+    // Swipe order: Printing <-> Cash In/Out <-> Expenses
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -1451,29 +1655,31 @@
 
 
         // Swipe LEFT
-        if (
-          deltaX < 0 &&
-          currentAppPage === "gcash"
-        ) {
+        if (deltaX < 0) {
 
-          showAppPage(
-            "expenses"
-          );
+          if (currentAppPage === "printing") {
+            showAppPage("gcash");
+            return;
+          }
 
-          return;
+          if (currentAppPage === "gcash") {
+            showAppPage("expenses");
+            return;
+          }
         }
 
 
         // Swipe RIGHT
-        if (
-          deltaX > 0 &&
-          currentAppPage === "expenses"
-        ) {
+        if (deltaX > 0) {
 
-          showAppPage(
-            "gcash"
-          );
+          if (currentAppPage === "expenses") {
+            showAppPage("gcash");
+            return;
+          }
 
+          if (currentAppPage === "gcash") {
+            showAppPage("printing");
+          }
         }
 
       },
@@ -1714,6 +1920,295 @@
         15000
       );
 
+    }
+
+
+    // ========================================================
+    // PRINTING BUSINESS ENTRY + DASHBOARD
+    // ========================================================
+
+    function setPrintingEntryButtonsDisabled(disabled) {
+
+      document
+        .querySelectorAll(
+          ".printing-entry-button"
+        )
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+    }
+
+
+    function savePrintingEntry(category) {
+
+      var input =
+        document.getElementById(
+          "printingTransactionInput"
+        );
+
+      var text =
+        input.value.trim();
+
+      var status =
+        document.getElementById(
+          "printingStatus"
+        );
+
+      if (!text) {
+        status.innerText =
+          "Enter a transaction first.";
+        return;
+      }
+
+      status.innerText =
+        "Saving...";
+
+      setPrintingEntryButtonsDisabled(
+        true
+      );
+
+      jsonpRequest(
+        {
+          action: "printingAdd",
+          text: text,
+          category: category
+        },
+
+        function(result) {
+
+          status.innerText =
+            "✅ " +
+            result.category +
+            " " +
+            formatPeso(
+              result.amount
+            ) +
+            " added";
+
+          input.value = "";
+
+          setPrintingEntryButtonsDisabled(
+            false
+          );
+
+          pageDataLoaded.printing =
+            false;
+
+          loadPrintingDashboard();
+        },
+
+        function(error) {
+
+          status.innerText =
+            "❌ " +
+            error.message;
+
+          setPrintingEntryButtonsDisabled(
+            false
+          );
+        }
+      );
+    }
+
+
+    function loadPrintingDashboard() {
+
+      document
+        .getElementById(
+          "printingMonthLabel"
+        )
+        .innerText =
+          "Loading...";
+
+      jsonpRequest(
+        {
+          action: "printingDashboard"
+        },
+
+        renderPrintingDashboard,
+
+        function(error) {
+
+          document
+            .getElementById(
+              "printingMonthLabel"
+            )
+            .innerText =
+              "Could not load dashboard";
+
+          document
+            .getElementById(
+              "printingRecentTransactions"
+            )
+            .className =
+              "dashboard-message";
+
+          document
+            .getElementById(
+              "printingRecentTransactions"
+            )
+            .innerText =
+              "Could not load recent transactions.";
+
+          console.log(error);
+          syncActivePageHeight();
+        }
+      );
+    }
+
+
+    function renderPrintingDashboard(data) {
+
+      document
+        .getElementById(
+          "printingMonthLabel"
+        )
+        .innerText =
+          data.monthLabel || "";
+
+      document
+        .getElementById(
+          "printingIncome"
+        )
+        .innerText =
+          formatPeso(data.income);
+
+      document
+        .getElementById(
+          "printingExpenses"
+        )
+        .innerText =
+          formatPeso(data.expenses);
+
+      document
+        .getElementById(
+          "printingProfit"
+        )
+        .innerText =
+          formatPeso(data.profit);
+
+      document
+        .getElementById(
+          "printingTransactions"
+        )
+        .innerText =
+          Number(
+            data.transactions || 0
+          ).toLocaleString(
+            "en-PH"
+          );
+
+      var profit =
+        document.getElementById(
+          "printingProfit"
+        );
+
+      profit.classList.toggle(
+        "income-value",
+        Number(data.profit || 0) >= 0
+      );
+
+      profit.classList.toggle(
+        "expense-value",
+        Number(data.profit || 0) < 0
+      );
+
+      renderPrintingRecentTransactions(
+        data.recentTransactions || []
+      );
+
+      syncActivePageHeight();
+    }
+
+
+    function renderPrintingRecentTransactions(
+      transactions
+    ) {
+
+      var recentBox =
+        document.getElementById(
+          "printingRecentTransactions"
+        );
+
+      if (!transactions.length) {
+
+        recentBox.className =
+          "dashboard-message";
+
+        recentBox.innerText =
+          "No transactions yet.";
+
+        syncActivePageHeight();
+        return;
+      }
+
+      recentBox.className = "";
+
+      recentBox.innerHTML =
+        transactions
+          .slice(
+            0,
+            RECENT_TRANSACTION_LIMIT
+          )
+          .map(function(item) {
+
+            var metaParts = [];
+
+            if (item.date) {
+              metaParts.push(item.date);
+            }
+
+            if (item.time) {
+              metaParts.push(item.time);
+            }
+
+            if (item.category) {
+              metaParts.push(item.category);
+            }
+
+            var isExpense =
+              Boolean(item.isExpense);
+
+            var sign =
+              isExpense
+                ? "−"
+                : "+";
+
+            var valueClass =
+              isExpense
+                ? "expense-value"
+                : "income-value";
+
+            return (
+              '<div class="transaction-row">' +
+                "<div>" +
+                  '<div class="transaction-name">' +
+                    escapeHtml(
+                      item.description ||
+                      item.category ||
+                      "Printing"
+                    ) +
+                  "</div>" +
+                  '<div class="transaction-meta">' +
+                    escapeHtml(
+                      metaParts.join(" • ")
+                    ) +
+                  "</div>" +
+                "</div>" +
+                '<div class="transaction-amount ' +
+                  valueClass +
+                  '">' +
+                  sign +
+                  formatPeso(
+                    item.amount
+                  ) +
+                "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+      syncActivePageHeight();
     }
 
 
