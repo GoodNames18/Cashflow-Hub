@@ -127,23 +127,23 @@
       padding: 0 2px 12px;
     }
 
-    .pages-track.show-konek {
+    .pages-track.show-twice {
       transform: translateX(0);
     }
 
-    .pages-track.show-twice {
+    .pages-track.show-printing {
       transform: translateX(-20%);
     }
 
-    .pages-track.show-printing {
+    .pages-track.show-gcash {
       transform: translateX(-40%);
     }
 
-    .pages-track.show-gcash {
+    .pages-track.show-expenses {
       transform: translateX(-60%);
     }
 
-    .pages-track.show-expenses {
+    .pages-track.show-konek {
       transform: translateX(-80%);
     }
 
@@ -549,14 +549,7 @@
     }
 
     .konek-quick-section {
-      margin-top: 10px;
-    }
-
-    .konek-quick-label {
-      margin: 0 0 6px 2px;
-      color: var(--secondary);
-      font-size: 13px;
-      font-weight: 800;
+      margin-top: 8px;
     }
 
     .konek-amount-grid {
@@ -565,8 +558,9 @@
       gap: 8px;
     }
 
-    #konekExpenseButtons {
-      grid-template-columns: 1fr;
+    #konekStatus:empty {
+      min-height: 0;
+      margin-top: 0;
     }
 
     .konek-quick-button {
@@ -783,15 +777,6 @@
     <nav class="app-tabs" aria-label="Tracker pages">
 
       <button
-        id="konekTab"
-        class="app-tab"
-        type="button"
-        onclick="showAppPage('konek')"
-      >
-        Konek2Card
-      </button>
-
-      <button
         id="twiceTab"
         class="app-tab"
         type="button"
@@ -827,16 +812,25 @@
         💰 Expenses
       </button>
 
+      <button
+        id="konekTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('konek')"
+      >
+        Konek2Card
+      </button>
+
     </nav>
 
 
     <!-- ====================================================
          SWIPE VIEWPORT
-         Page 1 = Konek2Card
-         Page 2 = TwiceAsNyce
-         Page 3 = Printing
-         Page 4 = Cash In/Out
-         Page 5 = Expenses
+         Page 1 = TwiceAsNyce
+         Page 2 = Printing
+         Page 3 = Cash In/Out
+         Page 4 = Expenses
+         Page 5 = Konek2Card
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -844,108 +838,7 @@
       <div id="pagesTrack" class="pages-track show-gcash">
 
         <!-- =================================================
-             PAGE 1: KONEK2CARD
-             ================================================= -->
-
-        <section id="konekPage" class="app-page konek-page" data-page="konek">
-
-          <div class="gcash-hero printing-hero">
-
-            <div class="gcash-title printing-title">
-              Konek2Card
-            </div>
-
-            <div class="gcash-subtitle">
-              Quick income and expense entry
-            </div>
-
-            <div class="quick-entry">
-
-              <input
-                id="konekTransactionInput"
-                class="quick-custom-input"
-                type="text"
-                inputmode="text"
-                enterkeyhint="done"
-                maxlength="120"
-                required
-                placeholder="Description / note (required)"
-              >
-
-              <div class="konek-quick-section">
-                <div class="konek-quick-label">Income</div>
-                <div id="konekIncomeButtons" class="konek-amount-grid"></div>
-              </div>
-
-              <div class="konek-quick-section">
-                <div class="konek-quick-label">Expenses</div>
-                <div id="konekExpenseButtons" class="konek-amount-grid"></div>
-              </div>
-
-              <div id="konekStatus"></div>
-
-            </div>
-
-          </div>
-
-          <div class="dashboard-header">
-
-            <h1>📊 Dashboard</h1>
-
-            <button
-              class="refresh-button"
-              type="button"
-              onclick="loadKonek2CardDashboard()"
-            >
-              ↻ Refresh
-            </button>
-
-          </div>
-
-          <div id="konekMonthLabel" class="month-label">
-            Loading...
-          </div>
-
-          <div class="metric-grid">
-
-            <div class="metric-card">
-              <div class="metric-icon">💰</div>
-              <div class="metric-label">Income</div>
-              <div id="konekIncome" class="metric-value income-value">—</div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-icon">💸</div>
-              <div class="metric-label">Expenses</div>
-              <div id="konekExpenses" class="metric-value expense-value">—</div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-icon">📈</div>
-              <div class="metric-label">Profit</div>
-              <div id="konekProfit" class="metric-value">—</div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-icon">🧾</div>
-              <div class="metric-label">Transactions</div>
-              <div id="konekTransactions" class="metric-value">—</div>
-            </div>
-
-          </div>
-
-          <div class="recent-card">
-            <h2 class="recent-title">Recent Transactions</h2>
-            <div id="konekRecentTransactions" class="dashboard-message">
-              Loading...
-            </div>
-          </div>
-
-        </section>
-
-
-        <!-- =================================================
-             PAGE 2: TWICEASNYCE
+             PAGE 1: TWICEASNYCE
              ================================================= -->
 
         <section id="twicePage" class="app-page twice-page" data-page="twice">
@@ -1084,7 +977,7 @@
 
 
         <!-- =================================================
-             PAGE 3: PRINTING BUSINESS
+             PAGE 2: PRINTING BUSINESS
              ================================================= -->
 
         <section id="printingPage" class="app-page printing-page" data-page="printing">
@@ -1407,7 +1300,7 @@
 
 
         <!-- =================================================
-             PAGE 3: EXPENSES
+             PAGE 4: EXPENSES
              Existing working page kept intact
              ================================================= -->
 
@@ -1573,6 +1466,102 @@
 
 
         </section>
+
+
+        <!-- =================================================
+             PAGE 5: KONEK2CARD
+             ================================================= -->
+
+        <section id="konekPage" class="app-page konek-page" data-page="konek">
+
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">
+              Konek2Card
+            </div>
+
+            <div class="gcash-subtitle">
+              Quick income and expense entry
+            </div>
+
+            <div class="quick-entry">
+
+              <input
+                id="konekTransactionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="120"
+                required
+                placeholder="Description / note (required)"
+              >
+
+              <div class="konek-quick-section">
+                <div id="konekIncomeButtons" class="konek-amount-grid"></div>
+              </div>
+
+              <div id="konekStatus"></div>
+
+            </div>
+
+          </div>
+
+          <div class="dashboard-header">
+
+            <h1>📊 Dashboard</h1>
+
+            <button
+              class="refresh-button"
+              type="button"
+              onclick="loadKonek2CardDashboard()"
+            >
+              ↻ Refresh
+            </button>
+
+          </div>
+
+          <div id="konekMonthLabel" class="month-label">
+            Loading...
+          </div>
+
+          <div class="metric-grid">
+
+            <div class="metric-card">
+              <div class="metric-icon">💰</div>
+              <div class="metric-label">Income</div>
+              <div id="konekIncome" class="metric-value income-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">💸</div>
+              <div class="metric-label">Expenses</div>
+              <div id="konekExpenses" class="metric-value expense-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">📈</div>
+              <div class="metric-label">Profit</div>
+              <div id="konekProfit" class="metric-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">🧾</div>
+              <div class="metric-label">Transactions</div>
+              <div id="konekTransactions" class="metric-value">—</div>
+            </div>
+
+          </div>
+
+          <div class="recent-card">
+            <h2 class="recent-title">Recent Transactions</h2>
+            <div id="konekRecentTransactions" class="dashboard-message">
+              Loading...
+            </div>
+          </div>
+
+        </section>
+
 
       </div>
 
@@ -2047,7 +2036,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: Konek2Card <-> TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses
+    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses <-> Konek2Card
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -2113,11 +2102,6 @@
         // Swipe LEFT
         if (deltaX < 0) {
 
-          if (currentAppPage === "konek") {
-            showAppPage("twice");
-            return;
-          }
-
           if (currentAppPage === "twice") {
             showAppPage("printing");
             return;
@@ -2132,11 +2116,21 @@
             showAppPage("expenses");
             return;
           }
+
+          if (currentAppPage === "expenses") {
+            showAppPage("konek");
+            return;
+          }
         }
 
 
         // Swipe RIGHT
         if (deltaX > 0) {
+
+          if (currentAppPage === "konek") {
+            showAppPage("expenses");
+            return;
+          }
 
           if (currentAppPage === "expenses") {
             showAppPage("gcash");
@@ -2150,11 +2144,6 @@
 
           if (currentAppPage === "printing") {
             showAppPage("twice");
-            return;
-          }
-
-          if (currentAppPage === "twice") {
-            showAppPage("konek");
           }
         }
 
@@ -2412,16 +2401,11 @@
           "konekIncomeButtons"
         );
 
-      var expenseBox =
-        document.getElementById(
-          "konekExpenseButtons"
-        );
-
-      if (!incomeBox || !expenseBox) {
+      if (!incomeBox) {
         return;
       }
 
-      function buildButton(category, amount) {
+      function buildButton(amount) {
 
         var button =
           document.createElement("button");
@@ -2436,7 +2420,7 @@
           "click",
           function() {
             saveKonek2CardEntry(
-              category,
+              "Income",
               amount
             );
           }
@@ -2446,25 +2430,11 @@
       }
 
       incomeBox.innerHTML = "";
-      expenseBox.innerHTML = "";
 
       KONEK2CARD_PRESETS.income
         .forEach(function(amount) {
           incomeBox.appendChild(
-            buildButton(
-              "Income",
-              amount
-            )
-          );
-        });
-
-      KONEK2CARD_PRESETS.expense
-        .forEach(function(amount) {
-          expenseBox.appendChild(
-            buildButton(
-              "Expense",
-              amount
-            )
+            buildButton(amount)
           );
         });
     }
