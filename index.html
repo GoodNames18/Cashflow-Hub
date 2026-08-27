@@ -559,8 +559,7 @@
       gap: 8px;
     }
 
-    #konekStatus:empty,
-    #testStatus:empty {
+    #konekStatus:empty {
       min-height: 0;
       margin-top: 0;
     }
@@ -585,6 +584,135 @@
     .test-quick-button:disabled {
       opacity: .55;
       cursor: wait;
+    }
+
+
+    /* ======================================================
+       TEST CASH-OUT REBUILD
+       ====================================================== */
+
+    .test-cashout-entry {
+      margin-top: 12px;
+    }
+
+    .test-action-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .test-action-button {
+      width: 100%;
+      min-width: 0;
+      height: 42px;
+      margin: 0;
+      padding: 6px 3px;
+      border: 1px solid var(--secondary);
+      border-radius: 9px;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.1;
+      cursor: pointer;
+    }
+
+    .test-add-button {
+      background: var(--primary);
+      color: #07110e;
+    }
+
+    .test-secondary-button {
+      background: #ffffff;
+      color: var(--secondary);
+    }
+
+    .test-action-button:disabled,
+    .test-atm-grid button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    #testStatus {
+      min-height: 34px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    #testStatus.test-status-success {
+      color: #087443;
+      font-weight: 700;
+    }
+
+    #testStatus.test-status-error {
+      color: #b42318;
+      font-weight: 700;
+    }
+
+    #testStatus.test-status-preview {
+      color: var(--muted);
+    }
+
+    .test-metric-grid .metric-card:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .test-modal[hidden] {
+      display: none;
+    }
+
+    .test-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(7, 17, 14, .52);
+    }
+
+    .test-modal-card {
+      width: min(360px, 94vw);
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 14px 38px rgba(0, 0, 0, .20);
+    }
+
+    .test-modal-title {
+      margin-bottom: 12px;
+      color: var(--secondary);
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .test-atm-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .test-atm-grid button,
+    .test-modal-cancel {
+      min-height: 42px;
+      border: 1px solid var(--secondary);
+      border-radius: 9px;
+      background: #ffffff;
+      color: var(--secondary);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .test-modal-cancel {
+      width: 100%;
+      margin-top: 10px;
     }
 
     /* ======================================================
@@ -831,7 +959,7 @@
         type="button"
         onclick="showAppPage('test')"
       >
-        Test
+        <span id="testTabLabel">Test</span>
       </button>
 
     </nav>
@@ -1590,95 +1718,105 @@
 
         <section id="testPage" class="app-page test-page" data-page="test">
 
-          <div class="gcash-hero printing-hero">
+          <div class="gcash-hero printing-hero test-cashout-hero">
 
-            <div class="gcash-title printing-title">
+            <div id="testPageTitle" class="gcash-title printing-title">
               Test
             </div>
 
             <div class="gcash-subtitle">
-              Quick income and expense entry
+              Smart cash-out tracker
             </div>
 
-            <div class="quick-entry">
+            <div class="quick-entry test-cashout-entry">
 
-              <div class="konek-autocomplete-wrap">
+              <input
+                id="testTransactionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="120"
+                autocomplete="off"
+                placeholder="Marwin 8k / 2500 Merlinda"
+              >
 
-                <input
-                  id="testTransactionInput"
-                  class="quick-custom-input"
-                  type="text"
-                  inputmode="text"
-                  enterkeyhint="done"
-                  maxlength="120"
-                  autocomplete="off"
-                  required
-                  aria-autocomplete="inline"
-                  placeholder="Description / note (required)"
-                >
-
+              <div class="test-action-row">
+                <button id="testAddCashOutButton" class="test-action-button test-add-button" type="button">
+                  ADD CASH-OUT
+                </button>
+                <button id="testLoanButton" class="test-action-button test-secondary-button" type="button">
+                  ₱415 LOAN
+                </button>
+                <button id="testAtmButton" class="test-action-button test-secondary-button" type="button">
+                  ATM WITHDRAW
+                </button>
               </div>
 
-              <div class="konek-quick-section">
-                <div id="testIncomeButtons" class="konek-amount-grid"></div>
-              </div>
-
-              <div id="testStatus"></div>
+              <div id="testStatus" class="test-status" aria-live="polite"></div>
 
             </div>
 
           </div>
 
           <div class="dashboard-header">
-
             <h1>📊 Dashboard</h1>
-
-            <button
-              class="refresh-button"
-              type="button"
-              onclick="loadTestDashboard()"
-            >
+            <button class="refresh-button" type="button" onclick="loadTestDashboard()">
               ↻ Refresh
             </button>
-
           </div>
 
-          <div id="testMonthLabel" class="month-label">
-            Loading...
-          </div>
+          <div id="testMonthLabel" class="month-label">Loading...</div>
 
-          <div class="metric-grid">
-
+          <div class="metric-grid test-metric-grid">
             <div class="metric-card">
               <div class="metric-icon">💰</div>
-              <div class="metric-label">Income</div>
-              <div id="testIncome" class="metric-value income-value">—</div>
+              <div class="metric-label">Total Money</div>
+              <div id="testTotalMoney" class="metric-value">—</div>
             </div>
-
             <div class="metric-card">
-              <div class="metric-icon">💸</div>
-              <div class="metric-label">Expenses</div>
-              <div id="testExpenses" class="metric-value expense-value">—</div>
+              <div class="metric-icon">💵</div>
+              <div class="metric-label">Cash on Hand</div>
+              <div id="testCashOnHand" class="metric-value">—</div>
             </div>
-
+            <div class="metric-card">
+              <div class="metric-icon">📱</div>
+              <div class="metric-label">Cash on App</div>
+              <div id="testCashOnApp" class="metric-value">—</div>
+            </div>
             <div class="metric-card">
               <div class="metric-icon">📈</div>
-              <div class="metric-label">Profit</div>
-              <div id="testProfit" class="metric-value">—</div>
+              <div class="metric-label">Total Earned</div>
+              <div id="testTotalEarned" class="metric-value income-value">—</div>
             </div>
-
             <div class="metric-card">
-              <div class="metric-icon">🧾</div>
-              <div class="metric-label">Transactions</div>
-              <div id="testTransactions" class="metric-value">—</div>
+              <div class="metric-icon">🗓️</div>
+              <div class="metric-label">This Week Earned</div>
+              <div id="testThisWeekEarned" class="metric-value income-value">—</div>
             </div>
-
           </div>
 
           <div class="recent-card">
             <h2 class="recent-title">Recent Transactions</h2>
-            <div id="testRecentTransactions" class="dashboard-message">
-              Loading...
+            <div id="testRecentTransactions" class="dashboard-message">Loading...</div>
+          </div>
+
+          <div id="testAtmModal" class="test-modal" hidden>
+            <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testAtmTitle">
+              <div id="testAtmTitle" class="test-modal-title">ATM WITHDRAW</div>
+              <div class="test-atm-grid">
+                <button type="button" data-atm-amount="1000">₱1K</button>
+                <button type="button" data-atm-amount="2000">₱2K</button>
+                <button type="button" data-atm-amount="3000">₱3K</button>
+                <button type="button" data-atm-amount="4000">₱4K</button>
+                <button type="button" data-atm-amount="5000">₱5K</button>
+                <button type="button" data-atm-amount="6000">₱6K</button>
+                <button type="button" data-atm-amount="7000">₱7K</button>
+                <button type="button" data-atm-amount="8000">₱8K</button>
+                <button type="button" data-atm-amount="9000">₱9K</button>
+                <button type="button" data-atm-amount="10000">₱10K</button>
+              </div>
+              <button id="testAtmCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
           </div>
 
@@ -1706,16 +1844,9 @@
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
-    let testSuggestionNames = [];
-    let testSuggestionsLoaded = false;
-    let testSuggestionsLoading = false;
+    const TEST_DISPLAY_NAME = "Test";
 
     const KONEK2CARD_PRESETS = {
-      income: [7, 12, 22, 32, 52, 415],
-      expense: [415]
-    };
-
-    const TEST_PRESETS = {
       income: [7, 12, 22, 32, 52, 415],
       expense: [415]
     };
@@ -1895,8 +2026,7 @@
 
       renderKonek2CardQuickButtons();
       setupKonek2CardAutocomplete();
-      renderTestQuickButtons();
-      setupTestAutocomplete();
+      initializeTestCashOutUI();
       initializePageHeightSync();
 
       showAppPage("gcash", false);
@@ -3113,563 +3243,350 @@
 
 
     // ========================================================
-    // TEST QUICK ENTRY + DASHBOARD
+    // TEST CASH-OUT + DASHBOARD
     // ========================================================
 
-    function normalizeTestSuggestionNames(names) {
+    // TEST CASHOUT PURE HELPERS START
+    function parseTestCashOutInputClient(text) {
+      var raw = String(text || "").replace(/\s+/g, " ").trim();
+      if (!raw) throw new Error("Enter customer and cash-out amount.");
 
-      var seen = {};
-      var uniqueNames = [];
+      var match = raw.match(/(?:^|\s)(?:₱\s*)?(\d+(?:\.\d+)?)(k)?(?=\s|$)/i);
+      if (!match) throw new Error("Cash-out amount not found.");
 
-      (names || []).forEach(function(name) {
+      var amount = Number(match[1]);
+      if (match[2]) amount *= 1000;
 
-        var cleanName =
-          String(name || "")
-            .replace(/\s+/g, " ")
-            .trim();
+      var customer = (raw.slice(0, match.index) + " " + raw.slice(match.index + match[0].length))
+        .replace(/\s+/g, " ")
+        .trim();
+      if (!customer) throw new Error("Customer name is required.");
 
-        if (!cleanName) {
-          return;
-        }
-
-        var key = cleanName.toLowerCase();
-
-        if (seen[key]) {
-          return;
-        }
-
-        seen[key] = true;
-        uniqueNames.push(cleanName);
-      });
-
-      uniqueNames.sort(function(a, b) {
-        return a.localeCompare(
-          b,
-          "en",
-          {
-            numeric: true,
-            sensitivity: "base"
-          }
-        );
-      });
-
-      return uniqueNames;
+      return { customer: customer, amount: amount };
     }
 
-
-    function getTestInlineCompletion(
-      query,
-      names
-    ) {
-
-      var typed =
-        String(query || "");
-
-      var normalizedQuery =
-        typed.toLowerCase();
-
-      if (!normalizedQuery) {
-        return "";
-      }
-
-      var sortedNames =
-        normalizeTestSuggestionNames(
-          names
-        );
-
-      for (
-        var i = 0;
-        i < sortedNames.length;
-        i++
-      ) {
-
-        var name = sortedNames[i];
-
-        if (
-          name.toLowerCase().indexOf(
-            normalizedQuery
-          ) === 0
-        ) {
-          return name;
-        }
-      }
-
-      return "";
+    function validateTestCashOutAmountClient(amount) {
+      var value = Number(amount);
+      if (!isFinite(value)) throw new Error("Invalid cash-out amount.");
+      if (value < 100) throw new Error("Minimum cash-out is ₱100.");
+      if (value > 10000) throw new Error("Maximum cash-out is ₱10,000.");
+      if (value % 100 !== 0) throw new Error("Amount must be in ₱100 increments.");
+      return value;
     }
 
-
-    function applyTestInlineCompletion() {
-
-      var input =
-        document.getElementById(
-          "testTransactionInput"
-        );
-
-      if (!input) {
-        return;
-      }
-
-      var typed = input.value;
-
-      if (!typed) {
-        return;
-      }
-
-      var completion =
-        getTestInlineCompletion(
-          typed,
-          testSuggestionNames
-        );
-
-      if (
-        !completion ||
-        completion.length <= typed.length
-      ) {
-        return;
-      }
-
-      input.value = completion;
-
-      try {
-        input.setSelectionRange(
-          typed.length,
-          completion.length
-        );
-      } catch (error) {
-      }
+    function getTestFeeEarnedClient(amount) {
+      var value = validateTestCashOutAmountClient(amount);
+      if (value <= 500) return 7;
+      if (value <= 1000) return 12;
+      if (value <= 2000) return 22;
+      if (value <= 5000) return 32;
+      return 52;
     }
 
-
-    function loadTestSuggestions() {
-
-      if (testSuggestionsLoaded) {
-        applyTestInlineCompletion();
-        return;
-      }
-
-      if (testSuggestionsLoading) {
-        return;
-      }
-
-      testSuggestionsLoading = true;
-
-      jsonpRequest(
-        {
-          action: "testSuggestions"
-        },
-
-        function(result) {
-          testSuggestionsLoading = false;
-          testSuggestionsLoaded = true;
-          testSuggestionNames =
-            normalizeTestSuggestionNames(
-              Array.isArray(result.suggestions)
-                ? result.suggestions
-                : []
-            );
-          applyTestInlineCompletion();
-        },
-
-        function() {
-          testSuggestionsLoading = false;
-          // Keep it retryable on the next focus/input.
-        }
-      );
+    function buildTestPreviewText(entry) {
+      return String(entry.customer || "") +
+        " • ₱" + Number(entry.amount || 0).toLocaleString("en-PH") +
+        " cash-out • ₱" + Number(entry.feeEarned || 0).toLocaleString("en-PH") +
+        " fee earned";
     }
+    // TEST CASHOUT PURE HELPERS END
 
 
-    function rememberTestSuggestion(name) {
+    function initializeTestCashOutUI() {
+      var tabLabel = document.getElementById("testTabLabel");
+      var pageTitle = document.getElementById("testPageTitle");
+      var input = document.getElementById("testTransactionInput");
+      var addButton = document.getElementById("testAddCashOutButton");
+      var loanButton = document.getElementById("testLoanButton");
+      var atmButton = document.getElementById("testAtmButton");
+      var modal = document.getElementById("testAtmModal");
+      var cancelButton = document.getElementById("testAtmCancelButton");
 
-      var cleanName =
-        String(name || "")
-          .replace(/\s+/g, " ")
-          .trim();
+      if (tabLabel) tabLabel.textContent = TEST_DISPLAY_NAME;
+      if (pageTitle) pageTitle.textContent = TEST_DISPLAY_NAME;
 
-      if (!cleanName) {
-        return;
+      if (input) {
+        input.addEventListener("input", updateTestCashOutPreview);
+      }
+      if (addButton) {
+        addButton.addEventListener("click", saveTestCashOut);
+      }
+      if (loanButton) {
+        loanButton.addEventListener("click", saveTestLoan);
+      }
+      if (atmButton) {
+        atmButton.addEventListener("click", openTestAtmModal);
+      }
+      if (cancelButton) {
+        cancelButton.addEventListener("click", closeTestAtmModal);
+      }
+      if (modal) {
+        modal.addEventListener("click", function(event) {
+          if (event.target === modal) closeTestAtmModal();
+        });
       }
 
-      testSuggestionNames =
-        normalizeTestSuggestionNames(
-          testSuggestionNames.concat(
-            [cleanName]
-          )
-        );
-    }
-
-
-    function setupTestAutocomplete() {
-
-      var input =
-        document.getElementById(
-          "testTransactionInput"
-        );
-
-      if (!input) {
-        return;
-      }
-
-      input.addEventListener(
-        "focus",
-        function() {
-          loadTestSuggestions();
-        }
-      );
-
-      input.addEventListener(
-        "input",
-        function() {
-
-          if (!input.value) {
-            return;
-          }
-
-          if (!testSuggestionsLoaded) {
-            loadTestSuggestions();
-            return;
-          }
-
-          applyTestInlineCompletion();
-        }
-      );
-    }
-
-
-    function renderTestQuickButtons() {
-
-      var incomeBox =
-        document.getElementById(
-          "testIncomeButtons"
-        );
-
-      if (!incomeBox) {
-        return;
-      }
-
-      function buildButton(amount) {
-
-        var button =
-          document.createElement("button");
-
-        button.type = "button";
-        button.className =
-          "test-quick-button";
-        button.textContent =
-          "₱" + String(amount);
-
-        button.addEventListener(
-          "click",
-          function() {
-            saveTestEntry(
-              amount === 415
-                ? "Expense"
-                : "Income",
-              amount
-            );
-          }
-        );
-
-        return button;
-      }
-
-      incomeBox.innerHTML = "";
-
-      TEST_PRESETS.income
-        .forEach(function(amount) {
-          incomeBox.appendChild(
-            buildButton(amount)
-          );
+      document.querySelectorAll("#testAtmModal [data-atm-amount]")
+        .forEach(function(button) {
+          button.addEventListener("click", function() {
+            saveTestAtmWithdrawal(Number(button.getAttribute("data-atm-amount")));
+          });
         });
     }
 
 
-    function setTestButtonsDisabled(disabled) {
+    function setTestStatus(message, kind) {
+      var status = document.getElementById("testStatus");
+      if (!status) return;
+      status.textContent = message || "";
+      status.className = "test-status" + (kind ? " test-status-" + kind : "");
+      syncActivePageHeight();
+    }
 
-      document
-        .querySelectorAll(
-          ".test-quick-button"
-        )
+
+    function updateTestCashOutPreview() {
+      var input = document.getElementById("testTransactionInput");
+      if (!input || !input.value.trim()) {
+        setTestStatus("", "preview");
+        return;
+      }
+
+      try {
+        var parsed = parseTestCashOutInputClient(input.value);
+        var amount = validateTestCashOutAmountClient(parsed.amount);
+        var feeEarned = getTestFeeEarnedClient(amount);
+        setTestStatus(buildTestPreviewText({
+          customer: parsed.customer,
+          amount: amount,
+          feeEarned: feeEarned
+        }), "preview");
+      } catch (error) {
+        // Partially typed/invalid text stays quiet until Add Cash-Out is pressed.
+        setTestStatus("", "preview");
+      }
+    }
+
+
+    function setTestActionButtonsDisabled(disabled) {
+      ["testAddCashOutButton", "testLoanButton", "testAtmButton"]
+        .forEach(function(id) {
+          var button = document.getElementById(id);
+          if (button) button.disabled = disabled;
+        });
+
+      document.querySelectorAll("#testAtmModal [data-atm-amount]")
         .forEach(function(button) {
           button.disabled = disabled;
         });
     }
 
 
-    function saveTestEntry(
-      category,
-      amount
-    ) {
+    function markTestDashboardLoaded_(dashboard) {
+      if (dashboard) renderTestDashboard(dashboard);
+      if (pageDataState.test) {
+        pageDataState.test.status = "loaded";
+        pageDataState.test.promise = null;
+      }
+    }
 
-      var input =
-        document.getElementById(
-          "testTransactionInput"
-        );
 
-      var status =
-        document.getElementById(
-          "testStatus"
-        );
+    function saveTestCashOut() {
+      var input = document.getElementById("testTransactionInput");
+      var text = input ? input.value.trim() : "";
 
-      var text =
-        input.value.trim();
-
-      if (
-        amount !== 415 &&
-        !text
-      ) {
-        status.innerText =
-          "Description / note is required.";
-        input.focus();
+      if (!text) {
+        setTestStatus("❌ Enter customer and cash-out amount.", "error");
+        if (input) input.focus();
         return;
       }
 
-      status.innerText = "Saving...";
-      setTestButtonsDisabled(true);
+      setTestStatus("Saving cash-out...", "preview");
+      setTestActionButtonsDisabled(true);
 
       jsonpRequest(
-        {
-          action: "testAdd",
-          text: text,
-          category: category,
-          amount: amount
-        },
-
+        { action: "testCashOut", text: text },
         function(result) {
-
-          if (result.bundle) {
-            status.innerText =
-              "✅ ₱50 Loan rebate + ₱415 Loan payment added";
-          } else {
-            status.innerText =
-              "✅ " +
-              result.category +
-              " " +
-              formatPeso(result.amount) +
-              " added";
-          }
-
-          if (!result.bundle && result.description) {
-            rememberTestSuggestion(
-              result.description
-            );
-          }
-
-          input.value = "";
-          setTestButtonsDisabled(false);
-
-          if (pageDataState.test) {
-            pageDataState.test.status = "idle";
-            pageDataState.test.promise = null;
-          }
-
-          ensurePageDataLoaded("test");
+          setTestActionButtonsDisabled(false);
+          if (input) input.value = "";
+          setTestStatus(
+            "✓ Saved — " + buildTestPreviewText({
+              customer: result.customer,
+              amount: result.amount,
+              feeEarned: result.feeEarned
+            }),
+            "success"
+          );
+          markTestDashboardLoaded_(result.dashboard);
         },
-
         function(error) {
+          setTestActionButtonsDisabled(false);
+          setTestStatus("❌ " + error.message, "error");
+        }
+      );
+    }
 
-          status.innerText =
-            "❌ " + error.message;
 
-          setTestButtonsDisabled(false);
+    function saveTestLoan() {
+      setTestStatus("Recording loan...", "preview");
+      setTestActionButtonsDisabled(true);
+
+      jsonpRequest(
+        { action: "testLoan" },
+        function(result) {
+          setTestActionButtonsDisabled(false);
+          setTestStatus("✓ Loan recorded — ₱415 payment + ₱50 rebate", "success");
+          markTestDashboardLoaded_(result.dashboard);
+        },
+        function(error) {
+          setTestActionButtonsDisabled(false);
+          setTestStatus("❌ " + error.message, "error");
+        }
+      );
+    }
+
+
+    function openTestAtmModal() {
+      var modal = document.getElementById("testAtmModal");
+      if (modal) modal.hidden = false;
+    }
+
+
+    function closeTestAtmModal() {
+      var modal = document.getElementById("testAtmModal");
+      if (modal) modal.hidden = true;
+    }
+
+
+    function saveTestAtmWithdrawal(amount) {
+      setTestStatus("Recording ATM withdrawal...", "preview");
+      setTestActionButtonsDisabled(true);
+
+      jsonpRequest(
+        { action: "testAtmWithdraw", amount: amount },
+        function(result) {
+          setTestActionButtonsDisabled(false);
+          closeTestAtmModal();
+          setTestStatus(
+            "✓ ATM withdrawal — " + formatPeso(result.amount) + " moved to Cash on Hand",
+            "success"
+          );
+          markTestDashboardLoaded_(result.dashboard);
+        },
+        function(error) {
+          setTestActionButtonsDisabled(false);
+          setTestStatus("❌ " + error.message, "error");
         }
       );
     }
 
 
     function loadTestDashboard() {
+      var monthLabel = document.getElementById("testMonthLabel");
+      if (monthLabel) monthLabel.innerText = "Loading...";
 
-      document
-        .getElementById(
-          "testMonthLabel"
-        )
-        .innerText = "Loading...";
-
-      return new Promise(
-        function(resolve) {
-
-          jsonpRequest(
-            {
-              action: "testDashboard"
-            },
-
-            function(data) {
-              renderTestDashboard(data);
-              resolve(true);
-            },
-
-            function(error) {
-
-              document
-                .getElementById(
-                  "testMonthLabel"
-                )
-                .innerText =
-                  "Could not load dashboard";
-
-              document
-                .getElementById(
-                  "testRecentTransactions"
-                )
-                .className =
-                  "dashboard-message";
-
-              document
-                .getElementById(
-                  "testRecentTransactions"
-                )
-                .innerText =
-                  "Could not load recent transactions.";
-
-              console.log(error);
-              syncActivePageHeight();
-              resolve(false);
+      return new Promise(function(resolve) {
+        jsonpRequest(
+          { action: "testDashboard" },
+          function(data) {
+            renderTestDashboard(data);
+            resolve(true);
+          },
+          function(error) {
+            if (monthLabel) monthLabel.innerText = "Could not load dashboard";
+            var recentBox = document.getElementById("testRecentTransactions");
+            if (recentBox) {
+              recentBox.className = "dashboard-message";
+              recentBox.innerText = "Could not load recent transactions.";
             }
-          );
-        }
-      );
+            console.log(error);
+            syncActivePageHeight();
+            resolve(false);
+          }
+        );
+      });
     }
 
 
     function renderTestDashboard(data) {
+      var monthLabel = document.getElementById("testMonthLabel");
+      if (monthLabel) monthLabel.innerText = data.monthLabel || "";
 
-      document
-        .getElementById(
-          "testMonthLabel"
-        )
-        .innerText =
-          data.monthLabel || "";
+      var map = {
+        testTotalMoney: data.totalMoney,
+        testCashOnHand: data.cashOnHand,
+        testCashOnApp: data.cashOnApp,
+        testTotalEarned: data.totalEarned,
+        testThisWeekEarned: data.thisWeekEarned
+      };
 
-      document
-        .getElementById(
-          "testIncome"
-        )
-        .innerText =
-          formatPeso(data.income);
+      Object.keys(map).forEach(function(id) {
+        var element = document.getElementById(id);
+        if (element) element.innerText = formatPeso(map[id]);
+      });
 
-      document
-        .getElementById(
-          "testExpenses"
-        )
-        .innerText =
-          formatPeso(data.expenses);
-
-      document
-        .getElementById(
-          "testProfit"
-        )
-        .innerText =
-          formatPeso(data.profit);
-
-      document
-        .getElementById(
-          "testTransactions"
-        )
-        .innerText =
-          Number(
-            data.transactions || 0
-          ).toLocaleString("en-PH");
-
-      var profit =
-        document.getElementById(
-          "testProfit"
-        );
-
-      profit.classList.toggle(
-        "income-value",
-        Number(data.profit || 0) >= 0
-      );
-
-      profit.classList.toggle(
-        "expense-value",
-        Number(data.profit || 0) < 0
-      );
-
-      renderTestRecentTransactions(
-        data.recentTransactions || []
-      );
-
+      renderTestRecentTransactions(data.recentTransactions || []);
       syncActivePageHeight();
     }
 
 
-    function renderTestRecentTransactions(
-      recentTransactions
-    ) {
+    function renderTestRecentTransactions(recentTransactions) {
+      var recentBox = document.getElementById("testRecentTransactions");
+      if (!recentBox) return;
 
-      var recentBox =
-        document.getElementById(
-          "testRecentTransactions"
-        );
-
-      var transactions =
-        Array.isArray(recentTransactions)
-          ? recentTransactions.slice(
-              0,
-              RECENT_TRANSACTION_LIMIT
-            )
-          : [];
+      var transactions = Array.isArray(recentTransactions)
+        ? recentTransactions.slice(0, RECENT_TRANSACTION_LIMIT)
+        : [];
 
       if (!transactions.length) {
-
-        recentBox.className =
-          "dashboard-message";
-        recentBox.innerText =
-          "No transactions yet.";
+        recentBox.className = "dashboard-message";
+        recentBox.innerText = "No transactions yet.";
         syncActivePageHeight();
         return;
       }
 
       recentBox.className = "";
+      recentBox.innerHTML = transactions.map(function(item) {
+        var metaParts = [];
+        if (item.date) metaParts.push(item.date);
+        if (item.time) metaParts.push(item.time);
+        if (item.description) metaParts.push(item.description);
+        else if (item.category) metaParts.push(item.category);
 
-      recentBox.innerHTML =
-        transactions
-          .map(function(item) {
+        var customer = item.customer || item.description || item.category || TEST_DISPLAY_NAME;
+        var amount = Number(item.amount || 0);
+        var fee = Number(item.feeEarned || 0);
+        var category = String(item.category || "").toLowerCase();
+        var description = String(item.description || "").toLowerCase();
+        var amountText = "";
+        var amountClass = "transaction-amount";
 
-            var metaParts = [];
+        if (description === "cash-out" || fee > 0) {
+          if (amount > 0) {
+            amountText = formatPeso(amount) + (fee > 0 ? " • +" + formatPeso(fee) + " fee" : "");
+          } else {
+            amountText = "+" + formatPeso(fee) + " fee";
+          }
+          amountClass += " income-value";
+        } else if (category === "expense") {
+          amountText = "−" + formatPeso(amount);
+          amountClass += " expense-value";
+        } else if (category === "income") {
+          amountText = "+" + formatPeso(amount);
+          amountClass += " income-value";
+        } else {
+          amountText = formatPeso(amount);
+        }
 
-            if (item.date) {
-              metaParts.push(item.date);
-            }
-
-            if (item.time) {
-              metaParts.push(item.time);
-            }
-
-            if (item.category) {
-              metaParts.push(item.category);
-            }
-
-            var isExpense =
-              Boolean(item.isExpense);
-
-            return (
-              '<div class="transaction-row">' +
-                "<div>" +
-                  '<div class="transaction-name">' +
-                    escapeHtml(
-                      item.description ||
-                      item.category ||
-                      "Test"
-                    ) +
-                  "</div>" +
-                  '<div class="transaction-meta">' +
-                    escapeHtml(
-                      metaParts.join(" • ")
-                    ) +
-                  "</div>" +
-                "</div>" +
-                '<div class="transaction-amount ' +
-                  (isExpense
-                    ? "expense-value"
-                    : "income-value") +
-                  '">' +
-                  (isExpense ? "−" : "+") +
-                  formatPeso(item.amount) +
-                "</div>" +
-              "</div>"
-            );
-          })
-          .join("");
+        return (
+          '<div class="transaction-row">' +
+            '<div>' +
+              '<div class="transaction-name">' + escapeHtml(customer) + '</div>' +
+              '<div class="transaction-meta">' + escapeHtml(metaParts.join(" • ")) + '</div>' +
+            '</div>' +
+            '<div class="' + amountClass + '">' + escapeHtml(amountText) + '</div>' +
+          '</div>'
+        );
+      }).join("");
 
       syncActivePageHeight();
     }
