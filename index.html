@@ -72,7 +72,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 6px;
       margin-bottom: 10px;
       padding: 5px;
@@ -114,15 +114,15 @@
 
     .pages-track {
       display: flex;
-      width: 500%;
+      width: 600%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 20%;
-      flex: 0 0 20%;
+      width: 16.6666667%;
+      flex: 0 0 16.6666667%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
@@ -132,19 +132,23 @@
     }
 
     .pages-track.show-printing {
-      transform: translateX(-20%);
+      transform: translateX(-16.6666667%);
     }
 
     .pages-track.show-gcash {
-      transform: translateX(-40%);
+      transform: translateX(-33.3333333%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-60%);
+      transform: translateX(-50%);
     }
 
     .pages-track.show-konek {
-      transform: translateX(-80%);
+      transform: translateX(-66.6666667%);
+    }
+
+    .pages-track.show-test {
+      transform: translateX(-83.3333333%);
     }
 
     /* ======================================================
@@ -489,7 +493,6 @@
       display: block;
     }
 
-
     .quick-category-button {
       display: flex;
       align-items: center;
@@ -532,7 +535,8 @@
 
     #printingStatus,
     #twiceStatus,
-    #konekStatus {
+    #konekStatus,
+    #testStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
@@ -555,12 +559,14 @@
       gap: 8px;
     }
 
-    #konekStatus:empty {
+    #konekStatus:empty,
+    #testStatus:empty {
       min-height: 0;
       margin-top: 0;
     }
 
-    .konek-quick-button {
+    .konek-quick-button,
+    .test-quick-button {
       width: 100%;
       min-width: 0;
       height: 42px;
@@ -575,7 +581,8 @@
       cursor: pointer;
     }
 
-    .konek-quick-button:disabled {
+    .konek-quick-button:disabled,
+    .test-quick-button:disabled {
       opacity: .55;
       cursor: wait;
     }
@@ -818,6 +825,15 @@
         Konek2Card
       </button>
 
+      <button
+        id="testTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('test')"
+      >
+        Test
+      </button>
+
     </nav>
 
 
@@ -828,6 +844,7 @@
          Page 3 = Cash In/Out
          Page 4 = Expenses
          Page 5 = Konek2Card
+         Page 6 = Test
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -1566,6 +1583,108 @@
         </section>
 
 
+        <!-- =================================================
+             PAGE 6: TEST
+             Isolated clone of Konek2Card using sheet "test"
+             ================================================= -->
+
+        <section id="testPage" class="app-page test-page" data-page="test">
+
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">
+              Test
+            </div>
+
+            <div class="gcash-subtitle">
+              Quick income and expense entry
+            </div>
+
+            <div class="quick-entry">
+
+              <div class="konek-autocomplete-wrap">
+
+                <input
+                  id="testTransactionInput"
+                  class="quick-custom-input"
+                  type="text"
+                  inputmode="text"
+                  enterkeyhint="done"
+                  maxlength="120"
+                  autocomplete="off"
+                  required
+                  aria-autocomplete="inline"
+                  placeholder="Description / note (required)"
+                >
+
+              </div>
+
+              <div class="konek-quick-section">
+                <div id="testIncomeButtons" class="konek-amount-grid"></div>
+              </div>
+
+              <div id="testStatus"></div>
+
+            </div>
+
+          </div>
+
+          <div class="dashboard-header">
+
+            <h1>📊 Dashboard</h1>
+
+            <button
+              class="refresh-button"
+              type="button"
+              onclick="loadTestDashboard()"
+            >
+              ↻ Refresh
+            </button>
+
+          </div>
+
+          <div id="testMonthLabel" class="month-label">
+            Loading...
+          </div>
+
+          <div class="metric-grid">
+
+            <div class="metric-card">
+              <div class="metric-icon">💰</div>
+              <div class="metric-label">Income</div>
+              <div id="testIncome" class="metric-value income-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">💸</div>
+              <div class="metric-label">Expenses</div>
+              <div id="testExpenses" class="metric-value expense-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">📈</div>
+              <div class="metric-label">Profit</div>
+              <div id="testProfit" class="metric-value">—</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">🧾</div>
+              <div class="metric-label">Transactions</div>
+              <div id="testTransactions" class="metric-value">—</div>
+            </div>
+
+          </div>
+
+          <div class="recent-card">
+            <h2 class="recent-title">Recent Transactions</h2>
+            <div id="testRecentTransactions" class="dashboard-message">
+              Loading...
+            </div>
+          </div>
+
+        </section>
+
+
       </div>
 
     </div>
@@ -1587,8 +1706,16 @@
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
+    let testSuggestionNames = [];
+    let testSuggestionsLoaded = false;
+    let testSuggestionsLoading = false;
 
     const KONEK2CARD_PRESETS = {
+      income: [7, 12, 22, 32, 52, 415],
+      expense: [415]
+    };
+
+    const TEST_PRESETS = {
       income: [7, 12, 22, 32, 52, 415],
       expense: [415]
     };
@@ -1605,10 +1732,11 @@
       gcash: loadGcashDashboard,
       twice: loadTwiceAsNyceDashboard,
       konek: loadKonek2CardDashboard,
+      test: loadTestDashboard,
       expenses: loadDashboard
     };
 
-    const startupPagePreloadOrder = ["gcash", "printing", "twice", "konek", "expenses"];
+    const startupPagePreloadOrder = ["gcash", "printing", "twice", "konek", "test", "expenses"];
 
     const pageDataState = {};
 
@@ -1767,6 +1895,8 @@
 
       renderKonek2CardQuickButtons();
       setupKonek2CardAutocomplete();
+      renderTestQuickButtons();
+      setupTestAutocomplete();
       initializePageHeightSync();
 
       showAppPage("gcash", false);
@@ -1919,6 +2049,9 @@
       const konekTab =
         document.getElementById("konekTab");
 
+      const testTab =
+        document.getElementById("testTab");
+
       const twiceTab =
         document.getElementById("twiceTab");
 
@@ -1941,6 +2074,7 @@
 
       track.classList.remove(
         "show-konek",
+        "show-test",
         "show-twice",
         "show-printing",
         "show-gcash",
@@ -1948,13 +2082,20 @@
       );
 
       konekTab.classList.remove("active");
+      testTab.classList.remove("active");
       twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
       gcashTab.classList.remove("active");
       expensesTab.classList.remove("active");
 
 
-      if (pageName === "konek") {
+      if (pageName === "test") {
+
+        currentAppPage = "test";
+        track.classList.add("show-test");
+        testTab.classList.add("active");
+
+      } else if (pageName === "konek") {
 
         currentAppPage = "konek";
         track.classList.add("show-konek");
@@ -2043,7 +2184,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses <-> Konek2Card
+    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses <-> Konek2Card <-> Test
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -2128,11 +2269,21 @@
             showAppPage("konek");
             return;
           }
+
+          if (currentAppPage === "konek") {
+            showAppPage("test");
+            return;
+          }
         }
 
 
         // Swipe RIGHT
         if (deltaX > 0) {
+
+          if (currentAppPage === "test") {
+            showAppPage("konek");
+            return;
+          }
 
           if (currentAppPage === "konek") {
             showAppPage("expenses");
@@ -2935,6 +3086,570 @@
                       item.description ||
                       item.category ||
                       "Konek2Card"
+                    ) +
+                  "</div>" +
+                  '<div class="transaction-meta">' +
+                    escapeHtml(
+                      metaParts.join(" • ")
+                    ) +
+                  "</div>" +
+                "</div>" +
+                '<div class="transaction-amount ' +
+                  (isExpense
+                    ? "expense-value"
+                    : "income-value") +
+                  '">' +
+                  (isExpense ? "−" : "+") +
+                  formatPeso(item.amount) +
+                "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+      syncActivePageHeight();
+    }
+
+
+
+    // ========================================================
+    // TEST QUICK ENTRY + DASHBOARD
+    // ========================================================
+
+    function normalizeTestSuggestionNames(names) {
+
+      var seen = {};
+      var uniqueNames = [];
+
+      (names || []).forEach(function(name) {
+
+        var cleanName =
+          String(name || "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (!cleanName) {
+          return;
+        }
+
+        var key = cleanName.toLowerCase();
+
+        if (seen[key]) {
+          return;
+        }
+
+        seen[key] = true;
+        uniqueNames.push(cleanName);
+      });
+
+      uniqueNames.sort(function(a, b) {
+        return a.localeCompare(
+          b,
+          "en",
+          {
+            numeric: true,
+            sensitivity: "base"
+          }
+        );
+      });
+
+      return uniqueNames;
+    }
+
+
+    function getTestInlineCompletion(
+      query,
+      names
+    ) {
+
+      var typed =
+        String(query || "");
+
+      var normalizedQuery =
+        typed.toLowerCase();
+
+      if (!normalizedQuery) {
+        return "";
+      }
+
+      var sortedNames =
+        normalizeTestSuggestionNames(
+          names
+        );
+
+      for (
+        var i = 0;
+        i < sortedNames.length;
+        i++
+      ) {
+
+        var name = sortedNames[i];
+
+        if (
+          name.toLowerCase().indexOf(
+            normalizedQuery
+          ) === 0
+        ) {
+          return name;
+        }
+      }
+
+      return "";
+    }
+
+
+    function applyTestInlineCompletion() {
+
+      var input =
+        document.getElementById(
+          "testTransactionInput"
+        );
+
+      if (!input) {
+        return;
+      }
+
+      var typed = input.value;
+
+      if (!typed) {
+        return;
+      }
+
+      var completion =
+        getTestInlineCompletion(
+          typed,
+          testSuggestionNames
+        );
+
+      if (
+        !completion ||
+        completion.length <= typed.length
+      ) {
+        return;
+      }
+
+      input.value = completion;
+
+      try {
+        input.setSelectionRange(
+          typed.length,
+          completion.length
+        );
+      } catch (error) {
+      }
+    }
+
+
+    function loadTestSuggestions() {
+
+      if (testSuggestionsLoaded) {
+        applyTestInlineCompletion();
+        return;
+      }
+
+      if (testSuggestionsLoading) {
+        return;
+      }
+
+      testSuggestionsLoading = true;
+
+      jsonpRequest(
+        {
+          action: "testSuggestions"
+        },
+
+        function(result) {
+          testSuggestionsLoading = false;
+          testSuggestionsLoaded = true;
+          testSuggestionNames =
+            normalizeTestSuggestionNames(
+              Array.isArray(result.suggestions)
+                ? result.suggestions
+                : []
+            );
+          applyTestInlineCompletion();
+        },
+
+        function() {
+          testSuggestionsLoading = false;
+          // Keep it retryable on the next focus/input.
+        }
+      );
+    }
+
+
+    function rememberTestSuggestion(name) {
+
+      var cleanName =
+        String(name || "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (!cleanName) {
+        return;
+      }
+
+      testSuggestionNames =
+        normalizeTestSuggestionNames(
+          testSuggestionNames.concat(
+            [cleanName]
+          )
+        );
+    }
+
+
+    function setupTestAutocomplete() {
+
+      var input =
+        document.getElementById(
+          "testTransactionInput"
+        );
+
+      if (!input) {
+        return;
+      }
+
+      input.addEventListener(
+        "focus",
+        function() {
+          loadTestSuggestions();
+        }
+      );
+
+      input.addEventListener(
+        "input",
+        function() {
+
+          if (!input.value) {
+            return;
+          }
+
+          if (!testSuggestionsLoaded) {
+            loadTestSuggestions();
+            return;
+          }
+
+          applyTestInlineCompletion();
+        }
+      );
+    }
+
+
+    function renderTestQuickButtons() {
+
+      var incomeBox =
+        document.getElementById(
+          "testIncomeButtons"
+        );
+
+      if (!incomeBox) {
+        return;
+      }
+
+      function buildButton(amount) {
+
+        var button =
+          document.createElement("button");
+
+        button.type = "button";
+        button.className =
+          "test-quick-button";
+        button.textContent =
+          "₱" + String(amount);
+
+        button.addEventListener(
+          "click",
+          function() {
+            saveTestEntry(
+              amount === 415
+                ? "Expense"
+                : "Income",
+              amount
+            );
+          }
+        );
+
+        return button;
+      }
+
+      incomeBox.innerHTML = "";
+
+      TEST_PRESETS.income
+        .forEach(function(amount) {
+          incomeBox.appendChild(
+            buildButton(amount)
+          );
+        });
+    }
+
+
+    function setTestButtonsDisabled(disabled) {
+
+      document
+        .querySelectorAll(
+          ".test-quick-button"
+        )
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+    }
+
+
+    function saveTestEntry(
+      category,
+      amount
+    ) {
+
+      var input =
+        document.getElementById(
+          "testTransactionInput"
+        );
+
+      var status =
+        document.getElementById(
+          "testStatus"
+        );
+
+      var text =
+        input.value.trim();
+
+      if (
+        amount !== 415 &&
+        !text
+      ) {
+        status.innerText =
+          "Description / note is required.";
+        input.focus();
+        return;
+      }
+
+      status.innerText = "Saving...";
+      setTestButtonsDisabled(true);
+
+      jsonpRequest(
+        {
+          action: "testAdd",
+          text: text,
+          category: category,
+          amount: amount
+        },
+
+        function(result) {
+
+          if (result.bundle) {
+            status.innerText =
+              "✅ ₱50 Loan rebate + ₱415 Loan payment added";
+          } else {
+            status.innerText =
+              "✅ " +
+              result.category +
+              " " +
+              formatPeso(result.amount) +
+              " added";
+          }
+
+          if (!result.bundle && result.description) {
+            rememberTestSuggestion(
+              result.description
+            );
+          }
+
+          input.value = "";
+          setTestButtonsDisabled(false);
+
+          if (pageDataState.test) {
+            pageDataState.test.status = "idle";
+            pageDataState.test.promise = null;
+          }
+
+          ensurePageDataLoaded("test");
+        },
+
+        function(error) {
+
+          status.innerText =
+            "❌ " + error.message;
+
+          setTestButtonsDisabled(false);
+        }
+      );
+    }
+
+
+    function loadTestDashboard() {
+
+      document
+        .getElementById(
+          "testMonthLabel"
+        )
+        .innerText = "Loading...";
+
+      return new Promise(
+        function(resolve) {
+
+          jsonpRequest(
+            {
+              action: "testDashboard"
+            },
+
+            function(data) {
+              renderTestDashboard(data);
+              resolve(true);
+            },
+
+            function(error) {
+
+              document
+                .getElementById(
+                  "testMonthLabel"
+                )
+                .innerText =
+                  "Could not load dashboard";
+
+              document
+                .getElementById(
+                  "testRecentTransactions"
+                )
+                .className =
+                  "dashboard-message";
+
+              document
+                .getElementById(
+                  "testRecentTransactions"
+                )
+                .innerText =
+                  "Could not load recent transactions.";
+
+              console.log(error);
+              syncActivePageHeight();
+              resolve(false);
+            }
+          );
+        }
+      );
+    }
+
+
+    function renderTestDashboard(data) {
+
+      document
+        .getElementById(
+          "testMonthLabel"
+        )
+        .innerText =
+          data.monthLabel || "";
+
+      document
+        .getElementById(
+          "testIncome"
+        )
+        .innerText =
+          formatPeso(data.income);
+
+      document
+        .getElementById(
+          "testExpenses"
+        )
+        .innerText =
+          formatPeso(data.expenses);
+
+      document
+        .getElementById(
+          "testProfit"
+        )
+        .innerText =
+          formatPeso(data.profit);
+
+      document
+        .getElementById(
+          "testTransactions"
+        )
+        .innerText =
+          Number(
+            data.transactions || 0
+          ).toLocaleString("en-PH");
+
+      var profit =
+        document.getElementById(
+          "testProfit"
+        );
+
+      profit.classList.toggle(
+        "income-value",
+        Number(data.profit || 0) >= 0
+      );
+
+      profit.classList.toggle(
+        "expense-value",
+        Number(data.profit || 0) < 0
+      );
+
+      renderTestRecentTransactions(
+        data.recentTransactions || []
+      );
+
+      syncActivePageHeight();
+    }
+
+
+    function renderTestRecentTransactions(
+      recentTransactions
+    ) {
+
+      var recentBox =
+        document.getElementById(
+          "testRecentTransactions"
+        );
+
+      var transactions =
+        Array.isArray(recentTransactions)
+          ? recentTransactions.slice(
+              0,
+              RECENT_TRANSACTION_LIMIT
+            )
+          : [];
+
+      if (!transactions.length) {
+
+        recentBox.className =
+          "dashboard-message";
+        recentBox.innerText =
+          "No transactions yet.";
+        syncActivePageHeight();
+        return;
+      }
+
+      recentBox.className = "";
+
+      recentBox.innerHTML =
+        transactions
+          .map(function(item) {
+
+            var metaParts = [];
+
+            if (item.date) {
+              metaParts.push(item.date);
+            }
+
+            if (item.time) {
+              metaParts.push(item.time);
+            }
+
+            if (item.category) {
+              metaParts.push(item.category);
+            }
+
+            var isExpense =
+              Boolean(item.isExpense);
+
+            return (
+              '<div class="transaction-row">' +
+                "<div>" +
+                  '<div class="transaction-name">' +
+                    escapeHtml(
+                      item.description ||
+                      item.category ||
+                      "Test"
                     ) +
                   "</div>" +
                   '<div class="transaction-meta">' +
