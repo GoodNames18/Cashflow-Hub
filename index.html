@@ -3299,11 +3299,13 @@
     // TEST AAP PURE HELPERS START
     function parseTestAapInputClient(text) {
       var raw = String(text || "").replace(/\s+/g, " ").trim();
-      var match = raw.match(/^(\d+)\s+(?:₱\s*)?([\d,]+(?:\.\d{1,2})?)$/);
-      if (!match) throw new Error("Enter people and book total, for example: 100 26432.");
+      var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:₱\s*)?([\d,]+(?:\.\d{1,2})?)$/);
+      if (!match) throw new Error("Enter people and book total in either order, for example: 100 26432.");
 
-      var people = Number(match[1]);
-      var bookTotal = Number(match[2].replace(/,/g, ""));
+      var first = Number(match[1].replace(/,/g, ""));
+      var second = Number(match[2].replace(/,/g, ""));
+      var people = Math.min(first, second);
+      var bookTotal = Math.max(first, second);
       if (!isFinite(people) || people <= 0 || people % 1 !== 0) {
         throw new Error("Number of people must be a whole number greater than 0.");
       }
@@ -3337,10 +3339,8 @@
     }
 
     function buildTestAapPreviewText(calculation) {
-      return calculation.customer + "\n" +
-        calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
-        "Total fee " + formatTestAapPesoClient(calculation.totalFee) +
-        " · Your earnings " + formatTestAapPesoClient(calculation.feeEarned) + "\n" +
+      return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
+        "Total fee " + formatTestAapPesoClient(calculation.totalFee) + "\n" +
         "Cash received " + formatTestAapPesoClient(calculation.cashReceived);
     }
     // TEST AAP PURE HELPERS END
