@@ -536,8 +536,7 @@
     #printingStatus,
     #twiceStatus,
     #konekStatus,
-    #testStatus,
-    #testAapStatus {
+    #testStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
@@ -598,8 +597,8 @@
 
     .test-action-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 5px;
       margin-top: 8px;
     }
 
@@ -611,7 +610,7 @@
       padding: 6px 3px;
       border: 1px solid var(--secondary);
       border-radius: 9px;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
       line-height: 1.1;
       cursor: pointer;
@@ -656,46 +655,6 @@
 
     #testStatus.test-status-preview {
       color: var(--muted);
-    }
-
-    .test-aap-entry {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid var(--line);
-    }
-
-    .test-aap-title {
-      margin-bottom: 7px;
-      color: var(--secondary);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: .03em;
-    }
-
-    .test-aap-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 112px;
-      gap: 7px;
-    }
-
-    #testAapStatus {
-      min-height: 50px;
-      margin-top: 8px;
-      color: var(--muted);
-      text-align: center;
-      white-space: pre-line;
-      font-size: 11px;
-      line-height: 1.4;
-    }
-
-    #testAapStatus.test-status-success {
-      color: #087443;
-      font-weight: 700;
-    }
-
-    #testAapStatus.test-status-error {
-      color: #b42318;
-      font-weight: 700;
     }
 
     .test-metric-grid .metric-card:last-child {
@@ -1785,42 +1744,25 @@
                 enterkeyhint="done"
                 maxlength="120"
                 autocomplete="off"
-                placeholder="Customer & amount"
+                placeholder="Customer & amount / People & book total"
               >
 
               <div class="test-action-row">
-                <button id="testAddCashOutButton" class="test-action-button test-add-button" type="button">
-                  ADD CASH-OUT
-                </button>
                 <button id="testLoanButton" class="test-action-button test-secondary-button" type="button">
                   ₱415 LOAN
                 </button>
+                <button id="testAddAapButton" class="test-action-button test-add-button" type="button">
+                  COLLECTION
+                </button>
+                <button id="testAddCashOutButton" class="test-action-button test-add-button" type="button">
+                  CASH-OUT
+                </button>
                 <button id="testAtmButton" class="test-action-button test-secondary-button" type="button">
-                  ATM WITHDRAW
+                  ATM
                 </button>
               </div>
 
               <div id="testStatus" class="test-status" aria-live="polite"></div>
-
-              <div class="test-aap-entry">
-                <div class="test-aap-title">AAP COLLECTION · BATASAN M3</div>
-                <div class="test-aap-row">
-                  <input
-                    id="testAapInput"
-                    class="quick-custom-input"
-                    type="text"
-                    inputmode="decimal"
-                    enterkeyhint="done"
-                    maxlength="60"
-                    autocomplete="off"
-                    placeholder="People & book total"
-                  >
-                  <button id="testAddAapButton" class="test-action-button test-add-button" type="button">
-                    ADD COLLECTION
-                  </button>
-                </div>
-                <div id="testAapStatus" class="test-status" aria-live="polite"></div>
-              </div>
 
             </div>
 
@@ -1842,6 +1784,11 @@
               <div id="testTotalMoney" class="metric-value">—</div>
             </div>
             <div class="metric-card">
+              <div class="metric-icon">📈</div>
+              <div class="metric-label">Total Earned</div>
+              <div id="testTotalEarned" class="metric-value income-value">—</div>
+            </div>
+            <div class="metric-card">
               <div class="metric-icon">💵</div>
               <div class="metric-label">Cash on Hand</div>
               <div id="testCashOnHand" class="metric-value">—</div>
@@ -1850,11 +1797,6 @@
               <div class="metric-icon">📱</div>
               <div class="metric-label">Cash on App</div>
               <div id="testCashOnApp" class="metric-value">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">📈</div>
-              <div class="metric-label">Total Earned</div>
-              <div id="testTotalEarned" class="metric-value income-value">—</div>
             </div>
             <div class="metric-card">
               <div class="metric-icon">🗓️</div>
@@ -3415,7 +3357,6 @@
       var addButton = document.getElementById("testAddCashOutButton");
       var loanButton = document.getElementById("testLoanButton");
       var atmButton = document.getElementById("testAtmButton");
-      var aapInput = document.getElementById("testAapInput");
       var aapButton = document.getElementById("testAddAapButton");
       var modal = document.getElementById("testAtmModal");
       var cancelButton = document.getElementById("testAtmCancelButton");
@@ -3434,12 +3375,6 @@
       }
       if (atmButton) {
         atmButton.addEventListener("click", openTestAtmModal);
-      }
-      if (aapInput) {
-        aapInput.addEventListener("input", updateTestAapPreview);
-        aapInput.addEventListener("keydown", function(event) {
-          if (event.key === "Enter") saveTestAapCollection();
-        });
       }
       if (aapButton) {
         aapButton.addEventListener("click", saveTestAapCollection);
@@ -3471,38 +3406,21 @@
       syncActivePageHeight();
     }
 
-    function setTestAapStatus(message, kind) {
-      var status = document.getElementById("testAapStatus");
-      if (!status) return;
-      status.textContent = message || "";
-      status.className = "test-status" + (kind ? " test-status-" + kind : "");
-      syncActivePageHeight();
-    }
-
-    function updateTestAapPreview() {
-      var input = document.getElementById("testAapInput");
-      if (!input || !input.value.trim()) {
-        setTestAapStatus("", "preview");
-        return;
-      }
-
-      try {
-        var parsed = parseTestAapInputClient(input.value);
-        setTestAapStatus(
-          buildTestAapPreviewText(calculateTestAapClient(parsed.people, parsed.bookTotal)),
-          "preview"
-        );
-      } catch (error) {
-        setTestAapStatus("", "preview");
-      }
-    }
-
-
     function updateTestCashOutPreview() {
       var input = document.getElementById("testTransactionInput");
       if (!input || !input.value.trim()) {
         setTestStatus("", "preview");
         return;
+      }
+
+      try {
+        var parsedAap = parseTestAapInputClient(input.value);
+        setTestStatus(
+          buildTestAapPreviewText(calculateTestAapClient(parsedAap.people, parsedAap.bookTotal)),
+          "preview"
+        );
+        return;
+      } catch (aapError) {
       }
 
       try {
@@ -3580,7 +3498,7 @@
     }
 
     function saveTestAapCollection() {
-      var input = document.getElementById("testAapInput");
+      var input = document.getElementById("testTransactionInput");
       var text = input ? input.value.trim() : "";
       var calculation;
 
@@ -3588,12 +3506,12 @@
         var parsed = parseTestAapInputClient(text);
         calculation = calculateTestAapClient(parsed.people, parsed.bookTotal);
       } catch (error) {
-        setTestAapStatus("❌ " + error.message, "error");
+        setTestStatus("❌ " + error.message, "error");
         if (input) input.focus();
         return;
       }
 
-      setTestAapStatus("Saving AAP collection...", "preview");
+      setTestStatus("Saving AAP collection...", "preview");
       setTestActionButtonsDisabled(true);
 
       jsonpRequest(
@@ -3601,7 +3519,7 @@
         function(result) {
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
-          setTestAapStatus(
+          setTestStatus(
             "✓ Saved AAP collection\n" + buildTestAapPreviewText({
               customer: result.customer,
               people: result.people,
@@ -3618,7 +3536,7 @@
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestAapStatus("❌ " + error.message, "error");
+          setTestStatus("❌ " + error.message, "error");
         }
       );
     }
