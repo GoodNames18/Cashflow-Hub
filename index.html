@@ -3335,6 +3335,7 @@
       document.querySelectorAll("#testAtmModal [data-atm-amount]")
         .forEach(function(button) {
           button.addEventListener("click", function() {
+            closeTestAtmModal();
             saveTestAtmWithdrawal(Number(button.getAttribute("data-atm-amount")));
           });
         });
