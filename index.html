@@ -621,11 +621,6 @@
       color: #07110e;
     }
 
-    .test-secondary-button {
-      background: #ffffff;
-      color: var(--secondary);
-    }
-
     .test-action-button:disabled,
     .test-atm-grid button:disabled {
       opacity: .55;
@@ -655,10 +650,6 @@
 
     #testStatus.test-status-preview {
       color: var(--muted);
-    }
-
-    .test-metric-grid .metric-card:last-child {
-      grid-column: 1 / -1;
     }
 
     .test-page {
@@ -1744,11 +1735,11 @@
                 enterkeyhint="done"
                 maxlength="120"
                 autocomplete="off"
-                placeholder="Customer & amount / People & book total"
+                placeholder="Name amount / People total"
               >
 
               <div class="test-action-row">
-                <button id="testLoanButton" class="test-action-button test-secondary-button" type="button">
+                <button id="testLoanButton" class="test-action-button test-add-button" type="button">
                   ₱415 LOAN
                 </button>
                 <button id="testAddAapButton" class="test-action-button test-add-button" type="button">
@@ -1757,7 +1748,7 @@
                 <button id="testAddCashOutButton" class="test-action-button test-add-button" type="button">
                   CASH-OUT
                 </button>
-                <button id="testAtmButton" class="test-action-button test-secondary-button" type="button">
+                <button id="testAtmButton" class="test-action-button test-add-button" type="button">
                   ATM
                 </button>
               </div>
@@ -1802,6 +1793,11 @@
               <div class="metric-icon">🗓️</div>
               <div class="metric-label">This Week Earned</div>
               <div id="testThisWeekEarned" class="metric-value income-value">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">🏦</div>
+              <div class="metric-label">Loan Remaining</div>
+              <div id="testLoanRemaining" class="metric-value expense-value">—</div>
             </div>
           </div>
 
@@ -3632,7 +3628,8 @@
         testCashOnHand: data.cashOnHand,
         testCashOnApp: data.cashOnApp,
         testTotalEarned: data.totalEarned,
-        testThisWeekEarned: data.thisWeekEarned
+        testThisWeekEarned: data.thisWeekEarned,
+        testLoanRemaining: data.loanRemaining
       };
 
       Object.keys(map).forEach(function(id) {
