@@ -661,12 +661,16 @@
       grid-column: 1 / -1;
     }
 
+    .test-page {
+      position: relative;
+    }
+
     .test-modal[hidden] {
       display: none;
     }
 
     .test-modal {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: 9999;
       display: flex;
