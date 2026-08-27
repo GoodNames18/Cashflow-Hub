@@ -536,7 +536,8 @@
     #printingStatus,
     #twiceStatus,
     #konekStatus,
-    #testStatus {
+    #testStatus,
+    #testAapStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
@@ -655,6 +656,46 @@
 
     #testStatus.test-status-preview {
       color: var(--muted);
+    }
+
+    .test-aap-entry {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .test-aap-title {
+      margin-bottom: 7px;
+      color: var(--secondary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .03em;
+    }
+
+    .test-aap-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 112px;
+      gap: 7px;
+    }
+
+    #testAapStatus {
+      min-height: 50px;
+      margin-top: 8px;
+      color: var(--muted);
+      text-align: center;
+      white-space: pre-line;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    #testAapStatus.test-status-success {
+      color: #087443;
+      font-weight: 700;
+    }
+
+    #testAapStatus.test-status-error {
+      color: #b42318;
+      font-weight: 700;
     }
 
     .test-metric-grid .metric-card:last-child {
@@ -1760,6 +1801,26 @@
               </div>
 
               <div id="testStatus" class="test-status" aria-live="polite"></div>
+
+              <div class="test-aap-entry">
+                <div class="test-aap-title">AAP COLLECTION · BATASAN M3</div>
+                <div class="test-aap-row">
+                  <input
+                    id="testAapInput"
+                    class="quick-custom-input"
+                    type="text"
+                    inputmode="decimal"
+                    enterkeyhint="done"
+                    maxlength="60"
+                    autocomplete="off"
+                    placeholder="People & book total"
+                  >
+                  <button id="testAddAapButton" class="test-action-button test-add-button" type="button">
+                    ADD COLLECTION
+                  </button>
+                </div>
+                <div id="testAapStatus" class="test-status" aria-live="polite"></div>
+              </div>
 
             </div>
 
@@ -3297,6 +3358,55 @@
     }
     // TEST CASHOUT PURE HELPERS END
 
+    // TEST AAP PURE HELPERS START
+    function parseTestAapInputClient(text) {
+      var raw = String(text || "").replace(/\s+/g, " ").trim();
+      var match = raw.match(/^(\d+)\s+(?:₱\s*)?([\d,]+(?:\.\d{1,2})?)$/);
+      if (!match) throw new Error("Enter people and book total, for example: 100 26432.");
+
+      var people = Number(match[1]);
+      var bookTotal = Number(match[2].replace(/,/g, ""));
+      if (!isFinite(people) || people <= 0 || people % 1 !== 0) {
+        throw new Error("Number of people must be a whole number greater than 0.");
+      }
+      if (!isFinite(bookTotal) || bookTotal <= 0) {
+        throw new Error("Book total must be greater than 0.");
+      }
+      return { people: people, bookTotal: bookTotal };
+    }
+
+    function calculateTestAapClient(people, bookTotal) {
+      var totalFee = Number(people) * 5;
+      var systemFee = Number(people) * 2;
+      var feeEarned = Number(people) * 3;
+      return {
+        customer: "Batasan M3",
+        people: Number(people),
+        bookTotal: Number(bookTotal),
+        totalFee: totalFee,
+        systemFee: systemFee,
+        feeEarned: feeEarned,
+        cashReceived: Number(bookTotal) + totalFee,
+        appDeduction: Number(bookTotal) + systemFee
+      };
+    }
+
+    function formatTestAapPesoClient(value) {
+      return "₱" + Number(value || 0).toLocaleString("en-PH", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function buildTestAapPreviewText(calculation) {
+      return calculation.customer + "\n" +
+        calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
+        "Total fee " + formatTestAapPesoClient(calculation.totalFee) +
+        " · Your earnings " + formatTestAapPesoClient(calculation.feeEarned) + "\n" +
+        "Cash received " + formatTestAapPesoClient(calculation.cashReceived);
+    }
+    // TEST AAP PURE HELPERS END
+
 
     function initializeTestCashOutUI() {
       var tabLabel = document.getElementById("testTabLabel");
@@ -3305,6 +3415,8 @@
       var addButton = document.getElementById("testAddCashOutButton");
       var loanButton = document.getElementById("testLoanButton");
       var atmButton = document.getElementById("testAtmButton");
+      var aapInput = document.getElementById("testAapInput");
+      var aapButton = document.getElementById("testAddAapButton");
       var modal = document.getElementById("testAtmModal");
       var cancelButton = document.getElementById("testAtmCancelButton");
 
@@ -3322,6 +3434,15 @@
       }
       if (atmButton) {
         atmButton.addEventListener("click", openTestAtmModal);
+      }
+      if (aapInput) {
+        aapInput.addEventListener("input", updateTestAapPreview);
+        aapInput.addEventListener("keydown", function(event) {
+          if (event.key === "Enter") saveTestAapCollection();
+        });
+      }
+      if (aapButton) {
+        aapButton.addEventListener("click", saveTestAapCollection);
       }
       if (cancelButton) {
         cancelButton.addEventListener("click", closeTestAtmModal);
@@ -3350,6 +3471,32 @@
       syncActivePageHeight();
     }
 
+    function setTestAapStatus(message, kind) {
+      var status = document.getElementById("testAapStatus");
+      if (!status) return;
+      status.textContent = message || "";
+      status.className = "test-status" + (kind ? " test-status-" + kind : "");
+      syncActivePageHeight();
+    }
+
+    function updateTestAapPreview() {
+      var input = document.getElementById("testAapInput");
+      if (!input || !input.value.trim()) {
+        setTestAapStatus("", "preview");
+        return;
+      }
+
+      try {
+        var parsed = parseTestAapInputClient(input.value);
+        setTestAapStatus(
+          buildTestAapPreviewText(calculateTestAapClient(parsed.people, parsed.bookTotal)),
+          "preview"
+        );
+      } catch (error) {
+        setTestAapStatus("", "preview");
+      }
+    }
+
 
     function updateTestCashOutPreview() {
       var input = document.getElementById("testTransactionInput");
@@ -3375,7 +3522,7 @@
 
 
     function setTestActionButtonsDisabled(disabled) {
-      ["testAddCashOutButton", "testLoanButton", "testAtmButton"]
+      ["testAddCashOutButton", "testLoanButton", "testAtmButton", "testAddAapButton"]
         .forEach(function(id) {
           var button = document.getElementById(id);
           if (button) button.disabled = disabled;
@@ -3428,6 +3575,50 @@
         function(error) {
           setTestActionButtonsDisabled(false);
           setTestStatus("❌ " + error.message, "error");
+        }
+      );
+    }
+
+    function saveTestAapCollection() {
+      var input = document.getElementById("testAapInput");
+      var text = input ? input.value.trim() : "";
+      var calculation;
+
+      try {
+        var parsed = parseTestAapInputClient(text);
+        calculation = calculateTestAapClient(parsed.people, parsed.bookTotal);
+      } catch (error) {
+        setTestAapStatus("❌ " + error.message, "error");
+        if (input) input.focus();
+        return;
+      }
+
+      setTestAapStatus("Saving AAP collection...", "preview");
+      setTestActionButtonsDisabled(true);
+
+      jsonpRequest(
+        { action: "testAapCollection", text: text },
+        function(result) {
+          setTestActionButtonsDisabled(false);
+          if (input) input.value = "";
+          setTestAapStatus(
+            "✓ Saved AAP collection\n" + buildTestAapPreviewText({
+              customer: result.customer,
+              people: result.people,
+              bookTotal: result.bookTotal,
+              totalFee: result.totalFee,
+              systemFee: result.systemFee,
+              feeEarned: result.feeEarned,
+              cashReceived: result.cashReceived,
+              appDeduction: result.appDeduction
+            }),
+            "success"
+          );
+          markTestDashboardLoaded_(result.dashboard);
+        },
+        function(error) {
+          setTestActionButtonsDisabled(false);
+          setTestAapStatus("❌ " + error.message, "error");
         }
       );
     }
