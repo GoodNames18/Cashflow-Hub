@@ -3605,12 +3605,30 @@
     }
 
     function parseTestTransferAmountClient(text) {
-      var raw = String(text || "").replace(/[₱,\s]/g, "");
-      var amount = Number(raw);
-      if (!raw || !isFinite(amount) || amount <= 0) {
-        throw new Error("Enter a transfer amount greater than 0.");
+      var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
+      var parts = raw ? raw.split(/\s+/) : [];
+      if (parts.length < 1 || parts.length > 2) {
+        throw new Error("Enter one amount, or amount and people for AAP.");
       }
-      return amount;
+      var values = parts.map(Number);
+      if (values.some(function(value) { return !isFinite(value) || value <= 0; })) {
+        throw new Error("Enter numbers greater than 0.");
+      }
+      if (values.length === 1) {
+        return { mode: "normal", amount: values[0] };
+      }
+      var candidates = [];
+      function addCandidate(amount, people) {
+        if (people === Math.floor(people) && amount > people * 5) {
+          candidates.push({ mode: "aap", amount: amount, people: people });
+        }
+      }
+      addCandidate(values[0], values[1]);
+      addCandidate(values[1], values[0]);
+      if (candidates.length !== 1) {
+        throw new Error("AAP input must contain one total amount and one people count.");
+      }
+      return candidates[0];
     }
 
     function openTestTransferModal() {
@@ -3677,9 +3695,9 @@
 
     function saveTestTransfer(direction) {
       var input = document.getElementById("testTransactionInput");
-      var amount;
+      var text = input ? input.value.trim() : "";
       try {
-        amount = parseTestTransferAmountClient(input ? input.value : "");
+        parseTestTransferAmountClient(text);
       } catch (error) {
         setTestStatus("❌ " + error.message, "error");
         if (input) input.focus();
@@ -3689,7 +3707,7 @@
       setTestStatus("Recording transfer...", "preview");
       setTestActionButtonsDisabled(true);
       jsonpRequest(
-        { action: "testTransfer", amount: amount, direction: direction },
+        { action: "testTransfer", text: text, direction: direction },
         function(result) {
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
