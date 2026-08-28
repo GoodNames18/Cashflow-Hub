@@ -1794,29 +1794,14 @@
               <div id="testTotalMoney" class="metric-value">—</div>
             </div>
             <div class="metric-card">
+              <div class="metric-icon">🏦</div>
+              <div class="metric-label">Loan Remaining</div>
+              <div id="testLoanRemaining" class="metric-value expense-value">—</div>
+            </div>
+            <div class="metric-card">
               <div class="metric-icon">📈</div>
               <div class="metric-label">Total Earned</div>
               <div id="testTotalEarned" class="metric-value income-value">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">💵</div>
-              <div class="metric-label">Cash on Hand</div>
-              <div id="testCashOnHand" class="metric-value">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">📱</div>
-              <div class="metric-label">Total App</div>
-              <div id="testTotalApp" class="metric-value">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">💙</div>
-              <div class="metric-label">GCash</div>
-              <div id="testGcash" class="metric-value">—</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-icon">💳</div>
-              <div class="metric-label">Card</div>
-              <div id="testCard" class="metric-value">—</div>
             </div>
             <div class="metric-card">
               <div class="metric-icon">🗓️</div>
@@ -1824,9 +1809,24 @@
               <div id="testThisWeekEarned" class="metric-value income-value">—</div>
             </div>
             <div class="metric-card">
-              <div class="metric-icon">🏦</div>
-              <div class="metric-label">Loan Remaining</div>
-              <div id="testLoanRemaining" class="metric-value expense-value">—</div>
+              <div class="metric-icon">💳</div>
+              <div class="metric-label">Money on Card</div>
+              <div id="testCard" class="metric-value">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">💵</div>
+              <div class="metric-label">Money on Hand</div>
+              <div id="testCashOnHand" class="metric-value">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">💙</div>
+              <div class="metric-label">Money on GCash</div>
+              <div id="testGcash" class="metric-value">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">👩</div>
+              <div class="metric-label">Utang kay Nanay</div>
+              <div id="testUtangKayNanay" class="metric-value expense-value">—</div>
             </div>
           </div>
 
@@ -3789,12 +3789,12 @@
       var map = {
         testTotalMoney: data.totalMoney,
         testCashOnHand: data.cashOnHand,
-        testTotalApp: data.totalApp,
         testGcash: data.gcash,
         testCard: data.card,
         testTotalEarned: data.totalEarned,
         testThisWeekEarned: data.thisWeekEarned,
-        testLoanRemaining: data.loanRemaining
+        testLoanRemaining: data.loanRemaining,
+        testUtangKayNanay: data.utangKayNanay
       };
 
       Object.keys(map).forEach(function(id) {
