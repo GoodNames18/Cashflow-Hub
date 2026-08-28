@@ -597,8 +597,8 @@
 
     .test-action-row {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 5px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 4px;
       margin-top: 8px;
     }
 
@@ -607,10 +607,10 @@
       min-width: 0;
       height: 42px;
       margin: 0;
-      padding: 6px 3px;
+      padding: 6px 1px;
       border: 1px solid var(--secondary);
       border-radius: 9px;
-      font-size: 9px;
+      font-size: 8px;
       font-weight: 800;
       line-height: 1.1;
       cursor: pointer;
@@ -622,7 +622,8 @@
     }
 
     .test-action-button:disabled,
-    .test-atm-grid button:disabled {
+    .test-atm-grid button:disabled,
+    .test-choice-grid button:disabled {
       opacity: .55;
       cursor: wait;
     }
@@ -696,7 +697,22 @@
       gap: 8px;
     }
 
+    .test-choice-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .test-modal-note {
+      margin: -4px 0 12px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
     .test-atm-grid button,
+    .test-choice-grid button,
     .test-modal-cancel {
       min-height: 42px;
       border: 1px solid var(--secondary);
@@ -1735,21 +1751,24 @@
                 enterkeyhint="done"
                 maxlength="120"
                 autocomplete="off"
-                placeholder="Name amount / People total"
+                placeholder="Cash-out / Collection / Transfer amount"
               >
 
               <div class="test-action-row">
                 <button id="testLoanButton" class="test-action-button test-add-button" type="button">
-                  ₱415 LOAN
+                  LOAN
                 </button>
                 <button id="testAddAapButton" class="test-action-button test-add-button" type="button">
-                  COLLECTION
+                  COLLECT
                 </button>
                 <button id="testAddCashOutButton" class="test-action-button test-add-button" type="button">
                   CASH-OUT
                 </button>
                 <button id="testAtmButton" class="test-action-button test-add-button" type="button">
                   ATM
+                </button>
+                <button id="testTransferButton" class="test-action-button test-add-button" type="button">
+                  TRANSFER
                 </button>
               </div>
 
@@ -1786,8 +1805,18 @@
             </div>
             <div class="metric-card">
               <div class="metric-icon">📱</div>
-              <div class="metric-label">Cash on App</div>
-              <div id="testCashOnApp" class="metric-value">—</div>
+              <div class="metric-label">Total App</div>
+              <div id="testTotalApp" class="metric-value">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">💙</div>
+              <div class="metric-label">GCash</div>
+              <div id="testGcash" class="metric-value">—</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-icon">💳</div>
+              <div class="metric-label">Card</div>
+              <div id="testCard" class="metric-value">—</div>
             </div>
             <div class="metric-card">
               <div class="metric-icon">🗓️</div>
@@ -1822,6 +1851,30 @@
                 <button type="button" data-atm-amount="10000">₱10K</button>
               </div>
               <button id="testAtmCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
+            </div>
+          </div>
+
+          <div id="testCollectionModal" class="test-modal" hidden>
+            <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testCollectionTitle">
+              <div id="testCollectionTitle" class="test-modal-title">COLLECTION RECEIVED IN</div>
+              <div class="test-choice-grid">
+                <button type="button" data-collection-destination="cash">CASH COLLECTION</button>
+                <button type="button" data-collection-destination="gcash">GCASH COLLECTION</button>
+              </div>
+              <button id="testCollectionCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
+            </div>
+          </div>
+
+          <div id="testTransferModal" class="test-modal" hidden>
+            <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testTransferTitle">
+              <div id="testTransferTitle" class="test-modal-title">TRANSFER</div>
+              <div class="test-modal-note">Uses the amount entered in the shared textbox.</div>
+              <div class="test-choice-grid">
+                <button type="button" data-transfer-direction="cashToGcash">CASH → GCASH</button>
+                <button type="button" data-transfer-direction="gcashToCard">GCASH → CARD</button>
+                <button type="button" data-transfer-direction="cardToGcash">CARD → GCASH</button>
+              </div>
+              <button id="testTransferCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
           </div>
 
@@ -3354,8 +3407,13 @@
       var loanButton = document.getElementById("testLoanButton");
       var atmButton = document.getElementById("testAtmButton");
       var aapButton = document.getElementById("testAddAapButton");
-      var modal = document.getElementById("testAtmModal");
-      var cancelButton = document.getElementById("testAtmCancelButton");
+      var transferButton = document.getElementById("testTransferButton");
+      var atmModal = document.getElementById("testAtmModal");
+      var collectionModal = document.getElementById("testCollectionModal");
+      var transferModal = document.getElementById("testTransferModal");
+      var atmCancelButton = document.getElementById("testAtmCancelButton");
+      var collectionCancelButton = document.getElementById("testCollectionCancelButton");
+      var transferCancelButton = document.getElementById("testTransferCancelButton");
 
       if (tabLabel) tabLabel.textContent = TEST_DISPLAY_NAME;
       if (pageTitle) pageTitle.textContent = TEST_DISPLAY_NAME;
@@ -3373,22 +3431,49 @@
         atmButton.addEventListener("click", openTestAtmModal);
       }
       if (aapButton) {
-        aapButton.addEventListener("click", saveTestAapCollection);
+        aapButton.addEventListener("click", openTestCollectionModal);
       }
-      if (cancelButton) {
-        cancelButton.addEventListener("click", closeTestAtmModal);
+      if (transferButton) {
+        transferButton.addEventListener("click", openTestTransferModal);
       }
-      if (modal) {
-        modal.addEventListener("click", function(event) {
-          if (event.target === modal) closeTestAtmModal();
+      if (atmCancelButton) atmCancelButton.addEventListener("click", closeTestAtmModal);
+      if (collectionCancelButton) collectionCancelButton.addEventListener("click", closeTestCollectionModal);
+      if (transferCancelButton) transferCancelButton.addEventListener("click", closeTestTransferModal);
+
+      [
+        { modal: atmModal, close: closeTestAtmModal },
+        { modal: collectionModal, close: closeTestCollectionModal },
+        { modal: transferModal, close: closeTestTransferModal }
+      ].forEach(function(entry) {
+        if (!entry.modal) return;
+        entry.modal.addEventListener("click", function(event) {
+          if (event.target === entry.modal) entry.close();
         });
-      }
+      });
 
       document.querySelectorAll("#testAtmModal [data-atm-amount]")
         .forEach(function(button) {
           button.addEventListener("click", function() {
             closeTestAtmModal();
             saveTestAtmWithdrawal(Number(button.getAttribute("data-atm-amount")));
+          });
+        });
+
+      document.querySelectorAll("#testCollectionModal [data-collection-destination]")
+        .forEach(function(button) {
+          button.addEventListener("click", function() {
+            var destination = button.getAttribute("data-collection-destination");
+            closeTestCollectionModal();
+            saveTestAapCollection(destination);
+          });
+        });
+
+      document.querySelectorAll("#testTransferModal [data-transfer-direction]")
+        .forEach(function(button) {
+          button.addEventListener("click", function() {
+            var direction = button.getAttribute("data-transfer-direction");
+            closeTestTransferModal();
+            saveTestTransfer(direction);
           });
         });
     }
@@ -3436,13 +3521,18 @@
 
 
     function setTestActionButtonsDisabled(disabled) {
-      ["testAddCashOutButton", "testLoanButton", "testAtmButton", "testAddAapButton"]
+      ["testAddCashOutButton", "testLoanButton", "testAtmButton", "testAddAapButton", "testTransferButton"]
         .forEach(function(id) {
           var button = document.getElementById(id);
           if (button) button.disabled = disabled;
         });
 
       document.querySelectorAll("#testAtmModal [data-atm-amount]")
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+
+      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction]")
         .forEach(function(button) {
           button.disabled = disabled;
         });
@@ -3493,7 +3583,52 @@
       );
     }
 
-    function saveTestAapCollection() {
+    function openTestCollectionModal() {
+      var input = document.getElementById("testTransactionInput");
+      try {
+        parseTestAapInputClient(input ? input.value : "");
+      } catch (error) {
+        setTestStatus("❌ " + error.message, "error");
+        if (input) input.focus();
+        return;
+      }
+      var modal = document.getElementById("testCollectionModal");
+      if (modal) modal.hidden = false;
+    }
+
+    function closeTestCollectionModal() {
+      var modal = document.getElementById("testCollectionModal");
+      if (modal) modal.hidden = true;
+    }
+
+    function parseTestTransferAmountClient(text) {
+      var raw = String(text || "").replace(/[₱,\s]/g, "");
+      var amount = Number(raw);
+      if (!raw || !isFinite(amount) || amount <= 0) {
+        throw new Error("Enter a transfer amount greater than 0.");
+      }
+      return amount;
+    }
+
+    function openTestTransferModal() {
+      var input = document.getElementById("testTransactionInput");
+      try {
+        parseTestTransferAmountClient(input ? input.value : "");
+      } catch (error) {
+        setTestStatus("❌ " + error.message, "error");
+        if (input) input.focus();
+        return;
+      }
+      var modal = document.getElementById("testTransferModal");
+      if (modal) modal.hidden = false;
+    }
+
+    function closeTestTransferModal() {
+      var modal = document.getElementById("testTransferModal");
+      if (modal) modal.hidden = true;
+    }
+
+    function saveTestAapCollection(destination) {
       var input = document.getElementById("testTransactionInput");
       var text = input ? input.value.trim() : "";
       var calculation;
@@ -3511,12 +3646,12 @@
       setTestActionButtonsDisabled(true);
 
       jsonpRequest(
-        { action: "testAapCollection", text: text },
+        { action: "testAapCollection", text: text, destination: destination },
         function(result) {
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
           setTestStatus(
-            "✓ Saved AAP collection\n" + buildTestAapPreviewText({
+            "✓ Saved " + (result.destination === "gcash" ? "GCash" : "Cash") + " collection\n" + buildTestAapPreviewText({
               customer: result.customer,
               people: result.people,
               bookTotal: result.bookTotal,
@@ -3528,6 +3663,34 @@
             }),
             "success"
           );
+          markTestDashboardLoaded_(result.dashboard);
+        },
+        function(error) {
+          setTestActionButtonsDisabled(false);
+          setTestStatus("❌ " + error.message, "error");
+        }
+      );
+    }
+
+    function saveTestTransfer(direction) {
+      var input = document.getElementById("testTransactionInput");
+      var amount;
+      try {
+        amount = parseTestTransferAmountClient(input ? input.value : "");
+      } catch (error) {
+        setTestStatus("❌ " + error.message, "error");
+        if (input) input.focus();
+        return;
+      }
+
+      setTestStatus("Recording transfer...", "preview");
+      setTestActionButtonsDisabled(true);
+      jsonpRequest(
+        { action: "testTransfer", amount: amount, direction: direction },
+        function(result) {
+          setTestActionButtonsDisabled(false);
+          if (input) input.value = "";
+          setTestStatus("✓ " + result.description + " — " + formatPeso(result.amount), "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
@@ -3626,7 +3789,9 @@
       var map = {
         testTotalMoney: data.totalMoney,
         testCashOnHand: data.cashOnHand,
-        testCashOnApp: data.cashOnApp,
+        testTotalApp: data.totalApp,
+        testGcash: data.gcash,
+        testCard: data.card,
         testTotalEarned: data.totalEarned,
         testThisWeekEarned: data.thisWeekEarned,
         testLoanRemaining: data.loanRemaining
