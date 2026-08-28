@@ -114,15 +114,15 @@
 
     .pages-track {
       display: flex;
-      width: 600%;
+      width: 500%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 16.6666667%;
-      flex: 0 0 16.6666667%;
+      width: 20%;
+      flex: 0 0 20%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
@@ -132,23 +132,19 @@
     }
 
     .pages-track.show-printing {
-      transform: translateX(-16.6666667%);
+      transform: translateX(-20%);
     }
 
     .pages-track.show-gcash {
-      transform: translateX(-33.3333333%);
+      transform: translateX(-40%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-50%);
-    }
-
-    .pages-track.show-konek {
-      transform: translateX(-66.6666667%);
+      transform: translateX(-60%);
     }
 
     .pages-track.show-test {
-      transform: translateX(-83.3333333%);
+      transform: translateX(-80%);
     }
 
     /* ======================================================
@@ -958,21 +954,12 @@
       </button>
 
       <button
-        id="konekTab"
-        class="app-tab"
-        type="button"
-        onclick="showAppPage('konek')"
-      >
-        Konek2Card
-      </button>
-
-      <button
         id="testTab"
         class="app-tab"
         type="button"
         onclick="showAppPage('test')"
       >
-        <span id="testTabLabel">Test</span>
+        <span id="testTabLabel">Konek2Card</span>
       </button>
 
     </nav>
@@ -985,7 +972,6 @@
          Page 3 = Cash In/Out
          Page 4 = Expenses
          Page 5 = Konek2Card
-         Page 6 = Test
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -1627,114 +1613,12 @@
              PAGE 5: KONEK2CARD
              ================================================= -->
 
-        <section id="konekPage" class="app-page konek-page" data-page="konek">
-
-          <div class="gcash-hero printing-hero">
-
-            <div class="gcash-title printing-title">
-              Konek2Card
-            </div>
-
-            <div class="gcash-subtitle">
-              Quick income and expense entry
-            </div>
-
-            <div class="quick-entry">
-
-              <div class="konek-autocomplete-wrap">
-
-                <input
-                  id="konekTransactionInput"
-                  class="quick-custom-input"
-                  type="text"
-                  inputmode="text"
-                  enterkeyhint="done"
-                  maxlength="120"
-                  autocomplete="off"
-                  required
-                  aria-autocomplete="inline"
-                  placeholder="Description / note (required)"
-                >
-
-              </div>
-
-              <div class="konek-quick-section">
-                <div id="konekIncomeButtons" class="konek-amount-grid"></div>
-              </div>
-
-              <div id="konekStatus"></div>
-
-            </div>
-
-          </div>
-
-          <div class="dashboard-header">
-
-            <h1>📊 Dashboard</h1>
-
-            <button
-              class="refresh-button"
-              type="button"
-              onclick="loadKonek2CardDashboard()"
-            >
-              ↻ Refresh
-            </button>
-
-          </div>
-
-          <div id="konekMonthLabel" class="month-label">
-            Loading...
-          </div>
-
-          <div class="metric-grid">
-
-            <div class="metric-card">
-              <div class="metric-icon">💰</div>
-              <div class="metric-label">Income</div>
-              <div id="konekIncome" class="metric-value income-value">—</div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-icon">💸</div>
-              <div class="metric-label">Expenses</div>
-              <div id="konekExpenses" class="metric-value expense-value">—</div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-icon">📈</div>
-              <div class="metric-label">Profit</div>
-              <div id="konekProfit" class="metric-value">—</div>
-            </div>
-
-            <div class="metric-card">
-              <div class="metric-icon">🧾</div>
-              <div class="metric-label">Transactions</div>
-              <div id="konekTransactions" class="metric-value">—</div>
-            </div>
-
-          </div>
-
-          <div class="recent-card">
-            <h2 class="recent-title">Recent Transactions</h2>
-            <div id="konekRecentTransactions" class="dashboard-message">
-              Loading...
-            </div>
-          </div>
-
-        </section>
-
-
-        <!-- =================================================
-             PAGE 6: TEST
-             Isolated clone of Konek2Card using sheet "test"
-             ================================================= -->
-
         <section id="testPage" class="app-page test-page" data-page="test">
 
           <div class="gcash-hero printing-hero test-cashout-hero">
 
             <div id="testPageTitle" class="gcash-title printing-title">
-              Test
+              Konek2Card
             </div>
 
             <div class="gcash-subtitle">
@@ -1905,7 +1789,7 @@
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
-    const TEST_DISPLAY_NAME = "Test";
+    const TEST_DISPLAY_NAME = "Konek2Card";
 
     const KONEK2CARD_PRESETS = {
       income: [7, 12, 22, 32, 52, 415],
@@ -1923,12 +1807,11 @@
       printing: loadPrintingDashboard,
       gcash: loadGcashDashboard,
       twice: loadTwiceAsNyceDashboard,
-      konek: loadKonek2CardDashboard,
       test: loadTestDashboard,
       expenses: loadDashboard
     };
 
-    const startupPagePreloadOrder = ["gcash", "printing", "twice", "konek", "test", "expenses"];
+    const startupPagePreloadOrder = ["gcash", "printing", "twice", "test", "expenses"];
 
     const pageDataState = {};
 
@@ -2085,8 +1968,6 @@
 
     window.addEventListener("load", function() {
 
-      renderKonek2CardQuickButtons();
-      setupKonek2CardAutocomplete();
       initializeTestCashOutUI();
       initializePageHeightSync();
 
@@ -2237,9 +2118,6 @@
       const track =
         document.getElementById("pagesTrack");
 
-      const konekTab =
-        document.getElementById("konekTab");
-
       const testTab =
         document.getElementById("testTab");
 
@@ -2264,7 +2142,6 @@
 
 
       track.classList.remove(
-        "show-konek",
         "show-test",
         "show-twice",
         "show-printing",
@@ -2272,7 +2149,6 @@
         "show-expenses"
       );
 
-      konekTab.classList.remove("active");
       testTab.classList.remove("active");
       twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
@@ -2285,12 +2161,6 @@
         currentAppPage = "test";
         track.classList.add("show-test");
         testTab.classList.add("active");
-
-      } else if (pageName === "konek") {
-
-        currentAppPage = "konek";
-        track.classList.add("show-konek");
-        konekTab.classList.add("active");
 
       } else if (pageName === "twice") {
 
@@ -2375,7 +2245,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses <-> Konek2Card <-> Test
+    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses <-> Konek2Card
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -2457,11 +2327,6 @@
           }
 
           if (currentAppPage === "expenses") {
-            showAppPage("konek");
-            return;
-          }
-
-          if (currentAppPage === "konek") {
             showAppPage("test");
             return;
           }
@@ -2472,11 +2337,6 @@
         if (deltaX > 0) {
 
           if (currentAppPage === "test") {
-            showAppPage("konek");
-            return;
-          }
-
-          if (currentAppPage === "konek") {
             showAppPage("expenses");
             return;
           }
