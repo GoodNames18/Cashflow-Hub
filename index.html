@@ -1350,7 +1350,7 @@
 
             <div class="quick-quantity-row">
               <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(-1)">−</button>
-              <span id="gcashQuickQuantity" class="quick-quantity-value">1</span>
+              <span id="gcashQuickQuantity" class="quick-quantity-value" onclick="handleGcashQuickReset()">1</span>
               <button id="gcashQuickPlusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(1)">+</button>
               <button
                 id="gcashCustomAddButton"
@@ -1849,9 +1849,9 @@
         return "₱" + price + " = ₱" +
           calculateGcashQuickTotal(price, normalizedQuantity).toLocaleString("en-PH");
       });
-      var prefix = category ? String(category) + " · " : "";
+      var prefix = category ? String(category) + " | " : "";
 
-      return prefix + "×" + normalizedQuantity + " · " + totals.join(" · ");
+      return prefix + "×" + normalizedQuantity + " | " + totals.join(" | ");
     }
     // GCASH QUICK QUANTITY PURE HELPERS END
 
@@ -4866,6 +4866,10 @@
 
       updateGcashCustomAddButton();
       updateGcashQuickPreview();
+    }
+
+    function handleGcashQuickReset() {
+      resetGcashQuickEntry();
     }
 
 
