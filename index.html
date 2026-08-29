@@ -272,6 +272,33 @@
       margin-top: 8px;
     }
 
+    .quick-quantity-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1.35fr;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .quick-quantity-button,
+    .quick-quantity-value {
+      width: 100%;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--secondary);
+      border-radius: 9px;
+      background: #ffffff;
+      color: #000000;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .quick-quantity-button:disabled {
+      background: rgba(230, 230, 250, .58);
+      cursor: not-allowed;
+    }
+
     .quick-category-button,
     .quick-amount-button,
     .quick-custom-add-button {
@@ -301,6 +328,10 @@
       background: #ffffff;
       color: #000000;
       border: 1px solid var(--secondary);
+    }
+
+    .quick-amount-button.selected {
+      background: var(--primary);
     }
 
     .quick-custom-add-button {
@@ -1299,26 +1330,22 @@
             </div>
 
             <div class="quick-amount-grid">
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(5)">₱5</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(10)">₱10</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(20)">₱20</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(30)">₱30</button>
+              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(5)">₱5</button>
+              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(10)">₱10</button>
+              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(15)">₱15</button>
+              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(20)">₱20</button>
+            </div>
 
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(40)">₱40</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(50)">₱50</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(60)">₱60</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(70)">₱70</button>
-
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(80)">₱80</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(90)">₱90</button>
-              <button class="quick-amount-button" type="button" disabled onclick="saveGcashQuickEntry(100)">₱100</button>
-
+            <div class="quick-quantity-row">
+              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" disabled onclick="changeGcashQuickQuantity(-1)">−</button>
+              <span id="gcashQuickQuantity" class="quick-quantity-value">1</span>
+              <button id="gcashQuickPlusButton" class="quick-quantity-button" type="button" disabled onclick="changeGcashQuickQuantity(1)">+</button>
               <button
                 id="gcashCustomAddButton"
                 class="quick-custom-add-button"
                 type="button"
                 disabled
-                onclick="saveGcashCustomAmount()"
+                onclick="handleGcashAdd()"
               >
                 Add
               </button>
@@ -1786,10 +1813,23 @@
     let deferredInstallPrompt = null;
     let currentAppPage = "gcash";
     let selectedGcashQuickCategory = "";
+    let selectedGcashQuickAmount = 0;
+    let gcashQuickQuantity = 1;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
     const TEST_DISPLAY_NAME = "Konek2Card";
+
+    // GCASH QUICK QUANTITY PURE HELPERS START
+    function normalizeGcashQuickQuantity(value) {
+      var quantity = Math.floor(Number(value) || 1);
+      return Math.max(1, quantity);
+    }
+
+    function calculateGcashQuickTotal(amount, quantity) {
+      return Number(amount || 0) * normalizeGcashQuickQuantity(quantity);
+    }
+    // GCASH QUICK QUANTITY PURE HELPERS END
 
     const KONEK2CARD_PRESETS = {
       income: [7, 12, 22, 32, 52, 415],
@@ -4602,6 +4642,86 @@
     // GCASH BUSINESS QUICK ADD
     // ========================================================
 
+    function updateGcashQuickPreview() {
+      var status = document.getElementById("gcashQuickStatus");
+      var quantityDisplay = document.getElementById("gcashQuickQuantity");
+
+      gcashQuickQuantity = normalizeGcashQuickQuantity(gcashQuickQuantity);
+      quantityDisplay.textContent = gcashQuickQuantity;
+
+      if (!selectedGcashQuickCategory) {
+        status.innerText = "Select GCash, Maya, Bills, or Load.";
+        return;
+      }
+
+      if (!selectedGcashQuickAmount) {
+        status.innerText = selectedGcashQuickCategory + " selected · Choose price.";
+        return;
+      }
+
+      status.innerText =
+        selectedGcashQuickCategory + " · " +
+        formatPeso(selectedGcashQuickAmount) + " × " +
+        gcashQuickQuantity + " = " +
+        formatPeso(calculateGcashQuickTotal(selectedGcashQuickAmount, gcashQuickQuantity));
+    }
+
+
+    function setGcashQuickQuantityControlsDisabled(disabled) {
+      document.getElementById("gcashQuickMinusButton").disabled =
+        disabled || gcashQuickQuantity <= 1;
+      document.getElementById("gcashQuickPlusButton").disabled = disabled;
+    }
+
+
+    function selectGcashQuickAmount(amount) {
+      if (!selectedGcashQuickCategory) return;
+
+      selectedGcashQuickAmount = Number(amount) || 0;
+      gcashQuickQuantity = 1;
+
+      document.querySelectorAll(".quick-amount-button")
+        .forEach(function(button) {
+          button.classList.toggle(
+            "selected",
+            Number(button.textContent.replace(/[^0-9.]/g, "")) === selectedGcashQuickAmount
+          );
+        });
+
+      setGcashQuickQuantityControlsDisabled(false);
+      updateGcashCustomAddButton();
+      updateGcashQuickPreview();
+    }
+
+
+    function changeGcashQuickQuantity(change) {
+      if (!selectedGcashQuickAmount) return;
+
+      gcashQuickQuantity = normalizeGcashQuickQuantity(
+        gcashQuickQuantity + Number(change || 0)
+      );
+
+      setGcashQuickQuantityControlsDisabled(false);
+      updateGcashCustomAddButton();
+      updateGcashQuickPreview();
+    }
+
+
+    function handleGcashAdd() {
+      var command = document.getElementById("gcashCustomAmount").value.trim();
+
+      if (command) {
+        saveGcashCustomAmount();
+        return;
+      }
+
+      if (!selectedGcashQuickCategory || !selectedGcashQuickAmount) return;
+
+      saveGcashQuickEntry(
+        calculateGcashQuickTotal(selectedGcashQuickAmount, gcashQuickQuantity)
+      );
+    }
+
     function selectGcashQuickCategory(category) {
 
       var command =
@@ -4629,12 +4749,13 @@
           });
 
         setQuickAmountButtonsDisabled(true);
+        selectedGcashQuickAmount = 0;
+        gcashQuickQuantity = 1;
+        document.querySelectorAll(".quick-amount-button")
+          .forEach(function(button) { button.classList.remove("selected"); });
+        setGcashQuickQuantityControlsDisabled(true);
         updateGcashCustomAddButton();
-
-        document
-          .getElementById("gcashQuickStatus")
-          .innerText =
-            "Select GCash, Maya, Bills, or Load.";
+        updateGcashQuickPreview();
 
         return;
       }
@@ -4658,12 +4779,13 @@
       }
 
       setQuickAmountButtonsDisabled(false);
+      selectedGcashQuickAmount = 0;
+      gcashQuickQuantity = 1;
+      document.querySelectorAll(".quick-amount-button")
+        .forEach(function(button) { button.classList.remove("selected"); });
+      setGcashQuickQuantityControlsDisabled(true);
       updateGcashCustomAddButton();
-
-      document
-        .getElementById("gcashQuickStatus")
-        .innerText =
-          category + " selected.";
+      updateGcashQuickPreview();
     }
 
 
@@ -4702,13 +4824,16 @@
       document
         .getElementById("gcashCustomAddButton")
         .disabled =
-          command.length === 0;
+          command.length === 0 &&
+          !(selectedGcashQuickCategory && selectedGcashQuickAmount);
     }
 
 
     function resetGcashQuickEntry() {
 
       selectedGcashQuickCategory = "";
+      selectedGcashQuickAmount = 0;
+      gcashQuickQuantity = 1;
 
       document
         .querySelectorAll(".quick-category-button")
@@ -4717,12 +4842,16 @@
         });
 
       setQuickAmountButtonsDisabled(true);
+      document.querySelectorAll(".quick-amount-button")
+        .forEach(function(button) { button.classList.remove("selected"); });
+      setGcashQuickQuantityControlsDisabled(true);
 
       document
         .getElementById("gcashCustomAmount")
         .value = "";
 
       updateGcashCustomAddButton();
+      updateGcashQuickPreview();
     }
 
 
@@ -4824,6 +4953,7 @@
           "...";
 
       setQuickAmountButtonsDisabled(true);
+      setGcashQuickQuantityControlsDisabled(true);
       document
         .getElementById("gcashCustomAddButton")
         .disabled = true;
@@ -4859,6 +4989,7 @@
 
           if (selectedGcashQuickCategory) {
             setQuickAmountButtonsDisabled(false);
+            setGcashQuickQuantityControlsDisabled(!selectedGcashQuickAmount);
           }
 
           updateGcashCustomAddButton();
