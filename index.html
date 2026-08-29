@@ -1492,6 +1492,52 @@
 
         <section id="expensesPage" class="app-page" data-page="expenses">
 
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">
+              💰 Money Flow
+            </div>
+
+            <div class="gcash-subtitle">
+              Track personal income and expenses
+            </div>
+
+            <div class="quick-entry">
+
+              <input
+                id="moneyFlowTransactionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="120"
+                placeholder="Enter transaction"
+              >
+
+              <div class="printing-entry-grid">
+                <button
+                  class="money-flow-entry-button printing-entry-button printing-income-button"
+                  type="button"
+                  onclick="saveMoneyFlowEntry('Income')"
+                >
+                  Income
+                </button>
+
+                <button
+                  class="money-flow-entry-button printing-entry-button printing-expense-button"
+                  type="button"
+                  onclick="saveMoneyFlowEntry('Expense')"
+                >
+                  Expense
+                </button>
+              </div>
+
+              <div id="moneyFlowStatus"></div>
+
+            </div>
+
+          </div>
+
           <section id="dashboardView">
 
             <div class="dashboard-header">
@@ -4157,6 +4203,49 @@
           setPrintingEntryButtonsDisabled(
             false
           );
+        }
+      );
+    }
+
+
+    function setMoneyFlowEntryButtonsDisabled(disabled) {
+      document
+        .querySelectorAll(".money-flow-entry-button")
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+    }
+
+
+    function saveMoneyFlowEntry(entryType) {
+      var input = document.getElementById("moneyFlowTransactionInput");
+      var text = input.value.trim();
+      var status = document.getElementById("moneyFlowStatus");
+
+      if (!text) {
+        status.innerText = "Enter a transaction first.";
+        return;
+      }
+
+      status.innerText = "Saving...";
+      setMoneyFlowEntryButtonsDisabled(true);
+
+      jsonpRequest(
+        {
+          action: "expense",
+          text: text,
+          entryType: entryType
+        },
+        function(result) {
+          status.innerText =
+            "✅ " + entryType + " " + formatPeso(result.amount) + " added";
+          input.value = "";
+          setMoneyFlowEntryButtonsDisabled(false);
+          loadDashboard();
+        },
+        function(error) {
+          status.innerText = "❌ " + error.message;
+          setMoneyFlowEntryButtonsDisabled(false);
         }
       );
     }
