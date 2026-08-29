@@ -72,8 +72,8 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 6px;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 4px;
       margin-bottom: 10px;
       padding: 5px;
       background: #ffffff;
@@ -85,15 +85,21 @@
     }
 
     .app-tab {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 100%;
+      min-height: 44px;
       margin: 0;
-      padding: 10px 8px;
+      padding: 10px 2px;
       border: 0;
       border-radius: 10px;
       background: transparent;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
       cursor: pointer;
     }
 
@@ -975,7 +981,7 @@
         type="button"
         onclick="showAppPage('printing')"
       >
-        🖨️ Printing
+        Printing
       </button>
 
       <button
@@ -984,7 +990,7 @@
         type="button"
         onclick="showAppPage('gcash')"
       >
-        ↕️ Cash In/Out
+        Cash In/Out
       </button>
 
       <button
@@ -993,7 +999,7 @@
         type="button"
         onclick="showAppPage('expenses')"
       >
-        💰 Money Flow
+        Money Flow
       </button>
 
       <button
