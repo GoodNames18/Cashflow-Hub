@@ -993,7 +993,7 @@
         type="button"
         onclick="showAppPage('expenses')"
       >
-        💰 Expenses
+        💰 Money Flow
       </button>
 
       <button
@@ -1480,50 +1480,11 @@
 
 
         <!-- =================================================
-             PAGE 4: EXPENSES
-             Existing working page kept intact
+             PAGE 4: MONEY FLOW
+             Personal income and expense dashboard
              ================================================= -->
 
         <section id="expensesPage" class="app-page" data-page="expenses">
-
-          <section id="addView">
-
-            <div class="box">
-
-              <h1 id="expenseTitle">
-                💰 Expense
-              </h1>
-
-              <button
-                id="speakButton"
-                onclick="startListening()"
-              >
-                🎤 Tap to Speak
-              </button>
-
-              <div id="status">
-                Ready
-              </div>
-
-              <textarea
-                id="voiceText"
-                placeholder="Type or speak your expense..."
-                autocomplete="off"
-              ></textarea>
-
-              <button
-                id="saveButton"
-                onclick="saveExpense()"
-              >
-                Add Expense
-              </button>
-
-              <div id="result"></div>
-
-            </div>
-
-          </section>
-
 
           <section id="dashboardView">
 
@@ -4986,6 +4947,8 @@
 
         function(result) {
 
+          resetGcashQuickEntry();
+
           document
             .getElementById("gcashQuickStatus")
             .innerText =
@@ -4995,7 +4958,6 @@
               formatPeso(result.amount) +
               " added";
 
-          resetGcashQuickEntry();
           loadGcashDashboard();
         },
 
