@@ -1,0 +1,23 @@
+{
+  "name": "Cashflow Hub",
+  "short_name": "Cashflow Hub",
+  "start_url": "/Cashflow-Hub/",
+  "scope": "/Cashflow-Hub/",
+  "display": "standalone",
+  "background_color": "#E6E6FA",
+  "theme_color": "#00F8B9",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
