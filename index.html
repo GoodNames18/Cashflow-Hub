@@ -1349,9 +1349,9 @@
             </div>
 
             <div class="quick-quantity-row">
-              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" disabled onclick="changeGcashQuickQuantity(-1)">−</button>
+              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(-1)">−</button>
               <span id="gcashQuickQuantity" class="quick-quantity-value">1</span>
-              <button id="gcashQuickPlusButton" class="quick-quantity-button" type="button" disabled onclick="changeGcashQuickQuantity(1)">+</button>
+              <button id="gcashQuickPlusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(1)">+</button>
               <button
                 id="gcashCustomAddButton"
                 class="quick-custom-add-button"
@@ -4680,8 +4680,7 @@
 
 
     function setGcashQuickQuantityControlsDisabled(disabled) {
-      document.getElementById("gcashQuickMinusButton").disabled =
-        disabled || gcashQuickQuantity <= 1;
+      document.getElementById("gcashQuickMinusButton").disabled = disabled;
       document.getElementById("gcashQuickPlusButton").disabled = disabled;
     }
 
@@ -4690,7 +4689,6 @@
       if (!selectedGcashQuickCategory) return;
 
       selectedGcashQuickAmount = Number(amount) || 0;
-      gcashQuickQuantity = 1;
 
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button) {
@@ -4700,15 +4698,16 @@
           );
         });
 
-      setGcashQuickQuantityControlsDisabled(false);
       updateGcashCustomAddButton();
       updateGcashQuickPreview();
+
+      saveGcashQuickEntry(
+        calculateGcashQuickTotal(selectedGcashQuickAmount, gcashQuickQuantity)
+      );
     }
 
 
     function changeGcashQuickQuantity(change) {
-      if (!selectedGcashQuickAmount) return;
-
       gcashQuickQuantity = normalizeGcashQuickQuantity(
         gcashQuickQuantity + Number(change || 0)
       );
@@ -4724,14 +4723,7 @@
 
       if (command) {
         saveGcashCustomAmount();
-        return;
       }
-
-      if (!selectedGcashQuickCategory || !selectedGcashQuickAmount) return;
-
-      saveGcashQuickEntry(
-        calculateGcashQuickTotal(selectedGcashQuickAmount, gcashQuickQuantity)
-      );
     }
 
     function selectGcashQuickCategory(category) {
@@ -4762,10 +4754,8 @@
 
         setQuickAmountButtonsDisabled(true);
         selectedGcashQuickAmount = 0;
-        gcashQuickQuantity = 1;
         document.querySelectorAll(".quick-amount-button")
           .forEach(function(button) { button.classList.remove("selected"); });
-        setGcashQuickQuantityControlsDisabled(true);
         updateGcashCustomAddButton();
         updateGcashQuickPreview();
 
@@ -4792,10 +4782,8 @@
 
       setQuickAmountButtonsDisabled(false);
       selectedGcashQuickAmount = 0;
-      gcashQuickQuantity = 1;
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button) { button.classList.remove("selected"); });
-      setGcashQuickQuantityControlsDisabled(true);
       updateGcashCustomAddButton();
       updateGcashQuickPreview();
     }
@@ -4836,8 +4824,7 @@
       document
         .getElementById("gcashCustomAddButton")
         .disabled =
-          command.length === 0 &&
-          !(selectedGcashQuickCategory && selectedGcashQuickAmount);
+          command.length === 0;
     }
 
 
@@ -4856,7 +4843,7 @@
       setQuickAmountButtonsDisabled(true);
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button) { button.classList.remove("selected"); });
-      setGcashQuickQuantityControlsDisabled(true);
+      setGcashQuickQuantityControlsDisabled(false);
 
       document
         .getElementById("gcashCustomAmount")
