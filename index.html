@@ -1841,6 +1841,18 @@
     function calculateGcashQuickTotal(amount, quantity) {
       return Number(amount || 0) * normalizeGcashQuickQuantity(quantity);
     }
+
+    function buildGcashQuickPricePreview(category, quantity) {
+      var normalizedQuantity = normalizeGcashQuickQuantity(quantity);
+      var prices = [5, 10, 15, 20];
+      var totals = prices.map(function(price) {
+        return "₱" + price + " = ₱" +
+          calculateGcashQuickTotal(price, normalizedQuantity).toLocaleString("en-PH");
+      });
+      var prefix = category ? String(category) + " · " : "";
+
+      return prefix + "×" + normalizedQuantity + " · " + totals.join(" · ");
+    }
     // GCASH QUICK QUANTITY PURE HELPERS END
 
     const KONEK2CARD_PRESETS = {
@@ -4662,12 +4674,15 @@
       quantityDisplay.textContent = gcashQuickQuantity;
 
       if (!selectedGcashQuickCategory) {
-        status.innerText = "Select GCash, Maya, Bills, or Load.";
+        status.innerText = buildGcashQuickPricePreview("", gcashQuickQuantity);
         return;
       }
 
       if (!selectedGcashQuickAmount) {
-        status.innerText = selectedGcashQuickCategory + " selected · Choose price.";
+        status.innerText = buildGcashQuickPricePreview(
+          selectedGcashQuickCategory,
+          gcashQuickQuantity
+        );
         return;
       }
 
