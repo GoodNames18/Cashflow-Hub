@@ -343,13 +343,13 @@
     }
 
     .quick-amount-button {
-      background: #ffffff;
+      background: var(--lavender);
       color: #000000;
       border: 1px solid var(--secondary);
     }
 
     .quick-amount-button.selected {
-      background: var(--primary);
+      background: var(--lavender);
     }
 
     .quick-custom-add-button {
@@ -366,7 +366,7 @@
     }
 
     .quick-amount-button:disabled {
-      background: rgba(230, 230, 250, .58);
+      background: var(--lavender);
     }
 
     .quick-custom-add-button:disabled {
@@ -1348,10 +1348,10 @@
             </div>
 
             <div class="quick-amount-grid">
-              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(5)">₱5</button>
-              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(10)">₱10</button>
-              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(15)">₱15</button>
-              <button class="quick-amount-button" type="button" disabled onclick="selectGcashQuickAmount(20)">₱20</button>
+              <button class="quick-amount-button" data-base-amount="5" type="button" disabled onclick="selectGcashQuickAmount(5)">₱5</button>
+              <button class="quick-amount-button" data-base-amount="10" type="button" disabled onclick="selectGcashQuickAmount(10)">₱10</button>
+              <button class="quick-amount-button" data-base-amount="15" type="button" disabled onclick="selectGcashQuickAmount(15)">₱15</button>
+              <button class="quick-amount-button" data-base-amount="20" type="button" disabled onclick="selectGcashQuickAmount(20)">₱20</button>
             </div>
 
             <div class="quick-quantity-row">
@@ -1809,16 +1809,10 @@
       return Number(amount || 0) * normalizeGcashQuickQuantity(quantity);
     }
 
-    function buildGcashQuickPricePreview(category, quantity) {
-      var normalizedQuantity = normalizeGcashQuickQuantity(quantity);
-      var prices = [5, 10, 15, 20];
-      var totals = prices.map(function(price) {
-        return "₱" + price + " = ₱" +
-          calculateGcashQuickTotal(price, normalizedQuantity).toLocaleString("en-PH");
+    function buildGcashQuickDisplayAmounts(quantity) {
+      return [5, 10, 15, 20].map(function(amount) {
+        return calculateGcashQuickTotal(amount, quantity);
       });
-      var prefix = category ? String(category) + " | " : "";
-
-      return prefix + "×" + normalizedQuantity + " | " + totals.join(" | ");
     }
     // GCASH QUICK QUANTITY PURE HELPERS END
 
@@ -4639,25 +4633,12 @@
 
       gcashQuickQuantity = normalizeGcashQuickQuantity(gcashQuickQuantity);
       quantityDisplay.textContent = gcashQuickQuantity;
-
-      if (!selectedGcashQuickCategory) {
-        status.innerText = buildGcashQuickPricePreview("", gcashQuickQuantity);
-        return;
-      }
-
-      if (!selectedGcashQuickAmount) {
-        status.innerText = buildGcashQuickPricePreview(
-          selectedGcashQuickCategory,
-          gcashQuickQuantity
-        );
-        return;
-      }
-
-      status.innerText =
-        selectedGcashQuickCategory + " · " +
-        formatPeso(selectedGcashQuickAmount) + " × " +
-        gcashQuickQuantity + " = " +
-        formatPeso(calculateGcashQuickTotal(selectedGcashQuickAmount, gcashQuickQuantity));
+      var displayAmounts = buildGcashQuickDisplayAmounts(gcashQuickQuantity);
+      document.querySelectorAll(".quick-amount-button")
+        .forEach(function(button, index) {
+          button.textContent = "₱" + displayAmounts[index].toLocaleString("en-PH");
+        });
+      status.innerText = "";
     }
 
 
@@ -4676,7 +4657,7 @@
         .forEach(function(button) {
           button.classList.toggle(
             "selected",
-            Number(button.textContent.replace(/[^0-9.]/g, "")) === selectedGcashQuickAmount
+            Number(button.dataset.baseAmount) === selectedGcashQuickAmount
           );
         });
 
