@@ -3588,13 +3588,19 @@
       if (modal) modal.hidden = true;
     }
 
+    function parseTestTransferNumberClient(value) {
+      var token = String(value || "").trim().toLowerCase();
+      var kMatch = token.match(/^([0-9]+(?:\.[0-9]+)?)k$/);
+      return kMatch ? Number(kMatch[1]) * 1000 : Number(token);
+    }
+
     function parseTestTransferAmountClient(text) {
       var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
       var parts = raw ? raw.split(/\s+/) : [];
       if (parts.length < 1 || parts.length > 2) {
         throw new Error("Enter one amount, or amount and people for AAP.");
       }
-      var values = parts.map(Number);
+      var values = parts.map(parseTestTransferNumberClient);
       if (values.some(function(value) { return !isFinite(value) || value <= 0; })) {
         throw new Error("Enter numbers greater than 0.");
       }
