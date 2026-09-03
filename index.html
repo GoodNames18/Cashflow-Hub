@@ -649,6 +649,13 @@
       color: #07110e;
     }
 
+    .rental-dashboard-category {
+      margin: 18px 4px 10px;
+      color: var(--secondary);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
     .konek-autocomplete-wrap {
       position: relative;
     }
@@ -1934,12 +1941,20 @@
           </div>
           <div id="rentalMonthLabel" class="month-label">Loading...</div>
 
+          <h2 class="rental-dashboard-category">📷 Insta360</h2>
           <div class="metric-grid">
-            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalIncome" class="metric-value income-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalExpenses" class="metric-value expense-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-label">Profit</div><div id="rentalProfit" class="metric-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalTransactions" class="metric-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalTotalMoney" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">—</div></div>
+          </div>
+
+          <h2 class="rental-dashboard-category">🪑 Chair &amp; Table</h2>
+          <div class="metric-grid">
+            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">—</div></div>
           </div>
 
           <div class="recent-card">
@@ -4369,14 +4384,17 @@
 
     function renderRentalDashboard(data) {
       document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
-      document.getElementById("rentalIncome").innerText = formatPeso(data.income);
-      document.getElementById("rentalExpenses").innerText = formatPeso(data.expenses);
-      document.getElementById("rentalProfit").innerText = formatPeso(data.profit);
-      document.getElementById("rentalTransactions").innerText = Number(data.transactions || 0).toLocaleString("en-PH");
-      document.getElementById("rentalTotalMoney").innerText = formatPeso(data.totalMoney);
-      var profit = document.getElementById("rentalProfit");
-      profit.classList.toggle("income-value", Number(data.profit || 0) >= 0);
-      profit.classList.toggle("expense-value", Number(data.profit || 0) < 0);
+      var categories = data.categories || {};
+      var insta360 = categories.insta360 || {};
+      var chairTable = categories.chairTable || {};
+      document.getElementById("rentalInsta360Income").innerText = formatPeso(insta360.income);
+      document.getElementById("rentalInsta360Expenses").innerText = formatPeso(insta360.expenses);
+      document.getElementById("rentalInsta360TotalMoney").innerText = formatPeso(insta360.totalMoney);
+      document.getElementById("rentalInsta360Transactions").innerText = Number(insta360.transactions || 0).toLocaleString("en-PH");
+      document.getElementById("rentalChairTableIncome").innerText = formatPeso(chairTable.income);
+      document.getElementById("rentalChairTableExpenses").innerText = formatPeso(chairTable.expenses);
+      document.getElementById("rentalChairTableTotalMoney").innerText = formatPeso(chairTable.totalMoney);
+      document.getElementById("rentalChairTableTransactions").innerText = Number(chairTable.transactions || 0).toLocaleString("en-PH");
       renderRentalRecentTransactions(data.recentTransactions || []);
       syncActivePageHeight();
     }
