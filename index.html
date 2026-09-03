@@ -185,19 +185,19 @@
       transform: translateX(-16.6666667%);
     }
 
-    .pages-track.show-rental {
+    .pages-track.show-gcash {
       transform: translateX(-33.3333334%);
     }
 
-    .pages-track.show-gcash {
+    .pages-track.show-expenses {
       transform: translateX(-50%);
     }
 
-    .pages-track.show-expenses {
+    .pages-track.show-test {
       transform: translateX(-66.6666667%);
     }
 
-    .pages-track.show-test {
+    .pages-track.show-rental {
       transform: translateX(-83.3333334%);
     }
 
@@ -639,9 +639,14 @@
       line-height: 1.3;
     }
 
-    .rental-category-button.selected {
+    .rental-category-button {
       background: var(--lavender);
       color: var(--secondary);
+    }
+
+    .rental-category-button.selected {
+      background: var(--primary);
+      color: #07110e;
       box-shadow: inset 0 0 0 2px var(--secondary);
     }
 
@@ -1044,15 +1049,6 @@
       </button>
 
       <button
-        id="rentalTab"
-        class="app-tab"
-        type="button"
-        onclick="showAppPage('rental')"
-      >
-        Rental
-      </button>
-
-      <button
         id="gcashTab"
         class="app-tab active"
         type="button"
@@ -1079,6 +1075,15 @@
         <span id="testTabLabel">Konek2Card</span>
       </button>
 
+      <button
+        id="rentalTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('rental')"
+      >
+        Rental
+      </button>
+
     </nav>
 
 
@@ -1086,10 +1091,10 @@
          SWIPE VIEWPORT
          Page 1 = TwiceAsNyce
          Page 2 = Printing
-         Page 3 = Rental
-         Page 4 = Cash In/Out
-         Page 5 = Money Flow
-         Page 6 = Konek2Card
+         Page 3 = Cash In/Out
+         Page 4 = Money Flow
+         Page 5 = Konek2Card
+         Page 6 = Rental
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -1217,7 +1222,7 @@
 
             <div class="metric-card">
               <div class="metric-icon">💼</div>
-              <div class="metric-label">Lifetime Total Money</div>
+              <div class="metric-label">Total Money</div>
               <div id="twiceTotalMoney" class="metric-value">—</div>
             </div>
 
@@ -1362,7 +1367,7 @@
 
             <div class="metric-card">
               <div class="metric-icon">💼</div>
-              <div class="metric-label">Lifetime Total Money</div>
+              <div class="metric-label">Total Money</div>
               <div id="printingTotalMoney" class="metric-value">—</div>
             </div>
 
@@ -1387,53 +1392,7 @@
 
 
         <!-- =================================================
-             PAGE 3: HAEO RENTAL
-             ================================================= -->
-
-        <section id="rentalPage" class="app-page rental-page" data-page="rental">
-          <div class="gcash-hero printing-hero">
-            <div class="gcash-title printing-title">🏠 HAEO Rental</div>
-            <div class="gcash-subtitle">Track rental income and expenses</div>
-
-            <div class="quick-entry">
-              <input id="rentalTransactionInput" class="quick-custom-input" type="text" inputmode="text" enterkeyhint="done" maxlength="120" placeholder="Amount and description, e.g. 500 birthday rental">
-
-              <div class="printing-entry-grid">
-                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Insta360')">Insta360</button>
-                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Chair & Table')">Chair &amp; Table</button>
-              </div>
-
-              <div class="printing-entry-grid">
-                <button class="rental-entry-button printing-entry-button printing-income-button" type="button" onclick="saveRentalEntry('Income')">Income</button>
-                <button class="rental-entry-button printing-entry-button printing-expense-button" type="button" onclick="saveRentalEntry('Expense')">Expense</button>
-              </div>
-              <div id="rentalStatus"></div>
-            </div>
-          </div>
-
-          <div class="dashboard-header">
-            <h1>📊 Dashboard</h1>
-            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">↻ Refresh</button>
-          </div>
-          <div id="rentalMonthLabel" class="month-label">Loading...</div>
-
-          <div class="metric-grid">
-            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalIncome" class="metric-value income-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalExpenses" class="metric-value expense-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-label">Profit</div><div id="rentalProfit" class="metric-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalTransactions" class="metric-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Lifetime Total Money</div><div id="rentalTotalMoney" class="metric-value">—</div></div>
-          </div>
-
-          <div class="recent-card">
-            <h2 class="recent-title">Recent Transactions</h2>
-            <div id="rentalRecentTransactions" class="dashboard-message">Loading...</div>
-          </div>
-        </section>
-
-
-        <!-- =================================================
-             PAGE 4: GCASH BUSINESS
+             PAGE 3: GCASH BUSINESS
              ================================================= -->
 
         <section id="gcashPage" class="app-page gcash-page" data-page="gcash">
@@ -1610,7 +1569,6 @@
 
 
         </section>
-
 
         <!-- =================================================
              PAGE 4: MONEY FLOW
@@ -1946,6 +1904,50 @@
 
         </section>
 
+        <!-- =================================================
+             PAGE 6: HAEO RENTAL
+             ================================================= -->
+
+        <section id="rentalPage" class="app-page rental-page" data-page="rental">
+          <div class="gcash-hero printing-hero">
+            <div class="gcash-title printing-title">Haeo Rental</div>
+            <div class="gcash-subtitle">Track rental income and expenses</div>
+
+            <div class="quick-entry">
+              <input id="rentalTransactionInput" class="quick-custom-input" type="text" inputmode="text" enterkeyhint="done" maxlength="120" placeholder="Enter transaction">
+
+              <div class="printing-entry-grid">
+                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Insta360')">Insta360</button>
+                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Chair & Table')">Chair &amp; Table</button>
+              </div>
+
+              <div class="printing-entry-grid">
+                <button class="rental-entry-button printing-entry-button printing-income-button" type="button" onclick="saveRentalEntry('Income')">Income</button>
+                <button class="rental-entry-button printing-entry-button printing-expense-button" type="button" onclick="saveRentalEntry('Expense')">Expense</button>
+              </div>
+              <div id="rentalStatus"></div>
+            </div>
+          </div>
+
+          <div class="dashboard-header">
+            <h1>📊 Dashboard</h1>
+            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">↻ Refresh</button>
+          </div>
+          <div id="rentalMonthLabel" class="month-label">Loading...</div>
+
+          <div class="metric-grid">
+            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalIncome" class="metric-value income-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalExpenses" class="metric-value expense-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-label">Profit</div><div id="rentalProfit" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalTransactions" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalTotalMoney" class="metric-value">—</div></div>
+          </div>
+
+          <div class="recent-card">
+            <h2 class="recent-title">Recent Transactions</h2>
+            <div id="rentalRecentTransactions" class="dashboard-message">Loading...</div>
+          </div>
+        </section>
 
       </div>
 
@@ -2461,7 +2463,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: TwiceAsNyce <-> Printing <-> Rental <-> Cash In/Out <-> Money Flow <-> Konek2Card
+    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Money Flow <-> Konek2Card <-> Rental
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -2533,11 +2535,6 @@
           }
 
           if (currentAppPage === "printing") {
-            showAppPage("rental");
-            return;
-          }
-
-          if (currentAppPage === "rental") {
             showAppPage("gcash");
             return;
           }
@@ -2551,11 +2548,21 @@
             showAppPage("test");
             return;
           }
+
+          if (currentAppPage === "test") {
+            showAppPage("rental");
+            return;
+          }
         }
 
 
         // Swipe RIGHT
         if (deltaX > 0) {
+
+          if (currentAppPage === "rental") {
+            showAppPage("test");
+            return;
+          }
 
           if (currentAppPage === "test") {
             showAppPage("expenses");
@@ -2568,11 +2575,6 @@
           }
 
           if (currentAppPage === "gcash") {
-            showAppPage("rental");
-            return;
-          }
-
-          if (currentAppPage === "rental") {
             showAppPage("printing");
             return;
           }
