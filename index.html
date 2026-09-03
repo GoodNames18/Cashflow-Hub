@@ -647,7 +647,6 @@
     .rental-category-button.selected {
       background: var(--primary);
       color: #07110e;
-      box-shadow: inset 0 0 0 2px var(--secondary);
     }
 
     .konek-autocomplete-wrap {
@@ -4291,12 +4290,16 @@
     // RENTAL ENTRY + DASHBOARD
     // ========================================================
 
+    function toggleRentalCategorySelection_(currentCategory, clickedCategory) {
+      return currentCategory === clickedCategory ? "" : clickedCategory;
+    }
+
     function selectRentalCategory(category) {
-      selectedRentalCategory = category;
+      selectedRentalCategory = toggleRentalCategorySelection_(selectedRentalCategory, category);
       document.querySelectorAll(".rental-category-button").forEach(function(button) {
-        button.classList.toggle("selected", button.textContent.trim() === category);
+        button.classList.toggle("selected", button.textContent.trim() === selectedRentalCategory);
       });
-      document.getElementById("rentalStatus").innerText = category + " selected";
+      document.getElementById("rentalStatus").innerText = selectedRentalCategory ? category + " selected" : "";
     }
 
     function setRentalEntryButtonsDisabled(disabled) {
