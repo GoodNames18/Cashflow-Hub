@@ -116,7 +116,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 4px;
       margin-bottom: 10px;
       padding: 5px;
@@ -164,15 +164,15 @@
 
     .pages-track {
       display: flex;
-      width: 500%;
+      width: 600%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 20%;
-      flex: 0 0 20%;
+      width: 16.6666667%;
+      flex: 0 0 16.6666667%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
@@ -182,19 +182,23 @@
     }
 
     .pages-track.show-printing {
-      transform: translateX(-20%);
+      transform: translateX(-16.6666667%);
+    }
+
+    .pages-track.show-rental {
+      transform: translateX(-33.3333334%);
     }
 
     .pages-track.show-gcash {
-      transform: translateX(-40%);
+      transform: translateX(-50%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-60%);
+      transform: translateX(-66.6666667%);
     }
 
     .pages-track.show-test {
-      transform: translateX(-80%);
+      transform: translateX(-83.3333334%);
     }
 
     /* ======================================================
@@ -623,6 +627,7 @@
     }
 
     #printingStatus,
+    #rentalStatus,
     #twiceStatus,
     #konekStatus,
     #testStatus {
@@ -632,6 +637,12 @@
       text-align: center;
       font-size: 11px;
       line-height: 1.3;
+    }
+
+    .rental-category-button.selected {
+      background: var(--lavender);
+      color: var(--secondary);
+      box-shadow: inset 0 0 0 2px var(--secondary);
     }
 
     .konek-autocomplete-wrap {
@@ -1033,6 +1044,15 @@
       </button>
 
       <button
+        id="rentalTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('rental')"
+      >
+        Rental
+      </button>
+
+      <button
         id="gcashTab"
         class="app-tab active"
         type="button"
@@ -1066,9 +1086,10 @@
          SWIPE VIEWPORT
          Page 1 = TwiceAsNyce
          Page 2 = Printing
-         Page 3 = Cash In/Out
-         Page 4 = Expenses
-         Page 5 = Konek2Card
+         Page 3 = Rental
+         Page 4 = Cash In/Out
+         Page 5 = Money Flow
+         Page 6 = Konek2Card
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -1192,6 +1213,12 @@
               >
                 —
               </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">💼</div>
+              <div class="metric-label">Lifetime Total Money</div>
+              <div id="twiceTotalMoney" class="metric-value">—</div>
             </div>
 
           </div>
@@ -1333,6 +1360,12 @@
               </div>
             </div>
 
+            <div class="metric-card">
+              <div class="metric-icon">💼</div>
+              <div class="metric-label">Lifetime Total Money</div>
+              <div id="printingTotalMoney" class="metric-value">—</div>
+            </div>
+
           </div>
 
           <div class="recent-card">
@@ -1354,7 +1387,53 @@
 
 
         <!-- =================================================
-             PAGE 3: GCASH BUSINESS
+             PAGE 3: HAEO RENTAL
+             ================================================= -->
+
+        <section id="rentalPage" class="app-page rental-page" data-page="rental">
+          <div class="gcash-hero printing-hero">
+            <div class="gcash-title printing-title">🏠 HAEO Rental</div>
+            <div class="gcash-subtitle">Track rental income and expenses</div>
+
+            <div class="quick-entry">
+              <input id="rentalTransactionInput" class="quick-custom-input" type="text" inputmode="text" enterkeyhint="done" maxlength="120" placeholder="Amount and description, e.g. 500 birthday rental">
+
+              <div class="printing-entry-grid">
+                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Insta360')">Insta360</button>
+                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Chair & Table')">Chair &amp; Table</button>
+              </div>
+
+              <div class="printing-entry-grid">
+                <button class="rental-entry-button printing-entry-button printing-income-button" type="button" onclick="saveRentalEntry('Income')">Income</button>
+                <button class="rental-entry-button printing-entry-button printing-expense-button" type="button" onclick="saveRentalEntry('Expense')">Expense</button>
+              </div>
+              <div id="rentalStatus"></div>
+            </div>
+          </div>
+
+          <div class="dashboard-header">
+            <h1>📊 Dashboard</h1>
+            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">↻ Refresh</button>
+          </div>
+          <div id="rentalMonthLabel" class="month-label">Loading...</div>
+
+          <div class="metric-grid">
+            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalIncome" class="metric-value income-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalExpenses" class="metric-value expense-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-label">Profit</div><div id="rentalProfit" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalTransactions" class="metric-value">—</div></div>
+            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Lifetime Total Money</div><div id="rentalTotalMoney" class="metric-value">—</div></div>
+          </div>
+
+          <div class="recent-card">
+            <h2 class="recent-title">Recent Transactions</h2>
+            <div id="rentalRecentTransactions" class="dashboard-message">Loading...</div>
+          </div>
+        </section>
+
+
+        <!-- =================================================
+             PAGE 4: GCASH BUSINESS
              ================================================= -->
 
         <section id="gcashPage" class="app-page gcash-page" data-page="gcash">
@@ -1885,6 +1964,7 @@
     let recognition;
     let deferredInstallPrompt = null;
     let currentAppPage = "gcash";
+    let selectedRentalCategory = "";
     let selectedGcashQuickCategory = "";
     let selectedGcashQuickAmount = 0;
     let gcashQuickQuantity = 1;
@@ -1924,13 +2004,14 @@
 
     const pageDataLoaders = {
       printing: loadPrintingDashboard,
+      rental: loadRentalDashboard,
       gcash: loadGcashDashboard,
       twice: loadTwiceAsNyceDashboard,
       test: loadTestDashboard,
       expenses: loadDashboard
     };
 
-    const startupPagePreloadOrder = ["gcash", "printing", "twice", "test", "expenses"];
+    const startupPagePreloadOrder = ["gcash", "rental", "printing", "twice", "test", "expenses"];
 
     const pageDataState = {};
 
@@ -2251,6 +2332,9 @@
       const printingTab =
         document.getElementById("printingTab");
 
+      const rentalTab =
+        document.getElementById("rentalTab");
+
       const gcashTab =
         document.getElementById("gcashTab");
 
@@ -2269,6 +2353,7 @@
         "show-test",
         "show-twice",
         "show-printing",
+        "show-rental",
         "show-gcash",
         "show-expenses"
       );
@@ -2276,6 +2361,7 @@
       testTab.classList.remove("active");
       twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
+      rentalTab.classList.remove("active");
       gcashTab.classList.remove("active");
       expensesTab.classList.remove("active");
 
@@ -2297,6 +2383,12 @@
         currentAppPage = "printing";
         track.classList.add("show-printing");
         printingTab.classList.add("active");
+
+      } else if (pageName === "rental") {
+
+        currentAppPage = "rental";
+        track.classList.add("show-rental");
+        rentalTab.classList.add("active");
 
       } else if (pageName === "expenses") {
 
@@ -2369,7 +2461,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Expenses <-> Konek2Card
+    // Swipe order: TwiceAsNyce <-> Printing <-> Rental <-> Cash In/Out <-> Money Flow <-> Konek2Card
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -2441,6 +2533,11 @@
           }
 
           if (currentAppPage === "printing") {
+            showAppPage("rental");
+            return;
+          }
+
+          if (currentAppPage === "rental") {
             showAppPage("gcash");
             return;
           }
@@ -2471,6 +2568,11 @@
           }
 
           if (currentAppPage === "gcash") {
+            showAppPage("rental");
+            return;
+          }
+
+          if (currentAppPage === "rental") {
             showAppPage("printing");
             return;
           }
@@ -4062,6 +4164,9 @@
             "en-PH"
           );
 
+      document.getElementById("twiceTotalMoney").innerText =
+        formatPeso(data.totalMoney);
+
       var profit =
         document.getElementById(
           "twiceProfit"
@@ -4176,6 +4281,120 @@
           })
           .join("");
 
+      syncActivePageHeight();
+    }
+
+
+    // ========================================================
+    // RENTAL ENTRY + DASHBOARD
+    // ========================================================
+
+    function selectRentalCategory(category) {
+      selectedRentalCategory = category;
+      document.querySelectorAll(".rental-category-button").forEach(function(button) {
+        button.classList.toggle("selected", button.textContent.trim() === category);
+      });
+      document.getElementById("rentalStatus").innerText = category + " selected";
+    }
+
+    function setRentalEntryButtonsDisabled(disabled) {
+      document.querySelectorAll(".rental-entry-button, .rental-category-button").forEach(function(button) {
+        button.disabled = disabled;
+      });
+    }
+
+    function saveRentalEntry(entryType) {
+      var input = document.getElementById("rentalTransactionInput");
+      var status = document.getElementById("rentalStatus");
+      var text = input.value.trim();
+      if (!text) {
+        status.innerText = "Enter the amount and what it is for.";
+        return;
+      }
+      if (!selectedRentalCategory) {
+        status.innerText = "Choose Insta360 or Chair & Table.";
+        return;
+      }
+
+      status.innerText = "Saving...";
+      setRentalEntryButtonsDisabled(true);
+      jsonpRequest(
+        {
+          action: "rentalAdd",
+          text: text,
+          category: selectedRentalCategory,
+          entryType: entryType
+        },
+        function(result) {
+          status.innerText = "✅ " + result.category + " " + result.type + " " + formatPeso(result.amount) + " added";
+          input.value = "";
+          selectedRentalCategory = "";
+          document.querySelectorAll(".rental-category-button").forEach(function(button) {
+            button.classList.remove("selected");
+          });
+          setRentalEntryButtonsDisabled(false);
+          loadRentalDashboard();
+        },
+        function(error) {
+          status.innerText = "❌ " + error.message;
+          setRentalEntryButtonsDisabled(false);
+        }
+      );
+    }
+
+    function loadRentalDashboard() {
+      document.getElementById("rentalMonthLabel").innerText = "Loading...";
+      return new Promise(function(resolve) {
+        jsonpRequest(
+          { action: "rentalDashboard" },
+          function(data) {
+            renderRentalDashboard(data);
+            resolve(true);
+          },
+          function(error) {
+            document.getElementById("rentalMonthLabel").innerText = "Could not load dashboard";
+            document.getElementById("rentalRecentTransactions").innerText = "Could not load recent transactions.";
+            console.log(error);
+            syncActivePageHeight();
+            resolve(false);
+          }
+        );
+      });
+    }
+
+    function renderRentalDashboard(data) {
+      document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
+      document.getElementById("rentalIncome").innerText = formatPeso(data.income);
+      document.getElementById("rentalExpenses").innerText = formatPeso(data.expenses);
+      document.getElementById("rentalProfit").innerText = formatPeso(data.profit);
+      document.getElementById("rentalTransactions").innerText = Number(data.transactions || 0).toLocaleString("en-PH");
+      document.getElementById("rentalTotalMoney").innerText = formatPeso(data.totalMoney);
+      var profit = document.getElementById("rentalProfit");
+      profit.classList.toggle("income-value", Number(data.profit || 0) >= 0);
+      profit.classList.toggle("expense-value", Number(data.profit || 0) < 0);
+      renderRentalRecentTransactions(data.recentTransactions || []);
+      syncActivePageHeight();
+    }
+
+    function renderRentalRecentTransactions(transactions) {
+      var recentBox = document.getElementById("rentalRecentTransactions");
+      var items = Array.isArray(transactions) ? transactions.slice(0, RECENT_TRANSACTION_LIMIT) : [];
+      if (!items.length) {
+        recentBox.className = "dashboard-message";
+        recentBox.innerText = "No transactions yet.";
+        syncActivePageHeight();
+        return;
+      }
+      recentBox.className = "";
+      recentBox.innerHTML = items.map(function(item) {
+        var meta = [item.date, item.time, item.category, item.type].filter(Boolean).join(" • ");
+        var isExpense = Boolean(item.isExpense);
+        return '<div class="transaction-row"><div><div class="transaction-name">' +
+          escapeHtml(item.description || item.category || "Rental") +
+          '</div><div class="transaction-meta">' + escapeHtml(meta) +
+          '</div></div><div class="transaction-amount ' + (isExpense ? "expense-value" : "income-value") + '">' +
+          (isExpense ? "−" : "+") + formatPeso(item.amount) + '</div></div>';
+      }).join("");
       syncActivePageHeight();
     }
 
@@ -4406,6 +4625,9 @@
           ).toLocaleString(
             "en-PH"
           );
+
+      document.getElementById("printingTotalMoney").innerText =
+        formatPeso(data.totalMoney);
 
       var profit =
         document.getElementById(
