@@ -3458,19 +3458,19 @@
     function parseTestAapInputClient(text) {
       var raw = String(text || "").replace(/\s+/g, " ").trim();
       var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:₱\s*)?([\d,]+(?:\.\d{1,2})?)$/);
-      if (!match) throw new Error("Enter people and book total in either order, for example: 100 26432.");
+      if (!match) throw new Error("Enter people and total received in either order, for example: 2 2450.");
 
       var first = Number(match[1].replace(/,/g, ""));
       var second = Number(match[2].replace(/,/g, ""));
       var people = Math.min(first, second);
-      var bookTotal = Math.max(first, second);
+      var totalReceived = Math.max(first, second);
       if (!isFinite(people) || people <= 0 || people % 1 !== 0) {
         throw new Error("Number of people must be a whole number greater than 0.");
       }
-      if (!isFinite(bookTotal) || bookTotal <= 0) {
-        throw new Error("Book total must be greater than 0.");
+      if (!isFinite(totalReceived) || totalReceived <= people * 5) {
+        throw new Error("Total received must be greater than the total fee.");
       }
-      return { people: people, bookTotal: bookTotal };
+      return { people: people, bookTotal: totalReceived - people * 5 };
     }
 
     function calculateTestAapClient(people, bookTotal) {
