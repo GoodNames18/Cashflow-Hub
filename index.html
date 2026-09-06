@@ -1167,6 +1167,11 @@
 
           </div>
 
+          <div class="recent-card">
+            <h2 class="recent-title">Recent Life Logs</h2>
+            <div id="lifeLogRecentEntries" class="dashboard-message">Loading...</div>
+          </div>
+
         </section>
 
         <!-- =================================================
@@ -2088,6 +2093,7 @@
     // ========================================================
 
     const pageDataLoaders = {
+      lifeLog: loadLifeLogDashboard,
       printing: loadPrintingDashboard,
       rental: loadRentalDashboard,
       gcash: loadGcashDashboard,
@@ -2096,7 +2102,7 @@
       expenses: loadDashboard
     };
 
-    const startupPagePreloadOrder = ["gcash", "rental", "printing", "twice", "test", "expenses"];
+    const startupPagePreloadOrder = ["gcash", "lifeLog", "rental", "printing", "twice", "test", "expenses"];
 
     const pageDataState = {};
 
@@ -4217,13 +4223,71 @@
           status.innerText = "✅ " + result.category + " added";
           input.value = "";
           setLifeLogButtonsDisabled(false);
-          syncActivePageHeight();
+          loadLifeLogDashboard();
         },
         function(error) {
           status.innerText = "❌ " + error.message;
           setLifeLogButtonsDisabled(false);
         }
       );
+    }
+
+
+    function loadLifeLogDashboard() {
+      var recentBox = document.getElementById("lifeLogRecentEntries");
+      recentBox.className = "dashboard-message";
+      recentBox.innerText = "Loading...";
+
+      return new Promise(function(resolve) {
+        jsonpRequest(
+          {
+            action: "lifeLogDashboard"
+          },
+          function(data) {
+            renderLifeLogRecentEntries(data.recentEntries || []);
+            resolve(true);
+          },
+          function(error) {
+            recentBox.className = "dashboard-message";
+            recentBox.innerText = "Could not load recent Life Logs.";
+            console.log(error);
+            syncActivePageHeight();
+            resolve(false);
+          }
+        );
+      });
+    }
+
+
+    function renderLifeLogRecentEntries(entries) {
+      var recentBox = document.getElementById("lifeLogRecentEntries");
+
+      if (!entries.length) {
+        recentBox.className = "dashboard-message";
+        recentBox.innerText = "No Life Log entries yet.";
+        syncActivePageHeight();
+        return;
+      }
+
+      recentBox.className = "";
+      recentBox.innerHTML = entries.map(function(entry) {
+        var details = [entry.date, entry.time, entry.category, entry.notes]
+          .filter(function(value) {
+            return !!String(value || "").trim();
+          })
+          .join(" • ");
+
+        return (
+          '<div class="transaction-row">' +
+            '<div>' +
+              '<div class="transaction-name">' + escapeHtml(entry.description || "Life Log") + '</div>' +
+              '<div class="transaction-meta">' + escapeHtml(details) + '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join("");
+
+      syncActivePageHeight();
     }
 
 
