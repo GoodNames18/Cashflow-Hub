@@ -1023,6 +1023,12 @@
       color: var(--secondary) !important;
     }
 
+    .gcash-filtered-transactions {
+      max-height: 560px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
 </style>
 </head>
 
@@ -1571,7 +1577,7 @@
 
           <div class="metric-grid">
 
-            <div class="metric-card gcash-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('gcash')">
               <div class="metric-icon">
                 <img src="./gcash-logo.png" class="brand-logo-metric" alt="GCash">
               </div>
@@ -1585,7 +1591,7 @@
             </div>
 
 
-            <div class="metric-card gcash-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('maya')">
               <div class="metric-icon">
                 <img src="./maya-logo.png" class="brand-logo-metric" alt="Maya">
               </div>
@@ -1599,7 +1605,7 @@
             </div>
 
 
-            <div class="metric-card gcash-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('load')">
               <div class="metric-icon">📱</div>
               <div class="metric-label">Load</div>
               <div
@@ -1611,7 +1617,7 @@
             </div>
 
 
-            <div class="metric-card gcash-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('bills')">
               <div class="metric-icon">🧾</div>
               <div class="metric-label">Bills</div>
               <div
@@ -1627,7 +1633,7 @@
 
           <div class="recent-card">
 
-            <h2 class="recent-title">
+            <h2 id="gcashTransactionsTitle" class="recent-title">
               Recent Transactions
             </h2>
 
@@ -2058,6 +2064,8 @@
     let selectedGcashQuickCategory = "";
     let selectedGcashQuickAmount = 0;
     let gcashQuickQuantity = 1;
+    let activeGcashTransactionFilter = "";
+    let gcashRecentTransactionsCache = [];
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
@@ -5062,6 +5070,62 @@
     // GCASH BUSINESS DASHBOARD
     // ========================================================
 
+    function getGcashFilterDisplayName(category) {
+      if (category === "gcash") return "GCash";
+      return category.charAt(0).toUpperCase() + category.slice(1);
+    }
+
+
+    function toggleGcashTransactionFilter(category) {
+      var normalizedCategory = String(category || "").trim().toLowerCase();
+
+      if (activeGcashTransactionFilter === normalizedCategory) {
+        activeGcashTransactionFilter = "";
+        document.getElementById("gcashTransactionsTitle").innerText = "Recent Transactions";
+        renderGcashRecentTransactions(gcashRecentTransactionsCache, false);
+        return;
+      }
+
+      activeGcashTransactionFilter = normalizedCategory;
+      loadGcashFilteredTransactions(normalizedCategory);
+    }
+
+
+    function loadGcashFilteredTransactions(category) {
+      var recentBox = document.getElementById("gcashRecentTransactions");
+      var title = document.getElementById("gcashTransactionsTitle");
+      var displayName = getGcashFilterDisplayName(category);
+
+      title.innerText = "All " + displayName + " Transactions";
+      recentBox.className = "dashboard-message";
+      recentBox.innerText = "Loading...";
+
+      return new Promise(function(resolve) {
+        jsonpRequest(
+          {
+            action: "gcashTransactions",
+            category: category
+          },
+          function(data) {
+            if (activeGcashTransactionFilter === category) {
+              renderGcashRecentTransactions(data.transactions || [], true);
+            }
+            resolve(true);
+          },
+          function(error) {
+            if (activeGcashTransactionFilter === category) {
+              recentBox.className = "dashboard-message";
+              recentBox.innerText = "Could not load " + displayName + " transactions.";
+            }
+            console.log(error);
+            syncActivePageHeight();
+            resolve(false);
+          }
+        );
+      });
+    }
+
+
     function loadGcashDashboard() {
 
       document
@@ -5209,9 +5273,14 @@
           formatPeso(data.bills);
 
 
-      renderGcashRecentTransactions(
-        data.recentTransactions || []
-      );
+      gcashRecentTransactionsCache = data.recentTransactions || [];
+
+      if (activeGcashTransactionFilter) {
+        loadGcashFilteredTransactions(activeGcashTransactionFilter);
+      } else {
+        document.getElementById("gcashTransactionsTitle").innerText = "Recent Transactions";
+        renderGcashRecentTransactions(gcashRecentTransactionsCache, false);
+      }
 
       syncActivePageHeight();
 
@@ -5219,7 +5288,8 @@
 
 
     function renderGcashRecentTransactions(
-      transactions
+      transactions,
+      showAll
     ) {
 
       var recentBox =
@@ -5241,12 +5311,13 @@
       }
 
 
-      recentBox.className = "";
+      recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
 
       recentBox.innerHTML =
-        transactions
-          .slice(0, RECENT_TRANSACTION_LIMIT)
+        (showAll
+          ? transactions
+          : transactions.slice(0, RECENT_TRANSACTION_LIMIT))
           .map(function(item) {
 
             var metaParts = [];
