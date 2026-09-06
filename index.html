@@ -2066,6 +2066,8 @@
     let gcashQuickQuantity = 1;
     let activeGcashTransactionFilter = "";
     let gcashRecentTransactionsCache = [];
+    let gcashTransactionHistoryCache = {};
+    const GCASH_TRANSACTION_PAGE_SIZE = 50;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
@@ -5078,16 +5080,32 @@
 
     function toggleGcashTransactionFilter(category) {
       var normalizedCategory = String(category || "").trim().toLowerCase();
+      var recentBox = document.getElementById("gcashRecentTransactions");
 
       if (activeGcashTransactionFilter === normalizedCategory) {
         activeGcashTransactionFilter = "";
         document.getElementById("gcashTransactionsTitle").innerText = "Recent Transactions";
         renderGcashRecentTransactions(gcashRecentTransactionsCache, false);
+        recentBox.scrollTop = 0;
         return;
       }
 
       activeGcashTransactionFilter = normalizedCategory;
+      recentBox.scrollTop = 0;
       loadGcashFilteredTransactions(normalizedCategory);
+    }
+
+
+    function getGcashTransactionCache(category) {
+      if (!gcashTransactionHistoryCache[category]) {
+        gcashTransactionHistoryCache[category] = {
+          transactions: [],
+          nextCursor: 0,
+          hasMore: true,
+          loading: false
+        };
+      }
+      return gcashTransactionHistoryCache[category];
     }
 
 
@@ -5095,25 +5113,65 @@
       var recentBox = document.getElementById("gcashRecentTransactions");
       var title = document.getElementById("gcashTransactionsTitle");
       var displayName = getGcashFilterDisplayName(category);
+      var cache = getGcashTransactionCache(category);
 
-      title.innerText = "All " + displayName + " Transactions";
-      recentBox.className = "dashboard-message";
-      recentBox.innerText = "Loading...";
+      title.innerText = displayName + " Transactions";
+
+      if (cache.transactions.length) {
+        renderGcashRecentTransactions(cache.transactions, true, false);
+        recentBox.scrollTop = 0;
+      } else {
+        recentBox.className = "dashboard-message";
+        recentBox.innerText = "Loading...";
+      }
+
+      if (!cache.hasMore) return Promise.resolve(true);
+
+      return loadGcashTransactionPage(category, cache)
+        .then(function(success) {
+          if (success) {
+            loadRemainingGcashTransactionsInBackground(category, cache);
+          }
+          return success;
+        });
+    }
+
+
+    function loadGcashTransactionPage(category, cache) {
+      if (cache.loading || !cache.hasMore) return Promise.resolve(true);
+
+      cache.loading = true;
 
       return new Promise(function(resolve) {
         jsonpRequest(
           {
             action: "gcashTransactions",
-            category: category
+            category: category,
+            cursor: cache.nextCursor,
+            limit: GCASH_TRANSACTION_PAGE_SIZE
           },
           function(data) {
+            cache.loading = false;
+
+            if (gcashTransactionHistoryCache[category] !== cache) {
+              resolve(false);
+              return;
+            }
+
+            cache.transactions = cache.transactions.concat(data.transactions || []);
+            cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
+            cache.hasMore = !!data.hasMore;
+
             if (activeGcashTransactionFilter === category) {
-              renderGcashRecentTransactions(data.transactions || [], true);
+              renderGcashRecentTransactions(cache.transactions, true, true);
             }
             resolve(true);
           },
           function(error) {
+            cache.loading = false;
             if (activeGcashTransactionFilter === category) {
+              var recentBox = document.getElementById("gcashRecentTransactions");
+              var displayName = getGcashFilterDisplayName(category);
               recentBox.className = "dashboard-message";
               recentBox.innerText = "Could not load " + displayName + " transactions.";
             }
@@ -5126,7 +5184,23 @@
     }
 
 
+    function loadRemainingGcashTransactionsInBackground(category, cache) {
+      if (!cache.hasMore || gcashTransactionHistoryCache[category] !== cache) return;
+
+      window.setTimeout(function() {
+        loadGcashTransactionPage(category, cache)
+          .then(function(success) {
+            if (success && cache.hasMore) {
+              loadRemainingGcashTransactionsInBackground(category, cache);
+            }
+          });
+      }, 80);
+    }
+
+
     function loadGcashDashboard() {
+
+      gcashTransactionHistoryCache = {};
 
       document
         .getElementById(
@@ -5289,7 +5363,8 @@
 
     function renderGcashRecentTransactions(
       transactions,
-      showAll
+      showAll,
+      preserveScroll
     ) {
 
       var recentBox =
@@ -5311,6 +5386,7 @@
       }
 
 
+      var previousScrollTop = preserveScroll ? recentBox.scrollTop : 0;
       recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
 
@@ -5373,6 +5449,8 @@
 
           })
           .join("");
+
+      recentBox.scrollTop = preserveScroll ? previousScrollTop : 0;
 
       syncActivePageHeight();
 
