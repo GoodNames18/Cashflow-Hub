@@ -116,7 +116,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 4px;
       margin-bottom: 10px;
       padding: 5px;
@@ -164,41 +164,45 @@
 
     .pages-track {
       display: flex;
-      width: 600%;
+      width: 700%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 16.6666667%;
-      flex: 0 0 16.6666667%;
+      width: 14.2857143%;
+      flex: 0 0 14.2857143%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
 
-    .pages-track.show-twice {
+    .pages-track.show-lifeLog {
       transform: translateX(0);
     }
 
+    .pages-track.show-twice {
+      transform: translateX(-14.2857143%);
+    }
+
     .pages-track.show-printing {
-      transform: translateX(-16.6666667%);
+      transform: translateX(-28.5714286%);
     }
 
     .pages-track.show-gcash {
-      transform: translateX(-33.3333334%);
+      transform: translateX(-42.8571429%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-50%);
+      transform: translateX(-57.1428572%);
     }
 
     .pages-track.show-test {
-      transform: translateX(-66.6666667%);
+      transform: translateX(-71.4285715%);
     }
 
     .pages-track.show-rental {
-      transform: translateX(-83.3333334%);
+      transform: translateX(-85.7142858%);
     }
 
     /* ======================================================
@@ -1037,6 +1041,15 @@
     <nav class="app-tabs" aria-label="Tracker pages">
 
       <button
+        id="lifeLogTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('lifeLog')"
+      >
+        Life Log
+      </button>
+
+      <button
         id="twiceTab"
         class="app-tab"
         type="button"
@@ -1095,12 +1108,13 @@
 
     <!-- ====================================================
          SWIPE VIEWPORT
-         Page 1 = TwiceAsNyce
-         Page 2 = Printing
-         Page 3 = Cash In/Out
-         Page 4 = Money Flow
-         Page 5 = Konek2Card
-         Page 6 = Rental
+         Page 1 = Life Log
+         Page 2 = TwiceAsNyce
+         Page 3 = Printing
+         Page 4 = Cash In/Out
+         Page 5 = Money Flow
+         Page 6 = Konek2Card
+         Page 7 = Rental
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -1108,7 +1122,49 @@
       <div id="pagesTrack" class="pages-track show-gcash">
 
         <!-- =================================================
-             PAGE 1: TWICEASNYCE
+             PAGE 1: LIFE LOG
+             ================================================= -->
+
+        <section id="lifeLogPage" class="app-page" data-page="lifeLog">
+
+          <div class="gcash-hero printing-hero">
+
+            <div class="gcash-title printing-title">Life Log</div>
+
+            <div class="gcash-subtitle">
+              Record what happened and how you felt
+            </div>
+
+            <div class="quick-entry">
+
+              <input
+                id="lifeLogDescriptionInput"
+                class="quick-custom-input"
+                type="text"
+                inputmode="text"
+                enterkeyhint="done"
+                maxlength="200"
+                placeholder="Enter description"
+              >
+
+              <div class="printing-entry-grid">
+                <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Health')">Health</button>
+                <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Grooming')">Grooming</button>
+                <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Home')">Home</button>
+                <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Device')">Device</button>
+                <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Other')">Other</button>
+              </div>
+
+              <div id="lifeLogStatus" class="status-message"></div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- =================================================
+             PAGE 2: TWICEASNYCE
              ================================================= -->
 
         <section id="twicePage" class="app-page twice-page" data-page="twice">
@@ -2346,6 +2402,9 @@
       const track =
         document.getElementById("pagesTrack");
 
+      const lifeLogTab =
+        document.getElementById("lifeLogTab");
+
       const testTab =
         document.getElementById("testTab");
 
@@ -2373,6 +2432,7 @@
 
 
       track.classList.remove(
+        "show-lifeLog",
         "show-test",
         "show-twice",
         "show-printing",
@@ -2381,6 +2441,7 @@
         "show-expenses"
       );
 
+      lifeLogTab.classList.remove("active");
       testTab.classList.remove("active");
       twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
@@ -2389,7 +2450,13 @@
       expensesTab.classList.remove("active");
 
 
-      if (pageName === "test") {
+      if (pageName === "lifeLog") {
+
+        currentAppPage = "lifeLog";
+        track.classList.add("show-lifeLog");
+        lifeLogTab.classList.add("active");
+
+      } else if (pageName === "test") {
 
         currentAppPage = "test";
         track.classList.add("show-test");
@@ -2484,7 +2551,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: TwiceAsNyce <-> Printing <-> Cash In/Out <-> Money Flow <-> Konek2Card <-> Rental
+    // Swipe order: Life Log <-> TwiceAsNyce <-> Printing <-> Cash In/Out <-> Money Flow <-> Konek2Card <-> Rental
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -2550,6 +2617,11 @@
         // Swipe LEFT
         if (deltaX < 0) {
 
+          if (currentAppPage === "lifeLog") {
+            showAppPage("twice");
+            return;
+          }
+
           if (currentAppPage === "twice") {
             showAppPage("printing");
             return;
@@ -2602,6 +2674,11 @@
 
           if (currentAppPage === "printing") {
             showAppPage("twice");
+            return;
+          }
+
+          if (currentAppPage === "twice") {
+            showAppPage("lifeLog");
           }
         }
 
@@ -4095,6 +4172,52 @@
       }).join("");
 
       syncActivePageHeight();
+    }
+
+
+    // ========================================================
+    // LIFE LOG ENTRY
+    // ========================================================
+
+    function setLifeLogButtonsDisabled(disabled) {
+      document
+        .querySelectorAll(".life-log-entry-button")
+        .forEach(function(button) {
+          button.disabled = disabled;
+        });
+    }
+
+
+    function saveLifeLogEntry(category) {
+      var input = document.getElementById("lifeLogDescriptionInput");
+      var description = input.value.trim();
+      var status = document.getElementById("lifeLogStatus");
+
+      if (!description) {
+        status.innerText = "Enter a description first.";
+        return;
+      }
+
+      status.innerText = "Saving...";
+      setLifeLogButtonsDisabled(true);
+
+      jsonpRequest(
+        {
+          action: "lifeLogAdd",
+          description: description,
+          category: category
+        },
+        function(result) {
+          status.innerText = "✅ " + result.category + " added";
+          input.value = "";
+          setLifeLogButtonsDisabled(false);
+          syncActivePageHeight();
+        },
+        function(error) {
+          status.innerText = "❌ " + error.message;
+          setLifeLogButtonsDisabled(false);
+        }
+      );
     }
 
 
