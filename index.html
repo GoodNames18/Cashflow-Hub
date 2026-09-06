@@ -1855,6 +1855,11 @@
               <div class="metric-label">Utang kay Nanay</div>
               <div id="testUtangKayNanay" class="metric-value expense-value">—</div>
             </div>
+            <div class="metric-card">
+              <div class="metric-icon">🏛️</div>
+              <div class="metric-label">Others Loan</div>
+              <div id="testOthersLoan" class="metric-value expense-value">—</div>
+            </div>
           </div>
 
           <div class="recent-card">
@@ -1903,6 +1908,8 @@
                 <button type="button" data-transfer-direction="gcashToCash">GCASH → CASH</button>
                 <button type="button" data-transfer-direction="nanayToCash">NANAY → CASH</button>
                 <button type="button" data-transfer-direction="cashToNanay">CASH → NANAY</button>
+                <button type="button" data-others-loan-action="add">ADD LOAN</button>
+                <button type="button" data-others-loan-action="minus">MINUS LOAN</button>
               </div>
               <button id="testTransferCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -3581,6 +3588,15 @@
             saveTestTransfer(direction);
           });
         });
+
+      document.querySelectorAll("#testTransferModal [data-others-loan-action]")
+        .forEach(function(button) {
+          button.addEventListener("click", function() {
+            var action = button.getAttribute("data-others-loan-action");
+            closeTestTransferModal();
+            saveTestOthersLoan(action);
+          });
+        });
     }
 
 
@@ -3637,7 +3653,7 @@
           button.disabled = disabled;
         });
 
-      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction]")
+      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction], #testTransferModal [data-others-loan-action]")
         .forEach(function(button) {
           button.disabled = disabled;
         });
@@ -3739,14 +3755,57 @@
       return candidates[0];
     }
 
+    function parseTestOthersLoanInputClient(text, action) {
+      var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
+      var normalizedAction = String(action || "").trim().toLowerCase();
+      if (normalizedAction !== "add" && normalizedAction !== "minus") {
+        throw new Error("Choose ADD LOAN or MINUS LOAN.");
+      }
+      if (!raw) throw new Error("Enter the loan amount.");
+
+      var tokens = raw.split(/\s+/);
+      var numbers = [];
+      var lenderParts = [];
+      tokens.forEach(function(token) {
+        var value = parseTestTransferNumberClient(token);
+        if (isFinite(value) && value > 0) numbers.push(value);
+        else lenderParts.push(token);
+      });
+
+      if (normalizedAction === "minus" && numbers.length !== 1) {
+        throw new Error("MINUS LOAN needs one payment amount.");
+      }
+      if (normalizedAction === "add" && (numbers.length < 1 || numbers.length > 2)) {
+        throw new Error("ADD LOAN needs a loan amount and optional fee.");
+      }
+
+      var principal = Math.max.apply(Math, numbers);
+      var fee = normalizedAction === "add" && numbers.length === 2
+        ? Math.min.apply(Math, numbers)
+        : 0;
+      if (fee >= principal) throw new Error("Loan fee must be lower than the loan amount.");
+
+      return {
+        action: normalizedAction,
+        principal: principal,
+        fee: fee,
+        lender: lenderParts.join(" ").trim(),
+        netToCard: normalizedAction === "add" ? principal - fee : -principal
+      };
+    }
+
     function openTestTransferModal() {
       var input = document.getElementById("testTransactionInput");
       try {
         parseTestTransferAmountClient(input ? input.value : "");
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
-        if (input) input.focus();
-        return;
+        try {
+          parseTestOthersLoanInputClient(input ? input.value : "", "add");
+        } catch (loanError) {
+          setTestStatus("❌ Enter a transfer amount or Others Loan entry.", "error");
+          if (input) input.focus();
+          return;
+        }
       }
       var modal = document.getElementById("testTransferModal");
       if (modal) modal.hidden = false;
@@ -3820,6 +3879,45 @@
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
           setTestStatus("✓ " + result.description + " — " + formatPeso(result.amount), "success");
+          markTestDashboardLoaded_(result.dashboard);
+        },
+        function(error) {
+          setTestActionButtonsDisabled(false);
+          setTestStatus("❌ " + error.message, "error");
+        }
+      );
+    }
+
+    function saveTestOthersLoan(action) {
+      var input = document.getElementById("testTransactionInput");
+      var text = input ? input.value.trim() : "";
+      var entry;
+      try {
+        entry = parseTestOthersLoanInputClient(text, action);
+      } catch (error) {
+        setTestStatus("❌ " + error.message, "error");
+        if (input) input.focus();
+        return;
+      }
+
+      setTestStatus(action === "add" ? "Adding Others Loan..." : "Recording loan payment...", "preview");
+      setTestActionButtonsDisabled(true);
+      jsonpRequest(
+        { action: "testOthersLoan", text: text, loanAction: action },
+        function(result) {
+          setTestActionButtonsDisabled(false);
+          if (input) input.value = "";
+          var lender = result.lender ? " " + result.lender : "";
+          if (result.action === "add") {
+            setTestStatus(
+              "✓ Others Loan" + lender + " added — Card received " +
+              formatPeso(result.netToCard) +
+              (result.fee ? " after " + formatPeso(result.fee) + " fee" : ""),
+              "success"
+            );
+          } else {
+            setTestStatus("✓ Others Loan" + lender + " minus " + formatPeso(result.principal), "success");
+          }
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
@@ -3923,7 +4021,8 @@
         testTotalEarned: data.totalEarned,
         testThisWeekEarned: data.thisWeekEarned,
         testLoanRemaining: data.loanRemaining,
-        testUtangKayNanay: data.utangKayNanay
+        testUtangKayNanay: data.utangKayNanay,
+        testOthersLoan: data.othersLoan
       };
 
       Object.keys(map).forEach(function(id) {
