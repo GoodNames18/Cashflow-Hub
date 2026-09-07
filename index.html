@@ -1272,7 +1272,7 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('income')">
               <div class="metric-icon">💰</div>
               <div class="metric-label">Income</div>
               <div
@@ -1283,7 +1283,7 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('expense')">
               <div class="metric-icon">💸</div>
               <div class="metric-label">Expenses</div>
               <div
@@ -1294,7 +1294,7 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('transactions')">
               <div class="metric-icon">🧾</div>
               <div class="metric-label">Transactions</div>
               <div
@@ -1309,7 +1309,7 @@
 
           <div class="recent-card">
 
-            <h2 class="recent-title">
+            <h2 id="twiceTransactionsTitle" class="recent-title">
               Recent Transactions
             </h2>
 
@@ -1417,7 +1417,7 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('income')">
               <div class="metric-icon">💰</div>
               <div class="metric-label">Income</div>
               <div
@@ -1428,7 +1428,7 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('expense')">
               <div class="metric-icon">💸</div>
               <div class="metric-label">Expenses</div>
               <div
@@ -1439,7 +1439,7 @@
               </div>
             </div>
 
-            <div class="metric-card">
+            <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('transactions')">
               <div class="metric-icon">🧾</div>
               <div class="metric-label">Transactions</div>
               <div
@@ -1454,7 +1454,7 @@
 
           <div class="recent-card">
 
-            <h2 class="recent-title">
+            <h2 id="printingTransactionsTitle" class="recent-title">
               Recent Transactions
             </h2>
 
@@ -2068,6 +2068,10 @@
     let gcashRecentTransactionsCache = [];
     let gcashTransactionHistoryCache = {};
     const GCASH_TRANSACTION_PAGE_SIZE = 50;
+    let activeBusinessTransactionFilters = { printing: "", twice: "" };
+    let businessRecentTransactionsCache = { printing: [], twice: [] };
+    let businessTransactionHistoryCache = { printing: {}, twice: {} };
+    const BUSINESS_TRANSACTION_PAGE_SIZE = 50;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
@@ -4386,7 +4390,160 @@
     }
 
 
+    function getBusinessTransactionConfig(pageName) {
+      if (pageName === "printing") {
+        return {
+          action: "printingTransactions",
+          boxId: "printingRecentTransactions",
+          titleId: "printingTransactionsTitle",
+          render: renderPrintingRecentTransactions
+        };
+      }
+
+      return {
+        action: "twiceTransactions",
+        boxId: "twiceRecentTransactions",
+        titleId: "twiceTransactionsTitle",
+        render: renderTwiceAsNyceRecentTransactions
+      };
+    }
+
+
+    function togglePrintingTransactionFilter(category) {
+      toggleBusinessTransactionFilter("printing", category);
+    }
+
+
+    function toggleTwiceTransactionFilter(category) {
+      toggleBusinessTransactionFilter("twice", category);
+    }
+
+
+    function toggleBusinessTransactionFilter(pageName, category) {
+      var normalizedCategory = String(category || "").trim().toLowerCase();
+      var config = getBusinessTransactionConfig(pageName);
+      var recentBox = document.getElementById(config.boxId);
+
+      if (activeBusinessTransactionFilters[pageName] === normalizedCategory) {
+        activeBusinessTransactionFilters[pageName] = "";
+        document.getElementById(config.titleId).innerText = "Recent Transactions";
+        config.render(businessRecentTransactionsCache[pageName], false, false);
+        recentBox.scrollTop = 0;
+        return;
+      }
+
+      activeBusinessTransactionFilters[pageName] = normalizedCategory;
+      recentBox.scrollTop = 0;
+      loadBusinessFilteredTransactions(pageName, normalizedCategory);
+    }
+
+
+    function getBusinessTransactionCache(pageName, category) {
+      if (!businessTransactionHistoryCache[pageName][category]) {
+        businessTransactionHistoryCache[pageName][category] = {
+          transactions: [],
+          nextCursor: 0,
+          hasMore: true,
+          loading: false
+        };
+      }
+      return businessTransactionHistoryCache[pageName][category];
+    }
+
+
+    function getBusinessFilterTitle(category) {
+      if (category === "income") return "Income Transactions";
+      if (category === "expense") return "Expense Transactions";
+      return "Transactions";
+    }
+
+
+    function loadBusinessFilteredTransactions(pageName, category) {
+      var config = getBusinessTransactionConfig(pageName);
+      var recentBox = document.getElementById(config.boxId);
+      var cache = getBusinessTransactionCache(pageName, category);
+      document.getElementById(config.titleId).innerText = getBusinessFilterTitle(category);
+
+      if (cache.transactions.length) {
+        config.render(cache.transactions, true, false);
+        recentBox.scrollTop = 0;
+      } else {
+        recentBox.className = "dashboard-message";
+        recentBox.innerText = "Loading...";
+      }
+
+      if (!cache.hasMore) return Promise.resolve(true);
+
+      return loadBusinessTransactionPage(pageName, category, cache)
+        .then(function(success) {
+          if (success) loadRemainingBusinessTransactionsInBackground(pageName, category, cache);
+          return success;
+        });
+    }
+
+
+    function loadBusinessTransactionPage(pageName, category, cache) {
+      if (cache.loading || !cache.hasMore) return Promise.resolve(true);
+      cache.loading = true;
+      var config = getBusinessTransactionConfig(pageName);
+
+      return new Promise(function(resolve) {
+        jsonpRequest(
+          {
+            action: config.action,
+            category: category,
+            cursor: cache.nextCursor,
+            limit: BUSINESS_TRANSACTION_PAGE_SIZE
+          },
+          function(data) {
+            cache.loading = false;
+            if (businessTransactionHistoryCache[pageName][category] !== cache) {
+              resolve(false);
+              return;
+            }
+
+            cache.transactions = cache.transactions.concat(data.transactions || []);
+            cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
+            cache.hasMore = !!data.hasMore;
+
+            if (activeBusinessTransactionFilters[pageName] === category) {
+              config.render(cache.transactions, true, true);
+            }
+            resolve(true);
+          },
+          function(error) {
+            cache.loading = false;
+            if (activeBusinessTransactionFilters[pageName] === category) {
+              var recentBox = document.getElementById(config.boxId);
+              recentBox.className = "dashboard-message";
+              recentBox.innerText = "Could not load transactions.";
+            }
+            console.log(error);
+            syncActivePageHeight();
+            resolve(false);
+          }
+        );
+      });
+    }
+
+
+    function loadRemainingBusinessTransactionsInBackground(pageName, category, cache) {
+      if (!cache.hasMore || businessTransactionHistoryCache[pageName][category] !== cache) return;
+
+      window.setTimeout(function() {
+        loadBusinessTransactionPage(pageName, category, cache)
+          .then(function(success) {
+            if (success && cache.hasMore) {
+              loadRemainingBusinessTransactionsInBackground(pageName, category, cache);
+            }
+          });
+      }, 80);
+    }
+
+
     function loadTwiceAsNyceDashboard() {
+
+      businessTransactionHistoryCache.twice = {};
 
       document
         .getElementById(
@@ -4500,16 +4657,23 @@
         Number(data.profit || 0) < 0
       );
 
-      renderTwiceAsNyceRecentTransactions(
-        data.recentTransactions || []
-      );
+      businessRecentTransactionsCache.twice = data.recentTransactions || [];
+
+      if (activeBusinessTransactionFilters.twice) {
+        loadBusinessFilteredTransactions("twice", activeBusinessTransactionFilters.twice);
+      } else {
+        document.getElementById("twiceTransactionsTitle").innerText = "Recent Transactions";
+        renderTwiceAsNyceRecentTransactions(businessRecentTransactionsCache.twice, false, false);
+      }
 
       syncActivePageHeight();
     }
 
 
     function renderTwiceAsNyceRecentTransactions(
-      recentTransactions
+      recentTransactions,
+      showAll,
+      preserveScroll
     ) {
 
       var recentBox =
@@ -4517,13 +4681,11 @@
           "twiceRecentTransactions"
         );
 
-      var transactions =
-        Array.isArray(recentTransactions)
-          ? recentTransactions.slice(
-              0,
-              RECENT_TRANSACTION_LIMIT
-            )
-          : [];
+      var transactions = Array.isArray(recentTransactions)
+        ? (showAll
+            ? recentTransactions
+            : recentTransactions.slice(0, RECENT_TRANSACTION_LIMIT))
+        : [];
 
       if (!transactions.length) {
 
@@ -4537,7 +4699,8 @@
         return;
       }
 
-      recentBox.className = "";
+      var previousScrollTop = preserveScroll ? recentBox.scrollTop : 0;
+      recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
       recentBox.innerHTML =
         transactions
@@ -4598,6 +4761,8 @@
             );
           })
           .join("");
+
+      recentBox.scrollTop = previousScrollTop;
 
       syncActivePageHeight();
     }
@@ -4856,6 +5021,8 @@
 
     function loadPrintingDashboard() {
 
+      businessTransactionHistoryCache.printing = {};
+
       document
         .getElementById(
           "printingMonthLabel"
@@ -4969,16 +5136,23 @@
         Number(data.profit || 0) < 0
       );
 
-      renderPrintingRecentTransactions(
-        data.recentTransactions || []
-      );
+      businessRecentTransactionsCache.printing = data.recentTransactions || [];
+
+      if (activeBusinessTransactionFilters.printing) {
+        loadBusinessFilteredTransactions("printing", activeBusinessTransactionFilters.printing);
+      } else {
+        document.getElementById("printingTransactionsTitle").innerText = "Recent Transactions";
+        renderPrintingRecentTransactions(businessRecentTransactionsCache.printing, false, false);
+      }
 
       syncActivePageHeight();
     }
 
 
     function renderPrintingRecentTransactions(
-      transactions
+      transactions,
+      showAll,
+      preserveScroll
     ) {
 
       var recentBox =
@@ -4998,14 +5172,13 @@
         return;
       }
 
-      recentBox.className = "";
+      var previousScrollTop = preserveScroll ? recentBox.scrollTop : 0;
+      recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
       recentBox.innerHTML =
-        transactions
-          .slice(
-            0,
-            RECENT_TRANSACTION_LIMIT
-          )
+        (showAll
+          ? transactions
+          : transactions.slice(0, RECENT_TRANSACTION_LIMIT))
           .map(function(item) {
 
             var metaParts = [];
@@ -5063,6 +5236,8 @@
             );
           })
           .join("");
+
+      recentBox.scrollTop = previousScrollTop;
 
       syncActivePageHeight();
     }
