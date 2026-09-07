@@ -1044,7 +1044,7 @@
       id="installButton"
       class="hidden"
       onclick="installExpenseApp()"
-    >↓ Install Cashflow Hub</button>
+    >â†“ Install Cashflow Hub</button>
 
     <!-- ====================================================
          APP TABS
@@ -1173,8 +1173,29 @@
 
           </div>
 
+          <div class="dashboard-header">
+            <h1>ðŸ“Š Dashboard</h1>
+            <button class="refresh-button" type="button" onclick="loadLifeLogDashboard()">â†» Refresh</button>
+          </div>
+          <select id="lifeLogMonthSelector" class="quick-custom-input" onchange="changeLifeLogMonth(this.value)"></select>
+
+          <div class="metric-grid">
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('total')"><div class="metric-icon">ðŸ“š</div><div class="metric-label">Total Logs</div><div id="lifeLogTotalLogs" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('health')"><div class="metric-icon">â¤ï¸</div><div class="metric-label">Health</div><div id="lifeLogHealthCount" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('grooming')"><div class="metric-icon">âœ‚ï¸</div><div class="metric-label">Grooming</div><div id="lifeLogGroomingCount" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('home')"><div class="metric-icon">ðŸ </div><div class="metric-label">Home</div><div id="lifeLogHomeCount" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('device')"><div class="metric-icon">ðŸ“±</div><div class="metric-label">Device</div><div id="lifeLogDeviceCount" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('other')"><div class="metric-icon">ðŸ“</div><div class="metric-label">Other</div><div id="lifeLogOtherCount" class="metric-value">â€”</div></div>
+          </div>
+
+          <h2 class="rental-dashboard-category">Health Insights</h2>
+          <div class="metric-grid">
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('common-health')"><div class="metric-icon">ðŸ”</div><div class="metric-label">Most Common Health Issue</div><div id="lifeLogCommonIssue" class="metric-value">â€”</div><div id="lifeLogCommonCount" class="transaction-meta"></div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('latest-health')"><div class="metric-icon">ðŸ©º</div><div class="metric-label">Latest Health Log</div><div id="lifeLogLatestHealth" class="metric-value">â€”</div><div id="lifeLogLatestHealthDate" class="transaction-meta"></div></div>
+          </div>
+
           <div class="recent-card">
-            <h2 class="recent-title">Recent Life Logs</h2>
+            <h2 id="lifeLogTransactionsTitle" class="recent-title">Recent Life Logs</h2>
             <div id="lifeLogRecentEntries" class="dashboard-message">Loading...</div>
           </div>
 
@@ -1234,14 +1255,14 @@
 
           <div class="dashboard-header">
 
-            <h1>📊 Dashboard</h1>
+            <h1>ðŸ“Š Dashboard</h1>
 
             <button
               class="refresh-button"
               type="button"
               onclick="loadTwiceAsNyceDashboard()"
             >
-              ↻ Refresh
+              â†» Refresh
             </button>
 
           </div>
@@ -1256,52 +1277,52 @@
           <div class="metric-grid">
 
             <div class="metric-card">
-              <div class="metric-icon">💼</div>
+              <div class="metric-icon">ðŸ’¼</div>
               <div class="metric-label">Total Money</div>
-              <div id="twiceTotalMoney" class="metric-value">—</div>
+              <div id="twiceTotalMoney" class="metric-value">â€”</div>
             </div>
 
             <div class="metric-card">
-              <div class="metric-icon">📈</div>
+              <div class="metric-icon">ðŸ“ˆ</div>
               <div class="metric-label">Profit</div>
               <div
                 id="twiceProfit"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('income')">
-              <div class="metric-icon">💰</div>
+              <div class="metric-icon">ðŸ’°</div>
               <div class="metric-label">Income</div>
               <div
                 id="twiceIncome"
                 class="metric-value income-value"
               >
-                —
+                â€”
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('expense')">
-              <div class="metric-icon">💸</div>
+              <div class="metric-icon">ðŸ’¸</div>
               <div class="metric-label">Expenses</div>
               <div
                 id="twiceExpenses"
                 class="metric-value expense-value"
               >
-                —
+                â€”
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('transactions')">
-              <div class="metric-icon">🧾</div>
+              <div class="metric-icon">ðŸ§¾</div>
               <div class="metric-label">Transactions</div>
               <div
                 id="twiceTransactions"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
@@ -1334,7 +1355,7 @@
           <div class="gcash-hero printing-hero">
 
             <div class="gcash-title printing-title">
-              🖨️ Printing Business
+              ðŸ–¨ï¸ Printing Business
             </div>
 
             <div class="gcash-subtitle">
@@ -1379,14 +1400,14 @@
 
           <div class="dashboard-header">
 
-            <h1>📊 Dashboard</h1>
+            <h1>ðŸ“Š Dashboard</h1>
 
             <button
               class="refresh-button"
               type="button"
               onclick="loadPrintingDashboard()"
             >
-              ↻ Refresh
+              â†» Refresh
             </button>
 
           </div>
@@ -1401,52 +1422,52 @@
           <div class="metric-grid">
 
             <div class="metric-card">
-              <div class="metric-icon">💼</div>
+              <div class="metric-icon">ðŸ’¼</div>
               <div class="metric-label">Total Money</div>
-              <div id="printingTotalMoney" class="metric-value">—</div>
+              <div id="printingTotalMoney" class="metric-value">â€”</div>
             </div>
 
             <div class="metric-card">
-              <div class="metric-icon">📈</div>
+              <div class="metric-icon">ðŸ“ˆ</div>
               <div class="metric-label">Profit</div>
               <div
                 id="printingProfit"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('income')">
-              <div class="metric-icon">💰</div>
+              <div class="metric-icon">ðŸ’°</div>
               <div class="metric-label">Income</div>
               <div
                 id="printingIncome"
                 class="metric-value income-value"
               >
-                —
+                â€”
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('expense')">
-              <div class="metric-icon">💸</div>
+              <div class="metric-icon">ðŸ’¸</div>
               <div class="metric-label">Expenses</div>
               <div
                 id="printingExpenses"
                 class="metric-value expense-value"
               >
-                —
+                â€”
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('transactions')">
-              <div class="metric-icon">🧾</div>
+              <div class="metric-icon">ðŸ§¾</div>
               <div class="metric-label">Transactions</div>
               <div
                 id="printingTransactions"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
@@ -1513,14 +1534,14 @@
             </div>
 
             <div class="quick-amount-grid">
-              <button class="quick-amount-button" data-base-amount="5" type="button" disabled onclick="selectGcashQuickAmount(5)">₱5</button>
-              <button class="quick-amount-button" data-base-amount="10" type="button" disabled onclick="selectGcashQuickAmount(10)">₱10</button>
-              <button class="quick-amount-button" data-base-amount="15" type="button" disabled onclick="selectGcashQuickAmount(15)">₱15</button>
-              <button class="quick-amount-button" data-base-amount="20" type="button" disabled onclick="selectGcashQuickAmount(20)">₱20</button>
+              <button class="quick-amount-button" data-base-amount="5" type="button" disabled onclick="selectGcashQuickAmount(5)">â‚±5</button>
+              <button class="quick-amount-button" data-base-amount="10" type="button" disabled onclick="selectGcashQuickAmount(10)">â‚±10</button>
+              <button class="quick-amount-button" data-base-amount="15" type="button" disabled onclick="selectGcashQuickAmount(15)">â‚±15</button>
+              <button class="quick-amount-button" data-base-amount="20" type="button" disabled onclick="selectGcashQuickAmount(20)">â‚±20</button>
             </div>
 
             <div class="quick-quantity-row">
-              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(-1)">−</button>
+              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(-1)">âˆ’</button>
               <span id="gcashQuickQuantity" class="quick-quantity-value" onclick="handleGcashQuickReset()">1</span>
               <button id="gcashQuickPlusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(1)">+</button>
               <button
@@ -1545,14 +1566,14 @@
 
           <div class="dashboard-header">
 
-            <h1>📊 Dashboard</h1>
+            <h1>ðŸ“Š Dashboard</h1>
 
             <button
               class="refresh-button"
               type="button"
               onclick="loadGcashDashboard()"
             >
-              ↻ Refresh
+              â†» Refresh
             </button>
 
           </div>
@@ -1562,7 +1583,7 @@
 
             <div class="cash-income-only">
               <span>Total Income</span>
-              <strong id="gcashMonthlyIncomeOnly">—</strong>
+              <strong id="gcashMonthlyIncomeOnly">â€”</strong>
             </div>
 
             <div
@@ -1586,7 +1607,7 @@
                 id="gcashMonthlyTotal"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
@@ -1600,31 +1621,31 @@
                 id="mayaMonthlyTotal"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('load')">
-              <div class="metric-icon">📱</div>
+              <div class="metric-icon">ðŸ“±</div>
               <div class="metric-label">Load</div>
               <div
                 id="loadMonthlyTotal"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('bills')">
-              <div class="metric-icon">🧾</div>
+              <div class="metric-icon">ðŸ§¾</div>
               <div class="metric-label">Bills</div>
               <div
                 id="billsMonthlyTotal"
                 class="metric-value"
               >
-                —
+                â€”
               </div>
             </div>
 
@@ -1659,7 +1680,7 @@
           <div class="gcash-hero printing-hero">
 
             <div class="gcash-title printing-title">
-              💰 Money Flow
+              ðŸ’° Money Flow
             </div>
 
             <div class="gcash-subtitle">
@@ -1707,14 +1728,14 @@
             <div class="dashboard-header">
 
               <h1>
-                📊 Dashboard
+                ðŸ“Š Dashboard
               </h1>
 
               <button
                 class="refresh-button"
                 onclick="loadDashboard()"
               >
-                ↻ Refresh
+                â†» Refresh
               </button>
 
             </div>
@@ -1730,74 +1751,74 @@
 
             <div class="metric-grid">
 
-              <div class="metric-card">
-                <div class="metric-icon">💸</div>
+              <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('expense')">
+                <div class="metric-icon">ðŸ’¸</div>
                 <div class="metric-label">Monthly Expenses</div>
                 <div
                   id="monthlyExpenses"
                   class="metric-value expense-value"
                 >
-                  —
+                  â€”
                 </div>
               </div>
 
 
-              <div class="metric-card">
-                <div class="metric-icon">💰</div>
+              <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('income')">
+                <div class="metric-icon">ðŸ’°</div>
                 <div class="metric-label">Monthly Income</div>
                 <div
                   id="monthlyIncome"
                   class="metric-value income-value"
                 >
-                  —
+                  â€”
                 </div>
               </div>
 
 
               <div class="metric-card">
-                <div class="metric-icon">⚖️</div>
+                <div class="metric-icon">âš–ï¸</div>
                 <div class="metric-label">Balance</div>
                 <div
                   id="balance"
                   class="metric-value"
                 >
-                  —
+                  â€”
                 </div>
               </div>
 
 
-              <div class="metric-card">
-                <div class="metric-icon">🧾</div>
+              <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('transactions')">
+                <div class="metric-icon">ðŸ§¾</div>
                 <div class="metric-label">All Transactions</div>
                 <div
                   id="allTransactions"
                   class="metric-value"
                 >
-                  —
+                  â€”
                 </div>
               </div>
 
 
-              <div class="metric-card">
-                <div class="metric-icon">📅</div>
-                <div class="metric-label">Today’s Expenses</div>
+              <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('today-expenses')">
+                <div class="metric-icon">ðŸ“…</div>
+                <div class="metric-label">Todayâ€™s Expenses</div>
                 <div
                   id="todayExpenses"
                   class="metric-value expense-value"
                 >
-                  —
+                  â€”
                 </div>
               </div>
 
 
-              <div class="metric-card">
-                <div class="metric-icon">🔺</div>
+              <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('highest-expense')">
+                <div class="metric-icon">ðŸ”º</div>
                 <div class="metric-label">Highest Expense</div>
                 <div
                   id="highestExpense"
                   class="metric-value expense-value"
                 >
-                  —
+                  â€”
                 </div>
               </div>
 
@@ -1806,7 +1827,7 @@
 
             <div class="recent-card">
 
-              <h2 class="recent-title">
+              <h2 id="moneyFlowTransactionsTitle" class="recent-title">
                 Recent Transactions
               </h2>
 
@@ -1879,64 +1900,64 @@
           </div>
 
           <div class="dashboard-header">
-            <h1>📊 Dashboard</h1>
+            <h1>ðŸ“Š Dashboard</h1>
             <button class="refresh-button" type="button" onclick="loadTestDashboard()">
-              ↻ Refresh
+              â†» Refresh
             </button>
           </div>
 
           <div id="testMonthLabel" class="month-label">Loading...</div>
 
           <div class="metric-grid test-metric-grid">
-            <div class="metric-card">
-              <div class="metric-icon">💰</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('total-money')">
+              <div class="metric-icon">ðŸ’°</div>
               <div class="metric-label">Total Money</div>
-              <div id="testTotalMoney" class="metric-value">—</div>
+              <div id="testTotalMoney" class="metric-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">🏦</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('loan-remaining')">
+              <div class="metric-icon">ðŸ¦</div>
               <div class="metric-label">Loan Remaining</div>
-              <div id="testLoanRemaining" class="metric-value expense-value">—</div>
+              <div id="testLoanRemaining" class="metric-value expense-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">📈</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('total-earned')">
+              <div class="metric-icon">ðŸ“ˆ</div>
               <div class="metric-label">Total Earned</div>
-              <div id="testTotalEarned" class="metric-value income-value">—</div>
+              <div id="testTotalEarned" class="metric-value income-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">🗓️</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('this-week-earned')">
+              <div class="metric-icon">ðŸ—“ï¸</div>
               <div class="metric-label">This Week Earned</div>
-              <div id="testThisWeekEarned" class="metric-value income-value">—</div>
+              <div id="testThisWeekEarned" class="metric-value income-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">💳</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('card')">
+              <div class="metric-icon">ðŸ’³</div>
               <div class="metric-label">Money on Card</div>
-              <div id="testCard" class="metric-value">—</div>
+              <div id="testCard" class="metric-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">💵</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('cash')">
+              <div class="metric-icon">ðŸ’µ</div>
               <div class="metric-label">Money on Hand</div>
-              <div id="testCashOnHand" class="metric-value">—</div>
+              <div id="testCashOnHand" class="metric-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">💙</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('gcash')">
+              <div class="metric-icon">ðŸ’™</div>
               <div class="metric-label">Money on GCash</div>
-              <div id="testGcash" class="metric-value">—</div>
+              <div id="testGcash" class="metric-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">👩</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('nanay')">
+              <div class="metric-icon">ðŸ‘©</div>
               <div class="metric-label">Utang kay Nanay</div>
-              <div id="testUtangKayNanay" class="metric-value expense-value">—</div>
+              <div id="testUtangKayNanay" class="metric-value expense-value">â€”</div>
             </div>
-            <div class="metric-card">
-              <div class="metric-icon">🏛️</div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('others-loan')">
+              <div class="metric-icon">ðŸ›ï¸</div>
               <div class="metric-label">Others Loan</div>
-              <div id="testOthersLoan" class="metric-value expense-value">—</div>
+              <div id="testOthersLoan" class="metric-value expense-value">â€”</div>
             </div>
           </div>
 
           <div class="recent-card">
-            <h2 class="recent-title">Recent Transactions</h2>
+            <h2 id="testTransactionsTitle" class="recent-title">Recent Transactions</h2>
             <div id="testRecentTransactions" class="dashboard-message">Loading...</div>
           </div>
 
@@ -1944,16 +1965,16 @@
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testAtmTitle">
               <div id="testAtmTitle" class="test-modal-title">ATM WITHDRAW</div>
               <div class="test-atm-grid">
-                <button type="button" data-atm-amount="1000">₱1K</button>
-                <button type="button" data-atm-amount="2000">₱2K</button>
-                <button type="button" data-atm-amount="3000">₱3K</button>
-                <button type="button" data-atm-amount="4000">₱4K</button>
-                <button type="button" data-atm-amount="5000">₱5K</button>
-                <button type="button" data-atm-amount="6000">₱6K</button>
-                <button type="button" data-atm-amount="7000">₱7K</button>
-                <button type="button" data-atm-amount="8000">₱8K</button>
-                <button type="button" data-atm-amount="9000">₱9K</button>
-                <button type="button" data-atm-amount="10000">₱10K</button>
+                <button type="button" data-atm-amount="1000">â‚±1K</button>
+                <button type="button" data-atm-amount="2000">â‚±2K</button>
+                <button type="button" data-atm-amount="3000">â‚±3K</button>
+                <button type="button" data-atm-amount="4000">â‚±4K</button>
+                <button type="button" data-atm-amount="5000">â‚±5K</button>
+                <button type="button" data-atm-amount="6000">â‚±6K</button>
+                <button type="button" data-atm-amount="7000">â‚±7K</button>
+                <button type="button" data-atm-amount="8000">â‚±8K</button>
+                <button type="button" data-atm-amount="9000">â‚±9K</button>
+                <button type="button" data-atm-amount="10000">â‚±10K</button>
               </div>
               <button id="testAtmCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -1975,12 +1996,12 @@
               <div id="testTransferTitle" class="test-modal-title">TRANSFER</div>
               <div class="test-modal-note">Uses the amount entered in the shared textbox.</div>
               <div class="test-choice-grid">
-                <button type="button" data-transfer-direction="cashToGcash">CASH → GCASH</button>
-                <button type="button" data-transfer-direction="gcashToCard">GCASH → CARD</button>
-                <button type="button" data-transfer-direction="cardToGcash">CARD → GCASH</button>
-                <button type="button" data-transfer-direction="gcashToCash">GCASH → CASH</button>
-                <button type="button" data-transfer-direction="nanayToCash">NANAY → CASH</button>
-                <button type="button" data-transfer-direction="cashToNanay">CASH → NANAY</button>
+                <button type="button" data-transfer-direction="cashToGcash">CASH â†’ GCASH</button>
+                <button type="button" data-transfer-direction="gcashToCard">GCASH â†’ CARD</button>
+                <button type="button" data-transfer-direction="cardToGcash">CARD â†’ GCASH</button>
+                <button type="button" data-transfer-direction="gcashToCash">GCASH â†’ CASH</button>
+                <button type="button" data-transfer-direction="nanayToCash">NANAY â†’ CASH</button>
+                <button type="button" data-transfer-direction="cashToNanay">CASH â†’ NANAY</button>
                 <button type="button" data-others-loan-action="add">ADD LOAN</button>
                 <button type="button" data-others-loan-action="minus">MINUS LOAN</button>
               </div>
@@ -2016,29 +2037,29 @@
           </div>
 
           <div class="dashboard-header">
-            <h1>📊 Dashboard</h1>
-            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">↻ Refresh</button>
+            <h1>ðŸ“Š Dashboard</h1>
+            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">â†» Refresh</button>
           </div>
           <div id="rentalMonthLabel" class="month-label">Loading...</div>
 
-          <h2 class="rental-dashboard-category">📷 Insta360</h2>
+          <h2 class="rental-dashboard-category">ðŸ“· Insta360</h2>
           <div class="metric-grid">
-            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">—</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','income')"><div class="metric-icon">ðŸ’°</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','expense')"><div class="metric-icon">ðŸ’¸</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','total-money')"><div class="metric-icon">ðŸ’¼</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','transactions')"><div class="metric-icon">ðŸ§¾</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">â€”</div></div>
           </div>
 
-          <h2 class="rental-dashboard-category">🪑 Chair &amp; Table</h2>
+          <h2 class="rental-dashboard-category">ðŸª‘ Chair &amp; Table</h2>
           <div class="metric-grid">
-            <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">—</div></div>
-            <div class="metric-card"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">—</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','income')"><div class="metric-icon">ðŸ’°</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','expense')"><div class="metric-icon">ðŸ’¸</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','total-money')"><div class="metric-icon">ðŸ’¼</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">â€”</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','transactions')"><div class="metric-icon">ðŸ§¾</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">â€”</div></div>
           </div>
 
           <div class="recent-card">
-            <h2 class="recent-title">Recent Transactions</h2>
+            <h2 id="rentalTransactionsTitle" class="recent-title">Recent Transactions</h2>
             <div id="rentalRecentTransactions" class="dashboard-message">Loading...</div>
           </div>
         </section>
@@ -2072,10 +2093,35 @@
     let businessRecentTransactionsCache = { printing: [], twice: [] };
     let businessTransactionHistoryCache = { printing: {}, twice: {} };
     const BUSINESS_TRANSACTION_PAGE_SIZE = 50;
+    let activeMoneyFlowTransactionFilter = "";
+    let moneyFlowRecentTransactionsCache = [];
+    let moneyFlowTransactionHistoryCache = {};
+    let activeTestTransactionFilter = "";
+    let testRecentTransactionsCache = [];
+    let testTransactionHistoryCache = {};
+    let activeRentalTransactionFilter = "";
+    let rentalRecentTransactionsCache = [];
+    let rentalTransactionHistoryCache = {};
+    let activeLifeLogTransactionFilter = "";
+    let lifeLogRecentEntriesCache = [];
+    let lifeLogTransactionHistoryCache = {};
+    let lifeLogSelectedYear = new Date().getFullYear();
+    let lifeLogSelectedMonth = new Date().getMonth() + 1;
+    const DASHBOARD_TRANSACTION_PAGE_SIZE = 50;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
     const TEST_DISPLAY_NAME = "Konek2Card";
+
+    function scrollToFilteredTransactionBoxAfterLoad(boxId) {
+      var box = document.getElementById(boxId);
+      if (!box) return;
+      box.scrollTop = 0;
+      window.requestAnimationFrame(function() {
+        var card = box.closest(".recent-card") || box;
+        card.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
 
     // GCASH QUICK QUANTITY PURE HELPERS START
     function normalizeGcashQuickQuantity(value) {
@@ -2279,6 +2325,7 @@
       }
 
       initializeTestCashOutUI();
+      setupKonek2CardAutocomplete();
       initializePageHeightSync();
 
       showAppPage("gcash", false);
@@ -3041,7 +3088,7 @@
 
       var input =
         document.getElementById(
-          "konekTransactionInput"
+          "testTransactionInput"
         );
 
       if (!input) {
@@ -3054,11 +3101,11 @@
         return;
       }
 
-      var completion =
-        getKonek2CardInlineCompletion(
-          typed,
-          konekSuggestionNames
-        );
+      var match = typed.match(/^\s*((?:â‚±\s*)?\d+(?:\.\d+)?k?)\s+(.+)$/i);
+      if (!match) return;
+      var typedName = match[2];
+      var completedName = getKonek2CardInlineCompletion(typedName, konekSuggestionNames);
+      var completion = completedName ? match[1] + " " + completedName : "";
 
       if (
         !completion ||
@@ -3071,7 +3118,7 @@
 
       try {
         input.setSelectionRange(
-          typed.length,
+          match[1].length + 1 + typedName.length,
           completion.length
         );
       } catch (error) {
@@ -3141,7 +3188,7 @@
 
       var input =
         document.getElementById(
-          "konekTransactionInput"
+          "testTransactionInput"
         );
 
       if (!input) {
@@ -3194,7 +3241,7 @@
         button.className =
           "konek-quick-button";
         button.textContent =
-          "₱" + String(amount);
+          "â‚±" + String(amount);
 
         button.addEventListener(
           "click",
@@ -3277,10 +3324,10 @@
 
           if (result.bundle) {
             status.innerText =
-              "✅ ₱50 Loan rebate + ₱415 Loan payment added";
+              "âœ… â‚±50 Loan rebate + â‚±415 Loan payment added";
           } else {
             status.innerText =
-              "✅ " +
+              "âœ… " +
               result.category +
               " " +
               formatPeso(result.amount) +
@@ -3307,7 +3354,7 @@
         function(error) {
 
           status.innerText =
-            "❌ " + error.message;
+            "âŒ " + error.message;
 
           setKonek2CardButtonsDisabled(false);
         }
@@ -3423,9 +3470,7 @@
         Number(data.profit || 0) < 0
       );
 
-      renderKonek2CardRecentTransactions(
-        data.recentTransactions || []
-      );
+      renderKonek2CardRecentTransactions(data.recentTransactions || []);
 
       syncActivePageHeight();
     }
@@ -3493,7 +3538,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" â€¢ ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -3502,7 +3547,7 @@
                     ? "expense-value"
                     : "income-value") +
                   '">' +
-                  (isExpense ? "−" : "+") +
+                  (isExpense ? "âˆ’" : "+") +
                   formatPeso(item.amount) +
                 "</div>" +
               "</div>"
@@ -3524,7 +3569,7 @@
       var raw = String(text || "").replace(/\s+/g, " ").trim();
       if (!raw) throw new Error("Enter customer and cash-out amount.");
 
-      var match = raw.match(/(?:^|\s)(?:₱\s*)?(\d+(?:\.\d+)?)(k)?(?=\s|$)/i);
+      var match = raw.match(/(?:^|\s)(?:â‚±\s*)?(\d+(?:\.\d+)?)(k)?(?=\s|$)/i);
       if (!match) throw new Error("Cash-out amount not found.");
 
       var amount = Number(match[1]);
@@ -3541,9 +3586,9 @@
     function validateTestCashOutAmountClient(amount) {
       var value = Number(amount);
       if (!isFinite(value)) throw new Error("Invalid cash-out amount.");
-      if (value < 100) throw new Error("Minimum cash-out is ₱100.");
-      if (value > 10000) throw new Error("Maximum cash-out is ₱10,000.");
-      if (value % 100 !== 0) throw new Error("Amount must be in ₱100 increments.");
+      if (value < 100) throw new Error("Minimum cash-out is â‚±100.");
+      if (value > 10000) throw new Error("Maximum cash-out is â‚±10,000.");
+      if (value % 100 !== 0) throw new Error("Amount must be in â‚±100 increments.");
       return value;
     }
 
@@ -3558,8 +3603,8 @@
 
     function buildTestPreviewText(entry) {
       return String(entry.customer || "") +
-        " • ₱" + Number(entry.amount || 0).toLocaleString("en-PH") +
-        " cash-out • ₱" + Number(entry.feeEarned || 0).toLocaleString("en-PH") +
+        " â€¢ â‚±" + Number(entry.amount || 0).toLocaleString("en-PH") +
+        " cash-out â€¢ â‚±" + Number(entry.feeEarned || 0).toLocaleString("en-PH") +
         " fee earned";
     }
     // TEST CASHOUT PURE HELPERS END
@@ -3567,7 +3612,7 @@
     // TEST AAP PURE HELPERS START
     function parseTestAapInputClient(text) {
       var raw = String(text || "").replace(/\s+/g, " ").trim();
-      var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:₱\s*)?([\d,]+(?:\.\d{1,2})?)$/);
+      var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:â‚±\s*)?([\d,]+(?:\.\d{1,2})?)$/);
       if (!match) throw new Error("Enter people and total received in either order, for example: 2 2450.");
 
       var first = Number(match[1].replace(/,/g, ""));
@@ -3600,14 +3645,14 @@
     }
 
     function formatTestAapPesoClient(value) {
-      return "₱" + Number(value || 0).toLocaleString("en-PH", {
+      return "â‚±" + Number(value || 0).toLocaleString("en-PH", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
       });
     }
 
     function buildTestAapPreviewText(calculation) {
-      return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
+      return calculation.people + " people Â· Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
         "Total fee " + formatTestAapPesoClient(calculation.totalFee) + "\n" +
         "Cash received " + formatTestAapPesoClient(calculation.cashReceived);
     }
@@ -3777,7 +3822,7 @@
       var text = input ? input.value.trim() : "";
 
       if (!text) {
-        setTestStatus("❌ Enter customer and cash-out amount.", "error");
+        setTestStatus("âŒ Enter customer and cash-out amount.", "error");
         if (input) input.focus();
         return;
       }
@@ -3791,7 +3836,7 @@
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
           setTestStatus(
-            "✓ Saved — " + buildTestPreviewText({
+            "âœ“ Saved â€” " + buildTestPreviewText({
               customer: result.customer,
               amount: result.amount,
               feeEarned: result.feeEarned
@@ -3802,7 +3847,7 @@
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("âŒ " + error.message, "error");
         }
       );
     }
@@ -3812,7 +3857,7 @@
       try {
         parseTestAapInputClient(input ? input.value : "");
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("âŒ " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -3832,7 +3877,7 @@
     }
 
     function parseTestTransferAmountClient(text) {
-      var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
+      var raw = String(text || "").replace(/â‚±/g, "").replace(/,/g, "").trim();
       var parts = raw ? raw.split(/\s+/) : [];
       if (parts.length < 1 || parts.length > 2) {
         throw new Error("Enter one amount, or amount and people for AAP.");
@@ -3859,7 +3904,7 @@
     }
 
     function parseTestOthersLoanInputClient(text, action) {
-      var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
+      var raw = String(text || "").replace(/â‚±/g, "").replace(/,/g, "").trim();
       var normalizedAction = String(action || "").trim().toLowerCase();
       if (normalizedAction !== "add" && normalizedAction !== "minus") {
         throw new Error("Choose ADD LOAN or MINUS LOAN.");
@@ -3905,7 +3950,7 @@
         try {
           parseTestOthersLoanInputClient(input ? input.value : "", "add");
         } catch (loanError) {
-          setTestStatus("❌ Enter a transfer amount or Others Loan entry.", "error");
+          setTestStatus("âŒ Enter a transfer amount or Others Loan entry.", "error");
           if (input) input.focus();
           return;
         }
@@ -3928,7 +3973,7 @@
         var parsed = parseTestAapInputClient(text);
         calculation = calculateTestAapClient(parsed.people, parsed.bookTotal);
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("âŒ " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -3942,7 +3987,7 @@
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
           setTestStatus(
-            "✓ Saved " + (result.destination === "gcash" ? "GCash" : "Cash") + " collection\n" + buildTestAapPreviewText({
+            "âœ“ Saved " + (result.destination === "gcash" ? "GCash" : "Cash") + " collection\n" + buildTestAapPreviewText({
               customer: result.customer,
               people: result.people,
               bookTotal: result.bookTotal,
@@ -3958,7 +4003,7 @@
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("âŒ " + error.message, "error");
         }
       );
     }
@@ -3969,7 +4014,7 @@
       try {
         parseTestTransferAmountClient(text);
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("âŒ " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -3981,12 +4026,12 @@
         function(result) {
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
-          setTestStatus("✓ " + result.description + " — " + formatPeso(result.amount), "success");
+          setTestStatus("âœ“ " + result.description + " â€” " + formatPeso(result.amount), "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("âŒ " + error.message, "error");
         }
       );
     }
@@ -3998,7 +4043,7 @@
       try {
         entry = parseTestOthersLoanInputClient(text, action);
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("âŒ " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -4013,19 +4058,19 @@
           var lender = result.lender ? " " + result.lender : "";
           if (result.action === "add") {
             setTestStatus(
-              "✓ Others Loan" + lender + " added — Card received " +
+              "âœ“ Others Loan" + lender + " added â€” Card received " +
               formatPeso(result.netToCard) +
               (result.fee ? " after " + formatPeso(result.fee) + " fee" : ""),
               "success"
             );
           } else {
-            setTestStatus("✓ Others Loan" + lender + " minus " + formatPeso(result.principal), "success");
+            setTestStatus("âœ“ Others Loan" + lender + " minus " + formatPeso(result.principal), "success");
           }
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("âŒ " + error.message, "error");
         }
       );
     }
@@ -4039,12 +4084,12 @@
         { action: "testLoan" },
         function(result) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("✓ Loan recorded — ₱415 payment + ₱50 rebate", "success");
+          setTestStatus("âœ“ Loan recorded â€” â‚±415 payment + â‚±50 rebate", "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("âŒ " + error.message, "error");
         }
       );
     }
@@ -4072,14 +4117,14 @@
           setTestActionButtonsDisabled(false);
           closeTestAtmModal();
           setTestStatus(
-            "✓ ATM withdrawal — " + formatPeso(result.amount) + " moved to Cash on Hand",
+            "âœ“ ATM withdrawal â€” " + formatPeso(result.amount) + " moved to Cash on Hand",
             "success"
           );
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("âŒ " + error.message, "error");
         }
       );
     }
@@ -4133,7 +4178,12 @@
         if (element) element.innerText = formatPeso(map[id]);
       });
 
-      renderTestRecentTransactions(data.recentTransactions || []);
+      testRecentTransactionsCache = data.recentTransactions || [];
+      if (!activeTestTransactionFilter) {
+        var title = document.getElementById("testTransactionsTitle");
+        if (title) title.innerText = "Recent Transactions";
+        renderTestRecentTransactions(testRecentTransactionsCache);
+      }
       syncActivePageHeight();
     }
 
@@ -4171,13 +4221,13 @@
 
         if (description === "cash-out" || fee > 0) {
           if (amount > 0) {
-            amountText = formatPeso(amount) + (fee > 0 ? " • +" + formatPeso(fee) + " fee" : "");
+            amountText = formatPeso(amount) + (fee > 0 ? " â€¢ +" + formatPeso(fee) + " fee" : "");
           } else {
             amountText = "+" + formatPeso(fee) + " fee";
           }
           amountClass += " income-value";
         } else if (category === "expense") {
-          amountText = "−" + formatPeso(amount);
+          amountText = "âˆ’" + formatPeso(amount);
           amountClass += " expense-value";
         } else if (category === "income") {
           amountText = "+" + formatPeso(amount);
@@ -4190,7 +4240,7 @@
           '<div class="transaction-row">' +
             '<div>' +
               '<div class="transaction-name">' + escapeHtml(customer) + '</div>' +
-              '<div class="transaction-meta">' + escapeHtml(metaParts.join(" • ")) + '</div>' +
+              '<div class="transaction-meta">' + escapeHtml(metaParts.join(" â€¢ ")) + '</div>' +
             '</div>' +
             '<div class="' + amountClass + '">' + escapeHtml(amountText) + '</div>' +
           '</div>'
@@ -4234,13 +4284,13 @@
           category: category
         },
         function(result) {
-          status.innerText = "✅ " + result.category + " added";
+          status.innerText = "âœ… " + result.category + " added";
           input.value = "";
           setLifeLogButtonsDisabled(false);
           loadLifeLogDashboard();
         },
         function(error) {
-          status.innerText = "❌ " + error.message;
+          status.innerText = "âŒ " + error.message;
           setLifeLogButtonsDisabled(false);
         }
       );
@@ -4255,10 +4305,35 @@
       return new Promise(function(resolve) {
         jsonpRequest(
           {
-            action: "lifeLogDashboard"
+            action: "lifeLogDashboard",
+            year: lifeLogSelectedYear,
+            month: lifeLogSelectedMonth
           },
           function(data) {
-            renderLifeLogRecentEntries(data.recentEntries || []);
+            lifeLogSelectedYear = Number(data.selectedYear || lifeLogSelectedYear);
+            lifeLogSelectedMonth = Number(data.selectedMonth || lifeLogSelectedMonth);
+            var selector = document.getElementById("lifeLogMonthSelector");
+            selector.innerHTML = (data.monthOptions || []).map(function(option) {
+              var value = option.year + "-" + option.month;
+              var selected = option.year === lifeLogSelectedYear && option.month === lifeLogSelectedMonth ? " selected" : "";
+              return '<option value="' + value + '"' + selected + '>' + escapeHtml(option.label) + '</option>';
+            }).join("");
+            var counts = data.counts || {};
+            document.getElementById("lifeLogTotalLogs").innerText = Number(data.totalLogs || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogHealthCount").innerText = Number(counts.Health || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogGroomingCount").innerText = Number(counts.Grooming || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogHomeCount").innerText = Number(counts.Home || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogDeviceCount").innerText = Number(counts.Device || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogOtherCount").innerText = Number(counts.Other || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogCommonIssue").innerText = data.mostCommonHealthIssue || "No Health logs";
+            document.getElementById("lifeLogCommonCount").innerText = data.mostCommonHealthCount ? Number(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
+            document.getElementById("lifeLogLatestHealth").innerText = data.latestHealthLog || "No Health logs";
+            document.getElementById("lifeLogLatestHealthDate").innerText = data.latestHealthDate || "";
+            lifeLogRecentEntriesCache = data.recentEntries || [];
+            if (!activeLifeLogTransactionFilter) {
+              document.getElementById("lifeLogTransactionsTitle").innerText = "Recent Life Logs";
+              renderLifeLogRecentEntries(data.recentEntries || []);
+            }
             resolve(true);
           },
           function(error) {
@@ -4276,6 +4351,8 @@
     function renderLifeLogRecentEntries(entries) {
       var recentBox = document.getElementById("lifeLogRecentEntries");
 
+      lifeLogRecentEntriesCache = Array.isArray(entries) ? entries : [];
+
       if (!entries.length) {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "No Life Log entries yet.";
@@ -4289,7 +4366,7 @@
           .filter(function(value) {
             return !!String(value || "").trim();
           })
-          .join(" • ");
+          .join(" â€¢ ");
 
         return (
           '<div class="transaction-row">' +
@@ -4359,7 +4436,7 @@
         function(result) {
 
           status.innerText =
-            "✅ " +
+            "âœ… " +
             result.category +
             " " +
             formatPeso(
@@ -4379,7 +4456,7 @@
         function(error) {
 
           status.innerText =
-            "❌ " +
+            "âŒ " +
             error.message;
 
           setTwiceEntryButtonsDisabled(
@@ -4464,9 +4541,11 @@
       var cache = getBusinessTransactionCache(pageName, category);
       document.getElementById(config.titleId).innerText = getBusinessFilterTitle(category);
 
-      if (cache.transactions.length) {
+      var hadCachedTransactions = cache.transactions.length > 0;
+      if (hadCachedTransactions) {
         config.render(cache.transactions, true, false);
         recentBox.scrollTop = 0;
+        scrollToFilteredTransactionBoxAfterLoad(config.boxId);
       } else {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "Loading...";
@@ -4476,7 +4555,10 @@
 
       return loadBusinessTransactionPage(pageName, category, cache)
         .then(function(success) {
-          if (success) loadRemainingBusinessTransactionsInBackground(pageName, category, cache);
+          if (success) {
+            if (!hadCachedTransactions) scrollToFilteredTransactionBoxAfterLoad(config.boxId);
+            loadRemainingBusinessTransactionsInBackground(pageName, category, cache);
+          }
           return success;
         });
     }
@@ -4725,7 +4807,7 @@
 
             var sign =
               isExpense
-                ? "−"
+                ? "âˆ’"
                 : "+";
 
             var valueClass =
@@ -4745,7 +4827,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" â€¢ ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -4813,7 +4895,7 @@
           entryType: entryType
         },
         function(result) {
-          status.innerText = "✅ " + result.category + " " + result.type + " " + formatPeso(result.amount) + " added";
+          status.innerText = "âœ… " + result.category + " " + result.type + " " + formatPeso(result.amount) + " added";
           input.value = "";
           selectedRentalCategory = "";
           document.querySelectorAll(".rental-category-button").forEach(function(button) {
@@ -4823,7 +4905,7 @@
           loadRentalDashboard();
         },
         function(error) {
-          status.innerText = "❌ " + error.message;
+          status.innerText = "âŒ " + error.message;
           setRentalEntryButtonsDisabled(false);
         }
       );
@@ -4862,12 +4944,17 @@
       document.getElementById("rentalChairTableExpenses").innerText = formatPeso(chairTable.expenses);
       document.getElementById("rentalChairTableTotalMoney").innerText = formatPeso(chairTable.totalMoney);
       document.getElementById("rentalChairTableTransactions").innerText = Number(chairTable.transactions || 0).toLocaleString("en-PH");
-      renderRentalRecentTransactions(data.recentTransactions || []);
+      rentalRecentTransactionsCache = data.recentTransactions || [];
+      if (!activeRentalTransactionFilter) {
+        document.getElementById("rentalTransactionsTitle").innerText = "Recent Transactions";
+        renderRentalRecentTransactions(rentalRecentTransactionsCache);
+      }
       syncActivePageHeight();
     }
 
     function renderRentalRecentTransactions(transactions) {
       var recentBox = document.getElementById("rentalRecentTransactions");
+      rentalRecentTransactionsCache = Array.isArray(transactions) ? transactions : [];
       var items = Array.isArray(transactions) ? transactions.slice(0, RECENT_TRANSACTION_LIMIT) : [];
       if (!items.length) {
         recentBox.className = "dashboard-message";
@@ -4877,13 +4964,13 @@
       }
       recentBox.className = "";
       recentBox.innerHTML = items.map(function(item) {
-        var meta = [item.date, item.time, item.category, item.type].filter(Boolean).join(" • ");
+        var meta = [item.date, item.time, item.category, item.type].filter(Boolean).join(" â€¢ ");
         var isExpense = Boolean(item.isExpense);
         return '<div class="transaction-row"><div><div class="transaction-name">' +
           escapeHtml(item.description || item.category || "Rental") +
           '</div><div class="transaction-meta">' + escapeHtml(meta) +
           '</div></div><div class="transaction-amount ' + (isExpense ? "expense-value" : "income-value") + '">' +
-          (isExpense ? "−" : "+") + formatPeso(item.amount) + '</div></div>';
+          (isExpense ? "âˆ’" : "+") + formatPeso(item.amount) + '</div></div>';
       }).join("");
       syncActivePageHeight();
     }
@@ -4943,7 +5030,7 @@
         function(result) {
 
           status.innerText =
-            "✅ " +
+            "âœ… " +
             result.category +
             " " +
             formatPeso(
@@ -4965,7 +5052,7 @@
         function(error) {
 
           status.innerText =
-            "❌ " +
+            "âŒ " +
             error.message;
 
           setPrintingEntryButtonsDisabled(
@@ -5006,13 +5093,13 @@
         },
         function(result) {
           status.innerText =
-            "✅ " + entryType + " " + formatPeso(result.amount) + " added";
+            "âœ… " + entryType + " " + formatPeso(result.amount) + " added";
           input.value = "";
           setMoneyFlowEntryButtonsDisabled(false);
           loadDashboard();
         },
         function(error) {
-          status.innerText = "❌ " + error.message;
+          status.innerText = "âŒ " + error.message;
           setMoneyFlowEntryButtonsDisabled(false);
         }
       );
@@ -5200,7 +5287,7 @@
 
             var sign =
               isExpense
-                ? "−"
+                ? "âˆ’"
                 : "+";
 
             var valueClass =
@@ -5220,7 +5307,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" â€¢ ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -5292,9 +5379,11 @@
 
       title.innerText = displayName + " Transactions";
 
-      if (cache.transactions.length) {
+      var hadCachedTransactions = cache.transactions.length > 0;
+      if (hadCachedTransactions) {
         renderGcashRecentTransactions(cache.transactions, true, false);
         recentBox.scrollTop = 0;
+        scrollToFilteredTransactionBoxAfterLoad("gcashRecentTransactions");
       } else {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "Loading...";
@@ -5305,6 +5394,7 @@
       return loadGcashTransactionPage(category, cache)
         .then(function(success) {
           if (success) {
+            if (!hadCachedTransactions) scrollToFilteredTransactionBoxAfterLoad("gcashRecentTransactions");
             loadRemainingGcashTransactionsInBackground(category, cache);
           }
           return success;
@@ -5389,7 +5479,7 @@
           "gcashMonthlyIncomeOnly"
         )
         .innerText =
-          "—";
+          "â€”";
 
 
       return new Promise(
@@ -5420,31 +5510,31 @@
                 .getElementById(
                   "gcashMonthlyIncomeOnly"
                 )
-                .innerText = "—";
+                .innerText = "â€”";
 
               document
                 .getElementById(
                   "gcashMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "â€”";
 
               document
                 .getElementById(
                   "mayaMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "â€”";
 
               document
                 .getElementById(
                   "loadMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "â€”";
 
               document
                 .getElementById(
                   "billsMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "â€”";
 
               document
                 .getElementById(
@@ -5588,7 +5678,7 @@
 
             var sign =
               item.isExpense
-                ? "−"
+                ? "âˆ’"
                 : "+";
 
             var valueClass =
@@ -5607,7 +5697,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" â€¢ ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -5645,7 +5735,7 @@
       var displayAmounts = buildGcashQuickDisplayAmounts(gcashQuickQuantity);
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button, index) {
-          button.textContent = "₱" + displayAmounts[index].toLocaleString("en-PH");
+          button.textContent = "â‚±" + displayAmounts[index].toLocaleString("en-PH");
         });
       status.innerText = "";
     }
@@ -5886,9 +5976,9 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "✅ " +
+              "âœ… " +
               formatPeso(result.amount) +
-              " · " +
+              " Â· " +
               result.category;
 
           input.value = "";
@@ -5901,7 +5991,7 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "❌ " + error.message;
+              "âŒ " + error.message;
 
           updateGcashCustomAddButton();
         }
@@ -5948,7 +6038,7 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "✅ " +
+              "âœ… " +
               result.category +
               " " +
               formatPeso(result.amount) +
@@ -5962,7 +6052,7 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "❌ " + error.message;
+              "âŒ " + error.message;
 
           if (selectedGcashQuickCategory) {
             setQuickAmountButtonsDisabled(false);
@@ -6019,7 +6109,7 @@
           "status"
         )
         .innerText =
-          "🎤 Listening...";
+          "ðŸŽ¤ Listening...";
 
 
       recognition.onresult =
@@ -6040,7 +6130,7 @@
               "status"
             )
             .innerText =
-              "✅ Heard";
+              "âœ… Heard";
 
         };
 
@@ -6068,7 +6158,7 @@
                 "status"
               )
               .innerText ===
-              "🎤 Listening..."
+              "ðŸŽ¤ Listening..."
           ) {
 
             document
@@ -6146,7 +6236,7 @@
               "status"
             )
             .innerText =
-              "✅ Expense added";
+              "âœ… Expense added";
 
 
           document
@@ -6179,7 +6269,7 @@
             ) +
             (
               result.category
-                ? " • " +
+                ? " â€¢ " +
                   escapeHtml(
                     result.category
                   )
@@ -6187,7 +6277,7 @@
             ) +
             (
               result.payment
-                ? " • " +
+                ? " â€¢ " +
                   escapeHtml(
                     result.payment
                   )
@@ -6213,7 +6303,7 @@
               "status"
             )
             .innerText =
-              "❌ " +
+              "âŒ " +
               error.message;
 
 
@@ -6275,7 +6365,7 @@
                   "recentTransactions"
                 )
                 .innerHTML =
-                  '<div class="dashboard-message">❌ ' +
+                  '<div class="dashboard-message">âŒ ' +
                   escapeHtml(
                     error.message
                   ) +
@@ -6396,6 +6486,15 @@
       const transactions =
         data.recentTransactions || [];
 
+      moneyFlowRecentTransactionsCache = transactions;
+
+      if (activeMoneyFlowTransactionFilter) {
+        syncActivePageHeight();
+        return;
+      }
+
+      document.getElementById("moneyFlowTransactionsTitle").innerText = "Recent Transactions";
+
 
       if (
         !transactions.length
@@ -6425,7 +6524,7 @@
               const sign =
                 item.isIncome
                   ? "+"
-                  : "−";
+                  : "âˆ’";
 
 
               const valueClass =
@@ -6436,11 +6535,11 @@
 
               const meta =
                 item.date +
-                " • " +
+                " â€¢ " +
                 item.category +
                 (
                   item.payment
-                    ? " • " +
+                    ? " â€¢ " +
                       item.payment
                     : ""
                 );
@@ -6478,6 +6577,146 @@
     }
 
 
+    function renderDesign1TransactionRows(boxId, items, emptyMessage, lifeMode, preserveScroll) {
+      var box = document.getElementById(boxId);
+      var previousScrollTop = preserveScroll ? box.scrollTop : 0;
+      if (!items.length) {
+        box.className = "dashboard-message";
+        box.innerText = emptyMessage;
+        syncActivePageHeight();
+        return;
+      }
+      box.className = "gcash-filtered-transactions";
+      box.innerHTML = items.map(function(item) {
+        var name = item.description || item.merchant || item.customer || item.category || "Transaction";
+        var meta = [item.date, item.time, item.customer, item.category, item.type, item.payment, item.notes]
+          .filter(Boolean).join(" â€¢ ");
+        var amount = lifeMode ? "" : '<div class="transaction-amount ' + (item.isExpense ? "expense-value" : "income-value") + '">' + (item.isExpense ? "âˆ’" : "+") + formatPeso(item.amount) + '</div>';
+        return '<div class="transaction-row"><div><div class="transaction-name">' + escapeHtml(name) + '</div><div class="transaction-meta">' + escapeHtml(meta) + '</div></div>' + amount + '</div>';
+      }).join("");
+      box.scrollTop = previousScrollTop;
+      syncActivePageHeight();
+    }
+
+    function getDesign1HistoryCache(cacheMap, key) {
+      if (!cacheMap[key]) cacheMap[key] = { transactions: [], nextCursor: 0, hasMore: true, loading: false };
+      return cacheMap[key];
+    }
+
+    function loadDesign1FilteredHistory(options) {
+      var cache = getDesign1HistoryCache(options.cacheMap, options.key);
+      var box = document.getElementById(options.boxId);
+      var firstDisplay = cache.transactions.length === 0;
+      if (cache.transactions.length) {
+        options.render(cache.transactions, false);
+        scrollToFilteredTransactionBoxAfterLoad(options.boxId);
+      } else {
+        box.className = "dashboard-message";
+        box.innerText = "Loading...";
+      }
+      function nextPage() {
+        if (cache.loading || !cache.hasMore) return;
+        cache.loading = true;
+        var params = Object.assign({}, options.params, { cursor: cache.nextCursor, limit: DASHBOARD_TRANSACTION_PAGE_SIZE });
+        jsonpRequest(params, function(data) {
+          cache.loading = false;
+          if (!options.isActive()) return;
+          cache.transactions = cache.transactions.concat(data.transactions || []);
+          cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
+          cache.hasMore = !!data.hasMore;
+          options.render(cache.transactions, !firstDisplay);
+          if (firstDisplay) {
+            firstDisplay = false;
+            scrollToFilteredTransactionBoxAfterLoad(options.boxId);
+          }
+          if (cache.hasMore) window.setTimeout(nextPage, 80);
+        }, function(error) {
+          cache.loading = false;
+          if (options.isActive()) {
+            box.className = "dashboard-message";
+            box.innerText = options.errorMessage;
+          }
+          console.log(error);
+          syncActivePageHeight();
+        });
+      }
+      if (cache.hasMore) nextPage();
+    }
+
+    function toggleMoneyFlowTransactionFilter(filter) {
+      var box = document.getElementById("recentTransactions");
+      if (activeMoneyFlowTransactionFilter === filter) {
+        activeMoneyFlowTransactionFilter = "";
+        document.getElementById("moneyFlowTransactionsTitle").innerText = "Recent Transactions";
+        renderDesign1TransactionRows("recentTransactions", moneyFlowRecentTransactionsCache, "No transactions yet.", false, false);
+        box.className = moneyFlowRecentTransactionsCache.length ? "" : "dashboard-message";
+        box.scrollTop = 0;
+        return;
+      }
+      activeMoneyFlowTransactionFilter = filter;
+      var titles = { income:"Income Transactions", expense:"Expense Transactions", transactions:"Transactions", "today-expenses":"Todayâ€™s Expenses", "highest-expense":"Highest Expense" };
+      var empty = { income:"No income transactions.", expense:"No expense transactions.", transactions:"No transactions yet.", "today-expenses":"No expenses today.", "highest-expense":"No expenses recorded." };
+      document.getElementById("moneyFlowTransactionsTitle").innerText = titles[filter];
+      loadDesign1FilteredHistory({ key:filter, cacheMap:moneyFlowTransactionHistoryCache, boxId:"recentTransactions", params:{action:"moneyFlowTransactions",filter:filter}, isActive:function(){return activeMoneyFlowTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("recentTransactions",items,empty[filter],false,preserve);}, errorMessage:"Could not load transactions." });
+    }
+
+    function toggleTestTransactionFilter(filter) {
+      var box = document.getElementById("testRecentTransactions");
+      if (activeTestTransactionFilter === filter) {
+        activeTestTransactionFilter = "";
+        document.getElementById("testTransactionsTitle").innerText = "Recent Transactions";
+        renderTestRecentTransactions(testRecentTransactionsCache);
+        box.scrollTop = 0;
+        return;
+      }
+      activeTestTransactionFilter = filter;
+      var titles = {"total-money":"Total Money Transactions","loan-remaining":"Loan Remaining Transactions","total-earned":"Total Earned Transactions","this-week-earned":"This Week Earned Transactions",card:"Money on Card Transactions",cash:"Money on Hand Transactions",gcash:"Money on GCash Transactions",nanay:"Utang kay Nanay Transactions","others-loan":"Others Loan Transactions"};
+      document.getElementById("testTransactionsTitle").innerText = titles[filter];
+      loadDesign1FilteredHistory({ key:filter, cacheMap:testTransactionHistoryCache, boxId:"testRecentTransactions", params:{action:"testTransactions",filter:filter}, isActive:function(){return activeTestTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("testRecentTransactions",items,"No matching transactions.",false,preserve);}, errorMessage:"Could not load Konek2Card transactions." });
+    }
+
+    function toggleRentalTransactionFilter(category, filter) {
+      var key = category + "|" + filter;
+      var box = document.getElementById("rentalRecentTransactions");
+      if (activeRentalTransactionFilter === key) {
+        activeRentalTransactionFilter = "";
+        document.getElementById("rentalTransactionsTitle").innerText = "Recent Transactions";
+        renderRentalRecentTransactions(rentalRecentTransactionsCache);
+        box.scrollTop = 0;
+        return;
+      }
+      activeRentalTransactionFilter = key;
+      var filterName = filter === "income" ? "Income" : filter === "expense" ? "Expenses" : filter === "total-money" ? "Total Money" : "Transactions";
+      document.getElementById("rentalTransactionsTitle").innerText = category + " " + filterName;
+      var empty = "No " + category + (filter === "income" ? " income transactions." : filter === "expense" ? " expense transactions." : " transactions yet.");
+      loadDesign1FilteredHistory({ key:key, cacheMap:rentalTransactionHistoryCache, boxId:"rentalRecentTransactions", params:{action:"rentalTransactions",category:category,filter:filter}, isActive:function(){return activeRentalTransactionFilter===key;}, render:function(items,preserve){renderDesign1TransactionRows("rentalRecentTransactions",items,empty,false,preserve);}, errorMessage:"Could not load Rental transactions." });
+    }
+
+    function changeLifeLogMonth(value) {
+      var parts = String(value || "").split("-");
+      lifeLogSelectedYear = Number(parts[0]) || new Date().getFullYear();
+      lifeLogSelectedMonth = Number(parts[1]) || (new Date().getMonth() + 1);
+      activeLifeLogTransactionFilter = "";
+      lifeLogTransactionHistoryCache = {};
+      loadLifeLogDashboard();
+    }
+
+    function toggleLifeLogTransactionFilter(filter) {
+      var box = document.getElementById("lifeLogRecentEntries");
+      if (activeLifeLogTransactionFilter === filter) {
+        activeLifeLogTransactionFilter = "";
+        document.getElementById("lifeLogTransactionsTitle").innerText = "Recent Life Logs";
+        renderLifeLogRecentEntries(lifeLogRecentEntriesCache);
+        box.scrollTop = 0;
+        return;
+      }
+      activeLifeLogTransactionFilter = filter;
+      var labels = {total:"All Life Logs",health:"Health Logs",grooming:"Grooming Logs",home:"Home Logs",device:"Device Logs",other:"Other Logs","common-health":"Most Common Health Issue","latest-health":"Latest Health Log"};
+      document.getElementById("lifeLogTransactionsTitle").innerText = labels[filter];
+      var issue = document.getElementById("lifeLogCommonIssue").innerText;
+      loadDesign1FilteredHistory({ key:lifeLogSelectedYear+"-"+lifeLogSelectedMonth+"|"+filter+"|"+issue, cacheMap:lifeLogTransactionHistoryCache, boxId:"lifeLogRecentEntries", params:{action:"lifeLogTransactions",filter:filter,year:lifeLogSelectedYear,month:lifeLogSelectedMonth,issue:issue}, isActive:function(){return activeLifeLogTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("lifeLogRecentEntries",items,"No Life Logs for this month.",true,preserve);}, errorMessage:"Could not load Life Logs." });
+    }
+
     // ========================================================
     // HELPERS
     // ========================================================
@@ -6487,7 +6726,7 @@
     ) {
 
       return (
-        "₱" +
+        "â‚±" +
         Number(
           value || 0
         )
