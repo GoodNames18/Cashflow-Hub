@@ -2147,6 +2147,8 @@
     function openDashboardMonthSelector(page) {
       var picker = document.getElementById("dashboardMonthPicker");
       var current = currentDashboardMonthValue();
+      var firstMonths = { gcash: "2026-07", konek: "2026-08" };
+      picker.min = firstMonths[page] || "";
       picker.max = current;
       picker.value = dashboardSelectedMonths[page] || current;
       picker.dataset.page = page;
