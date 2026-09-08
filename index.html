@@ -256,6 +256,20 @@
       font-size: 14px;
     }
 
+    .selectable-month-label {
+      cursor: pointer;
+    }
+
+    .dashboard-month-picker {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      left: -10px;
+      bottom: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1177,7 +1191,7 @@
             <h1>&#x1F4CA; Dashboard</h1>
             <button class="refresh-button" type="button" onclick="loadLifeLogDashboard()">&#x21BB; Refresh</button>
           </div>
-          <select id="lifeLogMonthSelector" class="quick-custom-input" onchange="changeLifeLogMonth(this.value)"></select>
+          <div id="lifeLogMonthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('lifeLog')">Loading...</div>
 
           <div class="metric-grid">
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('total')"><div class="metric-icon">&#x1F4DA;</div><div class="metric-label">Total Logs</div><div id="lifeLogTotalLogs" class="metric-value">&#x2014;</div></div>
@@ -1269,7 +1283,7 @@
 
           <div class="cash-month-summary">
             <div class="cash-income-only"><span>Total Income</span><strong id="twiceLifetimeIncome">&#x2014;</strong></div>
-            <div id="twiceMonthLabel" class="month-label">Loading...</div>
+            <div id="twiceMonthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('twice')">Loading...</div>
           </div>
 
           <div class="metric-grid">
@@ -1412,7 +1426,7 @@
 
           <div class="cash-month-summary">
             <div class="cash-income-only"><span>Total Income</span><strong id="printingLifetimeIncome">&#x2014;</strong></div>
-            <div id="printingMonthLabel" class="month-label">Loading...</div>
+            <div id="printingMonthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('printing')">Loading...</div>
           </div>
 
           <div class="metric-grid">
@@ -1584,7 +1598,10 @@
 
             <div
               id="gcashMonthLabel"
-              class="month-label"
+              class="month-label selectable-month-label"
+              role="button"
+              tabindex="0"
+              onclick="openDashboardMonthSelector('gcash')"
             >
               Loading...
             </div>
@@ -1739,7 +1756,7 @@
 
             <div class="cash-month-summary">
               <div class="cash-income-only"><span>Total Income</span><strong id="moneyFlowLifetimeIncome">&#x2014;</strong></div>
-              <div id="monthLabel" class="month-label">Loading...</div>
+              <div id="monthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('moneyFlow')">Loading...</div>
             </div>
 
 
@@ -1902,7 +1919,7 @@
 
           <div class="cash-month-summary">
             <div class="cash-income-only"><span>Total Income</span><strong id="testLifetimeIncome">&#x2014;</strong></div>
-            <div id="testMonthLabel" class="month-label">Loading...</div>
+            <div id="testMonthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('konek')">Loading...</div>
           </div>
 
           <div class="metric-grid test-metric-grid">
@@ -2039,7 +2056,7 @@
           </div>
           <div class="cash-month-summary">
             <div class="cash-income-only"><span>Total Income</span><strong id="rentalLifetimeIncome">&#x2014;</strong></div>
-            <div id="rentalMonthLabel" class="month-label">Loading...</div>
+            <div id="rentalMonthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('rental')">Loading...</div>
           </div>
 
           <h2 class="rental-dashboard-category">&#x1F4F7; Insta360</h2>
@@ -2070,6 +2087,8 @@
 
   </main>
 
+
+  <input id="dashboardMonthPicker" class="dashboard-month-picker" type="month" aria-hidden="true">
 
   <script>
     document.title = "Cashflow Hub";
@@ -2107,11 +2126,54 @@
     let lifeLogTransactionHistoryCache = {};
     let lifeLogSelectedYear = new Date().getFullYear();
     let lifeLogSelectedMonth = new Date().getMonth() + 1;
+    let dashboardSelectedMonths = {};
     const DASHBOARD_TRANSACTION_PAGE_SIZE = 50;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
     const TEST_DISPLAY_NAME = "Konek2Card";
+
+    function currentDashboardMonthValue() {
+      var now = new Date();
+      return String(now.getFullYear()) + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    }
+
+    function dashboardMonthParams(page) {
+      var value = dashboardSelectedMonths[page] || currentDashboardMonthValue();
+      var parts = value.split("-");
+      return { year: Number(parts[0]), month: Number(parts[1]) };
+    }
+
+    function openDashboardMonthSelector(page) {
+      var picker = document.getElementById("dashboardMonthPicker");
+      var current = currentDashboardMonthValue();
+      picker.max = current;
+      picker.value = dashboardSelectedMonths[page] || current;
+      picker.dataset.page = page;
+      if (typeof picker.showPicker === "function") picker.showPicker();
+      else picker.click();
+    }
+
+    function applyDashboardMonthSelection(value) {
+      var picker = document.getElementById("dashboardMonthPicker");
+      var page = picker.dataset.page;
+      if (!page || !value || value > currentDashboardMonthValue()) return;
+      dashboardSelectedMonths[page] = value;
+      var loaders = {
+        lifeLog: loadLifeLogDashboard,
+        twice: loadTwiceAsNyceDashboard,
+        printing: loadPrintingDashboard,
+        gcash: loadGcashDashboard,
+        moneyFlow: loadDashboard,
+        konek: loadTestDashboard,
+        rental: loadRentalDashboard
+      };
+      if (loaders[page]) loaders[page]();
+    }
+
+    document.getElementById("dashboardMonthPicker").addEventListener("change", function() {
+      applyDashboardMonthSelection(this.value);
+    });
 
     function scrollToFilteredTransactionBoxAfterLoad(boxId) {
       var box = document.getElementById(boxId);
@@ -4135,8 +4197,9 @@
       if (monthLabel) monthLabel.innerText = "Loading...";
 
       return new Promise(function(resolve) {
+        var period = dashboardMonthParams("konek");
         jsonpRequest(
-          { action: "testDashboard" },
+          { action: "testDashboard", year: period.year, month: period.month },
           function(data) {
             renderTestDashboard(data);
             resolve(true);
@@ -4305,6 +4368,9 @@
       recentBox.innerText = "Loading...";
 
       return new Promise(function(resolve) {
+        var period = dashboardMonthParams("lifeLog");
+        lifeLogSelectedYear = period.year;
+        lifeLogSelectedMonth = period.month;
         jsonpRequest(
           {
             action: "lifeLogDashboard",
@@ -4314,12 +4380,8 @@
           function(data) {
             lifeLogSelectedYear = Number(data.selectedYear || lifeLogSelectedYear);
             lifeLogSelectedMonth = Number(data.selectedMonth || lifeLogSelectedMonth);
-            var selector = document.getElementById("lifeLogMonthSelector");
-            selector.innerHTML = (data.monthOptions || []).map(function(option) {
-              var value = option.year + "-" + option.month;
-              var selected = option.year === lifeLogSelectedYear && option.month === lifeLogSelectedMonth ? " selected" : "";
-              return '<option value="' + value + '"' + selected + '>' + escapeHtml(option.label) + '</option>';
-            }).join("");
+            dashboardSelectedMonths.lifeLog = String(lifeLogSelectedYear) + "-" + String(lifeLogSelectedMonth).padStart(2, "0");
+            document.getElementById("lifeLogMonthLabel").innerText = data.monthLabel || "";
             var counts = data.counts || {};
             document.getElementById("lifeLogTotalLogs").innerText = Number(data.totalLogs || 0).toLocaleString("en-PH");
             document.getElementById("lifeLogHealthCount").innerText = Number(counts.Health || 0).toLocaleString("en-PH");
@@ -4639,9 +4701,12 @@
       return new Promise(
         function(resolve) {
 
+          var period = dashboardMonthParams("twice");
           jsonpRequest(
             {
-              action: "twiceDashboard"
+              action: "twiceDashboard",
+              year: period.year,
+              month: period.month
             },
 
             function(data) {
@@ -4692,7 +4757,7 @@
           data.monthLabel || "";
 
       document.getElementById("twiceLifetimeIncome").innerText =
-        formatPeso(data.income);
+        formatPeso(data.totalIncome);
 
       document
         .getElementById(
@@ -4919,8 +4984,9 @@
     function loadRentalDashboard() {
       document.getElementById("rentalMonthLabel").innerText = "Loading...";
       return new Promise(function(resolve) {
+        var period = dashboardMonthParams("rental");
         jsonpRequest(
-          { action: "rentalDashboard" },
+          { action: "rentalDashboard", year: period.year, month: period.month },
           function(data) {
             renderRentalDashboard(data);
             resolve(true);
@@ -4938,7 +5004,7 @@
 
     function renderRentalDashboard(data) {
       document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
-      document.getElementById("rentalLifetimeIncome").innerText = formatPeso(Number((data.insta360 || {}).income || 0) + Number((data.chairTable || {}).income || 0));
+      document.getElementById("rentalLifetimeIncome").innerText = formatPeso(data.totalIncome);
       var categories = data.categories || {};
       var insta360 = categories.insta360 || {};
       var chairTable = categories.chairTable || {};
@@ -5126,9 +5192,12 @@
       return new Promise(
         function(resolve) {
 
+          var period = dashboardMonthParams("printing");
           jsonpRequest(
             {
-              action: "printingDashboard"
+              action: "printingDashboard",
+              year: period.year,
+              month: period.month
             },
 
             function(data) {
@@ -5180,7 +5249,7 @@
           data.monthLabel || "";
 
       document.getElementById("printingLifetimeIncome").innerText =
-        formatPeso(data.income);
+        formatPeso(data.totalIncome);
 
       document
         .getElementById(
@@ -5494,10 +5563,13 @@
       return new Promise(
         function(resolve) {
 
+          var period = dashboardMonthParams("gcash");
           jsonpRequest(
             {
               action:
-                "gcashDashboard"
+                "gcashDashboard",
+              year: period.year,
+              month: period.month
             },
 
             function(data) {
@@ -6347,10 +6419,13 @@
       return new Promise(
         function(resolve) {
 
+          var period = dashboardMonthParams("moneyFlow");
           jsonpRequest(
             {
               action:
-                "dashboard"
+                "dashboard",
+              year: period.year,
+              month: period.month
             },
 
             function(data) {
@@ -6401,7 +6476,7 @@
           data.monthLabel || "";
 
       document.getElementById("moneyFlowLifetimeIncome").innerText =
-        formatPeso(data.monthlyIncome);
+        formatPeso(data.totalIncome);
 
 
       document
