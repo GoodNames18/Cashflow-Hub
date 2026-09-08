@@ -1268,7 +1268,7 @@
           </div>
 
           <div class="cash-month-summary">
-            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="twiceLifetimeIncome">&#x2014;</strong></div>
+            <div class="cash-income-only"><span>Total Income</span><strong id="twiceLifetimeIncome">&#x2014;</strong></div>
             <div id="twiceMonthLabel" class="month-label">Loading...</div>
           </div>
 
@@ -1411,7 +1411,7 @@
           </div>
 
           <div class="cash-month-summary">
-            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="printingLifetimeIncome">&#x2014;</strong></div>
+            <div class="cash-income-only"><span>Total Income</span><strong id="printingLifetimeIncome">&#x2014;</strong></div>
             <div id="printingMonthLabel" class="month-label">Loading...</div>
           </div>
 
@@ -1578,7 +1578,7 @@
           <div class="cash-month-summary">
 
             <div class="cash-income-only">
-              <span>Lifetime Total Income</span>
+              <span>Total Income</span>
               <strong id="gcashMonthlyIncomeOnly">&#x2014;</strong>
             </div>
 
@@ -1738,7 +1738,7 @@
 
 
             <div class="cash-month-summary">
-              <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="moneyFlowLifetimeIncome">&#x2014;</strong></div>
+              <div class="cash-income-only"><span>Total Income</span><strong id="moneyFlowLifetimeIncome">&#x2014;</strong></div>
               <div id="monthLabel" class="month-label">Loading...</div>
             </div>
 
@@ -1901,7 +1901,7 @@
           </div>
 
           <div class="cash-month-summary">
-            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="testLifetimeIncome">&#x2014;</strong></div>
+            <div class="cash-income-only"><span>Total Income</span><strong id="testLifetimeIncome">&#x2014;</strong></div>
             <div id="testMonthLabel" class="month-label">Loading...</div>
           </div>
 
@@ -2038,7 +2038,7 @@
             <button class="refresh-button" type="button" onclick="loadRentalDashboard()">&#x21BB; Refresh</button>
           </div>
           <div class="cash-month-summary">
-            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="rentalLifetimeIncome">&#x2014;</strong></div>
+            <div class="cash-income-only"><span>Total Income</span><strong id="rentalLifetimeIncome">&#x2014;</strong></div>
             <div id="rentalMonthLabel" class="month-label">Loading...</div>
           </div>
 
@@ -4161,7 +4161,7 @@
       var monthLabel = document.getElementById("testMonthLabel");
       if (monthLabel) monthLabel.innerText = data.monthLabel || "";
       var lifetimeIncome = document.getElementById("testLifetimeIncome");
-      if (lifetimeIncome) lifetimeIncome.innerText = formatPeso(data.lifetimeIncome);
+      if (lifetimeIncome) lifetimeIncome.innerText = formatPeso(data.totalEarned);
 
       var map = {
         testTotalMoney: data.totalMoney,
@@ -4692,7 +4692,7 @@
           data.monthLabel || "";
 
       document.getElementById("twiceLifetimeIncome").innerText =
-        formatPeso(data.lifetimeIncome);
+        formatPeso(data.income);
 
       document
         .getElementById(
@@ -4938,7 +4938,7 @@
 
     function renderRentalDashboard(data) {
       document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
-      document.getElementById("rentalLifetimeIncome").innerText = formatPeso(data.lifetimeIncome);
+      document.getElementById("rentalLifetimeIncome").innerText = formatPeso(Number((data.insta360 || {}).income || 0) + Number((data.chairTable || {}).income || 0));
       var categories = data.categories || {};
       var insta360 = categories.insta360 || {};
       var chairTable = categories.chairTable || {};
@@ -5180,7 +5180,7 @@
           data.monthLabel || "";
 
       document.getElementById("printingLifetimeIncome").innerText =
-        formatPeso(data.lifetimeIncome);
+        formatPeso(data.income);
 
       document
         .getElementById(
@@ -5586,7 +5586,7 @@
           "gcashMonthlyIncomeOnly"
         )
         .innerText =
-          formatPeso(data.lifetimeIncome);
+          formatPeso(data.totalIncome);
 
 
       document
@@ -6401,7 +6401,7 @@
           data.monthLabel || "";
 
       document.getElementById("moneyFlowLifetimeIncome").innerText =
-        formatPeso(data.lifetimeIncome);
+        formatPeso(data.monthlyIncome);
 
 
       document
