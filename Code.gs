@@ -2,6 +2,8 @@
 // MAIN EDIT TRIGGER
 // =========================================================
 const APP_RECENT_TRANSACTION_LIMIT = 10;
+var KONEK2CARD_FIRST_MONTH_ = new Date(2026, 7, 1);
+var CASH_IN_OUT_FIRST_DATE_ = new Date(2026, 6, 16);
 
 function getAllowedDashboardPeriod_(selectedYear, selectedMonth, now) {
   var current = now instanceof Date ? now : new Date();
@@ -179,6 +181,12 @@ function onEdit(e) {
     var touchesLifeLogRows = range.getLastRow() >= 5 && range.getColumn() <= 6 && range.getLastColumn() >= 2;
     var touchesLifeLogMonth = range.getRow() <= 2 && range.getLastRow() >= 2 && range.getColumn() <= 13 && range.getLastColumn() >= 8;
     if (touchesLifeLogRows || touchesLifeLogMonth) getLifeLogDashboardData();
+  }
+
+  if (sheetName === "Cash In/Out") {
+    var touchesCashRows = range.getLastRow() >= 5 && range.getColumn() <= 6 && range.getLastColumn() >= 2;
+    var touchesCashMonth = range.getRow() <= 2 && range.getLastRow() >= 2 && range.getColumn() <= 11 && range.getLastColumn() >= 8;
+    if (touchesCashRows || touchesCashMonth) refreshCashInOutSheetDashboard_(sheet, new Date());
   }
 
   return;
@@ -3950,6 +3958,12 @@ var TEST_REBUILD_VERSION_ = 'TEST_CASHOUT_REBUILD_V1';
 // new balances or earnings totals.
 var TEST_LIVE_START_AT_KEY_ = 'TEST_LIVE_START_AT_V3';
 
+function getKonek2CardEffectiveStartMs_(liveStartAt) {
+  var configured = new Date(liveStartAt).getTime();
+  var fixedStart = KONEK2CARD_FIRST_MONTH_.getTime();
+  return isNaN(configured) ? fixedStart : Math.max(configured, fixedStart);
+}
+
 function ensureTestCashOutSetup_() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = spreadsheet.getSheetByName(TEST_SHEET_NAME_);
@@ -4231,7 +4245,7 @@ function getTestGcashAapProcessingFromRow_(row) {
 }
 
 function getTestOutstandingGcashAapReceipts_(rows, liveStartAt) {
-  var liveStartMs = new Date(liveStartAt).getTime();
+  var liveStartMs = getKonek2CardEffectiveStartMs_(liveStartAt);
   var events = [];
   var sourceRows = Array.isArray(rows) ? rows : [];
   for (var i = 0; i < sourceRows.length; i++) {
@@ -4448,7 +4462,7 @@ function getTestEarnedFeeValue_(row) {
 
 function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
   var sourceRows = Array.isArray(rows) ? rows : [];
-  var liveStartMs = new Date(liveStartAt).getTime();
+  var liveStartMs = getKonek2CardEffectiveStartMs_(liveStartAt);
   var currentDate = asOfDate instanceof Date ? asOfDate : new Date();
   var liveRows = [];
 
@@ -4623,7 +4637,7 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
 
 function getTestYearOptions_(rows, liveStartAt, currentYear) {
   var sourceRows = Array.isArray(rows) ? rows : [];
-  var liveStartMs = new Date(liveStartAt).getTime();
+  var liveStartMs = getKonek2CardEffectiveStartMs_(liveStartAt);
   var years = [];
 
   function addYear_(year) {
@@ -4651,34 +4665,19 @@ function getTestYearOptions_(rows, liveStartAt, currentYear) {
 
 
 function getTestMonthOptions_(rows, liveStartAt, asOfDate) {
-  var sourceRows = Array.isArray(rows) ? rows : [];
-  var liveStartMs = new Date(liveStartAt).getTime();
   var now = asOfDate instanceof Date ? asOfDate : new Date();
   var monthNames = [
     'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
     'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
   ];
   var monthKeys = [];
-
-  function addMonth_(date) {
-    var year = date.getFullYear();
-    var month = date.getMonth();
-    var key = String(year) + '-' + String(month + 1).padStart(2, '0');
-    if (monthKeys.indexOf(key) === -1) monthKeys.push(key);
+  var cursor = new Date(KONEK2CARD_FIRST_MONTH_.getFullYear(), KONEK2CARD_FIRST_MONTH_.getMonth(), 1);
+  var currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  while (cursor.getTime() <= currentMonth.getTime()) {
+    monthKeys.push(String(cursor.getFullYear()) + '-' + String(cursor.getMonth() + 1).padStart(2, '0'));
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   }
-
-  addMonth_(now);
-
-  for (var i = 0; i < sourceRows.length; i++) {
-    var timestamp = getTestRowTimestamp_(sourceRows[i]);
-    if (isNaN(timestamp)) continue;
-    if (!isNaN(liveStartMs) && timestamp < liveStartMs) continue;
-    addMonth_(new Date(timestamp));
-  }
-
-  monthKeys.sort(function(a, b) {
-    return a < b ? 1 : a > b ? -1 : 0;
-  });
+  monthKeys.reverse();
 
   return monthKeys.map(function(key) {
     var parts = key.split('-');
@@ -4698,7 +4697,7 @@ function computeTestMonthlySummaryFromRows_(rows, liveStartAt, monthKey, asOfDat
   var year = Number(parts[0]);
   var monthIndex = Number(parts[1]) - 1;
   var now = asOfDate instanceof Date ? asOfDate : new Date();
-  var liveStartMs = new Date(liveStartAt).getTime();
+  var liveStartMs = getKonek2CardEffectiveStartMs_(liveStartAt);
   var monthStartMs = new Date(year, monthIndex, 1).getTime();
   var nextMonthStartMs = new Date(year, monthIndex + 1, 1).getTime();
   var cutoffExclusiveMs = Math.min(nextMonthStartMs, now.getTime() + 1);
@@ -4731,7 +4730,7 @@ function computeTestYearlySummaryFromRows_(rows, liveStartAt, selectedYear, asOf
   var sourceRows = Array.isArray(rows) ? rows : [];
   var year = Number(selectedYear);
   var now = asOfDate instanceof Date ? asOfDate : new Date();
-  var liveStartMs = new Date(liveStartAt).getTime();
+  var liveStartMs = getKonek2CardEffectiveStartMs_(liveStartAt);
   var yearStartMs = new Date(year, 0, 1).getTime();
   var nextYearStartMs = new Date(year + 1, 0, 1).getTime();
   var cutoffExclusiveMs = Math.min(nextYearStartMs, now.getTime() + 1);
@@ -6926,6 +6925,11 @@ function getGcashBusinessDashboardData(selectedYear, selectedMonth) {
         }
 
 
+        if (transactionDate < CASH_IN_OUT_FIRST_DATE_) {
+          continue;
+        }
+
+
         var eLower =
           columnE.toLowerCase();
 
@@ -7147,6 +7151,65 @@ function normalizeGcashDashboardAmount_(value) {
     : amount;
 }
 
+function getCashInOutMonthOptions_(asOfDate) {
+  var now = asOfDate instanceof Date ? asOfDate : new Date();
+  var names = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  var current = new Date(now.getFullYear(), now.getMonth(), 1);
+  var cursor = new Date(CASH_IN_OUT_FIRST_DATE_.getFullYear(), CASH_IN_OUT_FIRST_DATE_.getMonth(), 1);
+  var options = [];
+  while (cursor.getTime() <= current.getTime()) {
+    options.push({
+      key: String(cursor.getFullYear()) + '-' + String(cursor.getMonth() + 1).padStart(2, '0'),
+      label: names[cursor.getMonth()] + ' ' + cursor.getFullYear()
+    });
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  }
+  return options.reverse();
+}
+
+function computeCashInOutMonthlyTotalsFromRows_(rows, monthKey) {
+  var totals = { gcash: 0, maya: 0, load: 0, bills: 0 };
+  (rows || []).forEach(function(row) {
+    var date = row[0] instanceof Date ? row[0] : new Date(row[0]);
+    var amount = Math.abs(Number(row[2]) || 0);
+    if (isNaN(date.getTime()) || date < CASH_IN_OUT_FIRST_DATE_ || amount <= 0) return;
+    var key = String(date.getFullYear()) + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    if (key !== monthKey) return;
+    var columnE = String(row[3] || '').trim().toLowerCase();
+    var columnF = String(row[4] || '').trim();
+    var columnFLower = columnF.toLowerCase();
+    var category = ['gcash','maya','load','bills'].indexOf(columnE) !== -1
+      ? columnE
+      : (['gcash','maya','load','bills'].indexOf(columnFLower) !== -1 ? columnFLower : '');
+    if (!category) return;
+    var isExpense = columnE === 'expense' || /(^|[^a-z])(expense|expenses|cash[ -]?out)([^a-z]|$)/i.test(columnF);
+    totals[category] += isExpense ? -amount : amount;
+  });
+  return totals;
+}
+
+function refreshCashInOutSheetDashboard_(sheet, asOfDate) {
+  if (!sheet) return;
+  var now = asOfDate instanceof Date ? asOfDate : new Date();
+  var options = getCashInOutMonthOptions_(now);
+  var selectedLabel = String(sheet.getRange('H2').getDisplayValue() || '').trim().toUpperCase();
+  var selected = options.filter(function(option) { return option.label === selectedLabel; })[0] || options[0];
+  var lastRow = sheet.getLastRow();
+  var rows = lastRow >= 5 ? sheet.getRange(5, 2, lastRow - 4, 5).getValues() : [];
+  var totals = computeCashInOutMonthlyTotalsFromRows_(rows, selected.key);
+  sheet.getRange('H2:K4').getMergedRanges().forEach(function(range) { range.breakApart(); });
+  sheet.getRange('H2:K2').merge();
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(options.map(function(option) { return option.label; }), true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange('H2').setDataValidation(rule).setValue(selected.label).setHorizontalAlignment('center');
+  sheet.getRange('H3:K3').setValues([['Gcash', 'Maya', 'Load', 'Bills']]);
+  sheet.getRange('H4:K4').setValues([[totals.gcash, totals.maya, totals.load, totals.bills]])
+    .setNumberFormat('₱#,##0.00');
+  sheet.getRange('H2:K4').setBorder(true, true, true, true, true, true, '#555555', SpreadsheetApp.BorderStyle.SOLID);
+}
+
 // =========================================================
 // GCASH BUSINESS QUICK ENTRY
 //
@@ -7306,7 +7369,8 @@ amount =
 
 
   SpreadsheetApp.flush();
-ensureCashInOutCurrentYearDropdown_(sheet);
+  ensureCashInOutCurrentYearDropdown_(sheet);
+  refreshCashInOutSheetDashboard_(sheet, now);
 
   // =======================================================
   // RETURN RESULT TO APP
@@ -7532,6 +7596,7 @@ function addGcashBusinessTextEntry(text, categoryOverride) {
 
   SpreadsheetApp.flush();
   ensureCashInOutCurrentYearDropdown_(sheet);
+  refreshCashInOutSheetDashboard_(sheet, now);
 
   return {
     amount: amount,
