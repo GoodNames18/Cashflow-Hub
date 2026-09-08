@@ -1044,7 +1044,7 @@
       id="installButton"
       class="hidden"
       onclick="installExpenseApp()"
-    >↓ Install Cashflow Hub</button>
+    >&#x2193; Install Cashflow Hub</button>
 
     <!-- ====================================================
          APP TABS
@@ -1174,24 +1174,24 @@
           </div>
 
           <div class="dashboard-header">
-            <h1>📊 Dashboard</h1>
-            <button class="refresh-button" type="button" onclick="loadLifeLogDashboard()">↻ Refresh</button>
+            <h1>&#x1F4CA; Dashboard</h1>
+            <button class="refresh-button" type="button" onclick="loadLifeLogDashboard()">&#x21BB; Refresh</button>
           </div>
           <select id="lifeLogMonthSelector" class="quick-custom-input" onchange="changeLifeLogMonth(this.value)"></select>
 
           <div class="metric-grid">
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('total')"><div class="metric-icon">📚</div><div class="metric-label">Total Logs</div><div id="lifeLogTotalLogs" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('health')"><div class="metric-icon">❤️</div><div class="metric-label">Health</div><div id="lifeLogHealthCount" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('grooming')"><div class="metric-icon">✂️</div><div class="metric-label">Grooming</div><div id="lifeLogGroomingCount" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('home')"><div class="metric-icon">🏠</div><div class="metric-label">Home</div><div id="lifeLogHomeCount" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('device')"><div class="metric-icon">📱</div><div class="metric-label">Device</div><div id="lifeLogDeviceCount" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('other')"><div class="metric-icon">📝</div><div class="metric-label">Other</div><div id="lifeLogOtherCount" class="metric-value">—</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('total')"><div class="metric-icon">&#x1F4DA;</div><div class="metric-label">Total Logs</div><div id="lifeLogTotalLogs" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('health')"><div class="metric-icon">&#x2764;&#xFE0F;</div><div class="metric-label">Health</div><div id="lifeLogHealthCount" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('grooming')"><div class="metric-icon">&#x2702;&#xFE0F;</div><div class="metric-label">Grooming</div><div id="lifeLogGroomingCount" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('home')"><div class="metric-icon">&#x1F3E0;</div><div class="metric-label">Home</div><div id="lifeLogHomeCount" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('device')"><div class="metric-icon">&#x1F4F1;</div><div class="metric-label">Device</div><div id="lifeLogDeviceCount" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('other')"><div class="metric-icon">&#x1F4DD;</div><div class="metric-label">Other</div><div id="lifeLogOtherCount" class="metric-value">&#x2014;</div></div>
           </div>
 
           <h2 class="rental-dashboard-category">Health Insights</h2>
           <div class="metric-grid">
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('common-health')"><div class="metric-icon">🔁</div><div class="metric-label">Most Common Health Issue</div><div id="lifeLogCommonIssue" class="metric-value">—</div><div id="lifeLogCommonCount" class="transaction-meta"></div></div>
-            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('latest-health')"><div class="metric-icon">🩺</div><div class="metric-label">Latest Health Log</div><div id="lifeLogLatestHealth" class="metric-value">—</div><div id="lifeLogLatestHealthDate" class="transaction-meta"></div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('common-health')"><div class="metric-icon">&#x1F501;</div><div class="metric-label">Most Common Health Issue</div><div id="lifeLogCommonIssue" class="metric-value">&#x2014;</div><div id="lifeLogCommonCount" class="transaction-meta"></div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('latest-health')"><div class="metric-icon">&#x1FA7A;</div><div class="metric-label">Latest Health Log</div><div id="lifeLogLatestHealth" class="metric-value">&#x2014;</div><div id="lifeLogLatestHealthDate" class="transaction-meta"></div></div>
           </div>
 
           <div class="recent-card">
@@ -1255,74 +1255,72 @@
 
           <div class="dashboard-header">
 
-            <h1>📊 Dashboard</h1>
+            <h1>&#x1F4CA; Dashboard</h1>
 
             <button
               class="refresh-button"
               type="button"
               onclick="loadTwiceAsNyceDashboard()"
             >
-              ↻ Refresh
+              &#x21BB; Refresh
             </button>
 
           </div>
 
-          <div
-            id="twiceMonthLabel"
-            class="month-label"
-          >
-            Loading...
+          <div class="cash-month-summary">
+            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="twiceLifetimeIncome">&#x2014;</strong></div>
+            <div id="twiceMonthLabel" class="month-label">Loading...</div>
           </div>
 
           <div class="metric-grid">
 
             <div class="metric-card">
-              <div class="metric-icon">💼</div>
+              <div class="metric-icon">&#x1F4BC;</div>
               <div class="metric-label">Total Money</div>
-              <div id="twiceTotalMoney" class="metric-value">—</div>
+              <div id="twiceTotalMoney" class="metric-value">&#x2014;</div>
             </div>
 
             <div class="metric-card">
-              <div class="metric-icon">📈</div>
+              <div class="metric-icon">&#x1F4C8;</div>
               <div class="metric-label">Profit</div>
               <div
                 id="twiceProfit"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('income')">
-              <div class="metric-icon">💰</div>
+              <div class="metric-icon">&#x1F4B0;</div>
               <div class="metric-label">Income</div>
               <div
                 id="twiceIncome"
                 class="metric-value income-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('expense')">
-              <div class="metric-icon">💸</div>
+              <div class="metric-icon">&#x1F4B8;</div>
               <div class="metric-label">Expenses</div>
               <div
                 id="twiceExpenses"
                 class="metric-value expense-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleTwiceTransactionFilter('transactions')">
-              <div class="metric-icon">🧾</div>
+              <div class="metric-icon">&#x1F9FE;</div>
               <div class="metric-label">Transactions</div>
               <div
                 id="twiceTransactions"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
@@ -1355,7 +1353,7 @@
           <div class="gcash-hero printing-hero">
 
             <div class="gcash-title printing-title">
-              🖨️ Printing Business
+              &#x1F5A8;&#xFE0F; Printing Business
             </div>
 
             <div class="gcash-subtitle">
@@ -1400,74 +1398,72 @@
 
           <div class="dashboard-header">
 
-            <h1>📊 Dashboard</h1>
+            <h1>&#x1F4CA; Dashboard</h1>
 
             <button
               class="refresh-button"
               type="button"
               onclick="loadPrintingDashboard()"
             >
-              ↻ Refresh
+              &#x21BB; Refresh
             </button>
 
           </div>
 
-          <div
-            id="printingMonthLabel"
-            class="month-label"
-          >
-            Loading...
+          <div class="cash-month-summary">
+            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="printingLifetimeIncome">&#x2014;</strong></div>
+            <div id="printingMonthLabel" class="month-label">Loading...</div>
           </div>
 
           <div class="metric-grid">
 
             <div class="metric-card">
-              <div class="metric-icon">💼</div>
+              <div class="metric-icon">&#x1F4BC;</div>
               <div class="metric-label">Total Money</div>
-              <div id="printingTotalMoney" class="metric-value">—</div>
+              <div id="printingTotalMoney" class="metric-value">&#x2014;</div>
             </div>
 
             <div class="metric-card">
-              <div class="metric-icon">📈</div>
+              <div class="metric-icon">&#x1F4C8;</div>
               <div class="metric-label">Profit</div>
               <div
                 id="printingProfit"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('income')">
-              <div class="metric-icon">💰</div>
+              <div class="metric-icon">&#x1F4B0;</div>
               <div class="metric-label">Income</div>
               <div
                 id="printingIncome"
                 class="metric-value income-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('expense')">
-              <div class="metric-icon">💸</div>
+              <div class="metric-icon">&#x1F4B8;</div>
               <div class="metric-label">Expenses</div>
               <div
                 id="printingExpenses"
                 class="metric-value expense-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="togglePrintingTransactionFilter('transactions')">
-              <div class="metric-icon">🧾</div>
+              <div class="metric-icon">&#x1F9FE;</div>
               <div class="metric-label">Transactions</div>
               <div
                 id="printingTransactions"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
@@ -1534,14 +1530,14 @@
             </div>
 
             <div class="quick-amount-grid">
-              <button class="quick-amount-button" data-base-amount="5" type="button" disabled onclick="selectGcashQuickAmount(5)">₱5</button>
-              <button class="quick-amount-button" data-base-amount="10" type="button" disabled onclick="selectGcashQuickAmount(10)">₱10</button>
-              <button class="quick-amount-button" data-base-amount="15" type="button" disabled onclick="selectGcashQuickAmount(15)">₱15</button>
-              <button class="quick-amount-button" data-base-amount="20" type="button" disabled onclick="selectGcashQuickAmount(20)">₱20</button>
+              <button class="quick-amount-button" data-base-amount="5" type="button" disabled onclick="selectGcashQuickAmount(5)">&#x20B1;5</button>
+              <button class="quick-amount-button" data-base-amount="10" type="button" disabled onclick="selectGcashQuickAmount(10)">&#x20B1;10</button>
+              <button class="quick-amount-button" data-base-amount="15" type="button" disabled onclick="selectGcashQuickAmount(15)">&#x20B1;15</button>
+              <button class="quick-amount-button" data-base-amount="20" type="button" disabled onclick="selectGcashQuickAmount(20)">&#x20B1;20</button>
             </div>
 
             <div class="quick-quantity-row">
-              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(-1)">−</button>
+              <button id="gcashQuickMinusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(-1)">&#x2212;</button>
               <span id="gcashQuickQuantity" class="quick-quantity-value" onclick="handleGcashQuickReset()">1</span>
               <button id="gcashQuickPlusButton" class="quick-quantity-button" type="button" onclick="changeGcashQuickQuantity(1)">+</button>
               <button
@@ -1566,14 +1562,14 @@
 
           <div class="dashboard-header">
 
-            <h1>📊 Dashboard</h1>
+            <h1>&#x1F4CA; Dashboard</h1>
 
             <button
               class="refresh-button"
               type="button"
               onclick="loadGcashDashboard()"
             >
-              ↻ Refresh
+              &#x21BB; Refresh
             </button>
 
           </div>
@@ -1582,8 +1578,8 @@
           <div class="cash-month-summary">
 
             <div class="cash-income-only">
-              <span>Total Income</span>
-              <strong id="gcashMonthlyIncomeOnly">—</strong>
+              <span>Lifetime Total Income</span>
+              <strong id="gcashMonthlyIncomeOnly">&#x2014;</strong>
             </div>
 
             <div
@@ -1607,7 +1603,7 @@
                 id="gcashMonthlyTotal"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
@@ -1621,31 +1617,31 @@
                 id="mayaMonthlyTotal"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('load')">
-              <div class="metric-icon">📱</div>
+              <div class="metric-icon">&#x1F4F1;</div>
               <div class="metric-label">Load</div>
               <div
                 id="loadMonthlyTotal"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('bills')">
-              <div class="metric-icon">🧾</div>
+              <div class="metric-icon">&#x1F9FE;</div>
               <div class="metric-label">Bills</div>
               <div
                 id="billsMonthlyTotal"
                 class="metric-value"
               >
-                —
+                &#x2014;
               </div>
             </div>
 
@@ -1680,7 +1676,7 @@
           <div class="gcash-hero printing-hero">
 
             <div class="gcash-title printing-title">
-              💰 Money Flow
+              &#x1F4B0; Money Flow
             </div>
 
             <div class="gcash-subtitle">
@@ -1728,97 +1724,95 @@
             <div class="dashboard-header">
 
               <h1>
-                📊 Dashboard
+                &#x1F4CA; Dashboard
               </h1>
 
               <button
                 class="refresh-button"
                 onclick="loadDashboard()"
               >
-                ↻ Refresh
+                &#x21BB; Refresh
               </button>
 
             </div>
 
 
-            <div
-              id="monthLabel"
-              class="month-label"
-            >
-              Loading...
+            <div class="cash-month-summary">
+              <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="moneyFlowLifetimeIncome">&#x2014;</strong></div>
+              <div id="monthLabel" class="month-label">Loading...</div>
             </div>
 
 
             <div class="metric-grid">
 
               <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('expense')">
-                <div class="metric-icon">💸</div>
+                <div class="metric-icon">&#x1F4B8;</div>
                 <div class="metric-label">Monthly Expenses</div>
                 <div
                   id="monthlyExpenses"
                   class="metric-value expense-value"
                 >
-                  —
+                  &#x2014;
                 </div>
               </div>
 
 
               <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('income')">
-                <div class="metric-icon">💰</div>
+                <div class="metric-icon">&#x1F4B0;</div>
                 <div class="metric-label">Monthly Income</div>
                 <div
                   id="monthlyIncome"
                   class="metric-value income-value"
                 >
-                  —
+                  &#x2014;
                 </div>
               </div>
 
 
               <div class="metric-card">
-                <div class="metric-icon">⚖️</div>
+                <div class="metric-icon">&#x2696;&#xFE0F;</div>
                 <div class="metric-label">Balance</div>
                 <div
                   id="balance"
                   class="metric-value"
                 >
-                  —
+                  &#x2014;
                 </div>
               </div>
 
 
               <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('transactions')">
-                <div class="metric-icon">🧾</div>
+                <div class="metric-icon">&#x1F9FE;</div>
                 <div class="metric-label">All Transactions</div>
                 <div
                   id="allTransactions"
                   class="metric-value"
                 >
-                  —
+                  &#x2014;
                 </div>
               </div>
 
 
               <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('today-expenses')">
-                <div class="metric-icon">📅</div>
-                <div class="metric-label">Today’s Expenses</div>
+                <div class="metric-icon">&#x1F4C5;</div>
+                <div class="metric-label">Today&#x2019;s Expenses</div>
                 <div
                   id="todayExpenses"
                   class="metric-value expense-value"
                 >
-                  —
+                  &#x2014;
                 </div>
               </div>
 
 
               <div class="metric-card" onclick="toggleMoneyFlowTransactionFilter('highest-expense')">
-                <div class="metric-icon">🔺</div>
+                <div class="metric-icon">&#x1F53A;</div>
                 <div class="metric-label">Highest Expense</div>
                 <div
                   id="highestExpense"
                   class="metric-value expense-value"
                 >
-                  —
+                  &#x2014;
                 </div>
               </div>
 
@@ -1900,59 +1894,62 @@
           </div>
 
           <div class="dashboard-header">
-            <h1>📊 Dashboard</h1>
+            <h1>&#x1F4CA; Dashboard</h1>
             <button class="refresh-button" type="button" onclick="loadTestDashboard()">
-              ↻ Refresh
+              &#x21BB; Refresh
             </button>
           </div>
 
-          <div id="testMonthLabel" class="month-label">Loading...</div>
+          <div class="cash-month-summary">
+            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="testLifetimeIncome">&#x2014;</strong></div>
+            <div id="testMonthLabel" class="month-label">Loading...</div>
+          </div>
 
           <div class="metric-grid test-metric-grid">
             <div class="metric-card" onclick="toggleTestTransactionFilter('total-money')">
-              <div class="metric-icon">💰</div>
+              <div class="metric-icon">&#x1F4B0;</div>
               <div class="metric-label">Total Money</div>
-              <div id="testTotalMoney" class="metric-value">—</div>
+              <div id="testTotalMoney" class="metric-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('loan-remaining')">
-              <div class="metric-icon">🏦</div>
+              <div class="metric-icon">&#x1F3E6;</div>
               <div class="metric-label">Loan Remaining</div>
-              <div id="testLoanRemaining" class="metric-value expense-value">—</div>
+              <div id="testLoanRemaining" class="metric-value expense-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('total-earned')">
-              <div class="metric-icon">📈</div>
+              <div class="metric-icon">&#x1F4C8;</div>
               <div class="metric-label">Total Earned</div>
-              <div id="testTotalEarned" class="metric-value income-value">—</div>
+              <div id="testTotalEarned" class="metric-value income-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('this-week-earned')">
-              <div class="metric-icon">🗓️</div>
+              <div class="metric-icon">&#x1F5D3;&#xFE0F;</div>
               <div class="metric-label">This Week Earned</div>
-              <div id="testThisWeekEarned" class="metric-value income-value">—</div>
+              <div id="testThisWeekEarned" class="metric-value income-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('card')">
-              <div class="metric-icon">💳</div>
+              <div class="metric-icon">&#x1F4B3;</div>
               <div class="metric-label">Money on Card</div>
-              <div id="testCard" class="metric-value">—</div>
+              <div id="testCard" class="metric-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('cash')">
-              <div class="metric-icon">💵</div>
+              <div class="metric-icon">&#x1F4B5;</div>
               <div class="metric-label">Money on Hand</div>
-              <div id="testCashOnHand" class="metric-value">—</div>
+              <div id="testCashOnHand" class="metric-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('gcash')">
-              <div class="metric-icon">💙</div>
+              <div class="metric-icon">&#x1F499;</div>
               <div class="metric-label">Money on GCash</div>
-              <div id="testGcash" class="metric-value">—</div>
+              <div id="testGcash" class="metric-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('nanay')">
-              <div class="metric-icon">👩</div>
+              <div class="metric-icon">&#x1F469;</div>
               <div class="metric-label">Utang kay Nanay</div>
-              <div id="testUtangKayNanay" class="metric-value expense-value">—</div>
+              <div id="testUtangKayNanay" class="metric-value expense-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('others-loan')">
-              <div class="metric-icon">🏛️</div>
+              <div class="metric-icon">&#x1F3DB;&#xFE0F;</div>
               <div class="metric-label">Others Loan</div>
-              <div id="testOthersLoan" class="metric-value expense-value">—</div>
+              <div id="testOthersLoan" class="metric-value expense-value">&#x2014;</div>
             </div>
           </div>
 
@@ -1965,16 +1962,16 @@
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testAtmTitle">
               <div id="testAtmTitle" class="test-modal-title">ATM WITHDRAW</div>
               <div class="test-atm-grid">
-                <button type="button" data-atm-amount="1000">₱1K</button>
-                <button type="button" data-atm-amount="2000">₱2K</button>
-                <button type="button" data-atm-amount="3000">₱3K</button>
-                <button type="button" data-atm-amount="4000">₱4K</button>
-                <button type="button" data-atm-amount="5000">₱5K</button>
-                <button type="button" data-atm-amount="6000">₱6K</button>
-                <button type="button" data-atm-amount="7000">₱7K</button>
-                <button type="button" data-atm-amount="8000">₱8K</button>
-                <button type="button" data-atm-amount="9000">₱9K</button>
-                <button type="button" data-atm-amount="10000">₱10K</button>
+                <button type="button" data-atm-amount="1000">&#x20B1;1K</button>
+                <button type="button" data-atm-amount="2000">&#x20B1;2K</button>
+                <button type="button" data-atm-amount="3000">&#x20B1;3K</button>
+                <button type="button" data-atm-amount="4000">&#x20B1;4K</button>
+                <button type="button" data-atm-amount="5000">&#x20B1;5K</button>
+                <button type="button" data-atm-amount="6000">&#x20B1;6K</button>
+                <button type="button" data-atm-amount="7000">&#x20B1;7K</button>
+                <button type="button" data-atm-amount="8000">&#x20B1;8K</button>
+                <button type="button" data-atm-amount="9000">&#x20B1;9K</button>
+                <button type="button" data-atm-amount="10000">&#x20B1;10K</button>
               </div>
               <button id="testAtmCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -1996,12 +1993,12 @@
               <div id="testTransferTitle" class="test-modal-title">TRANSFER</div>
               <div class="test-modal-note">Uses the amount entered in the shared textbox.</div>
               <div class="test-choice-grid">
-                <button type="button" data-transfer-direction="cashToGcash">CASH → GCASH</button>
-                <button type="button" data-transfer-direction="gcashToCard">GCASH → CARD</button>
-                <button type="button" data-transfer-direction="cardToGcash">CARD → GCASH</button>
-                <button type="button" data-transfer-direction="gcashToCash">GCASH → CASH</button>
-                <button type="button" data-transfer-direction="nanayToCash">NANAY → CASH</button>
-                <button type="button" data-transfer-direction="cashToNanay">CASH → NANAY</button>
+                <button type="button" data-transfer-direction="cashToGcash">CASH &#x2192; GCASH</button>
+                <button type="button" data-transfer-direction="gcashToCard">GCASH &#x2192; CARD</button>
+                <button type="button" data-transfer-direction="cardToGcash">CARD &#x2192; GCASH</button>
+                <button type="button" data-transfer-direction="gcashToCash">GCASH &#x2192; CASH</button>
+                <button type="button" data-transfer-direction="nanayToCash">NANAY &#x2192; CASH</button>
+                <button type="button" data-transfer-direction="cashToNanay">CASH &#x2192; NANAY</button>
                 <button type="button" data-others-loan-action="add">ADD LOAN</button>
                 <button type="button" data-others-loan-action="minus">MINUS LOAN</button>
               </div>
@@ -2037,25 +2034,28 @@
           </div>
 
           <div class="dashboard-header">
-            <h1>📊 Dashboard</h1>
-            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">↻ Refresh</button>
+            <h1>&#x1F4CA; Dashboard</h1>
+            <button class="refresh-button" type="button" onclick="loadRentalDashboard()">&#x21BB; Refresh</button>
           </div>
-          <div id="rentalMonthLabel" class="month-label">Loading...</div>
-
-          <h2 class="rental-dashboard-category">📷 Insta360</h2>
-          <div class="metric-grid">
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','income')"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">—</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','expense')"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">—</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','total-money')"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','transactions')"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">—</div></div>
+          <div class="cash-month-summary">
+            <div class="cash-income-only"><span>Lifetime Total Income</span><strong id="rentalLifetimeIncome">&#x2014;</strong></div>
+            <div id="rentalMonthLabel" class="month-label">Loading...</div>
           </div>
 
-          <h2 class="rental-dashboard-category">🪑 Chair &amp; Table</h2>
+          <h2 class="rental-dashboard-category">&#x1F4F7; Insta360</h2>
           <div class="metric-grid">
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','income')"><div class="metric-icon">💰</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">—</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','expense')"><div class="metric-icon">💸</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">—</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','total-money')"><div class="metric-icon">💼</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">—</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','transactions')"><div class="metric-icon">🧾</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">—</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','income')"><div class="metric-icon">&#x1F4B0;</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','expense')"><div class="metric-icon">&#x1F4B8;</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','total-money')"><div class="metric-icon">&#x1F4BC;</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','transactions')"><div class="metric-icon">&#x1F9FE;</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">&#x2014;</div></div>
+          </div>
+
+          <h2 class="rental-dashboard-category">&#x1FA91; Chair &amp; Table</h2>
+          <div class="metric-grid">
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','income')"><div class="metric-icon">&#x1F4B0;</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','expense')"><div class="metric-icon">&#x1F4B8;</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','total-money')"><div class="metric-icon">&#x1F4BC;</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','transactions')"><div class="metric-icon">&#x1F9FE;</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">&#x2014;</div></div>
           </div>
 
           <div class="recent-card">
@@ -3101,7 +3101,7 @@
         return;
       }
 
-      var match = typed.match(/^\s*((?:₱\s*)?\d+(?:\.\d+)?k?)\s+(.+)$/i);
+      var match = typed.match(/^\s*((?:\u20B1\s*)?\d+(?:\.\d+)?k?)\s+(.+)$/i);
       if (!match) return;
       var typedName = match[2];
       var completedName = getKonek2CardInlineCompletion(typedName, konekSuggestionNames);
@@ -3241,7 +3241,7 @@
         button.className =
           "konek-quick-button";
         button.textContent =
-          "₱" + String(amount);
+          "\u20B1" + String(amount);
 
         button.addEventListener(
           "click",
@@ -3324,10 +3324,10 @@
 
           if (result.bundle) {
             status.innerText =
-              "✅ ₱50 Loan rebate + ₱415 Loan payment added";
+              "\u2705 \u20B150 Loan rebate + \u20B1415 Loan payment added";
           } else {
             status.innerText =
-              "✅ " +
+              "\u2705 " +
               result.category +
               " " +
               formatPeso(result.amount) +
@@ -3354,7 +3354,7 @@
         function(error) {
 
           status.innerText =
-            "❌ " + error.message;
+            "\u274C " + error.message;
 
           setKonek2CardButtonsDisabled(false);
         }
@@ -3538,7 +3538,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" \u2022 ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -3547,7 +3547,7 @@
                     ? "expense-value"
                     : "income-value") +
                   '">' +
-                  (isExpense ? "−" : "+") +
+                  (isExpense ? "\u2212" : "+") +
                   formatPeso(item.amount) +
                 "</div>" +
               "</div>"
@@ -3569,7 +3569,7 @@
       var raw = String(text || "").replace(/\s+/g, " ").trim();
       if (!raw) throw new Error("Enter customer and cash-out amount.");
 
-      var match = raw.match(/(?:^|\s)(?:₱\s*)?(\d+(?:\.\d+)?)(k)?(?=\s|$)/i);
+      var match = raw.match(/(?:^|\s)(?:\u20B1\s*)?(\d+(?:\.\d+)?)(k)?(?=\s|$)/i);
       if (!match) throw new Error("Cash-out amount not found.");
 
       var amount = Number(match[1]);
@@ -3586,9 +3586,9 @@
     function validateTestCashOutAmountClient(amount) {
       var value = Number(amount);
       if (!isFinite(value)) throw new Error("Invalid cash-out amount.");
-      if (value < 100) throw new Error("Minimum cash-out is ₱100.");
-      if (value > 10000) throw new Error("Maximum cash-out is ₱10,000.");
-      if (value % 100 !== 0) throw new Error("Amount must be in ₱100 increments.");
+      if (value < 100) throw new Error("Minimum cash-out is \u20B1100.");
+      if (value > 10000) throw new Error("Maximum cash-out is \u20B110,000.");
+      if (value % 100 !== 0) throw new Error("Amount must be in \u20B1100 increments.");
       return value;
     }
 
@@ -3603,8 +3603,8 @@
 
     function buildTestPreviewText(entry) {
       return String(entry.customer || "") +
-        " • ₱" + Number(entry.amount || 0).toLocaleString("en-PH") +
-        " cash-out • ₱" + Number(entry.feeEarned || 0).toLocaleString("en-PH") +
+        " \u2022 \u20B1" + Number(entry.amount || 0).toLocaleString("en-PH") +
+        " cash-out \u2022 \u20B1" + Number(entry.feeEarned || 0).toLocaleString("en-PH") +
         " fee earned";
     }
     // TEST CASHOUT PURE HELPERS END
@@ -3612,7 +3612,7 @@
     // TEST AAP PURE HELPERS START
     function parseTestAapInputClient(text) {
       var raw = String(text || "").replace(/\s+/g, " ").trim();
-      var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:₱\s*)?([\d,]+(?:\.\d{1,2})?)$/);
+      var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:\u20B1\s*)?([\d,]+(?:\.\d{1,2})?)$/);
       if (!match) throw new Error("Enter people and total received in either order, for example: 2 2450.");
 
       var first = Number(match[1].replace(/,/g, ""));
@@ -3645,14 +3645,14 @@
     }
 
     function formatTestAapPesoClient(value) {
-      return "₱" + Number(value || 0).toLocaleString("en-PH", {
+      return "\u20B1" + Number(value || 0).toLocaleString("en-PH", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
       });
     }
 
     function buildTestAapPreviewText(calculation) {
-      return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
+      return calculation.people + " people \u00B7 Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
         "Total fee " + formatTestAapPesoClient(calculation.totalFee) + "\n" +
         "Cash received " + formatTestAapPesoClient(calculation.cashReceived);
     }
@@ -3822,7 +3822,7 @@
       var text = input ? input.value.trim() : "";
 
       if (!text) {
-        setTestStatus("❌ Enter customer and cash-out amount.", "error");
+        setTestStatus("\u274C Enter customer and cash-out amount.", "error");
         if (input) input.focus();
         return;
       }
@@ -3836,7 +3836,7 @@
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
           setTestStatus(
-            "✓ Saved — " + buildTestPreviewText({
+            "\u2713 Saved \u2014 " + buildTestPreviewText({
               customer: result.customer,
               amount: result.amount,
               feeEarned: result.feeEarned
@@ -3847,7 +3847,7 @@
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("\u274C " + error.message, "error");
         }
       );
     }
@@ -3857,7 +3857,7 @@
       try {
         parseTestAapInputClient(input ? input.value : "");
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("\u274C " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -3877,7 +3877,7 @@
     }
 
     function parseTestTransferAmountClient(text) {
-      var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
+      var raw = String(text || "").replace(/\u20B1/g, "").replace(/,/g, "").trim();
       var parts = raw ? raw.split(/\s+/) : [];
       if (parts.length < 1 || parts.length > 2) {
         throw new Error("Enter one amount, or amount and people for AAP.");
@@ -3904,7 +3904,7 @@
     }
 
     function parseTestOthersLoanInputClient(text, action) {
-      var raw = String(text || "").replace(/₱/g, "").replace(/,/g, "").trim();
+      var raw = String(text || "").replace(/\u20B1/g, "").replace(/,/g, "").trim();
       var normalizedAction = String(action || "").trim().toLowerCase();
       if (normalizedAction !== "add" && normalizedAction !== "minus") {
         throw new Error("Choose ADD LOAN or MINUS LOAN.");
@@ -3950,7 +3950,7 @@
         try {
           parseTestOthersLoanInputClient(input ? input.value : "", "add");
         } catch (loanError) {
-          setTestStatus("❌ Enter a transfer amount or Others Loan entry.", "error");
+          setTestStatus("\u274C Enter a transfer amount or Others Loan entry.", "error");
           if (input) input.focus();
           return;
         }
@@ -3973,7 +3973,7 @@
         var parsed = parseTestAapInputClient(text);
         calculation = calculateTestAapClient(parsed.people, parsed.bookTotal);
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("\u274C " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -3987,7 +3987,7 @@
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
           setTestStatus(
-            "✓ Saved " + (result.destination === "gcash" ? "GCash" : "Cash") + " collection\n" + buildTestAapPreviewText({
+            "\u2713 Saved " + (result.destination === "gcash" ? "GCash" : "Cash") + " collection\n" + buildTestAapPreviewText({
               customer: result.customer,
               people: result.people,
               bookTotal: result.bookTotal,
@@ -4003,7 +4003,7 @@
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("\u274C " + error.message, "error");
         }
       );
     }
@@ -4014,7 +4014,7 @@
       try {
         parseTestTransferAmountClient(text);
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("\u274C " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -4026,12 +4026,12 @@
         function(result) {
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
-          setTestStatus("✓ " + result.description + " — " + formatPeso(result.amount), "success");
+          setTestStatus("\u2713 " + result.description + " \u2014 " + formatPeso(result.amount), "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("\u274C " + error.message, "error");
         }
       );
     }
@@ -4043,7 +4043,7 @@
       try {
         entry = parseTestOthersLoanInputClient(text, action);
       } catch (error) {
-        setTestStatus("❌ " + error.message, "error");
+        setTestStatus("\u274C " + error.message, "error");
         if (input) input.focus();
         return;
       }
@@ -4058,19 +4058,19 @@
           var lender = result.lender ? " " + result.lender : "";
           if (result.action === "add") {
             setTestStatus(
-              "✓ Others Loan" + lender + " added — Card received " +
+              "\u2713 Others Loan" + lender + " added \u2014 Card received " +
               formatPeso(result.netToCard) +
               (result.fee ? " after " + formatPeso(result.fee) + " fee" : ""),
               "success"
             );
           } else {
-            setTestStatus("✓ Others Loan" + lender + " minus " + formatPeso(result.principal), "success");
+            setTestStatus("\u2713 Others Loan" + lender + " minus " + formatPeso(result.principal), "success");
           }
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("\u274C " + error.message, "error");
         }
       );
     }
@@ -4084,12 +4084,12 @@
         { action: "testLoan" },
         function(result) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("✓ Loan recorded — ₱415 payment + ₱50 rebate", "success");
+          setTestStatus("\u2713 Loan recorded \u2014 \u20B1415 payment + \u20B150 rebate", "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("\u274C " + error.message, "error");
         }
       );
     }
@@ -4117,14 +4117,14 @@
           setTestActionButtonsDisabled(false);
           closeTestAtmModal();
           setTestStatus(
-            "✓ ATM withdrawal — " + formatPeso(result.amount) + " moved to Cash on Hand",
+            "\u2713 ATM withdrawal \u2014 " + formatPeso(result.amount) + " moved to Cash on Hand",
             "success"
           );
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("❌ " + error.message, "error");
+          setTestStatus("\u274C " + error.message, "error");
         }
       );
     }
@@ -4160,6 +4160,8 @@
     function renderTestDashboard(data) {
       var monthLabel = document.getElementById("testMonthLabel");
       if (monthLabel) monthLabel.innerText = data.monthLabel || "";
+      var lifetimeIncome = document.getElementById("testLifetimeIncome");
+      if (lifetimeIncome) lifetimeIncome.innerText = formatPeso(data.lifetimeIncome);
 
       var map = {
         testTotalMoney: data.totalMoney,
@@ -4221,13 +4223,13 @@
 
         if (description === "cash-out" || fee > 0) {
           if (amount > 0) {
-            amountText = formatPeso(amount) + (fee > 0 ? " • +" + formatPeso(fee) + " fee" : "");
+            amountText = formatPeso(amount) + (fee > 0 ? " \u2022 +" + formatPeso(fee) + " fee" : "");
           } else {
             amountText = "+" + formatPeso(fee) + " fee";
           }
           amountClass += " income-value";
         } else if (category === "expense") {
-          amountText = "−" + formatPeso(amount);
+          amountText = "\u2212" + formatPeso(amount);
           amountClass += " expense-value";
         } else if (category === "income") {
           amountText = "+" + formatPeso(amount);
@@ -4240,7 +4242,7 @@
           '<div class="transaction-row">' +
             '<div>' +
               '<div class="transaction-name">' + escapeHtml(customer) + '</div>' +
-              '<div class="transaction-meta">' + escapeHtml(metaParts.join(" • ")) + '</div>' +
+              '<div class="transaction-meta">' + escapeHtml(metaParts.join(" \u2022 ")) + '</div>' +
             '</div>' +
             '<div class="' + amountClass + '">' + escapeHtml(amountText) + '</div>' +
           '</div>'
@@ -4284,13 +4286,13 @@
           category: category
         },
         function(result) {
-          status.innerText = "✅ " + result.category + " added";
+          status.innerText = "\u2705 " + result.category + " added";
           input.value = "";
           setLifeLogButtonsDisabled(false);
           loadLifeLogDashboard();
         },
         function(error) {
-          status.innerText = "❌ " + error.message;
+          status.innerText = "\u274C " + error.message;
           setLifeLogButtonsDisabled(false);
         }
       );
@@ -4366,7 +4368,7 @@
           .filter(function(value) {
             return !!String(value || "").trim();
           })
-          .join(" • ");
+          .join(" \u2022 ");
 
         return (
           '<div class="transaction-row">' +
@@ -4436,7 +4438,7 @@
         function(result) {
 
           status.innerText =
-            "✅ " +
+            "\u2705 " +
             result.category +
             " " +
             formatPeso(
@@ -4456,7 +4458,7 @@
         function(error) {
 
           status.innerText =
-            "❌ " +
+            "\u274C " +
             error.message;
 
           setTwiceEntryButtonsDisabled(
@@ -4689,6 +4691,9 @@
         .innerText =
           data.monthLabel || "";
 
+      document.getElementById("twiceLifetimeIncome").innerText =
+        formatPeso(data.lifetimeIncome);
+
       document
         .getElementById(
           "twiceIncome"
@@ -4807,7 +4812,7 @@
 
             var sign =
               isExpense
-                ? "−"
+                ? "\u2212"
                 : "+";
 
             var valueClass =
@@ -4827,7 +4832,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" \u2022 ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -4895,7 +4900,7 @@
           entryType: entryType
         },
         function(result) {
-          status.innerText = "✅ " + result.category + " " + result.type + " " + formatPeso(result.amount) + " added";
+          status.innerText = "\u2705 " + result.category + " " + result.type + " " + formatPeso(result.amount) + " added";
           input.value = "";
           selectedRentalCategory = "";
           document.querySelectorAll(".rental-category-button").forEach(function(button) {
@@ -4905,7 +4910,7 @@
           loadRentalDashboard();
         },
         function(error) {
-          status.innerText = "❌ " + error.message;
+          status.innerText = "\u274C " + error.message;
           setRentalEntryButtonsDisabled(false);
         }
       );
@@ -4933,6 +4938,7 @@
 
     function renderRentalDashboard(data) {
       document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
+      document.getElementById("rentalLifetimeIncome").innerText = formatPeso(data.lifetimeIncome);
       var categories = data.categories || {};
       var insta360 = categories.insta360 || {};
       var chairTable = categories.chairTable || {};
@@ -4964,13 +4970,13 @@
       }
       recentBox.className = "";
       recentBox.innerHTML = items.map(function(item) {
-        var meta = [item.date, item.time, item.category, item.type].filter(Boolean).join(" • ");
+        var meta = [item.date, item.time, item.category, item.type].filter(Boolean).join(" \u2022 ");
         var isExpense = Boolean(item.isExpense);
         return '<div class="transaction-row"><div><div class="transaction-name">' +
           escapeHtml(item.description || item.category || "Rental") +
           '</div><div class="transaction-meta">' + escapeHtml(meta) +
           '</div></div><div class="transaction-amount ' + (isExpense ? "expense-value" : "income-value") + '">' +
-          (isExpense ? "−" : "+") + formatPeso(item.amount) + '</div></div>';
+          (isExpense ? "\u2212" : "+") + formatPeso(item.amount) + '</div></div>';
       }).join("");
       syncActivePageHeight();
     }
@@ -5030,7 +5036,7 @@
         function(result) {
 
           status.innerText =
-            "✅ " +
+            "\u2705 " +
             result.category +
             " " +
             formatPeso(
@@ -5052,7 +5058,7 @@
         function(error) {
 
           status.innerText =
-            "❌ " +
+            "\u274C " +
             error.message;
 
           setPrintingEntryButtonsDisabled(
@@ -5093,13 +5099,13 @@
         },
         function(result) {
           status.innerText =
-            "✅ " + entryType + " " + formatPeso(result.amount) + " added";
+            "\u2705 " + entryType + " " + formatPeso(result.amount) + " added";
           input.value = "";
           setMoneyFlowEntryButtonsDisabled(false);
           loadDashboard();
         },
         function(error) {
-          status.innerText = "❌ " + error.message;
+          status.innerText = "\u274C " + error.message;
           setMoneyFlowEntryButtonsDisabled(false);
         }
       );
@@ -5172,6 +5178,9 @@
         )
         .innerText =
           data.monthLabel || "";
+
+      document.getElementById("printingLifetimeIncome").innerText =
+        formatPeso(data.lifetimeIncome);
 
       document
         .getElementById(
@@ -5287,7 +5296,7 @@
 
             var sign =
               isExpense
-                ? "−"
+                ? "\u2212"
                 : "+";
 
             var valueClass =
@@ -5307,7 +5316,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" \u2022 ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -5479,7 +5488,7 @@
           "gcashMonthlyIncomeOnly"
         )
         .innerText =
-          "—";
+          "\u2014";
 
 
       return new Promise(
@@ -5510,31 +5519,31 @@
                 .getElementById(
                   "gcashMonthlyIncomeOnly"
                 )
-                .innerText = "—";
+                .innerText = "\u2014";
 
               document
                 .getElementById(
                   "gcashMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "\u2014";
 
               document
                 .getElementById(
                   "mayaMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "\u2014";
 
               document
                 .getElementById(
                   "loadMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "\u2014";
 
               document
                 .getElementById(
                   "billsMonthlyTotal"
                 )
-                .innerText = "—";
+                .innerText = "\u2014";
 
               document
                 .getElementById(
@@ -5577,7 +5586,7 @@
           "gcashMonthlyIncomeOnly"
         )
         .innerText =
-          formatPeso(data.totalIncome);
+          formatPeso(data.lifetimeIncome);
 
 
       document
@@ -5678,7 +5687,7 @@
 
             var sign =
               item.isExpense
-                ? "−"
+                ? "\u2212"
                 : "+";
 
             var valueClass =
@@ -5697,7 +5706,7 @@
                   "</div>" +
                   '<div class="transaction-meta">' +
                     escapeHtml(
-                      metaParts.join(" • ")
+                      metaParts.join(" \u2022 ")
                     ) +
                   "</div>" +
                 "</div>" +
@@ -5735,7 +5744,7 @@
       var displayAmounts = buildGcashQuickDisplayAmounts(gcashQuickQuantity);
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button, index) {
-          button.textContent = "₱" + displayAmounts[index].toLocaleString("en-PH");
+          button.textContent = "\u20B1" + displayAmounts[index].toLocaleString("en-PH");
         });
       status.innerText = "";
     }
@@ -5976,9 +5985,9 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "✅ " +
+              "\u2705 " +
               formatPeso(result.amount) +
-              " · " +
+              " \u00B7 " +
               result.category;
 
           input.value = "";
@@ -5991,7 +6000,7 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "❌ " + error.message;
+              "\u274C " + error.message;
 
           updateGcashCustomAddButton();
         }
@@ -6038,7 +6047,7 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "✅ " +
+              "\u2705 " +
               result.category +
               " " +
               formatPeso(result.amount) +
@@ -6052,7 +6061,7 @@
           document
             .getElementById("gcashQuickStatus")
             .innerText =
-              "❌ " + error.message;
+              "\u274C " + error.message;
 
           if (selectedGcashQuickCategory) {
             setQuickAmountButtonsDisabled(false);
@@ -6109,7 +6118,7 @@
           "status"
         )
         .innerText =
-          "🎤 Listening...";
+          "\uD83C\uDFA4 Listening...";
 
 
       recognition.onresult =
@@ -6130,7 +6139,7 @@
               "status"
             )
             .innerText =
-              "✅ Heard";
+              "\u2705 Heard";
 
         };
 
@@ -6158,7 +6167,7 @@
                 "status"
               )
               .innerText ===
-              "🎤 Listening..."
+              "\uD83C\uDFA4 Listening..."
           ) {
 
             document
@@ -6236,7 +6245,7 @@
               "status"
             )
             .innerText =
-              "✅ Expense added";
+              "\u2705 Expense added";
 
 
           document
@@ -6269,7 +6278,7 @@
             ) +
             (
               result.category
-                ? " • " +
+                ? " \u2022 " +
                   escapeHtml(
                     result.category
                   )
@@ -6277,7 +6286,7 @@
             ) +
             (
               result.payment
-                ? " • " +
+                ? " \u2022 " +
                   escapeHtml(
                     result.payment
                   )
@@ -6303,7 +6312,7 @@
               "status"
             )
             .innerText =
-              "❌ " +
+              "\u274C " +
               error.message;
 
 
@@ -6365,7 +6374,7 @@
                   "recentTransactions"
                 )
                 .innerHTML =
-                  '<div class="dashboard-message">❌ ' +
+                  '<div class="dashboard-message">\u274C ' +
                   escapeHtml(
                     error.message
                   ) +
@@ -6390,6 +6399,9 @@
         )
         .innerText =
           data.monthLabel || "";
+
+      document.getElementById("moneyFlowLifetimeIncome").innerText =
+        formatPeso(data.lifetimeIncome);
 
 
       document
@@ -6524,7 +6536,7 @@
               const sign =
                 item.isIncome
                   ? "+"
-                  : "−";
+                  : "\u2212";
 
 
               const valueClass =
@@ -6535,11 +6547,11 @@
 
               const meta =
                 item.date +
-                " • " +
+                " \u2022 " +
                 item.category +
                 (
                   item.payment
-                    ? " • " +
+                    ? " \u2022 " +
                       item.payment
                     : ""
                 );
@@ -6590,8 +6602,8 @@
       box.innerHTML = items.map(function(item) {
         var name = item.description || item.merchant || item.customer || item.category || "Transaction";
         var meta = [item.date, item.time, item.customer, item.category, item.type, item.payment, item.notes]
-          .filter(Boolean).join(" • ");
-        var amount = lifeMode ? "" : '<div class="transaction-amount ' + (item.isExpense ? "expense-value" : "income-value") + '">' + (item.isExpense ? "−" : "+") + formatPeso(item.amount) + '</div>';
+          .filter(Boolean).join(" \u2022 ");
+        var amount = lifeMode ? "" : '<div class="transaction-amount ' + (item.isExpense ? "expense-value" : "income-value") + '">' + (item.isExpense ? "\u2212" : "+") + formatPeso(item.amount) + '</div>';
         return '<div class="transaction-row"><div><div class="transaction-name">' + escapeHtml(name) + '</div><div class="transaction-meta">' + escapeHtml(meta) + '</div></div>' + amount + '</div>';
       }).join("");
       box.scrollTop = previousScrollTop;
@@ -6654,7 +6666,7 @@
         return;
       }
       activeMoneyFlowTransactionFilter = filter;
-      var titles = { income:"Income Transactions", expense:"Expense Transactions", transactions:"Transactions", "today-expenses":"Today’s Expenses", "highest-expense":"Highest Expense" };
+      var titles = { income:"Income Transactions", expense:"Expense Transactions", transactions:"Transactions", "today-expenses":"Today\u2019s Expenses", "highest-expense":"Highest Expense" };
       var empty = { income:"No income transactions.", expense:"No expense transactions.", transactions:"No transactions yet.", "today-expenses":"No expenses today.", "highest-expense":"No expenses recorded." };
       document.getElementById("moneyFlowTransactionsTitle").innerText = titles[filter];
       loadDesign1FilteredHistory({ key:filter, cacheMap:moneyFlowTransactionHistoryCache, boxId:"recentTransactions", params:{action:"moneyFlowTransactions",filter:filter}, isActive:function(){return activeMoneyFlowTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("recentTransactions",items,empty[filter],false,preserve);}, errorMessage:"Could not load transactions." });
@@ -6726,7 +6738,7 @@
     ) {
 
       return (
-        "₱" +
+        "\u20B1" +
         Number(
           value || 0
         )
