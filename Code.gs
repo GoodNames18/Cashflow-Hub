@@ -1,6 +1,7 @@
 // =========================================================
 // MAIN EDIT TRIGGER
 // =========================================================
+// RENTAL ROW-6 DASHBOARD FIX — VERSION e04c9ee — 2026-09-09
 const APP_RECENT_TRANSACTION_LIMIT = 10;
 var KONEK2CARD_FIRST_MONTH_ = new Date(2026, 7, 1);
 var CASH_IN_OUT_FIRST_DATE_ = new Date(2026, 6, 16);
