@@ -2161,6 +2161,10 @@
       var page = picker.dataset.page;
       if (!page || !value || value > currentDashboardMonthValue()) return;
       dashboardSelectedMonths[page] = value;
+      if (page === "rental") {
+        activeRentalTransactionFilter = "";
+        rentalTransactionHistoryCache = {};
+      }
       var loaders = {
         lifeLog: loadLifeLogDashboard,
         twice: loadTwiceAsNyceDashboard,
@@ -6775,10 +6779,11 @@
         return;
       }
       activeRentalTransactionFilter = key;
+      var period = dashboardMonthParams("rental");
       var filterName = filter === "income" ? "Income" : filter === "expense" ? "Expenses" : filter === "total-money" ? "Total Money" : "Transactions";
       document.getElementById("rentalTransactionsTitle").innerText = category + " " + filterName;
       var empty = "No " + category + (filter === "income" ? " income transactions." : filter === "expense" ? " expense transactions." : " transactions yet.");
-      loadDesign1FilteredHistory({ key:key, cacheMap:rentalTransactionHistoryCache, boxId:"rentalRecentTransactions", params:{action:"rentalTransactions",category:category,filter:filter}, isActive:function(){return activeRentalTransactionFilter===key;}, render:function(items,preserve){renderDesign1TransactionRows("rentalRecentTransactions",items,empty,false,preserve);}, errorMessage:"Could not load Rental transactions." });
+      loadDesign1FilteredHistory({ key:key, cacheMap:rentalTransactionHistoryCache, boxId:"rentalRecentTransactions", params:{action:"rentalTransactions",category:category,filter:filter,year:period.year,month:period.month}, isActive:function(){return activeRentalTransactionFilter===key;}, render:function(items,preserve){renderDesign1TransactionRows("rentalRecentTransactions",items,empty,false,preserve);}, errorMessage:"Could not load Rental transactions." });
     }
 
     function changeLifeLogMonth(value) {
