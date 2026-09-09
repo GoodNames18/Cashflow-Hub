@@ -4,6 +4,7 @@
 const APP_RECENT_TRANSACTION_LIMIT = 10;
 var KONEK2CARD_FIRST_MONTH_ = new Date(2026, 7, 1);
 var CASH_IN_OUT_FIRST_DATE_ = new Date(2026, 6, 16);
+var RENTAL_DATA_START_ROW_ = 6;
 
 function getAllowedDashboardPeriod_(selectedYear, selectedMonth, now) {
   var current = now instanceof Date ? now : new Date();
@@ -189,6 +190,13 @@ function onEdit(e) {
     if (touchesCashRows || touchesCashMonth) refreshCashInOutSheetDashboard_(sheet, new Date());
   }
 
+  if (sheetName === "Rental") {
+    var touchesRentalRows = range.getLastRow() >= RENTAL_DATA_START_ROW_ && range.getColumn() <= 7 && range.getLastColumn() >= 2;
+    var touchesRentalMonth = range.getRow() <= 2 && range.getLastRow() >= 2 && range.getColumn() <= 16 && range.getLastColumn() >= 9;
+    var touchesRentalYear = range.getRow() <= 2 && range.getLastRow() >= 2 && range.getColumn() <= 25 && range.getLastColumn() >= 18;
+    if (touchesRentalRows || touchesRentalMonth || touchesRentalYear) refreshRentalSheetDashboard_(sheet, new Date());
+  }
+
   return;
 }
 
@@ -198,6 +206,11 @@ function onOpen(e) {
   getTestDashboardData();
   try {
     getLifeLogDashboardData();
+  } catch (error) {
+  }
+  try {
+    var rentalSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Rental");
+    if (rentalSheet) refreshRentalSheetDashboard_(rentalSheet, new Date());
   } catch (error) {
   }
 }
@@ -637,6 +650,8 @@ function doGet(e) {
         var rentalTransactions = getRentalTransactions(
           String(e.parameter.category || ""),
           String(e.parameter.filter || ""),
+          Number(e.parameter.year || 0),
+          Number(e.parameter.month || 0),
           Number(e.parameter.cursor || 0),
           Number(e.parameter.limit || 50)
         );
@@ -3137,15 +3152,61 @@ function addRentalEntry(text, category, entryType) {
   var entry = parseRentalEntry_(text, category, entryType);
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Rental");
   if (!sheet) throw new Error('Hindi makita ang sheet na "Rental".');
-  sheet.getRange("B4:G4").setValues([["Date", "Time", "Amount", "Type", "Category", "Description"]]);
-  sheet.getRange("B5:G5").insertCells(SpreadsheetApp.Dimension.ROWS);
+  ensureRentalSheetLayout_(sheet);
+  sheet.getRange("B6:G6").insertCells(SpreadsheetApp.Dimension.ROWS);
   var now = new Date();
-  sheet.getRange(5, 2, 1, 6).setValues([[now, now, entry.amount, entry.type, entry.category, entry.description]]);
-  sheet.getRange("B5").setNumberFormat("MM/dd/yy");
-  sheet.getRange("C5").setNumberFormat("hh:mm AM/PM");
-  sheet.getRange("D5").setNumberFormat("₱#,##0.00");
-  sheet.getRange("B5:G5").setBorder(true, true, true, true, true, true, "#555555", SpreadsheetApp.BorderStyle.SOLID);
+  sheet.getRange(RENTAL_DATA_START_ROW_, 2, 1, 6).setValues([[now, now, entry.amount, entry.type, entry.category, entry.description]]);
+  formatRentalDataRange_(sheet, RENTAL_DATA_START_ROW_, 1);
+  refreshRentalSheetDashboard_(sheet, now);
   return { amount: entry.amount, category: entry.category, type: entry.type, description: entry.description };
+}
+
+function normalizeRentalSheetRows_(rows) {
+  var validCategories = { "insta360": "Insta360", "chair & table": "Chair & Table" };
+  return (rows || []).map(function(row) {
+    var date = row[0] instanceof Date ? row[0] : new Date(row[0]);
+    var amount = Math.abs(Number(row[2]) || 0);
+    if (isNaN(date.getTime()) || amount <= 0) return null;
+    var fourth = String(row[3] || "").trim();
+    var fifth = String(row[4] || "").trim();
+    var fourthLower = fourth.toLowerCase();
+    var fifthLower = fifth.toLowerCase();
+    var type = (fourthLower === "income" || fourthLower === "expense" || fourthLower === "expenses") ? fourth : fifth;
+    var category = type === fourth ? fifth : fourth;
+    var cleanCategory = validCategories[String(category || "").toLowerCase()];
+    var cleanType = String(type || "").toLowerCase();
+    if (!cleanCategory || ["income", "expense", "expenses"].indexOf(cleanType) === -1) return null;
+    return [date, row[1], amount, cleanType === "income" ? "Income" : "Expense", cleanCategory, String(row[5] || "").trim()];
+  }).filter(Boolean);
+}
+
+function isRentalHeaderRow_(row) {
+  return (row || []).map(function(value) { return String(value || "").trim().toLowerCase(); }).join("|") ===
+    "date|time|amount|type|category|description";
+}
+
+function formatRentalDataRange_(sheet, startRow, rowCount) {
+  if (!rowCount) return;
+  sheet.getRange(startRow, 2, rowCount, 1).setNumberFormat("MM/dd/yy");
+  sheet.getRange(startRow, 3, rowCount, 1).setNumberFormat("hh:mm AM/PM");
+  sheet.getRange(startRow, 4, rowCount, 1).setNumberFormat("₱#,##0.00");
+  sheet.getRange(startRow, 2, rowCount, 6).setBorder(true, true, true, true, true, true, "#555555", SpreadsheetApp.BorderStyle.SOLID);
+}
+
+function ensureRentalSheetLayout_(sheet) {
+  var canonicalHeader = ["Date", "Time", "Amount", "Type", "Category", "Description"];
+  var header = sheet.getRange(5, 2, 1, 6).getValues()[0];
+  if (isRentalHeaderRow_(header)) return;
+  var lastRow = Math.max(5, sheet.getLastRow());
+  var source = sheet.getRange(5, 2, lastRow - 4, 6).getValues();
+  var transactions = normalizeRentalSheetRows_(source);
+  sheet.getRange(5, 2, lastRow - 4, 6).clearContent();
+  sheet.getRange(5, 2, 1, 6).setValues([canonicalHeader]);
+  if (transactions.length) {
+    sheet.getRange(RENTAL_DATA_START_ROW_, 2, transactions.length, 6).setValues(transactions);
+    formatRentalDataRange_(sheet, RENTAL_DATA_START_ROW_, transactions.length);
+  }
+  sheet.getRange("B5:G5").setBorder(true, true, true, true, true, true, "#555555", SpreadsheetApp.BorderStyle.SOLID);
 }
 
 function filterRentalTransactionsFromRows_(rows, requestedCategory, requestedFilter) {
@@ -3173,23 +3234,31 @@ function filterRentalTransactionsFromRows_(rows, requestedCategory, requestedFil
 function getRentalRows_() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Rental");
   if (!sheet) throw new Error('Hindi makita ang sheet na "Rental".');
-  return sheet.getLastRow() >= 5 ? sheet.getRange(5, 2, sheet.getLastRow() - 4, 6).getValues() : [];
+  ensureRentalSheetLayout_(sheet);
+  return sheet.getLastRow() >= RENTAL_DATA_START_ROW_
+    ? sheet.getRange(RENTAL_DATA_START_ROW_, 2, sheet.getLastRow() - RENTAL_DATA_START_ROW_ + 1, 6).getValues()
+    : [];
+}
+
+function filterRentalTransactionsByPeriod_(transactions, selectedYear, selectedMonth, asOfDate) {
+  var period = getAllowedDashboardPeriod_(selectedYear, selectedMonth, asOfDate || new Date());
+  var start = period.start.getTime();
+  var next = period.next.getTime();
+  return (transactions || []).filter(function(item) { return item.timestamp >= start && item.timestamp < next; });
 }
 
 function getRentalDashboardData(selectedYear, selectedMonth) {
   var rows = getRentalRows_();
   var now = new Date();
   var period = getAllowedDashboardPeriod_(selectedYear, selectedMonth, now);
-  var monthStart = period.start.getTime();
-  var nextMonth = period.next.getTime();
   var totalIncome = 0;
   function summary(category) {
     var all = filterRentalTransactionsFromRows_(rows, category, "transactions");
-    var monthly = all.filter(function(item) { return item.timestamp >= monthStart && item.timestamp < nextMonth; });
+    var monthly = filterRentalTransactionsByPeriod_(all, period.year, period.month, now);
     var income = monthly.filter(function(item) { return !item.isExpense; }).reduce(function(sum,item){ return sum + item.amount; },0);
     totalIncome += all.filter(function(item) { return !item.isExpense; }).reduce(function(sum,item){ return sum + item.amount; },0);
     var expenses = monthly.filter(function(item) { return item.isExpense; }).reduce(function(sum,item){ return sum + item.amount; },0);
-    var totalMoney = all.reduce(function(sum,item){ return sum + (item.isExpense ? -item.amount : item.amount); },0);
+    var totalMoney = monthly.reduce(function(sum,item){ return sum + (item.isExpense ? -item.amount : item.amount); },0);
     return { income: income, expenses: expenses, totalMoney: totalMoney, transactions: monthly.length };
   }
   var allRecent = filterRentalTransactionsFromRows_(rows, "Insta360", "transactions")
@@ -3202,13 +3271,91 @@ function getRentalDashboardData(selectedYear, selectedMonth) {
   return { monthLabel: Utilities.formatDate(period.start,timeZone,"MMMM yyyy"), totalIncome: totalIncome, categories: categories, recentTransactions: allRecent.map(display) };
 }
 
-function getRentalTransactions(category, filter, cursor, limit) {
-  var all = filterRentalTransactionsFromRows_(getRentalRows_(), category, filter);
+function getRentalTransactions(category, filter, selectedYear, selectedMonth, cursor, limit) {
+  var all = filterRentalTransactionsByPeriod_(
+    filterRentalTransactionsFromRows_(getRentalRows_(), category, filter),
+    selectedYear,
+    selectedMonth,
+    new Date()
+  );
   var start = Math.max(0, Math.floor(Number(cursor)||0));
   var size = Math.max(1, Math.min(50, Math.floor(Number(limit) || 50)));
   var timeZone = Session.getScriptTimeZone();
   var page = all.slice(start,start+size).map(function(item){ return { date: Utilities.formatDate(item.dateValue,timeZone,"MM/dd/yy"), time:item.timeValue instanceof Date ? Utilities.formatDate(item.timeValue,timeZone,"hh:mm a") : "", amount:item.amount, category:item.category, type:item.type, description:item.description, isExpense:item.isExpense }; });
   return { transactions:page, nextCursor:start+page.length, hasMore:start+page.length<all.length };
+}
+
+function getRentalYearOptions_(rows, now) {
+  var currentYear = now.getFullYear();
+  var years = [currentYear];
+  normalizeRentalSheetRows_(rows).forEach(function(row) {
+    var year = row[0].getFullYear();
+    if (year <= currentYear && years.indexOf(year) === -1) years.push(year);
+  });
+  return years.sort(function(a, b) { return b - a; });
+}
+
+function summarizeRentalPeriod_(rows, year, month) {
+  var start = new Date(year, month == null ? 0 : month - 1, 1).getTime();
+  var next = month == null ? new Date(year + 1, 0, 1).getTime() : new Date(year, month, 1).getTime();
+  function categorySummary(name) {
+    var items = filterRentalTransactionsFromRows_(rows, name, "transactions").filter(function(item) {
+      return item.timestamp >= start && item.timestamp < next;
+    });
+    var income = items.filter(function(item) { return !item.isExpense; }).reduce(function(sum, item) { return sum + item.amount; }, 0);
+    var expenses = items.filter(function(item) { return item.isExpense; }).reduce(function(sum, item) { return sum + item.amount; }, 0);
+    return [income, expenses, income - expenses, items.length];
+  }
+  return categorySummary("Insta360").concat(categorySummary("Chair & Table"));
+}
+
+function refreshRentalSheetDashboard_(sheet, asOfDate) {
+  if (!sheet) return;
+  ensureRentalSheetLayout_(sheet);
+  var now = asOfDate instanceof Date ? asOfDate : new Date();
+  var timeZone = Session.getScriptTimeZone();
+  var lastRow = sheet.getLastRow();
+  var rows = lastRow >= RENTAL_DATA_START_ROW_ ? sheet.getRange(RENTAL_DATA_START_ROW_, 2, lastRow - RENTAL_DATA_START_ROW_ + 1, 6).getValues() : [];
+  var monthLabel = String(sheet.getRange("I2").getDisplayValue() || "").trim();
+  var parsedMonth = new Date(monthLabel + " 1");
+  if (isNaN(parsedMonth.getTime()) || parsedMonth > now) parsedMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  var monthOptions = [];
+  var oldest = new Date(now.getFullYear(), now.getMonth(), 1);
+  normalizeRentalSheetRows_(rows).forEach(function(row) {
+    var candidate = new Date(row[0].getFullYear(), row[0].getMonth(), 1);
+    if (candidate < oldest) oldest = candidate;
+  });
+  for (var cursor = new Date(now.getFullYear(), now.getMonth(), 1); cursor >= oldest; cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)) {
+    monthOptions.push(Utilities.formatDate(cursor, timeZone, "MMMM yyyy"));
+  }
+  var monthRule = SpreadsheetApp.newDataValidation().requireValueInList(monthOptions, true).setAllowInvalid(false).build();
+  sheet.getRange("I2:P2").getMergedRanges().forEach(function(range) { range.breakApart(); });
+  sheet.getRange("I2:P2").merge();
+  sheet.getRange("I2").setDataValidation(monthRule).setValue(Utilities.formatDate(parsedMonth, timeZone, "MMMM yyyy")).setHorizontalAlignment("center");
+  sheet.getRange("I3:P3").getMergedRanges().forEach(function(range) { range.breakApart(); });
+  sheet.getRange("I3:L3").merge().setValue("Insta360").setHorizontalAlignment("center");
+  sheet.getRange("M3:P3").merge().setValue("Chair & Table").setHorizontalAlignment("center");
+  sheet.getRange("I4:P4").setValues([["Income", "Expenses", "Total Money", "Transactions", "Income", "Expenses", "Total Money", "Transactions"]]);
+  sheet.getRange("I5:P5").setValues([summarizeRentalPeriod_(rows, parsedMonth.getFullYear(), parsedMonth.getMonth() + 1)]);
+
+  var years = getRentalYearOptions_(rows, now);
+  var selectedYear = Number(sheet.getRange("R2").getDisplayValue()) || now.getFullYear();
+  if (years.indexOf(selectedYear) === -1) selectedYear = now.getFullYear();
+  var yearRule = SpreadsheetApp.newDataValidation().requireValueInList(years.map(String), true).setAllowInvalid(false).build();
+  sheet.getRange("R2:Y2").getMergedRanges().forEach(function(range) { range.breakApart(); });
+  sheet.getRange("R2:Y2").merge();
+  sheet.getRange("R2").setDataValidation(yearRule).setValue(selectedYear).setHorizontalAlignment("center");
+  sheet.getRange("R3:Y3").getMergedRanges().forEach(function(range) { range.breakApart(); });
+  sheet.getRange("R3:U3").merge().setValue("Insta360").setHorizontalAlignment("center");
+  sheet.getRange("V3:Y3").merge().setValue("Chair & Table").setHorizontalAlignment("center");
+  sheet.getRange("R4:Y4").setValues([["Income", "Expenses", "Total Money", "Transactions", "Income", "Expenses", "Total Money", "Transactions"]]);
+  sheet.getRange("R5:Y5").setValues([summarizeRentalPeriod_(rows, selectedYear, null)]);
+  sheet.getRange("I5:K5").setNumberFormat("₱#,##0.00");
+  sheet.getRange("M5:O5").setNumberFormat("₱#,##0.00");
+  sheet.getRange("R5:T5").setNumberFormat("₱#,##0.00");
+  sheet.getRange("V5:X5").setNumberFormat("₱#,##0.00");
+  sheet.getRange("I2:P5").setBorder(true, true, true, true, true, true, "#555555", SpreadsheetApp.BorderStyle.SOLID);
+  sheet.getRange("R2:Y5").setBorder(true, true, true, true, true, true, "#555555", SpreadsheetApp.BorderStyle.SOLID);
 }
 
 function buildMoneyFlowTransactionFromRow_(row) {
