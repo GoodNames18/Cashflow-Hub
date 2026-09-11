@@ -2147,12 +2147,17 @@
     }
 
     function openDashboardMonthSelector(page) {
-      if (page === "rental") {
+   if (page === "rental") {
   var rentalCurrent = dashboardSelectedMonths.rental || currentDashboardMonthValue();
   var rentalPicker = document.getElementById("dashboardMonthPicker");
 
   rentalPicker.dataset.page = "rental";
-  rentalPicker.min = "";
+
+  var firstRentalMonth = rentalAvailableMonths.length
+    ? rentalAvailableMonths[0].value
+    : currentDashboardMonthValue();
+
+  rentalPicker.min = firstRentalMonth;
   rentalPicker.max = currentDashboardMonthValue();
   rentalPicker.value = rentalCurrent;
 
