@@ -262,24 +262,23 @@
 
     .dashboard-month-picker {
       position: fixed;
-      left: 50%;
-      top: 50%;
-      width: 220px;
-      max-width: 80vw;
-      height: 42px;
-      transform: translate(-50%, -50%);
-      z-index: 10000;
-      display: none;
-      padding: 8px 10px;
-      border: 1px solid var(--secondary);
-      border-radius: 10px;
-      background: #ffffff;
-      color: var(--secondary);
-      font-size: 14px;
-      font-weight: 700;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
-      pointer-events: auto;
+      width: 1px;
+      height: 1px;
+      left: -10px;
+      bottom: 0;
+      opacity: 0;
+      pointer-events: none;
     }
+
+    .dashboard-month-modal[hidden] { display: none !important; }
+    .dashboard-month-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: flex-start; justify-content: center; padding: 150px 18px 24px; background: rgba(7,17,14,.38); }
+    .dashboard-month-card { width: min(360px,94vw); max-height: min(430px,70vh); overflow: hidden; border: 1px solid var(--secondary); border-radius: 16px; background: #fff; box-shadow: 0 14px 38px rgba(0,0,0,.22); }
+    .dashboard-month-title { padding: 15px 16px 10px; color: var(--secondary); font-size: 18px; font-weight: 800; text-align: center; }
+    .dashboard-month-list { max-height: 310px; overflow-y: auto; padding: 6px 10px 10px; }
+    .dashboard-month-option, .dashboard-month-cancel { width: 100%; min-height: 44px; margin: 4px 0; padding: 10px 12px; border: 1px solid var(--secondary); border-radius: 10px; background: #fff; color: var(--secondary); font-size: 15px; font-weight: 700; cursor: pointer; }
+    .dashboard-month-option.selected { background: var(--primary); color: #07110e; }
+    .dashboard-month-status { padding: 18px 12px; color: var(--muted); text-align: center; font-size: 14px; }
+    .dashboard-month-cancel { margin: 0; border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; background: var(--lavender); }
 
     .metric-grid {
       display: grid;
@@ -2099,7 +2098,15 @@
   </main>
 
 
-  <select id="dashboardMonthPicker" class="dashboard-month-picker" aria-hidden="true"></select>
+  <select id="dashboardMonthPicker" class="dashboard-month-picker" aria-hidden="true" tabindex="-1"></select>
+
+  <div id="dashboardMonthModal" class="dashboard-month-modal" hidden>
+    <div class="dashboard-month-card" role="dialog" aria-modal="true" aria-labelledby="dashboardMonthTitle">
+      <div id="dashboardMonthTitle" class="dashboard-month-title">Select month</div>
+      <div id="dashboardMonthList" class="dashboard-month-list"><div class="dashboard-month-status">Loading months...</div></div>
+      <button type="button" class="dashboard-month-cancel" onclick="closeDashboardMonthSelector()">Cancel</button>
+    </div>
+  </div>
   
 
   <script>
@@ -2179,64 +2186,57 @@
     }
 
     function preloadDashboardMonthOptions() {
-      ["lifeLog", "twice", "printing", "gcash", "moneyFlow", "konek", "rental"]
-        .forEach(function(page) {
-          loadDashboardMonthOptions(page);
+      var pages = ["lifeLog", "twice", "printing", "gcash", "moneyFlow", "konek", "rental"];
+      pages.reduce(function(chain, page) {
+        return chain.then(function() { return loadDashboardMonthOptions(page); });
+      }, Promise.resolve());
+    }
+
+    function closeDashboardMonthSelector() {
+      var modal = document.getElementById("dashboardMonthModal");
+      if (modal) modal.hidden = true;
+    }
+
+    function renderDashboardMonthOptions(page, options) {
+      var list = document.getElementById("dashboardMonthList");
+      if (!list) return;
+      if (!options.length) {
+        list.innerHTML = '<div class="dashboard-month-status">No months with data</div>';
+        return;
+      }
+      var savedValue = dashboardSelectedMonths[page];
+      list.innerHTML = options.map(function(option) {
+        var value = option.value || (String(option.year) + "-" + String(option.month).padStart(2, "0"));
+        var label = option.label || value;
+        var selected = value === savedValue ? " selected" : "";
+        return '<button type="button" class="dashboard-month-option' + selected + '" data-month-value="' + escapeHtml(value) + '">' + escapeHtml(label) + '</button>';
+      }).join("");
+      list.querySelectorAll(".dashboard-month-option").forEach(function(button) {
+        button.addEventListener("click", function() {
+          var value = this.getAttribute("data-month-value");
+          closeDashboardMonthSelector();
+          applyDashboardMonthSelection(value);
         });
+      });
     }
 
     function openDashboardMonthSelector(page) {
+      var modal = document.getElementById("dashboardMonthModal");
+      var list = document.getElementById("dashboardMonthList");
       var picker = document.getElementById("dashboardMonthPicker");
       var options = dashboardMonthOptionsCache[page] || [];
-
       picker.dataset.page = page;
-
-      if (!options.length) {
-        picker.innerHTML = '<option value="">Loading months...</option>';
-        picker.style.display = "block";
-        picker.focus();
+      if (modal) modal.hidden = false;
+      if (options.length) {
+        renderDashboardMonthOptions(page, options);
         return;
       }
-
-      picker.innerHTML = options.map(function(option) {
-        var value = option.value || (
-          String(option.year) + "-" + String(option.month).padStart(2, "0")
-        );
-        var label = option.label || value;
-        return '<option value="' + escapeHtml(value) + '">' +
-          escapeHtml(label) + '</option>';
-      }).join("");
-
-      var savedValue = dashboardSelectedMonths[page];
-      var selectedValue = options[0].value || (
-        String(options[0].year) + "-" +
-        String(options[0].month).padStart(2, "0")
-      );
-
-      options.some(function(option) {
-        var value = option.value || (
-          String(option.year) + "-" + String(option.month).padStart(2, "0")
-        );
-        if (value === savedValue) {
-          selectedValue = value;
-          return true;
-        }
-        return false;
+      if (list) list.innerHTML = '<div class="dashboard-month-status">Loading months...</div>';
+      loadDashboardMonthOptions(page).then(function(loadedOptions) {
+        var currentModal = document.getElementById("dashboardMonthModal");
+        if (!picker || picker.dataset.page !== page || !currentModal || currentModal.hidden) return;
+        renderDashboardMonthOptions(page, loadedOptions);
       });
-
-      picker.value = selectedValue;
-      picker.style.display = "block";
-      picker.focus();
-
-      if (typeof picker.showPicker === "function") {
-        try {
-          picker.showPicker();
-        } catch (error) {
-          picker.click();
-        }
-      } else {
-        picker.click();
-      }
     }
 
     function applyDashboardMonthSelection(value) {
@@ -2269,7 +2269,6 @@
 
     document.getElementById("dashboardMonthPicker").addEventListener("change", function() {
       applyDashboardMonthSelection(this.value);
-      this.style.display = "none";
     });
 
     function scrollToFilteredTransactionBoxAfterLoad(boxId) {
@@ -2628,6 +2627,8 @@
     // ========================================================
 
     function showAppPage(pageName, animate = true) {
+
+      closeDashboardMonthSelector();
 
       const pageChanged =
         currentAppPage !== pageName;
