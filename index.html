@@ -2088,7 +2088,7 @@
   </main>
 
 
-  <input id="dashboardMonthPicker" class="dashboard-month-picker" type="month" aria-hidden="true">
+  <select id="dashboardMonthPicker" class="dashboard-month-picker" aria-hidden="true"></select>
   
 
   <script>
@@ -2122,7 +2122,7 @@
     let activeRentalTransactionFilter = "";
     let rentalRecentTransactionsCache = [];
     let rentalTransactionHistoryCache = {};
-    let rentalAvailableMonths = [];
+
     let activeLifeLogTransactionFilter = "";
     let lifeLogRecentEntriesCache = [];
     let lifeLogTransactionHistoryCache = {};
@@ -2147,25 +2147,62 @@
     }
 
     function openDashboardMonthSelector(page) {
-   if (page === "rental") {
-  var rentalCurrent = dashboardSelectedMonths.rental || currentDashboardMonthValue();
-  var rentalPicker = document.getElementById("dashboardMonthPicker");
+  var picker = document.getElementById("dashboardMonthPicker");
+  picker.dataset.page = page;
+  picker.innerHTML = '<option value="">Loading months...</option>';
 
-  rentalPicker.dataset.page = "rental";
+  jsonpRequest(
+    {
+      action: "dashboardMonthOptions",
+      page: page
+    },
+    function(data) {
+      var options = Array.isArray(data) ? data : (data && Array.isArray(data.monthOptions) ? data.monthOptions : []);
 
-  var firstRentalMonth = rentalAvailableMonths.length
-    ? rentalAvailableMonths[0].value
-    : currentDashboardMonthValue();
+      if (!options.length) {
+        picker.innerHTML = '<option value="">No months with data</option>';
+        return;
+      }
 
-  rentalPicker.min = firstRentalMonth;
-  rentalPicker.max = currentDashboardMonthValue();
-  rentalPicker.value = rentalCurrent;
+      picker.innerHTML = options.map(function(option) {
+        var value = option.value || (
+          String(option.year) + "-" + String(option.month).padStart(2, "0")
+        );
+        var label = option.label || value;
 
-  if (typeof rentalPicker.showPicker === "function") rentalPicker.showPicker();
-  else rentalPicker.click();
+        return '<option value="' + escapeHtml(value) + '">' +
+          escapeHtml(label) +
+          '</option>';
+      }).join("");
 
-  return;
+      var savedValue = dashboardSelectedMonths[page];
+      var validSavedValue = options.some(function(option) {
+        var value = option.value || (
+          String(option.year) + "-" + String(option.month).padStart(2, "0")
+        );
+        return value === savedValue;
+      });
+
+      picker.value = validSavedValue
+        ? savedValue
+        : (options[0].value || (
+            String(options[0].year) + "-" +
+            String(options[0].month).padStart(2, "0")
+          ));
+
+      if (typeof picker.showPicker === "function") {
+        picker.showPicker();
+      } else {
+        picker.click();
+      }
+    },
+    function(error) {
+      picker.innerHTML = '<option value="">Unable to load months</option>';
+      console.error("Dashboard month options error:", error);
+    }
+  );
 }
+
       var picker = document.getElementById("dashboardMonthPicker");
       var current = currentDashboardMonthValue();
       var firstMonths = { gcash: "2026-07", konek: "2026-08" };
@@ -2178,25 +2215,32 @@
     }
 
     function applyDashboardMonthSelection(value) {
-      var picker = document.getElementById("dashboardMonthPicker");
-      var page = picker.dataset.page;
-      if (!page || !value || value > currentDashboardMonthValue()) return;
-      dashboardSelectedMonths[page] = value;
-      if (page === "rental") {
-        activeRentalTransactionFilter = "";
-        rentalTransactionHistoryCache = {};
-      }
-      var loaders = {
-        lifeLog: loadLifeLogDashboard,
-        twice: loadTwiceAsNyceDashboard,
-        printing: loadPrintingDashboard,
-        gcash: loadGcashDashboard,
-        moneyFlow: loadDashboard,
-        konek: loadTestDashboard,
-        rental: loadRentalDashboard
-      };
-      if (loaders[page]) loaders[page]();
-    }
+  var picker = document.getElementById("dashboardMonthPicker");
+  var page = picker.dataset.page;
+
+  if (!page || !value) return;
+
+  dashboardSelectedMonths[page] = value;
+
+  if (page === "rental") {
+    activeRentalTransactionFilter = "";
+    rentalTransactionHistoryCache = {};
+  }
+
+  var loaders = {
+    lifeLog: loadLifeLogDashboard,
+    twice: loadTwiceAsNyceDashboard,
+    printing: loadPrintingDashboard,
+    gcash: loadGcashDashboard,
+    moneyFlow: loadDashboard,
+    konek: loadTestDashboard,
+    rental: loadRentalDashboard
+  };
+
+  if (loaders[page]) {
+    loaders[page]();
+  }
+}
 
     document.getElementById("dashboardMonthPicker").addEventListener("change", function() {
       applyDashboardMonthSelection(this.value);
@@ -5036,7 +5080,6 @@
     }
 
     function renderRentalDashboard(data) {
-      rentalAvailableMonths = Array.isArray(data.monthOptions) ? data.monthOptions : [];
       if (data.selectedMonthValue) dashboardSelectedMonths.rental = data.selectedMonthValue;
       document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
       document.getElementById("rentalLifetimeIncome").innerText = formatPeso(data.totalIncome);
