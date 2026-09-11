@@ -267,7 +267,7 @@
       left: -10px;
       bottom: 0;
       opacity: 0;
-      pointer-events: auto;
+      pointer-events: none;
     }
 
     .metric-grid {
@@ -2129,6 +2129,7 @@
     let lifeLogSelectedYear = new Date().getFullYear();
     let lifeLogSelectedMonth = new Date().getMonth() + 1;
     let dashboardSelectedMonths = {};
+    let dashboardMonthOptionsCache = {};
     const DASHBOARD_TRANSACTION_PAGE_SIZE = 50;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
@@ -2146,62 +2147,76 @@
       return { year: Number(parts[0]), month: Number(parts[1]) };
     }
 
-    function openDashboardMonthSelector(page) {
-  var picker = document.getElementById("dashboardMonthPicker");
-  picker.dataset.page = page;
-  picker.innerHTML = '<option value="">Loading months...</option>';
+    function loadDashboardMonthOptions(page) {
+      return new Promise(function(resolve) {
+        jsonpRequest(
+          { action: "dashboardMonthOptions", page: page },
+          function(data) {
+            var options = data && Array.isArray(data.monthOptions)
+              ? data.monthOptions
+              : (Array.isArray(data) ? data : []);
+            dashboardMonthOptionsCache[page] = options;
+            resolve(options);
+          },
+          function(error) {
+            console.error("Dashboard month options error:", error);
+            resolve([]);
+          }
+        );
+      });
+    }
 
-  jsonpRequest(
-    {
-      action: "dashboardMonthOptions",
-      page: page
-    },
-    function(data) {
-      var options = Array.isArray(data) ? data : (data && Array.isArray(data.monthOptions) ? data.monthOptions : []);
+    function preloadDashboardMonthOptions() {
+      ["lifeLog", "twice", "printing", "gcash", "moneyFlow", "konek", "rental"]
+        .forEach(function(page) {
+          loadDashboardMonthOptions(page);
+        });
+    }
+
+    function openDashboardMonthSelector(page) {
+      var picker = document.getElementById("dashboardMonthPicker");
+      var options = dashboardMonthOptionsCache[page] || [];
+
+      picker.dataset.page = page;
 
       if (!options.length) {
-        picker.innerHTML = '<option value="">No months with data</option>';
-        return;
+        // Month data is normally preloaded at startup. If it is not ready yet,
+        // keep the selector empty rather than showing months that have no data.
+        picker.innerHTML = '<option value="">Loading months...</option>';
+      } else {
+        picker.innerHTML = options.map(function(option) {
+          var value = option.value || (
+            String(option.year) + "-" + String(option.month).padStart(2, "0")
+          );
+          var label = option.label || value;
+          return '<option value="' + escapeHtml(value) + '">' +
+            escapeHtml(label) + '</option>';
+        }).join("");
+
+        var savedValue = dashboardSelectedMonths[page];
+        var selected = options.some(function(option) {
+          var value = option.value || (
+            String(option.year) + "-" + String(option.month).padStart(2, "0")
+          );
+          return value === savedValue;
+        });
+
+        picker.value = selected
+          ? savedValue
+          : (options[0].value || (
+              String(options[0].year) + "-" +
+              String(options[0].month).padStart(2, "0")
+            ));
       }
 
-      picker.innerHTML = options.map(function(option) {
-        var value = option.value || (
-          String(option.year) + "-" + String(option.month).padStart(2, "0")
-        );
-        var label = option.label || value;
-
-        return '<option value="' + escapeHtml(value) + '">' +
-          escapeHtml(label) +
-          '</option>';
-      }).join("");
-
-      var savedValue = dashboardSelectedMonths[page];
-      var validSavedValue = options.some(function(option) {
-        var value = option.value || (
-          String(option.year) + "-" + String(option.month).padStart(2, "0")
-        );
-        return value === savedValue;
-      });
-
-      picker.value = validSavedValue
-        ? savedValue
-        : (options[0].value || (
-            String(options[0].year) + "-" +
-            String(options[0].month).padStart(2, "0")
-          ));
-
+      // This is synchronous with the label click, so browser user activation
+      // is preserved and the selector opens reliably.
       if (typeof picker.showPicker === "function") {
         picker.showPicker();
       } else {
         picker.click();
       }
-    },
-    function(error) {
-      picker.innerHTML = '<option value="">Unable to load months</option>';
-      console.error("Dashboard month options error:", error);
     }
-  );
-}
 
     function applyDashboardMonthSelection(value) {
   var picker = document.getElementById("dashboardMonthPicker");
@@ -2455,6 +2470,7 @@
       // Cash In/Out stays visible by default. The remaining
       // dashboards + Recent Transactions preload automatically
       // one at a time, with one startup retry on failure.
+      preloadDashboardMonthOptions();
       preloadAllPageData();
 
       if ("serviceWorker" in navigator) {
