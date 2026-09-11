@@ -3742,11 +3742,15 @@
       });
     }
 
-    function buildTestAapPreviewText(calculation) {
-  return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) +
-    " · Total fee " + formatTestAapPesoClient(calculation.totalFee) +
-    " · Cash received " + formatTestAapPesoClient(calculation.cashReceived);
-}
+    function buildTestAapPreviewText(calculation, destination) {
+      var moneyLabel = String(destination || '').toLowerCase() === 'gcash'
+        ? 'GCash received'
+        : 'Cash received';
+
+      return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) +
+        " · Total fee " + formatTestAapPesoClient(calculation.totalFee) +
+        " · " + moneyLabel + " " + formatTestAapPesoClient(calculation.cashReceived);
+    }
     // TEST AAP PURE HELPERS END
 
 
@@ -4087,7 +4091,7 @@
               feeEarned: result.feeEarned,
               cashReceived: result.cashReceived,
               appDeduction: result.appDeduction
-            }),
+            }, result.destination),
             "success"
           );
           markTestDashboardLoaded_(result.dashboard);
