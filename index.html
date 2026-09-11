@@ -2089,7 +2089,7 @@
 
 
   <input id="dashboardMonthPicker" class="dashboard-month-picker" type="month" aria-hidden="true">
-  <select id="rentalMonthPicker" class="dashboard-month-picker" aria-hidden="true"></select>
+  
 
   <script>
     document.title = "Cashflow Hub";
@@ -2148,18 +2148,19 @@
 
     function openDashboardMonthSelector(page) {
       if (page === "rental") {
-        var rentalPicker = document.getElementById("rentalMonthPicker");
-        var options = rentalAvailableMonths.length
-          ? rentalAvailableMonths
-          : [{ value: currentDashboardMonthValue(), label: document.getElementById("rentalMonthLabel").innerText || "Current month" }];
-        rentalPicker.innerHTML = options.map(function(option) {
-          return '<option value="' + escapeHtml(option.value) + '">' + escapeHtml(option.label) + '</option>';
-        }).join("");
-        rentalPicker.value = dashboardSelectedMonths.rental || options[0].value;
-        if (typeof rentalPicker.showPicker === "function") rentalPicker.showPicker();
-        else rentalPicker.click();
-        return;
-      }
+  var rentalCurrent = dashboardSelectedMonths.rental || currentDashboardMonthValue();
+  var rentalPicker = document.getElementById("dashboardMonthPicker");
+
+  rentalPicker.dataset.page = "rental";
+  rentalPicker.min = "";
+  rentalPicker.max = currentDashboardMonthValue();
+  rentalPicker.value = rentalCurrent;
+
+  if (typeof rentalPicker.showPicker === "function") rentalPicker.showPicker();
+  else rentalPicker.click();
+
+  return;
+}
       var picker = document.getElementById("dashboardMonthPicker");
       var current = currentDashboardMonthValue();
       var firstMonths = { gcash: "2026-07", konek: "2026-08" };
@@ -2193,12 +2194,6 @@
     }
 
     document.getElementById("dashboardMonthPicker").addEventListener("change", function() {
-      applyDashboardMonthSelection(this.value);
-    });
-
-    document.getElementById("rentalMonthPicker").addEventListener("change", function() {
-      var sharedPicker = document.getElementById("dashboardMonthPicker");
-      sharedPicker.dataset.page = "rental";
       applyDashboardMonthSelection(this.value);
     });
 
