@@ -272,13 +272,14 @@
 
     .dashboard-month-modal[hidden] { display: none !important; }
     .dashboard-month-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: flex-start; justify-content: center; padding: 150px 18px 24px; background: rgba(7,17,14,.38); }
-    .dashboard-month-card { width: min(360px,94vw); max-height: min(430px,70vh); overflow: hidden; border: 1px solid var(--secondary); border-radius: 16px; background: #fff; box-shadow: 0 14px 38px rgba(0,0,0,.22); }
+    .dashboard-month-card { width: min(390px,94vw); max-height: min(500px,70vh); overflow: hidden; border: 1px solid var(--secondary); border-radius: 16px; background: #fff; box-shadow: 0 14px 38px rgba(0,0,0,.22); }
     .dashboard-month-title { padding: 15px 16px 10px; color: var(--secondary); font-size: 18px; font-weight: 800; text-align: center; }
-    .dashboard-month-list { max-height: 310px; overflow-y: auto; padding: 6px 10px 10px; }
-    .dashboard-month-option, .dashboard-month-cancel { width: 100%; min-height: 44px; margin: 4px 0; padding: 10px 12px; border: 1px solid var(--secondary); border-radius: 10px; background: #fff; color: var(--secondary); font-size: 15px; font-weight: 700; cursor: pointer; }
-    .dashboard-month-option.selected { background: var(--primary); color: #07110e; }
-    .dashboard-month-status { padding: 18px 12px; color: var(--muted); text-align: center; font-size: 14px; }
-    .dashboard-month-cancel { margin: 0; border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; background: var(--lavender); }
+    .dashboard-month-list { max-height: 122px; overflow-y: auto; padding: 6px 10px 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-content: start; }
+    .dashboard-month-option { width: 100%; min-height: 48px; margin: 0; padding: 10px 8px; border: 1px solid var(--secondary); border-radius: 10px; background: var(--lavender); color: var(--secondary); font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color .12s ease, transform .12s ease, box-shadow .12s ease; }
+    .dashboard-month-option:active, .dashboard-month-option.selected { background: #00F9B9; color: #07110e; transform: scale(.98); box-shadow: 0 0 0 3px rgba(0,249,185,.22); }
+    .dashboard-month-status { grid-column: 1 / -1; padding: 18px 12px; color: var(--muted); text-align: center; font-size: 14px; }
+    .dashboard-month-cancel { width: calc(100% - 20px); min-height: 48px; margin: 0 10px 10px; padding: 10px 12px; border: 1px solid #281B6B; border-radius: 10px; background: #281B6B; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background-color .12s ease, transform .12s ease; }
+    .dashboard-month-cancel:active { background: #00F9B9; color: #07110e; transform: scale(.98); }
 
     .metric-grid {
       display: grid;
