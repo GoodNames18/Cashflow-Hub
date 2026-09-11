@@ -262,12 +262,23 @@
 
     .dashboard-month-picker {
       position: fixed;
-      width: 1px;
-      height: 1px;
-      left: -10px;
-      bottom: 0;
-      opacity: 0;
-      pointer-events: none;
+      left: 50%;
+      top: 50%;
+      width: 220px;
+      max-width: 80vw;
+      height: 42px;
+      transform: translate(-50%, -50%);
+      z-index: 10000;
+      display: none;
+      padding: 8px 10px;
+      border: 1px solid var(--secondary);
+      border-radius: 10px;
+      background: #ffffff;
+      color: var(--secondary);
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+      pointer-events: auto;
     }
 
     .metric-grid {
@@ -2160,6 +2171,7 @@
           },
           function(error) {
             console.error("Dashboard month options error:", error);
+            dashboardMonthOptionsCache[page] = [];
             resolve([]);
           }
         );
@@ -2180,39 +2192,48 @@
       picker.dataset.page = page;
 
       if (!options.length) {
-        // Month data is normally preloaded at startup. If it is not ready yet,
-        // keep the selector empty rather than showing months that have no data.
         picker.innerHTML = '<option value="">Loading months...</option>';
-      } else {
-        picker.innerHTML = options.map(function(option) {
-          var value = option.value || (
-            String(option.year) + "-" + String(option.month).padStart(2, "0")
-          );
-          var label = option.label || value;
-          return '<option value="' + escapeHtml(value) + '">' +
-            escapeHtml(label) + '</option>';
-        }).join("");
-
-        var savedValue = dashboardSelectedMonths[page];
-        var selected = options.some(function(option) {
-          var value = option.value || (
-            String(option.year) + "-" + String(option.month).padStart(2, "0")
-          );
-          return value === savedValue;
-        });
-
-        picker.value = selected
-          ? savedValue
-          : (options[0].value || (
-              String(options[0].year) + "-" +
-              String(options[0].month).padStart(2, "0")
-            ));
+        picker.style.display = "block";
+        picker.focus();
+        return;
       }
 
-      // This is synchronous with the label click, so browser user activation
-      // is preserved and the selector opens reliably.
+      picker.innerHTML = options.map(function(option) {
+        var value = option.value || (
+          String(option.year) + "-" + String(option.month).padStart(2, "0")
+        );
+        var label = option.label || value;
+        return '<option value="' + escapeHtml(value) + '">' +
+          escapeHtml(label) + '</option>';
+      }).join("");
+
+      var savedValue = dashboardSelectedMonths[page];
+      var selectedValue = options[0].value || (
+        String(options[0].year) + "-" +
+        String(options[0].month).padStart(2, "0")
+      );
+
+      options.some(function(option) {
+        var value = option.value || (
+          String(option.year) + "-" + String(option.month).padStart(2, "0")
+        );
+        if (value === savedValue) {
+          selectedValue = value;
+          return true;
+        }
+        return false;
+      });
+
+      picker.value = selectedValue;
+      picker.style.display = "block";
+      picker.focus();
+
       if (typeof picker.showPicker === "function") {
-        picker.showPicker();
+        try {
+          picker.showPicker();
+        } catch (error) {
+          picker.click();
+        }
       } else {
         picker.click();
       }
@@ -2248,6 +2269,7 @@
 
     document.getElementById("dashboardMonthPicker").addEventListener("change", function() {
       applyDashboardMonthSelection(this.value);
+      this.style.display = "none";
     });
 
     function scrollToFilteredTransactionBoxAfterLoad(boxId) {
