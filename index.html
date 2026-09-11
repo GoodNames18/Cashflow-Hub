@@ -274,9 +274,9 @@
     .dashboard-month-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: flex-start; justify-content: center; padding: 150px 18px 24px; background: rgba(7,17,14,.38); }
     .dashboard-month-card { width: min(390px,94vw); max-height: min(500px,70vh); overflow: hidden; border: 1px solid var(--secondary); border-radius: 16px; background: #fff; box-shadow: 0 14px 38px rgba(0,0,0,.22); }
     .dashboard-month-title { padding: 15px 16px 10px; color: var(--secondary); font-size: 18px; font-weight: 800; text-align: center; }
-    .dashboard-month-list { max-height: 122px; overflow-y: auto; padding: 6px 10px 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-content: start; }
+    .dashboard-month-list { max-height: 190px; overflow-y: auto; padding: 6px 10px 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
     .dashboard-month-option { width: 100%; min-height: 48px; margin: 0; padding: 10px 8px; border: 1px solid var(--secondary); border-radius: 10px; background: var(--lavender); color: var(--secondary); font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color .12s ease, transform .12s ease, box-shadow .12s ease; }
-    .dashboard-month-option:active, .dashboard-month-option.selected { background: #00F9B9; color: #07110e; transform: scale(.98); box-shadow: 0 0 0 3px rgba(0,249,185,.22); }
+    .dashboard-month-option.is-pressing { background: #00F9B9; color: #07110e; transform: scale(.98); box-shadow: 0 0 0 3px rgba(0,249,185,.22); }
     .dashboard-month-status { grid-column: 1 / -1; padding: 18px 12px; color: var(--muted); text-align: center; font-size: 14px; }
     .dashboard-month-cancel { width: calc(100% - 20px); min-height: 48px; margin: 0 10px 10px; padding: 10px 12px; border: 1px solid #281B6B; border-radius: 10px; background: #281B6B; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background-color .12s ease, transform .12s ease; }
     .dashboard-month-cancel:active { background: #00F9B9; color: #07110e; transform: scale(.98); }
@@ -2205,18 +2205,21 @@
         list.innerHTML = '<div class="dashboard-month-status">No months with data</div>';
         return;
       }
-      var savedValue = dashboardSelectedMonths[page];
       list.innerHTML = options.map(function(option) {
         var value = option.value || (String(option.year) + "-" + String(option.month).padStart(2, "0"));
         var label = option.label || value;
-        var selected = value === savedValue ? " selected" : "";
-        return '<button type="button" class="dashboard-month-option' + selected + '" data-month-value="' + escapeHtml(value) + '">' + escapeHtml(label) + '</button>';
+        return '<button type="button" class="dashboard-month-option" data-month-value="' + escapeHtml(value) + '">' + escapeHtml(label) + '</button>';
       }).join("");
       list.querySelectorAll(".dashboard-month-option").forEach(function(button) {
         button.addEventListener("click", function() {
           var value = this.getAttribute("data-month-value");
-          closeDashboardMonthSelector();
-          applyDashboardMonthSelection(value);
+          var selectedButton = this;
+          selectedButton.classList.add("is-pressing");
+          window.setTimeout(function() {
+            closeDashboardMonthSelector();
+            selectedButton.classList.remove("is-pressing");
+            applyDashboardMonthSelection(value);
+          }, 140);
         });
       });
     }
