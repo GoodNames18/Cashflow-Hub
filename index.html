@@ -270,17 +270,6 @@
       pointer-events: none;
     }
 
-    .dashboard-month-modal[hidden] { display: none !important; }
-    .dashboard-month-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: flex-start; justify-content: center; padding: 115px 18px 24px; background: rgba(7,17,14,.38); }
-    .dashboard-month-card { width: min(390px,94vw); max-height: min(560px,76vh); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--secondary); border-radius: 16px; background: #fff; box-shadow: 0 14px 38px rgba(0,0,0,.22); }
-    .dashboard-month-title { flex: 0 0 auto; padding: 15px 16px 10px; color: var(--secondary); font-size: 18px; font-weight: 800; text-align: center; }
-    .dashboard-month-list { height: auto; max-height: 210px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 6px 10px 10px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 58px; gap: 10px; align-content: start; }
-    .dashboard-month-option { width: 100%; height: 58px; margin: 0; padding: 8px 6px; border: 1px solid var(--secondary); border-radius: 10px; background: var(--lavender); color: var(--secondary); font-size: 14px; font-weight: 700; cursor: pointer; transition: background-color .12s ease, transform .12s ease, box-shadow .12s ease; }
-    .dashboard-month-option.is-pressing { background: #00F9B9; color: #07110e; transform: scale(.98); box-shadow: 0 0 0 3px rgba(0,249,185,.22); }
-    .dashboard-month-status { grid-column: 1 / -1; padding: 18px 12px; color: var(--muted); text-align: center; font-size: 14px; }
-    .dashboard-month-cancel { flex: 0 0 auto; width: calc(100% - 20px); min-height: 58px; margin: 0 10px 10px; padding: 10px 12px; border: 1px solid #281B6B; border-radius: 10px; background: #281B6B; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background-color .12s ease, transform .12s ease; }
-    .dashboard-month-cancel:active { background: #00F9B9; color: #07110e; transform: scale(.98); }
-
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -665,7 +654,8 @@
     #twiceStatus,
     #konekStatus,
     #testStatus,
-    #lifeLogStatus {
+    #lifeLogStatus,
+    #moneyFlowStatus {
       min-height: 17px;
       margin-top: 8px;
       color: var(--muted);
@@ -2099,22 +2089,14 @@
   </main>
 
 
-  <select id="dashboardMonthPicker" class="dashboard-month-picker" aria-hidden="true" tabindex="-1"></select>
-
-  <div id="dashboardMonthModal" class="dashboard-month-modal" hidden>
-    <div class="dashboard-month-card" role="dialog" aria-modal="true" aria-labelledby="dashboardMonthTitle">
-      <div id="dashboardMonthTitle" class="dashboard-month-title">Select month</div>
-      <div id="dashboardMonthList" class="dashboard-month-list"><div class="dashboard-month-status">Loading months...</div></div>
-      <button type="button" class="dashboard-month-cancel" onclick="closeDashboardMonthSelector()">Cancel</button>
-    </div>
-  </div>
-  
+  <input id="dashboardMonthPicker" class="dashboard-month-picker" type="month" aria-hidden="true">
+  <select id="rentalMonthPicker" class="dashboard-month-picker" aria-hidden="true"></select>
 
   <script>
     document.title = "Cashflow Hub";
 
     const APPS_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbxEnbsf98nGxIRew5DPxtsCHUydAaJKBJTkWykDBZ7YSzY7vELkr4GpvP4EDnLmaAmu/exec";
+      "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
 
 
     let recognition;
@@ -2141,14 +2123,13 @@
     let activeRentalTransactionFilter = "";
     let rentalRecentTransactionsCache = [];
     let rentalTransactionHistoryCache = {};
-
+    let rentalAvailableMonths = [];
     let activeLifeLogTransactionFilter = "";
     let lifeLogRecentEntriesCache = [];
     let lifeLogTransactionHistoryCache = {};
     let lifeLogSelectedYear = new Date().getFullYear();
     let lifeLogSelectedMonth = new Date().getMonth() + 1;
     let dashboardSelectedMonths = {};
-    let dashboardMonthOptionsCache = {};
     const DASHBOARD_TRANSACTION_PAGE_SIZE = 50;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
@@ -2166,142 +2147,59 @@
       return { year: Number(parts[0]), month: Number(parts[1]) };
     }
 
-    function loadDashboardMonthOptions(page) {
-      return new Promise(function(resolve) {
-        jsonpRequest(
-          { action: "dashboardMonthOptions", page: page },
-          function(data) {
-            var options = data && Array.isArray(data.monthOptions)
-              ? data.monthOptions
-              : (Array.isArray(data) ? data : []);
-            dashboardMonthOptionsCache[page] = options;
-            resolve(options);
-          },
-          function(error) {
-            console.error("Dashboard month options error:", error);
-            dashboardMonthOptionsCache[page] = [];
-            resolve([]);
-          }
-        );
-      });
-    }
-
-    function preloadDashboardMonthOptions() {
-      var pages = ["lifeLog", "twice", "printing", "gcash", "moneyFlow", "konek", "rental"];
-      pages.reduce(function(chain, page) {
-        return chain.then(function() { return loadDashboardMonthOptions(page); });
-      }, Promise.resolve());
-    }
-
-    function closeDashboardMonthSelector() {
-      var modal = document.getElementById("dashboardMonthModal");
-      if (modal) modal.hidden = true;
-      var list = document.getElementById("dashboardMonthList");
-      if (list) list.scrollTop = 0;
-    }
-
-    function setupDashboardMonthModalDismiss() {
-      var modal = document.getElementById("dashboardMonthModal");
-      if (!modal || modal.dataset.dismissReady === "1") return;
-      modal.dataset.dismissReady = "1";
-      modal.addEventListener("click", function(event) {
-        if (event.target === modal) closeDashboardMonthSelector();
-      });
-      document.addEventListener("keydown", function(event) {
-        if (event.key === "Escape" && !modal.hidden) closeDashboardMonthSelector();
-      });
-    }
-
-    function renderDashboardMonthOptions(page, options) {
-      var list = document.getElementById("dashboardMonthList");
-      if (!list) return;
-      list.scrollTop = 0;
-      if (!options.length) {
-        list.innerHTML = '<div class="dashboard-month-status">No months with data</div>';
-        list.style.height = "58px";
-        list.style.maxHeight = "210px";
-        return;
-      }
-      list.innerHTML = options.map(function(option) {
-        var value = option.value || (String(option.year) + "-" + String(option.month).padStart(2, "0"));
-        var label = option.label || value;
-        return '<button type="button" class="dashboard-month-option" data-month-value="' + escapeHtml(value) + '">' + escapeHtml(label) + '</button>';
-      }).join("");
-
-      var visibleCount = Math.min(options.length, 6);
-      var visibleRows = Math.max(1, Math.ceil(visibleCount / 2));
-      var listHeight = (visibleRows * 58) + ((visibleRows - 1) * 10) + 16;
-      list.style.height = listHeight + "px";
-      list.style.maxHeight = "210px";
-
-      list.querySelectorAll(".dashboard-month-option").forEach(function(button) {
-        button.addEventListener("click", function() {
-          var value = this.getAttribute("data-month-value");
-          var selectedButton = this;
-          selectedButton.classList.add("is-pressing");
-          window.setTimeout(function() {
-            closeDashboardMonthSelector();
-            selectedButton.classList.remove("is-pressing");
-            applyDashboardMonthSelection(value);
-          }, 140);
-        });
-      });
-    }
-
     function openDashboardMonthSelector(page) {
-      setupDashboardMonthModalDismiss();
-      var modal = document.getElementById("dashboardMonthModal");
-      var list = document.getElementById("dashboardMonthList");
-      var picker = document.getElementById("dashboardMonthPicker");
-      var options = dashboardMonthOptionsCache[page] || [];
-      if (list) list.scrollTop = 0;
-      picker.dataset.page = page;
-      if (modal) modal.hidden = false;
-      if (options.length) {
-        renderDashboardMonthOptions(page, options);
+      if (page === "rental") {
+        var rentalPicker = document.getElementById("rentalMonthPicker");
+        var options = rentalAvailableMonths.length
+          ? rentalAvailableMonths
+          : [{ value: currentDashboardMonthValue(), label: document.getElementById("rentalMonthLabel").innerText || "Current month" }];
+        rentalPicker.innerHTML = options.map(function(option) {
+          return '<option value="' + escapeHtml(option.value) + '">' + escapeHtml(option.label) + '</option>';
+        }).join("");
+        rentalPicker.value = dashboardSelectedMonths.rental || options[0].value;
+        if (typeof rentalPicker.showPicker === "function") rentalPicker.showPicker();
+        else rentalPicker.click();
         return;
       }
-      if (list) {
-        list.innerHTML = '<div class="dashboard-month-status">Loading months...</div>';
-        list.style.height = "58px";
-        list.style.maxHeight = "210px";
-      }
-      loadDashboardMonthOptions(page).then(function(loadedOptions) {
-        var currentModal = document.getElementById("dashboardMonthModal");
-        if (!picker || picker.dataset.page !== page || !currentModal || currentModal.hidden) return;
-        renderDashboardMonthOptions(page, loadedOptions);
-      });
+      var picker = document.getElementById("dashboardMonthPicker");
+      var current = currentDashboardMonthValue();
+      var firstMonths = { gcash: "2026-07", konek: "2026-08" };
+      picker.min = firstMonths[page] || "";
+      picker.max = current;
+      picker.value = dashboardSelectedMonths[page] || current;
+      picker.dataset.page = page;
+      if (typeof picker.showPicker === "function") picker.showPicker();
+      else picker.click();
     }
 
     function applyDashboardMonthSelection(value) {
-  var picker = document.getElementById("dashboardMonthPicker");
-  var page = picker.dataset.page;
-
-  if (!page || !value) return;
-
-  dashboardSelectedMonths[page] = value;
-
-  if (page === "rental") {
-    activeRentalTransactionFilter = "";
-    rentalTransactionHistoryCache = {};
-  }
-
-  var loaders = {
-    lifeLog: loadLifeLogDashboard,
-    twice: loadTwiceAsNyceDashboard,
-    printing: loadPrintingDashboard,
-    gcash: loadGcashDashboard,
-    moneyFlow: loadDashboard,
-    konek: loadTestDashboard,
-    rental: loadRentalDashboard
-  };
-
-  if (loaders[page]) {
-    loaders[page]();
-  }
-}
+      var picker = document.getElementById("dashboardMonthPicker");
+      var page = picker.dataset.page;
+      if (!page || !value || value > currentDashboardMonthValue()) return;
+      dashboardSelectedMonths[page] = value;
+      if (page === "rental") {
+        activeRentalTransactionFilter = "";
+        rentalTransactionHistoryCache = {};
+      }
+      var loaders = {
+        lifeLog: loadLifeLogDashboard,
+        twice: loadTwiceAsNyceDashboard,
+        printing: loadPrintingDashboard,
+        gcash: loadGcashDashboard,
+        moneyFlow: loadDashboard,
+        konek: loadTestDashboard,
+        rental: loadRentalDashboard
+      };
+      if (loaders[page]) loaders[page]();
+    }
 
     document.getElementById("dashboardMonthPicker").addEventListener("change", function() {
+      applyDashboardMonthSelection(this.value);
+    });
+
+    document.getElementById("rentalMonthPicker").addEventListener("change", function() {
+      var sharedPicker = document.getElementById("dashboardMonthPicker");
+      sharedPicker.dataset.page = "rental";
       applyDashboardMonthSelection(this.value);
     });
 
@@ -2525,7 +2423,6 @@
       // Cash In/Out stays visible by default. The remaining
       // dashboards + Recent Transactions preload automatically
       // one at a time, with one startup retry on failure.
-      preloadDashboardMonthOptions();
       preloadAllPageData();
 
       if ("serviceWorker" in navigator) {
@@ -2661,8 +2558,6 @@
     // ========================================================
 
     function showAppPage(pageName, animate = true) {
-
-      closeDashboardMonthSelector();
 
       const pageChanged =
         currentAppPage !== pageName;
@@ -3024,85 +2919,8 @@
 
 
     // ========================================================
-    // FAST DATA CACHE
-    // Show the last successful dashboard data immediately, then
-    // refresh it quietly from Apps Script in the background.
-    // This keeps every dashboard/tab fast without changing its
-    // existing calculation or rendering logic.
+    // JSONP
     // ========================================================
-
-    const DASHBOARD_CACHE_PREFIX = "cashflowHubDataCache_v1:";
-
-    const CACHEABLE_READ_ACTIONS = {
-      dashboardMonthOptions: true,
-      expense: true,
-      gcashDashboard: true,
-      gcashTransactions: true,
-      konekDashboard: true,
-      konekSuggestions: true,
-      lifeLogDashboard: true,
-      printingDashboard: true,
-      printingTransactions: true,
-      rentalDashboard: true,
-      testDashboard: true,
-      twiceDashboard: true,
-      twiceTransactions: true
-    };
-
-    function getDashboardCacheKey_(params) {
-      var clean = {};
-      Object.keys(params || {})
-        .filter(function(key) {
-          return key !== "callback" && key !== "t";
-        })
-        .sort()
-        .forEach(function(key) {
-          clean[key] = params[key];
-        });
-
-      return DASHBOARD_CACHE_PREFIX + JSON.stringify(clean);
-    }
-
-    function readDashboardCache_(key) {
-      try {
-        var raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : null;
-      } catch (error) {
-        return null;
-      }
-    }
-
-    function writeDashboardCache_(key, data) {
-      try {
-        localStorage.setItem(
-          key,
-          JSON.stringify({
-            savedAt: Date.now(),
-            data: data
-          })
-        );
-      } catch (error) {
-        // Storage can be full or unavailable. The live request still works.
-        try {
-          localStorage.removeItem(key);
-        } catch (ignore) {}
-      }
-    }
-
-    function clearDashboardDataCache_() {
-      try {
-        var keys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-          var key = localStorage.key(i);
-          if (key && key.indexOf(DASHBOARD_CACHE_PREFIX) === 0) {
-            keys.push(key);
-          }
-        }
-        keys.forEach(function(key) {
-          localStorage.removeItem(key);
-        });
-      } catch (error) {}
-    }
 
     function jsonpRequest(
       params,
@@ -3132,25 +2950,6 @@
 
       params.t =
         Date.now();
-
-      var cacheable =
-        !!CACHEABLE_READ_ACTIONS[params.action];
-      var cacheKey =
-        cacheable ? getDashboardCacheKey_(params) : "";
-      var cached =
-        cacheable ? readDashboardCache_(cacheKey) : null;
-
-      // Stale-while-revalidate: cached data is returned immediately.
-      // The live Apps Script request below still runs and refreshes it.
-      if (cached && cached.data !== undefined && onSuccess) {
-        setTimeout(function() {
-          try {
-            onSuccess(cached.data);
-          } catch (error) {
-            console.log(error);
-          }
-        }, 0);
-      }
 
 
       const query =
@@ -3222,20 +3021,6 @@
         }
 
 
-        if (cacheable) {
-          writeDashboardCache_(cacheKey, data);
-        } else if (params.action) {
-          // A successful write may change dashboard data. Clear stale
-          // cached reads so the next dashboard load cannot show old data.
-          if (
-            /Add$/.test(String(params.action)) ||
-            /^(lifeLog|printing|rental|twice|konek)Add$/.test(String(params.action)) ||
-            /^(gcashQuickAdd|gcashTextAdd|test)/.test(String(params.action))
-          ) {
-            clearDashboardDataCache_();
-          }
-        }
-
         if (onSuccess) {
           onSuccess(data);
         }
@@ -3275,12 +3060,6 @@
         .appendChild(script);
 
 
-      // Reads can fail quickly, but writes need more time because
-      // Apps Script may finish the Google Sheet write before its
-      // JSONP response reaches the phone. A longer write timeout
-      // prevents a false "timed out" message after a successful save.
-      var requestTimeout = cacheable ? 15000 : 60000;
-
       setTimeout(
         function() {
 
@@ -3295,15 +3074,13 @@
           if (onFailure) {
             onFailure(
               new Error(
-                cacheable
-                  ? "Request timed out."
-                  : "Save is taking longer than usual. The entry may already be recorded; please do not tap Save again."
+                "Request timed out."
               )
             );
           }
 
         },
-        requestTimeout
+        15000
       );
 
     }
@@ -3966,15 +3743,11 @@
       });
     }
 
-    function buildTestAapPreviewText(calculation, destination) {
-      var moneyLabel = String(destination || '').toLowerCase() === 'gcash'
-        ? 'GCash received'
-        : 'Cash received';
-
-      return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) +
-        " · Total fee " + formatTestAapPesoClient(calculation.totalFee) +
-        " · " + moneyLabel + " " + formatTestAapPesoClient(calculation.cashReceived);
-    }
+    function buildTestAapPreviewText(calculation) {
+  return calculation.people + " people · Book total " + formatTestAapPesoClient(calculation.bookTotal) +
+    " · Total fee " + formatTestAapPesoClient(calculation.totalFee) +
+    " · Cash received " + formatTestAapPesoClient(calculation.cashReceived);
+}
     // TEST AAP PURE HELPERS END
 
 
@@ -4315,7 +4088,7 @@
               feeEarned: result.feeEarned,
               cashReceived: result.cashReceived,
               appDeduction: result.appDeduction
-            }, result.destination),
+            }),
             "success"
           );
           markTestDashboardLoaded_(result.dashboard);
@@ -5260,6 +5033,7 @@
     }
 
     function renderRentalDashboard(data) {
+      rentalAvailableMonths = Array.isArray(data.monthOptions) ? data.monthOptions : [];
       if (data.selectedMonthValue) dashboardSelectedMonths.rental = data.selectedMonthValue;
       document.getElementById("rentalMonthLabel").innerText = data.monthLabel || "";
       document.getElementById("rentalLifetimeIncome").innerText = formatPeso(data.totalIncome);
@@ -5412,7 +5186,7 @@
         return;
       }
 
-      status.innerText = "Adding...";
+      status.innerText = "Saving...";
       setMoneyFlowEntryButtonsDisabled(true);
 
       jsonpRequest(
@@ -5422,21 +5196,14 @@
           entryType: entryType
         },
         function(result) {
-          // Only show "added" after Apps Script confirms the write.
           status.innerText =
             "\u2705 " + entryType + " " + formatPeso(result.amount) + " added";
           input.value = "";
           setMoneyFlowEntryButtonsDisabled(false);
-
-          // Refresh dashboard asynchronously so the success message
-          // remains visible immediately after the write is confirmed.
-          setTimeout(function() {
-            loadDashboard();
-          }, 0);
+          loadDashboard();
         },
         function(error) {
-          status.innerText =
-            "\u274C Not added \u2014 " + error.message;
+          status.innerText = "\u274C " + error.message;
           setMoneyFlowEntryButtonsDisabled(false);
         }
       );
