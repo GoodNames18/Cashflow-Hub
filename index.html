@@ -3275,6 +3275,12 @@
         .appendChild(script);
 
 
+      // Reads can fail quickly, but writes need more time because
+      // Apps Script may finish the Google Sheet write before its
+      // JSONP response reaches the phone. A longer write timeout
+      // prevents a false "timed out" message after a successful save.
+      var requestTimeout = cacheable ? 15000 : 60000;
+
       setTimeout(
         function() {
 
@@ -3289,13 +3295,15 @@
           if (onFailure) {
             onFailure(
               new Error(
-                "Request timed out."
+                cacheable
+                  ? "Request timed out."
+                  : "Save is taking longer than usual. The entry may already be recorded; please do not tap Save again."
               )
             );
           }
 
         },
-        15000
+        requestTimeout
       );
 
     }
