@@ -2918,85 +2918,6 @@
 
 
     // ========================================================
-    // PERSISTENT DASHBOARD CACHE
-    // Show the last successful dashboard data immediately on
-    // reopen, then silently refresh it from Apps Script.
-    // ========================================================
-
-    const DASHBOARD_CACHE_PREFIX = "cashflowHubDataCache_v1:";
-
-    const CACHEABLE_READ_ACTIONS = {
-      dashboardMonthOptions: true,
-      expense: true,
-      gcashDashboard: true,
-      gcashTransactions: true,
-      konekDashboard: true,
-      konekSuggestions: true,
-      lifeLogDashboard: true,
-      printingDashboard: true,
-      printingTransactions: true,
-      rentalDashboard: true,
-      testDashboard: true,
-      twiceDashboard: true,
-      twiceTransactions: true
-    };
-
-    function getDashboardCacheKey_(params) {
-      var clean = {};
-      Object.keys(params || {})
-        .filter(function(key) {
-          return key !== "callback" && key !== "t";
-        })
-        .sort()
-        .forEach(function(key) {
-          clean[key] = params[key];
-        });
-
-      return DASHBOARD_CACHE_PREFIX + JSON.stringify(clean);
-    }
-
-    function readDashboardCache_(key) {
-      try {
-        var raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : null;
-      } catch (error) {
-        return null;
-      }
-    }
-
-    function writeDashboardCache_(key, data) {
-      try {
-        localStorage.setItem(
-          key,
-          JSON.stringify({
-            savedAt: Date.now(),
-            data: data
-          })
-        );
-      } catch (error) {
-        // Storage may be full/unavailable. Never block the live request.
-        try {
-          localStorage.removeItem(key);
-        } catch (ignore) {}
-      }
-    }
-
-    function clearDashboardDataCache_() {
-      try {
-        var keys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-          var key = localStorage.key(i);
-          if (key && key.indexOf(DASHBOARD_CACHE_PREFIX) === 0) {
-            keys.push(key);
-          }
-        }
-        keys.forEach(function(key) {
-          localStorage.removeItem(key);
-        });
-      } catch (error) {}
-    }
-
-    // ========================================================
     // JSONP
     // ========================================================
 
@@ -3028,25 +2949,6 @@
 
       params.t =
         Date.now();
-
-      var cacheable =
-        !!CACHEABLE_READ_ACTIONS[params.action];
-      var cacheKey =
-        cacheable ? getDashboardCacheKey_(params) : "";
-      var cached =
-        cacheable ? readDashboardCache_(cacheKey) : null;
-
-      // Stale-while-revalidate: render the last successful result now.
-      // The live Apps Script request below still runs and replaces it.
-      if (cached && cached.data !== undefined && onSuccess) {
-        setTimeout(function() {
-          try {
-            onSuccess(cached.data);
-          } catch (error) {
-            console.log(error);
-          }
-        }, 0);
-      }
 
 
       const query =
@@ -3118,20 +3020,6 @@
         }
 
 
-        if (cacheable) {
-          writeDashboardCache_(cacheKey, data);
-        } else if (params.action) {
-          // Successful writes can change dashboard values. Remove stale
-          // cached reads so the next render cannot show old data.
-          if (
-            /Add$/.test(String(params.action)) ||
-            /^(lifeLog|printing|rental|twice|konek)Add$/.test(String(params.action)) ||
-            /^(gcashQuickAdd|gcashTextAdd|test)/.test(String(params.action))
-          ) {
-            clearDashboardDataCache_();
-          }
-        }
-
         if (onSuccess) {
           onSuccess(data);
         }
@@ -3171,6 +3059,11 @@
         .appendChild(script);
 
 
+      var actionName = String(params.action || "");
+      var isWriteRequest =
+        /Add$/.test(actionName) ||
+        actionName === "expense";
+
       setTimeout(
         function() {
 
@@ -3185,13 +3078,15 @@
           if (onFailure) {
             onFailure(
               new Error(
-                "Request timed out."
+                isWriteRequest
+                  ? "Could not confirm the save. Please check the sheet before trying again."
+                  : "Request timed out."
               )
             );
           }
 
         },
-        15000
+        isWriteRequest ? 60000 : 15000
       );
 
     }
@@ -4490,6 +4385,7 @@
           category: category
         },
         function(result) {
+          // Show success immediately after Apps Script confirms the record.
           status.innerText = "\u2705 " + result.category + " added";
           input.value = "";
           setLifeLogButtonsDisabled(false);
