@@ -2095,7 +2095,7 @@
     document.title = "Cashflow Hub";
 
     const APPS_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbzuggDaGCaF9L_3VJhFreUViGB4AEeapU7w3O_CoL7LMG9xdgSBL4YnlwVz_ojpSvo/exec";
+      "https://script.google.com/macros/s/AKfycbxEnbsf98nGxIRew5DPxtsCHUydAaJKBJTkWykDBZ7YSzY7vELkr4GpvP4EDnLmaAmu/exec";
 
 
     let recognition;
@@ -2917,6 +2917,74 @@
     }
 
 
+
+    // ========================================================
+    // DASHBOARD CACHE + FAST SHEET REVALIDATION
+    // ========================================================
+    const DASHBOARD_CACHE_PREFIX = "cashflowHubDashboard_v2:";
+    const DASHBOARD_READ_ACTIONS = {
+      dashboardMonthOptions: true,
+      expense: true,
+      gcashDashboard: true,
+      gcashTransactions: true,
+      konekDashboard: true,
+      konekSuggestions: true,
+      lifeLogDashboard: true,
+      printingDashboard: true,
+      printingTransactions: true,
+      rentalDashboard: true,
+      testDashboard: true,
+      twiceDashboard: true,
+      twiceTransactions: true
+    };
+
+    function dashboardCacheKey_(params) {
+      var action = String(params && params.action || "");
+      if (!DASHBOARD_READ_ACTIONS[action]) return "";
+      var copy = {};
+      Object.keys(params || {}).forEach(function(key) {
+        if (key !== "callback" && key !== "t" && key !== "_fresh") {
+          copy[key] = params[key];
+        }
+      });
+      return DASHBOARD_CACHE_PREFIX + action + ":" + JSON.stringify(copy);
+    }
+
+    function readDashboardCache_(params) {
+      var key = dashboardCacheKey_(params);
+      if (!key) return null;
+      try {
+        var raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeDashboardCache_(params, data) {
+      var key = dashboardCacheKey_(params);
+      if (!key) return;
+      try {
+        localStorage.setItem(key, JSON.stringify({
+          savedAt: Date.now(),
+          data: data
+        }));
+      } catch (error) {
+        // Cache is optional; never let storage errors affect the app.
+      }
+    }
+
+    function invalidateDashboardCache_() {
+      try {
+        Object.keys(localStorage).forEach(function(key) {
+          if (key.indexOf(DASHBOARD_CACHE_PREFIX) === 0) {
+            localStorage.removeItem(key);
+          }
+        });
+      } catch (error) {
+      }
+    }
+
     // ========================================================
     // JSONP
     // ========================================================
@@ -2926,179 +2994,115 @@
       onSuccess,
       onFailure
     ) {
+      params = Object.assign({}, params || {});
+
+      var actionName = String(params.action || "");
+      var isDashboardRead = !!DASHBOARD_READ_ACTIONS[actionName];
+      var cached = isDashboardRead ? readDashboardCache_(params) : null;
 
       const callbackName =
         "expensePwaCallback_" +
         Date.now() +
         "_" +
-        Math.floor(
-          Math.random() * 1000000
-        );
+        Math.floor(Math.random() * 1000000);
 
-
-      const script =
-        document.createElement(
-          "script"
-        );
-
+      const script = document.createElement("script");
       let finished = false;
 
+      params.callback = callbackName;
+      params.t = Date.now();
 
-      params.callback =
-        callbackName;
-
-      params.t =
-        Date.now();
-
-      // Dashboard reads must always fetch the latest Sheet state.
-      // This is especially important after a row is deleted directly in Sheets.
-      if (
-        params &&
-        (
-          /Dashboard/.test(
-            String(params.action || "")
-          ) ||
-          String(params.action || "") === "dashboardMonthOptions"
-        )
-      ) {
-        params._refresh = Date.now() + "_" +
-          Math.floor(Math.random() * 1000000);
+      // Every dashboard request gets a unique value so direct Google Sheet
+      // edits/deletions cannot be satisfied by an older cached/proxy response.
+      if (isDashboardRead) {
+        params._fresh = Date.now() + "_" + Math.floor(Math.random() * 1000000);
       }
 
       const query =
         Object.keys(params)
-          .map(
-            function(key) {
-
-              return (
-                encodeURIComponent(key) +
-                "=" +
-                encodeURIComponent(
-                  params[key]
-                )
-              );
-
-            }
-          )
+          .map(function(key) {
+            return (
+              encodeURIComponent(key) +
+              "=" +
+              encodeURIComponent(params[key])
+            );
+          })
           .join("&");
 
-
       function cleanup() {
-
         if (script.parentNode) {
-          script.parentNode
-            .removeChild(script);
+          script.parentNode.removeChild(script);
         }
 
         try {
-          delete window[
-            callbackName
-          ];
+          delete window[callbackName];
         } catch (error) {
-          window[
-            callbackName
-          ] = undefined;
+          window[callbackName] = undefined;
         }
-
       }
 
+      // Show the last successful dashboard immediately on reopen.
+      if (cached && cached.data && onSuccess) {
+        setTimeout(function() {
+          if (!finished) onSuccess(cached.data);
+        }, 0);
+      }
 
-      window[
-        callbackName
-      ] = function(data) {
-
-        if (finished) {
-          return;
-        }
+      window[callbackName] = function(data) {
+        if (finished) return;
 
         finished = true;
-
         cleanup();
 
-
-        if (
-          data &&
-          data.success === false
-        ) {
-
+        if (data && data.success === false) {
           if (onFailure) {
             onFailure(
-              new Error(
-                data.error ||
-                "Request failed."
-              )
+              new Error(data.error || "Request failed.")
             );
           }
-
           return;
         }
 
-
-        if (onSuccess) {
-          onSuccess(data);
+        if (isDashboardRead) {
+          writeDashboardCache_(params, data);
         }
 
+        if (onSuccess) onSuccess(data);
       };
 
+      script.onerror = function() {
+        if (finished) return;
 
-      script.onerror =
-        function() {
+        finished = true;
+        cleanup();
 
-          if (finished) {
-            return;
-          }
-
-          finished = true;
-
-          cleanup();
-
-          if (onFailure) {
-            onFailure(
-              new Error(
-                "Could not connect to Apps Script."
-              )
-            );
-          }
-
-        };
-
+        if (onFailure) {
+          onFailure(new Error("Could not connect to Apps Script."));
+        }
+      };
 
       script.src =
         APPS_SCRIPT_URL +
         "?" +
         query;
 
+      document.body.appendChild(script);
 
-      document.body
-        .appendChild(script);
+      setTimeout(function() {
+        if (finished) return;
 
+        finished = true;
+        cleanup();
 
-      setTimeout(
-        function() {
-
-          if (finished) {
-            return;
-          }
-
-          finished = true;
-
-          cleanup();
-
-          if (onFailure) {
-            onFailure(
-              new Error(
-                "Request timed out."
-              )
-            );
-          }
-
-        },
-        15000
-      );
-
+        if (onFailure) {
+          onFailure(
+            new Error(
+              "Could not confirm the latest Sheet data. Please refresh."
+            )
+          );
+        }
+      }, isDashboardRead ? 15000 : 60000);
     }
-
-
 
 
     // ========================================================
@@ -5008,6 +5012,7 @@
           entryType: entryType
         },
         function(result) {
+          invalidateDashboardCache_();
           status.innerText = "\u2705 " + result.category + " " + result.type + " " + formatPeso(result.amount) + " added";
           input.value = "";
           selectedRentalCategory = "";
@@ -6849,6 +6854,76 @@
       var issue = document.getElementById("lifeLogCommonIssue").innerText;
       loadDesign1FilteredHistory({ key:lifeLogSelectedYear+"-"+lifeLogSelectedMonth+"|"+filter+"|"+issue, cacheMap:lifeLogTransactionHistoryCache, boxId:"lifeLogRecentEntries", params:{action:"lifeLogTransactions",filter:filter,year:lifeLogSelectedYear,month:lifeLogSelectedMonth,issue:issue}, isActive:function(){return activeLifeLogTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("lifeLogRecentEntries",items,"No Life Logs for this month.",true,preserve);}, errorMessage:"Could not load Life Logs." });
     }
+
+
+    // ========================================================
+    // FAST DIRECT-SHEET EDIT REVALIDATION
+    // ========================================================
+    let dashboardRevalidateTimer = null;
+    let dashboardRevalidateBusy = false;
+
+    const dashboardPageLoaders = {
+      lifeLog: loadLifeLogDashboard,
+      twice: loadTwiceAsNyceDashboard,
+      printing: loadPrintingDashboard,
+      gcash: loadGcashDashboard,
+      expenses: loadDashboard,
+      test: loadTestDashboard,
+      rental: loadRentalDashboard
+    };
+
+    function revalidateActiveDashboard_() {
+      if (document.visibilityState === "hidden" || dashboardRevalidateBusy) {
+        return;
+      }
+
+      var loader = dashboardPageLoaders[currentAppPage];
+      if (!loader) return;
+
+      dashboardRevalidateBusy = true;
+      Promise.resolve(loader())
+        .catch(function(error) {
+          console.log(error);
+        })
+        .finally(function() {
+          dashboardRevalidateBusy = false;
+        });
+    }
+
+    function scheduleDashboardRevalidation_() {
+      if (dashboardRevalidateTimer) {
+        clearTimeout(dashboardRevalidateTimer);
+      }
+
+      dashboardRevalidateTimer = setTimeout(function() {
+        dashboardRevalidateTimer = null;
+        revalidateActiveDashboard_();
+      }, 250);
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      function() {
+        if (document.visibilityState === "visible") {
+          scheduleDashboardRevalidation_();
+        }
+      }
+    );
+
+    window.addEventListener(
+      "focus",
+      function() {
+        scheduleDashboardRevalidation_();
+      }
+    );
+
+    // If the user deletes/edits a row directly in Sheets and leaves Cashflow Hub
+    // open, recheck only the currently visible dashboard every 5 seconds.
+    setInterval(function() {
+      if (document.visibilityState === "visible") {
+        revalidateActiveDashboard_();
+      }
+    }, 5000);
 
     // ========================================================
     // HELPERS
