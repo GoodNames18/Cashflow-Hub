@@ -3011,8 +3011,85 @@
 
 
     // ========================================================
-    // JSONP
+    // FAST DATA CACHE
+    // Show the last successful dashboard data immediately, then
+    // refresh it quietly from Apps Script in the background.
+    // This keeps every dashboard/tab fast without changing its
+    // existing calculation or rendering logic.
     // ========================================================
+
+    const DASHBOARD_CACHE_PREFIX = "cashflowHubDataCache_v1:";
+
+    const CACHEABLE_READ_ACTIONS = {
+      dashboardMonthOptions: true,
+      expense: true,
+      gcashDashboard: true,
+      gcashTransactions: true,
+      konekDashboard: true,
+      konekSuggestions: true,
+      lifeLogDashboard: true,
+      printingDashboard: true,
+      printingTransactions: true,
+      rentalDashboard: true,
+      testDashboard: true,
+      twiceDashboard: true,
+      twiceTransactions: true
+    };
+
+    function getDashboardCacheKey_(params) {
+      var clean = {};
+      Object.keys(params || {})
+        .filter(function(key) {
+          return key !== "callback" && key !== "t";
+        })
+        .sort()
+        .forEach(function(key) {
+          clean[key] = params[key];
+        });
+
+      return DASHBOARD_CACHE_PREFIX + JSON.stringify(clean);
+    }
+
+    function readDashboardCache_(key) {
+      try {
+        var raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writeDashboardCache_(key, data) {
+      try {
+        localStorage.setItem(
+          key,
+          JSON.stringify({
+            savedAt: Date.now(),
+            data: data
+          })
+        );
+      } catch (error) {
+        // Storage can be full or unavailable. The live request still works.
+        try {
+          localStorage.removeItem(key);
+        } catch (ignore) {}
+      }
+    }
+
+    function clearDashboardDataCache_() {
+      try {
+        var keys = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.indexOf(DASHBOARD_CACHE_PREFIX) === 0) {
+            keys.push(key);
+          }
+        }
+        keys.forEach(function(key) {
+          localStorage.removeItem(key);
+        });
+      } catch (error) {}
+    }
 
     function jsonpRequest(
       params,
@@ -3042,6 +3119,25 @@
 
       params.t =
         Date.now();
+
+      var cacheable =
+        !!CACHEABLE_READ_ACTIONS[params.action];
+      var cacheKey =
+        cacheable ? getDashboardCacheKey_(params) : "";
+      var cached =
+        cacheable ? readDashboardCache_(cacheKey) : null;
+
+      // Stale-while-revalidate: cached data is returned immediately.
+      // The live Apps Script request below still runs and refreshes it.
+      if (cached && cached.data !== undefined && onSuccess) {
+        setTimeout(function() {
+          try {
+            onSuccess(cached.data);
+          } catch (error) {
+            console.log(error);
+          }
+        }, 0);
+      }
 
 
       const query =
@@ -3112,6 +3208,20 @@
           return;
         }
 
+
+        if (cacheable) {
+          writeDashboardCache_(cacheKey, data);
+        } else if (params.action) {
+          // A successful write may change dashboard data. Clear stale
+          // cached reads so the next dashboard load cannot show old data.
+          if (
+            /Add$/.test(String(params.action)) ||
+            /^(lifeLog|printing|rental|twice|konek)Add$/.test(String(params.action)) ||
+            /^(gcashQuickAdd|gcashTextAdd|test)/.test(String(params.action))
+          ) {
+            clearDashboardDataCache_();
+          }
+        }
 
         if (onSuccess) {
           onSuccess(data);
