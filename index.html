@@ -3075,11 +3075,14 @@
     function jsonpRequest(
       params,
       onSuccess,
-      onFailure
+      onFailure,
+      options
     ) {
 
       const cacheKey = dashboardCacheKey(params);
-      const cachedData = readDashboardCache(cacheKey);
+      const cachedData = options && options.skipCache
+        ? null
+        : readDashboardCache(cacheKey);
       if (cachedData !== null && onSuccess) onSuccess(cachedData);
 
       const callbackName =
@@ -5726,23 +5729,17 @@
     }
 
 
-    function loadGcashDashboard() {
+    function loadGcashDashboard(skipCache) {
 
       gcashTransactionHistoryCache = {};
 
-      document
-        .getElementById(
-          "gcashMonthLabel"
-        )
-        .innerText =
-          "Loading...";
+      if (!skipCache) {
+        document.getElementById("gcashMonthLabel").innerText = "Loading...";
+      }
 
-      document
-        .getElementById(
-          "gcashMonthlyIncomeOnly"
-        )
-        .innerText =
-          "\u2014";
+      if (!skipCache) {
+        document.getElementById("gcashMonthlyIncomeOnly").innerText = "\u2014";
+      }
 
 
       return new Promise(
@@ -5764,6 +5761,14 @@
             },
 
             function(error) {
+
+              if (skipCache) {
+                document.getElementById("gcashQuickStatus").innerText =
+                  "Saved, but GCash could not refresh. Tap Refresh.";
+                console.log(error);
+                resolve(false);
+                return;
+              }
 
               document
                 .getElementById(
@@ -5818,7 +5823,8 @@
 
               console.log(error);
               resolve(false);
-            }
+            },
+            { skipCache: !!skipCache }
           );
         }
       );
@@ -6249,7 +6255,7 @@
 
           input.value = "";
           updateGcashCustomAddButton();
-          loadGcashDashboard();
+          loadGcashDashboard(true);
         },
 
         function(error) {
@@ -6310,7 +6316,7 @@
               formatPeso(result.amount) +
               " added";
 
-          loadGcashDashboard();
+          loadGcashDashboard(true);
         },
 
         function(error) {
