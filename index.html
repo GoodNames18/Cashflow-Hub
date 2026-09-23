@@ -3032,11 +3032,55 @@
     // JSONP
     // ========================================================
 
+    // Save dashboard responses by month so a reopened app can show them
+    // immediately while checking Apps Script for newer values.
+    const DASHBOARD_CACHE_VERSION = "v1";
+    const DASHBOARD_CACHE_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
+    const cachedDashboardActions = [
+      "gcashDashboard", "lifeLogDashboard", "rentalDashboard",
+      "printingDashboard", "twiceDashboard", "testDashboard", "dashboard"
+    ];
+
+    function dashboardCacheKey(params) {
+      if (cachedDashboardActions.indexOf(params.action) === -1) return "";
+      return "cashflow-hub:dashboard:" + DASHBOARD_CACHE_VERSION + ":" +
+        params.action + ":" + params.year + ":" + params.month;
+    }
+
+    function readDashboardCache(key) {
+      if (!key) return null;
+      try {
+        var cached = JSON.parse(localStorage.getItem(key));
+        if (!cached || !cached.savedAt ||
+            Date.now() - cached.savedAt > DASHBOARD_CACHE_MAX_AGE) {
+          return null;
+        }
+        return cached.data;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveDashboardCache(key, data) {
+      if (!key) return;
+      try {
+        localStorage.setItem(key, JSON.stringify({
+          savedAt: Date.now(), data: data
+        }));
+      } catch (error) {
+        // Storage may be disabled or full; the live request still works.
+      }
+    }
+
     function jsonpRequest(
       params,
       onSuccess,
       onFailure
     ) {
+
+      const cacheKey = dashboardCacheKey(params);
+      const cachedData = readDashboardCache(cacheKey);
+      if (cachedData !== null && onSuccess) onSuccess(cachedData);
 
       const callbackName =
         "expensePwaCallback_" +
@@ -3118,7 +3162,7 @@
           data.success === false
         ) {
 
-          if (onFailure) {
+          if (onFailure && cachedData === null) {
             onFailure(
               new Error(
                 data.error ||
@@ -3131,6 +3175,7 @@
         }
 
 
+        saveDashboardCache(cacheKey, data);
         if (onSuccess) {
           onSuccess(data);
         }
@@ -3149,7 +3194,7 @@
 
           cleanup();
 
-          if (onFailure) {
+          if (onFailure && cachedData === null) {
             onFailure(
               new Error(
                 "Could not connect to Apps Script."
@@ -3181,7 +3226,7 @@
 
           cleanup();
 
-          if (onFailure) {
+          if (onFailure && cachedData === null) {
             onFailure(
               new Error(
                 "Request timed out."
