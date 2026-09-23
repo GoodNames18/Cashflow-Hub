@@ -159,7 +159,7 @@
     .pages-viewport {
       width: 100%;
       overflow: hidden;
-      transition: height .20s ease;
+      /* Keep page height in step with transaction rows as they arrive. */
     }
 
     .pages-track {
@@ -1100,10 +1100,8 @@
     }
 
     .gcash-filtered-transactions {
-      max-height: 780px;
-      overflow-y: auto;
-      overscroll-behavior-y: auto;
-      -webkit-overflow-scrolling: touch;
+      max-height: none;
+      overflow: visible;
     }
 
 </style>
@@ -2318,13 +2316,9 @@
     });
 
     function scrollToFilteredTransactionBoxAfterLoad(boxId) {
-      var box = document.getElementById(boxId);
-      if (!box) return;
-      box.scrollTop = 0;
-      window.requestAnimationFrame(function() {
-        var card = box.closest(".recent-card") || box;
-        card.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
+      // The transaction list now scrolls with the page. Do not move the
+      // viewport when an asynchronous history page arrives.
+      syncActivePageHeight();
     }
 
     // GCASH QUICK QUANTITY PURE HELPERS START
