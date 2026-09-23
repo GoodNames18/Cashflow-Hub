@@ -2527,7 +2527,7 @@
         appLoadingScreen.classList.add("is-hidden");
       }
 
-      enableGcashTransactionDeletion();
+      enableTransactionDeletion();
       initializeTestCashOutUI();
       setupKonek2CardAutocomplete();
       initializePageHeightSync();
@@ -3038,7 +3038,7 @@
 
     // Save dashboard responses by month so a reopened app can show them
     // immediately while checking Apps Script for newer values.
-    const DASHBOARD_CACHE_VERSION = "v2";
+    const DASHBOARD_CACHE_VERSION = "v3";
     const DASHBOARD_CACHE_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
     const cachedDashboardActions = [
       "gcashDashboard", "lifeLogDashboard", "rentalDashboard",
@@ -3053,7 +3053,7 @@
       if (["gcashTransactions", "printingTransactions", "twiceTransactions",
         "lifeLogTransactions", "moneyFlowTransactions", "testTransactions",
         "rentalTransactions"].indexOf(params.action) !== -1) {
-        return "cashflow-hub:history:v3:" + params.action + ":" +
+        return "cashflow-hub:history:v4:" + params.action + ":" +
           JSON.stringify([params.category || "", params.filter || "", params.type || "",
             params.year || "", params.month || "", params.issue || "",
             params.cursor || 0, params.limit || 10]);
@@ -3208,11 +3208,13 @@
           testCashOut: "testTransactions", testLoan: "testTransactions",
           testOthersLoan: "testTransactions", testTransfer: "testTransactions"
         };
-        if (invalidations[saveAction]) {
+        if (invalidations[saveAction] || saveAction === "transactionDelete") {
           try {
-            var prefix = "cashflow-hub:history:v2:" + invalidations[saveAction] + ":";
+            var prefix = "cashflow-hub:history:v4:" + (invalidations[saveAction] || "");
             Object.keys(localStorage).forEach(function(key) {
-              if (key.indexOf(prefix) === 0) localStorage.removeItem(key);
+              if (key.indexOf(prefix) === 0 ||
+                  (saveAction === "transactionDelete" && key.indexOf("cashflow-hub:dashboard:") === 0))
+                localStorage.removeItem(key);
             });
           } catch (error) {}
         }
@@ -4492,6 +4494,7 @@
       }
 
       recentBox.className = "";
+      recentBox._displayedTransactions = transactions;
       recentBox.innerHTML = transactions.map(function(item) {
         var metaParts = [];
         if (item.date) metaParts.push(item.date);
@@ -4648,6 +4651,7 @@
       }
 
       recentBox.className = "";
+      recentBox._displayedTransactions = entries;
       recentBox.innerHTML = entries.map(function(entry) {
         var details = [entry.date, entry.time, entry.category, entry.notes]
           .filter(function(value) {
@@ -5076,6 +5080,7 @@
       var previousScrollTop = preserveScroll ? recentBox.scrollTop : 0;
       recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
+      recentBox._displayedTransactions = transactions;
       recentBox.innerHTML =
         transactions
           .map(function(item) {
@@ -5259,6 +5264,7 @@
         return;
       }
       recentBox.className = "";
+      recentBox._displayedTransactions = items;
       recentBox.innerHTML = items.map(function(item) {
         var meta = [item.date, item.time, item.category, item.type].filter(Boolean).join(" \u2022 ");
         var isExpense = Boolean(item.isExpense);
@@ -6043,66 +6049,95 @@
     }
 
 
-    function enableGcashTransactionDeletion() {
-      var box = document.getElementById("gcashRecentTransactions");
-      var timer, startX, startY, longPressedAt = 0;
-      function selectedTransaction(target) {
-        var row = target.closest(".transaction-row");
-        if (!row || !box.contains(row)) return null;
-        var index = Array.prototype.indexOf.call(box.children, row);
-        return (box._displayedTransactions || [])[index] || null;
-      }
-      function deleteTransaction(item) {
-        if (!item) return;
-        if (!item.rowNumber || !item.rowFingerprint) {
-          window.alert("Update and redeploy Code.gs to enable transaction deletion.");
-          return;
+    function enableTransactionDeletion() {
+      var locations = {
+        lifeLogRecentEntries: ["Life Log", "lifeLog"],
+        twiceRecentTransactions: ["TwiceAsNyce", "twice"],
+        printingRecentTransactions: ["Printing Business", "printing"],
+        gcashRecentTransactions: ["Cash In/Out", "gcash"],
+        recentTransactions: ["Money Flow", "expenses"],
+        testRecentTransactions: ["Konek2Card", "test"],
+        rentalRecentTransactions: ["Rental", "rental"]
+      };
+      Object.keys(locations).forEach(function(boxId) {
+        var box = document.getElementById(boxId);
+        if (!box) return;
+        var sheet = locations[boxId][0];
+        var page = locations[boxId][1];
+        var timer, startX, startY, lastLongPress = 0, deleting = false;
+        function selectedItem(target) {
+          var row = target.closest(".transaction-row");
+          if (!row || !box.contains(row)) return null;
+          var index = Array.prototype.indexOf.call(box.children, row);
+          return (box._displayedTransactions || [])[index] || null;
         }
-        if (!window.confirm("Delete this " + item.category + " transaction of " +
-          formatPeso(item.amount) + " from Cashflow Hub and Google Sheets?")) return;
-        jsonpRequest({
-          action: "gcashDelete",
-          rowNumber: item.rowNumber,
-          rowFingerprint: item.rowFingerprint
-        }, function() {
-          box.className = "dashboard-message";
-          box.innerText = "Transaction deleted. Updating dashboard...";
-          loadGcashDashboard(true);
-        }, function(error) {
-          window.alert(error.message || "Could not delete transaction.");
+        function deleteItem(item) {
+          if (!item || deleting) return;
+          if (!item.rowNumber || !item.rowFingerprint) {
+            window.alert("Update and redeploy Code.gs to enable transaction deletion.");
+            return;
+          }
+          var label = item.description || item.merchant || item.category || "transaction";
+          if (!window.confirm("Delete " + label + " from " + sheet + " and Google Sheets?")) return;
+          deleting = true;
+          jsonpRequest({
+            action: "transactionDelete", sheet: sheet,
+            rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
+          }, function() {
+            deleting = false;
+            activeGcashTransactionFilter = "";
+            activeBusinessTransactionFilters = { printing: "", twice: "" };
+            activeMoneyFlowTransactionFilter = "";
+            activeTestTransactionFilter = "";
+            activeRentalTransactionFilter = "";
+            activeLifeLogTransactionFilter = "";
+            gcashTransactionHistoryCache = {};
+            businessTransactionHistoryCache = { printing: {}, twice: {} };
+            moneyFlowTransactionHistoryCache = {};
+            testTransactionHistoryCache = {};
+            rentalTransactionHistoryCache = {};
+            lifeLogTransactionHistoryCache = {};
+            box.className = "dashboard-message";
+            box.innerText = "Transaction deleted. Updating dashboard...";
+            if (page === "gcash") loadGcashDashboard(true);
+            else pageDataLoaders[page]();
+          }, function(error) {
+            deleting = false;
+            window.alert(error.message || "Could not delete transaction.");
+          });
+        }
+        box.addEventListener("touchstart", function(event) {
+          var item = selectedItem(event.target);
+          if (!item || event.touches.length !== 1) return;
+          startX = event.touches[0].clientX;
+          startY = event.touches[0].clientY;
+          window.clearTimeout(timer);
+          timer = window.setTimeout(function() {
+            timer = null;
+            lastLongPress = Date.now();
+            deleteItem(item);
+          }, 650);
+        }, { passive: true });
+        box.addEventListener("touchmove", function(event) {
+          if (timer && event.touches.length &&
+              (Math.abs(event.touches[0].clientY - startY) > 12 ||
+               Math.abs(event.touches[0].clientX - startX) > 12)) {
+            window.clearTimeout(timer);
+            timer = null;
+          }
+        }, { passive: true });
+        ["touchend", "touchcancel"].forEach(function(type) {
+          box.addEventListener(type, function() { window.clearTimeout(timer); timer = null; });
         });
-      }
-      box.addEventListener("touchstart", function(event) {
-        var item = selectedTransaction(event.target);
-        if (!item || event.touches.length !== 1) return;
-        startX = event.touches[0].clientX;
-        startY = event.touches[0].clientY;
-        window.clearTimeout(timer);
-        timer = window.setTimeout(function() {
-          timer = null;
-          longPressedAt = Date.now();
-          deleteTransaction(item);
-        }, 650);
-      }, { passive: true });
-      box.addEventListener("touchmove", function(event) {
-        if (timer && event.touches.length &&
-            (Math.abs(event.touches[0].clientY - startY) > 12 ||
-             Math.abs(event.touches[0].clientX - startX) > 12)) {
+        box.addEventListener("contextmenu", function(event) {
+          var item = selectedItem(event.target);
+          if (!item) return;
+          event.preventDefault();
           window.clearTimeout(timer);
           timer = null;
-        }
-      }, { passive: true });
-      ["touchend", "touchcancel"].forEach(function(type) {
-        box.addEventListener(type, function() { window.clearTimeout(timer); timer = null; });
-      });
-      box.addEventListener("contextmenu", function(event) {
-        var item = selectedTransaction(event.target);
-        if (!item) return;
-        event.preventDefault();
-        window.clearTimeout(timer);
-        timer = null;
-        if (Date.now() - longPressedAt < 1500) return;
-        deleteTransaction(item);
+          if (Date.now() - lastLongPress < 1500) return;
+          deleteItem(item);
+        });
       });
     }
 
@@ -6905,9 +6940,9 @@
         "";
 
 
+      recentBox._displayedTransactions = transactions.slice(0, RECENT_TRANSACTION_LIMIT);
       recentBox.innerHTML =
-        transactions
-          .slice(0, RECENT_TRANSACTION_LIMIT)
+        recentBox._displayedTransactions
           .map(
             function(item) {
 
@@ -6977,6 +7012,7 @@
         return;
       }
       box.className = "gcash-filtered-transactions";
+      box._displayedTransactions = items;
       box.innerHTML = items.map(function(item) {
         var name = item.description || item.merchant || item.customer || item.category || "Transaction";
         var meta = [item.date, item.time, item.customer, item.category, item.type, item.payment, item.notes]
