@@ -1100,8 +1100,10 @@
     }
 
     .gcash-filtered-transactions {
-      max-height: none;
-      overflow: visible;
+      max-height: min(60dvh, 560px);
+      overflow-y: auto;
+      overscroll-behavior-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
 </style>
@@ -4799,10 +4801,9 @@
         recentBox.innerText = "Loading...";
       }
 
-      filteredHistoryScrollLoaders[config.boxId] = {
-        isActive: function() { return activeBusinessTransactionFilters[pageName] === category; },
-        loadNext: function() { loadBusinessTransactionPage(pageName, category, cache); }
-      };
+      setFilteredHistoryScrollLoader(config.boxId,
+        function() { return activeBusinessTransactionFilters[pageName] === category; },
+        function() { loadBusinessTransactionPage(pageName, category, cache); });
       if (!cache.hasMore || cache.loading) return Promise.resolve(true);
       return loadBusinessTransactionPage(pageName, category, cache);
     }
@@ -5617,15 +5618,13 @@
     }
 
 
-    var filteredHistoryScrollLoaders = {};
-    window.addEventListener("scroll", function() {
-      Object.keys(filteredHistoryScrollLoaders).forEach(function(boxId) {
-        var entry = filteredHistoryScrollLoaders[boxId];
-        var box = document.getElementById(boxId);
-        if (!box || !entry.isActive() || box.closest(".app-page") !== getActiveAppPage()) return;
-        if (box.getBoundingClientRect().bottom <= window.innerHeight + 120) entry.loadNext();
-      });
-    }, { passive: true });
+    function setFilteredHistoryScrollLoader(boxId, isActive, loadNext) {
+      var box = document.getElementById(boxId);
+      box.onscroll = function() {
+        if (!isActive()) return;
+        if (box.scrollTop + box.clientHeight >= box.scrollHeight - 80) loadNext();
+      };
+    }
 
     function loadGcashFilteredTransactions(category) {
       var recentBox = document.getElementById("gcashRecentTransactions");
@@ -5645,10 +5644,9 @@
         recentBox.innerText = "Loading...";
       }
 
-      filteredHistoryScrollLoaders.gcashRecentTransactions = {
-        isActive: function() { return activeGcashTransactionFilter === category; },
-        loadNext: function() { loadGcashTransactionPage(category, cache); }
-      };
+      setFilteredHistoryScrollLoader("gcashRecentTransactions",
+        function() { return activeGcashTransactionFilter === category; },
+        function() { loadGcashTransactionPage(category, cache); });
       if (!cache.hasMore || cache.loading) return Promise.resolve(true);
       return loadGcashTransactionPage(category, cache);
     }
@@ -6890,10 +6888,7 @@
           syncActivePageHeight();
         });
       }
-      filteredHistoryScrollLoaders[options.boxId] = {
-        isActive: options.isActive,
-        loadNext: nextPage
-      };
+      setFilteredHistoryScrollLoader(options.boxId, options.isActive, nextPage);
       if (cache.hasMore && !cache.loading) nextPage();
     }
 
