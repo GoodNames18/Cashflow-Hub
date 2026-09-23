@@ -3048,7 +3048,7 @@
       }
     }
 
-    function jsonpRequest(
+    function rawJsonpRequest(
       params,
       onSuccess,
       onFailure,
@@ -3246,6 +3246,107 @@
 
 
 
+
+    const receiptSaveActions = [
+      "lifeLogAdd", "rentalAdd", "expense", "konekAdd", "twiceAdd",
+      "printingAdd", "gcashQuickAdd", "gcashTextAdd", "testCashOut",
+      "testAapCollection", "testTransfer", "testOthersLoan", "testLoan",
+      "testAtmWithdraw"
+    ];
+
+    function jsonpRequest(params, onSuccess, onFailure, options) {
+      if (receiptSaveActions.indexOf(params.action) === -1) {
+        return rawJsonpRequest(params, onSuccess, onFailure, options);
+      }
+      var payload = Object.assign({}, params);
+      var signature = "cashflow-hub:pending-save:" + JSON.stringify(payload);
+      var id;
+      try { id = sessionStorage.getItem(signature); } catch (error) {}
+      if (!id) {
+        var bytes = new Uint8Array(16);
+        if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+        else for (var i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+        id = Array.prototype.map.call(bytes, function(byte) {
+          return ("0" + byte.toString(16)).slice(-2);
+        }).join("");
+        try { sessionStorage.setItem(signature, id); } catch (error) {}
+      }
+      payload.requestId = id;
+      var settled = false;
+      var statusTimer, deadlineTimer;
+      function clearPending() {
+        try { sessionStorage.removeItem(signature); } catch (error) {}
+      }
+      function invalidatePageCache() {
+        var historyAction = {
+          gcashQuickAdd: "gcashTransactions", gcashTextAdd: "gcashTransactions",
+          printingAdd: "printingTransactions", twiceAdd: "twiceTransactions",
+          lifeLogAdd: "lifeLogTransactions", rentalAdd: "rentalTransactions",
+          expense: "moneyFlowTransactions", konekAdd: "testTransactions",
+          testCashOut: "testTransactions", testAapCollection: "testTransactions",
+          testAtmWithdraw: "testTransactions", testLoan: "testTransactions",
+          testOthersLoan: "testTransactions", testTransfer: "testTransactions"
+        }[params.action];
+        var dashboardAction = {
+          gcashQuickAdd: "gcashDashboard", gcashTextAdd: "gcashDashboard",
+          printingAdd: "printingDashboard", twiceAdd: "twiceDashboard",
+          lifeLogAdd: "lifeLogDashboard", rentalAdd: "rentalDashboard",
+          expense: "dashboard", konekAdd: "testDashboard",
+          testCashOut: "testDashboard", testAapCollection: "testDashboard",
+          testAtmWithdraw: "testDashboard", testLoan: "testDashboard",
+          testOthersLoan: "testDashboard", testTransfer: "testDashboard"
+        }[params.action];
+        try {
+          Object.keys(localStorage).forEach(function(key) {
+            if ((historyAction && key.indexOf("cashflow-hub:history:v4:" + historyAction + ":") === 0) ||
+                (dashboardAction && key.indexOf("cashflow-hub:dashboard:" + DASHBOARD_CACHE_VERSION + ":" + dashboardAction + ":") === 0)) {
+              localStorage.removeItem(key);
+            }
+          });
+        } catch (error) {}
+      }
+      function saved(result, fromReceipt) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(statusTimer);
+        clearTimeout(deadlineTimer);
+        clearPending();
+        invalidatePageCache();
+        if (onSuccess) onSuccess(result);
+        if (fromReceipt && params.action.indexOf("test") === 0 &&
+            typeof loadTestDashboard === "function") {
+          window.setTimeout(loadTestDashboard, 0);
+        }
+      }
+      function failed(error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(statusTimer);
+        clearTimeout(deadlineTimer);
+        if (onFailure) onFailure(error);
+      }
+      function checkStatus() {
+        if (settled) return;
+        rawJsonpRequest({
+          action: "cashflowSaveStatus", saveAction: params.action, requestId: id
+        }, function(status) {
+          if (status.saved && status.result) saved(status.result, true);
+          else if (!settled) statusTimer = window.setTimeout(checkStatus, 1800);
+        }, function() {
+          if (!settled) statusTimer = window.setTimeout(checkStatus, 1800);
+        }, { skipCache: true });
+      }
+      statusTimer = window.setTimeout(checkStatus, 1500);
+      deadlineTimer = window.setTimeout(function() {
+        failed(new Error("Save could not be confirmed. Check Google Sheets before trying again."));
+      }, 32000);
+      return rawJsonpRequest(payload, function(result) {
+        saved(result, false);
+      }, function(error) {
+        if (error.message !== "Request timed out." &&
+            error.message !== "Could not connect to Apps Script.") failed(error);
+      }, { skipCache: true });
+    }
 
     // ========================================================
     // KONEK2CARD QUICK ENTRY + DASHBOARD
@@ -3592,12 +3693,12 @@
           input.value = "";
           setKonek2CardButtonsDisabled(false);
 
-          if (pageDataState.konek) {
-            pageDataState.konek.status = "idle";
-            pageDataState.konek.promise = null;
+          if (pageDataState.test) {
+            pageDataState.test.status = "idle";
+            pageDataState.test.promise = null;
           }
 
-          ensurePageDataLoaded("konek");
+          ensurePageDataLoaded("test");
         },
 
         function(error) {
