@@ -1100,8 +1100,10 @@
     }
 
     .gcash-filtered-transactions {
-      max-height: none;
-      overflow: visible;
+      max-height: min(60dvh, 420px);
+      overflow-y: auto;
+      overscroll-behavior-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
 </style>
@@ -2174,11 +2176,11 @@
     let activeGcashTransactionFilter = "";
     let gcashRecentTransactionsCache = [];
     let gcashTransactionHistoryCache = {};
-    const GCASH_TRANSACTION_PAGE_SIZE = 50;
+    const GCASH_TRANSACTION_PAGE_SIZE = 10;
     let activeBusinessTransactionFilters = { printing: "", twice: "" };
     let businessRecentTransactionsCache = { printing: [], twice: [] };
     let businessTransactionHistoryCache = { printing: {}, twice: {} };
-    const BUSINESS_TRANSACTION_PAGE_SIZE = 50;
+    const BUSINESS_TRANSACTION_PAGE_SIZE = 10;
     let activeMoneyFlowTransactionFilter = "";
     let moneyFlowRecentTransactionsCache = [];
     let moneyFlowTransactionHistoryCache = {};
@@ -2195,7 +2197,7 @@
     let lifeLogSelectedYear = new Date().getFullYear();
     let lifeLogSelectedMonth = new Date().getMonth() + 1;
     let dashboardSelectedMonths = {};
-    const DASHBOARD_TRANSACTION_PAGE_SIZE = 50;
+    const DASHBOARD_TRANSACTION_PAGE_SIZE = 10;
     let konekSuggestionNames = [];
     let konekSuggestionsLoaded = false;
     let konekSuggestionsLoading = false;
@@ -2316,8 +2318,6 @@
     });
 
     function scrollToFilteredTransactionBoxAfterLoad(boxId) {
-      // The transaction list now scrolls with the page. Do not move the
-      // viewport when an asynchronous history page arrives.
       syncActivePageHeight();
     }
 
@@ -4788,27 +4788,21 @@
       var recentBox = document.getElementById(config.boxId);
       var cache = getBusinessTransactionCache(pageName, category);
       document.getElementById(config.titleId).innerText = getBusinessFilterTitle(category);
-
-      var hadCachedTransactions = cache.transactions.length > 0;
-      if (hadCachedTransactions) {
+      recentBox.onscroll = function() {
+        if (activeBusinessTransactionFilters[pageName] !== category || cache.loading || !cache.hasMore) return;
+        if (recentBox.scrollTop + recentBox.clientHeight >= recentBox.scrollHeight - 80) {
+          loadBusinessTransactionPage(pageName, category, cache);
+        }
+      };
+      if (cache.transactions.length) {
         config.render(cache.transactions, true, false);
         recentBox.scrollTop = 0;
-        scrollToFilteredTransactionBoxAfterLoad(config.boxId);
       } else {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "Loading...";
       }
-
-      if (!cache.hasMore) return Promise.resolve(true);
-
-      return loadBusinessTransactionPage(pageName, category, cache)
-        .then(function(success) {
-          if (success) {
-            if (!hadCachedTransactions) scrollToFilteredTransactionBoxAfterLoad(config.boxId);
-            loadRemainingBusinessTransactionsInBackground(pageName, category, cache);
-          }
-          return success;
-        });
+      if (!cache.hasMore || cache.loading) return Promise.resolve(true);
+      return loadBusinessTransactionPage(pageName, category, cache);
     }
 
 
@@ -4845,8 +4839,10 @@
             cache.loading = false;
             if (activeBusinessTransactionFilters[pageName] === category) {
               var recentBox = document.getElementById(config.boxId);
-              recentBox.className = "dashboard-message";
-              recentBox.innerText = "Could not load transactions.";
+              if (!cache.transactions.length) {
+                recentBox.className = "dashboard-message";
+                recentBox.innerText = "Could not load transactions.";
+              }
             }
             console.log(error);
             syncActivePageHeight();
@@ -4854,20 +4850,6 @@
           }
         );
       });
-    }
-
-
-    function loadRemainingBusinessTransactionsInBackground(pageName, category, cache) {
-      if (!cache.hasMore || businessTransactionHistoryCache[pageName][category] !== cache) return;
-
-      window.setTimeout(function() {
-        loadBusinessTransactionPage(pageName, category, cache)
-          .then(function(success) {
-            if (success && cache.hasMore) {
-              loadRemainingBusinessTransactionsInBackground(pageName, category, cache);
-            }
-          });
-      }, 80);
     }
 
 
@@ -5640,29 +5622,22 @@
       var title = document.getElementById("gcashTransactionsTitle");
       var displayName = getGcashFilterDisplayName(category);
       var cache = getGcashTransactionCache(category);
-
       title.innerText = displayName + " Transactions";
-
-      var hadCachedTransactions = cache.transactions.length > 0;
-      if (hadCachedTransactions) {
+      recentBox.onscroll = function() {
+        if (activeGcashTransactionFilter !== category || cache.loading || !cache.hasMore) return;
+        if (recentBox.scrollTop + recentBox.clientHeight >= recentBox.scrollHeight - 80) {
+          loadGcashTransactionPage(category, cache);
+        }
+      };
+      if (cache.transactions.length) {
         renderGcashRecentTransactions(cache.transactions, true, false);
         recentBox.scrollTop = 0;
-        scrollToFilteredTransactionBoxAfterLoad("gcashRecentTransactions");
       } else {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "Loading...";
       }
-
-      if (!cache.hasMore) return Promise.resolve(true);
-
-      return loadGcashTransactionPage(category, cache)
-        .then(function(success) {
-          if (success) {
-            if (!hadCachedTransactions) scrollToFilteredTransactionBoxAfterLoad("gcashRecentTransactions");
-            loadRemainingGcashTransactionsInBackground(category, cache);
-          }
-          return success;
-        });
+      if (!cache.hasMore || cache.loading) return Promise.resolve(true);
+      return loadGcashTransactionPage(category, cache);
     }
 
 
@@ -5701,8 +5676,10 @@
             if (activeGcashTransactionFilter === category) {
               var recentBox = document.getElementById("gcashRecentTransactions");
               var displayName = getGcashFilterDisplayName(category);
-              recentBox.className = "dashboard-message";
-              recentBox.innerText = "Could not load " + displayName + " transactions.";
+              if (!cache.transactions.length) {
+                recentBox.className = "dashboard-message";
+                recentBox.innerText = "Could not load " + displayName + " transactions.";
+              }
             }
             console.log(error);
             syncActivePageHeight();
@@ -5710,20 +5687,6 @@
           }
         );
       });
-    }
-
-
-    function loadRemainingGcashTransactionsInBackground(category, cache) {
-      if (!cache.hasMore || gcashTransactionHistoryCache[category] !== cache) return;
-
-      window.setTimeout(function() {
-        loadGcashTransactionPage(category, cache)
-          .then(function(success) {
-            if (success && cache.hasMore) {
-              loadRemainingGcashTransactionsInBackground(category, cache);
-            }
-          });
-      }, 80);
     }
 
 
@@ -6885,38 +6848,40 @@
       var firstDisplay = cache.transactions.length === 0;
       if (cache.transactions.length) {
         options.render(cache.transactions, false);
-        scrollToFilteredTransactionBoxAfterLoad(options.boxId);
       } else {
         box.className = "dashboard-message";
         box.innerText = "Loading...";
       }
       function nextPage() {
-        if (cache.loading || !cache.hasMore) return;
+        if (cache.loading || !cache.hasMore || !options.isActive()) return;
         cache.loading = true;
         var params = Object.assign({}, options.params, { cursor: cache.nextCursor, limit: DASHBOARD_TRANSACTION_PAGE_SIZE });
         jsonpRequest(params, function(data) {
           cache.loading = false;
-          if (!options.isActive()) return;
+          if (options.cacheMap[options.key] !== cache || !options.isActive()) return;
           cache.transactions = cache.transactions.concat(data.transactions || []);
           cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
           cache.hasMore = !!data.hasMore;
           options.render(cache.transactions, !firstDisplay);
-          if (firstDisplay) {
-            firstDisplay = false;
-            scrollToFilteredTransactionBoxAfterLoad(options.boxId);
-          }
-          if (cache.hasMore) window.setTimeout(nextPage, 80);
+          firstDisplay = false;
         }, function(error) {
           cache.loading = false;
           if (options.isActive()) {
-            box.className = "dashboard-message";
-            box.innerText = options.errorMessage;
+            if (cache.transactions.length) {
+              options.render(cache.transactions, true);
+            } else {
+              box.className = "dashboard-message";
+              box.innerText = options.errorMessage;
+            }
           }
           console.log(error);
           syncActivePageHeight();
         });
       }
-      if (cache.hasMore) nextPage();
+      box.onscroll = function() {
+        if (box.scrollTop + box.clientHeight >= box.scrollHeight - 80) nextPage();
+      };
+      if (cache.hasMore && !cache.loading) nextPage();
     }
 
     function toggleMoneyFlowTransactionFilter(filter) {
