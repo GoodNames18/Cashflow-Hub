@@ -3048,6 +3048,17 @@
       }
     }
 
+    var dashboardRequestGeneration = {};
+    var dashboardDeferredCallbacks = {};
+    function resolveDeferredDashboard(key, data, error) {
+      var waiting = dashboardDeferredCallbacks[key] || [];
+      delete dashboardDeferredCallbacks[key];
+      waiting.forEach(function(callbacks) {
+        if (error) { if (callbacks.failure) callbacks.failure(error); }
+        else if (callbacks.success) callbacks.success(data);
+      });
+    }
+
     function jsonpRequest(
       params,
       onSuccess,
@@ -3064,6 +3075,10 @@
         return;
       }
       if (cachedData !== null && onSuccess) onSuccess(cachedData);
+
+      var requestGeneration = cacheKey && cacheKey.indexOf("cashflow-hub:dashboard:") === 0
+        ? (dashboardRequestGeneration[cacheKey] = (dashboardRequestGeneration[cacheKey] || 0) + 1)
+        : 0;
 
       const callbackName =
         "expensePwaCallback_" +
@@ -3145,20 +3160,30 @@
           data.success === false
         ) {
 
+          if (requestGeneration === dashboardRequestGeneration[cacheKey]) {
+            resolveDeferredDashboard(cacheKey, null, new Error(data.error || "Request failed."));
+          }
           if (onFailure && cachedData === null) {
-            onFailure(
-              new Error(
-                data.error ||
-                "Request failed."
-              )
-            );
+            onFailure(new Error(data.error || "Request failed."));
           }
 
           return;
         }
 
 
+        if (requestGeneration && requestGeneration !== dashboardRequestGeneration[cacheKey]) {
+          var latest = readDashboardCache(cacheKey);
+          if (latest) {
+            if (onSuccess) onSuccess(latest);
+          } else {
+            (dashboardDeferredCallbacks[cacheKey] ||= []).push({
+              success: onSuccess, failure: onFailure
+            });
+          }
+          return;
+        }
         saveDashboardCache(cacheKey, data);
+        if (requestGeneration) resolveDeferredDashboard(cacheKey, data);
         var saveAction = String(params.action || "");
         var invalidations = {
           gcashQuickAdd: "gcashTransactions", gcashTextAdd: "gcashTransactions",
@@ -3198,12 +3223,11 @@
 
           cleanup();
 
+          if (requestGeneration === dashboardRequestGeneration[cacheKey]) {
+            resolveDeferredDashboard(cacheKey, null, new Error("Could not connect to Apps Script."));
+          }
           if (onFailure && cachedData === null) {
-            onFailure(
-              new Error(
-                "Could not connect to Apps Script."
-              )
-            );
+            onFailure(new Error("Could not connect to Apps Script."));
           }
 
         };
@@ -3230,12 +3254,11 @@
 
           cleanup();
 
+          if (requestGeneration === dashboardRequestGeneration[cacheKey]) {
+            resolveDeferredDashboard(cacheKey, null, new Error("Request timed out."));
+          }
           if (onFailure && cachedData === null) {
-            onFailure(
-              new Error(
-                "Request timed out."
-              )
-            );
+            onFailure(new Error("Request timed out."));
           }
 
         },
@@ -6011,7 +6034,7 @@
     }
 
 
-    function refreshDashboardTotalsAfterDelete(page) {
+    function refreshDashboardTotalsAfterDelete(page, attempt) {
       var actions = {
         gcash: ["gcashDashboard", "gcash"],
         printing: ["printingDashboard", "printing"],
@@ -6029,7 +6052,7 @@
       }, function(data) {
         function money(id, value) {
           var node = document.getElementById(id);
-          if (node) node.textContent = formatPeso(value);
+          if (node && value !== undefined && value !== null) node.textContent = formatPeso(value);
         }
         function count(id, value) {
           var node = document.getElementById(id);
@@ -6099,7 +6122,13 @@
             });
         }
       }, function(error) {
-        console.log("Dashboard totals will update on the next refresh:", error);
+        if (!attempt) {
+          window.setTimeout(function() {
+            refreshDashboardTotalsAfterDelete(page, 1);
+          }, 1200);
+        } else {
+          console.log("Dashboard totals will update on the next refresh:", error);
+        }
       }, { skipCache: true });
     }
 
@@ -6208,6 +6237,9 @@
                   }
                 });
               } catch (error) {}
+              Object.keys(dashboardRequestGeneration).forEach(function(key) {
+                dashboardRequestGeneration[key]++;
+              });
               if (!box.children.length) {
                 box.className = "dashboard-message";
                 box.textContent = "No transactions yet.";
