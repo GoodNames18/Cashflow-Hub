@@ -1059,6 +1059,9 @@
     }
 
     .transaction-row {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 8px;
@@ -5973,11 +5976,11 @@
       recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
 
+      recentBox._displayedTransactions = showAll
+        ? transactions
+        : transactions.slice(0, RECENT_TRANSACTION_LIMIT);
       recentBox.innerHTML =
-        (showAll
-          ? transactions
-          : transactions.slice(0, RECENT_TRANSACTION_LIMIT))
-          .map(function(item) {
+        recentBox._displayedTransactions.map(function(item) {
 
             var metaParts = [];
 
@@ -6050,7 +6053,11 @@
         return (box._displayedTransactions || [])[index] || null;
       }
       function deleteTransaction(item) {
-        if (!item || !item.rowNumber || !item.rowFingerprint) return;
+        if (!item) return;
+        if (!item.rowNumber || !item.rowFingerprint) {
+          window.alert("Update and redeploy Code.gs to enable transaction deletion.");
+          return;
+        }
         if (!window.confirm("Delete this " + item.category + " transaction of " +
           formatPeso(item.amount) + " from Cashflow Hub and Google Sheets?")) return;
         jsonpRequest({
@@ -6067,7 +6074,7 @@
       }
       box.addEventListener("touchstart", function(event) {
         var item = selectedTransaction(event.target);
-        if (!item || !item.rowNumber || event.touches.length !== 1) return;
+        if (!item || event.touches.length !== 1) return;
         startX = event.touches[0].clientX;
         startY = event.touches[0].clientY;
         window.clearTimeout(timer);
@@ -6090,7 +6097,7 @@
       });
       box.addEventListener("contextmenu", function(event) {
         var item = selectedTransaction(event.target);
-        if (!item || !item.rowNumber) return;
+        if (!item) return;
         event.preventDefault();
         window.clearTimeout(timer);
         timer = null;
