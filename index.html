@@ -1100,9 +1100,10 @@
     }
 
     .gcash-filtered-transactions {
-      max-height: 560px;
+      max-height: 780px;
       overflow-y: auto;
-      overscroll-behavior: contain;
+      overscroll-behavior-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
 </style>
@@ -2596,7 +2597,7 @@
         function() {
 
           const height =
-            activePage.scrollHeight;
+            activePage.offsetHeight;
 
           if (height > 0) {
             viewport.style.height =
