@@ -6011,6 +6011,98 @@
     }
 
 
+    function refreshDashboardTotalsAfterDelete(page) {
+      var actions = {
+        gcash: ["gcashDashboard", "gcash"],
+        printing: ["printingDashboard", "printing"],
+        twice: ["twiceDashboard", "twice"],
+        lifeLog: ["lifeLogDashboard", "lifeLog"],
+        expenses: ["dashboard", "moneyFlow"],
+        test: ["testDashboard", "konek"],
+        rental: ["rentalDashboard", "rental"]
+      };
+      var config = actions[page];
+      if (!config) return;
+      var period = dashboardMonthParams(config[1]);
+      jsonpRequest({
+        action: config[0], year: period.year, month: period.month
+      }, function(data) {
+        function money(id, value) {
+          var node = document.getElementById(id);
+          if (node) node.textContent = formatPeso(value);
+        }
+        function count(id, value) {
+          var node = document.getElementById(id);
+          if (node) node.textContent = Number(value || 0).toLocaleString("en-PH");
+        }
+        if (page === "gcash") {
+          money("gcashMonthlyIncomeOnly", data.totalIncome);
+          money("gcashMonthlyTotal", data.gcash);
+          money("mayaMonthlyTotal", data.maya);
+          money("loadMonthlyTotal", data.load);
+          money("billsMonthlyTotal", data.bills);
+        } else if (page === "printing" || page === "twice") {
+          var prefix = page === "printing" ? "printing" : "twice";
+          money(prefix + "LifetimeIncome", data.totalIncome);
+          money(prefix + "Income", data.income);
+          money(prefix + "Expenses", data.expenses);
+          money(prefix + "Profit", data.profit);
+          money(prefix + "TotalMoney", data.totalMoney);
+          count(prefix + "Transactions", data.transactions);
+        } else if (page === "lifeLog") {
+          var counts = data.counts || {};
+          count("lifeLogTotalLogs", data.totalLogs);
+          ["Health", "Grooming", "Home", "Device", "Other"].forEach(function(category) {
+            count("lifeLog" + category + "Count", counts[category]);
+          });
+          var issue = document.getElementById("lifeLogCommonIssue");
+          if (issue) issue.textContent = data.mostCommonHealthIssue || "No Health logs";
+          var issueCount = document.getElementById("lifeLogCommonCount");
+          if (issueCount) issueCount.textContent = data.mostCommonHealthCount ?
+            Number(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
+          var latest = document.getElementById("lifeLogLatestHealth");
+          if (latest) latest.textContent = data.latestHealthLog || "No Health logs";
+          var date = document.getElementById("lifeLogLatestHealthDate");
+          if (date) date.textContent = data.latestHealthDate || "";
+        } else if (page === "expenses") {
+          money("moneyFlowLifetimeIncome", data.totalIncome);
+          money("monthlyExpenses", data.monthlyExpenses);
+          money("monthlyIncome", data.monthlyIncome);
+          money("balance", data.balance);
+          money("todayExpenses", data.todayExpenses);
+          money("highestExpense", data.highestExpense);
+          count("allTransactions", data.allTransactions);
+        } else if (page === "test") {
+          var values = {
+            testLifetimeIncome: data.totalEarned,
+            testTotalMoney: data.totalMoney,
+            testCashOnHand: data.cashOnHand,
+            testGcash: data.gcash,
+            testCard: data.card,
+            testTotalEarned: data.totalEarned,
+            testThisWeekEarned: data.thisWeekEarned,
+            testLoanRemaining: data.loanRemaining,
+            testUtangKayNanay: data.utangKayNanay,
+            testOthersLoan: data.othersLoan
+          };
+          Object.keys(values).forEach(function(id) { money(id, values[id]); });
+        } else if (page === "rental") {
+          money("rentalLifetimeIncome", data.totalIncome);
+          var categories = data.categories || {};
+          [["insta360", "rentalInsta360"], ["chairTable", "rentalChairTable"]]
+            .forEach(function(pair) {
+              var value = categories[pair[0]] || {};
+              money(pair[1] + "Income", value.income);
+              money(pair[1] + "Expenses", value.expenses);
+              money(pair[1] + "TotalMoney", value.totalMoney);
+              count(pair[1] + "Transactions", value.transactions);
+            });
+        }
+      }, function(error) {
+        console.log("Dashboard totals will update on the next refresh:", error);
+      }, { skipCache: true });
+    }
+
     function enableTransactionDeletion() {
       var locations = {
         lifeLogRecentEntries: ["Life Log", "lifeLog"],
@@ -6054,61 +6146,112 @@
           confirm.onclick = function() {
             if (deleting) return;
             deleting = true;
-            confirm.disabled = true;
-            confirm.textContent = "Deleting...";
-            cancel.hidden = true;
+            modal.hidden = true;
+            var row = Array.prototype.find.call(box.children, function(child, index) {
+              return (box._displayedTransactions || [])[index] === item;
+            });
+            if (row) row.style.opacity = "0.45";
+            var settled = false;
+            var statusTimer;
             var params = {
               action: "transactionDelete", sheet: sheet,
               rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
             };
             function completed() {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(statusTimer);
               deleting = false;
-              modal.hidden = true;
-              activeGcashTransactionFilter = "";
-              activeBusinessTransactionFilters = { printing: "", twice: "" };
-              activeMoneyFlowTransactionFilter = "";
-              activeTestTransactionFilter = "";
-              activeRentalTransactionFilter = "";
-              activeLifeLogTransactionFilter = "";
+              if (row && row.parentNode === box) {
+                var index = Array.prototype.indexOf.call(box.children, row);
+                if (index !== -1) {
+                  box._displayedTransactions.splice(index, 1);
+                  row.remove();
+                }
+              }
+              var seen = new Set();
+              function adjust(items) {
+                if (!Array.isArray(items)) return;
+                for (var i = items.length - 1; i >= 0; i--) {
+                  var entry = items[i];
+                  if (!entry || seen.has(entry)) continue;
+                  seen.add(entry);
+                  if (entry === item) {
+                    items.splice(i, 1);
+                  } else if (Number(entry.rowNumber) > Number(item.rowNumber)) {
+                    entry.rowNumber--;
+                  }
+                }
+              }
+              adjust(box._displayedTransactions);
+              var recent = {
+                lifeLog: lifeLogRecentEntriesCache,
+                twice: businessRecentTransactionsCache.twice,
+                printing: businessRecentTransactionsCache.printing,
+                gcash: gcashRecentTransactionsCache,
+                expenses: moneyFlowRecentTransactionsCache,
+                test: testRecentTransactionsCache,
+                rental: rentalRecentTransactionsCache
+              };
+              adjust(recent[page]);
               gcashTransactionHistoryCache = {};
               businessTransactionHistoryCache = { printing: {}, twice: {} };
               moneyFlowTransactionHistoryCache = {};
               testTransactionHistoryCache = {};
               rentalTransactionHistoryCache = {};
               lifeLogTransactionHistoryCache = {};
-              box.className = "dashboard-message";
-              box.innerText = "Transaction deleted. Updating dashboard...";
-              if (page === "gcash") loadGcashDashboard(true);
-              else pageDataLoaders[page]();
+              try {
+                Object.keys(localStorage).forEach(function(key) {
+                  if (key.indexOf("cashflow-hub:history:") === 0 ||
+                      key.indexOf("cashflow-hub:dashboard:") === 0) {
+                    localStorage.removeItem(key);
+                  }
+                });
+              } catch (error) {}
+              if (!box.children.length) {
+                box.className = "dashboard-message";
+                box.textContent = "No transactions yet.";
+              }
+              syncActivePageHeight();
+              refreshDashboardTotalsAfterDelete(page);
             }
             function failed(error) {
+              if (settled) return;
+              settled = true;
+              window.clearTimeout(statusTimer);
               deleting = false;
+              if (row) row.style.opacity = "";
               message.textContent = error.message || "Could not delete transaction. Check the sheet before trying again.";
+              modal.hidden = false;
               confirm.hidden = true;
               cancel.hidden = false;
               cancel.textContent = "Close";
               cancel.onclick = function() { modal.hidden = true; cancel.textContent = "Cancel"; };
             }
+            var checks = 0;
+            function checkDeletion() {
+              if (settled) return;
+              jsonpRequest({
+                action: "transactionDeleteStatus", sheet: sheet,
+                rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
+              }, function(result) {
+                if (result.deleted) completed();
+                else if (++checks < 5 && !settled)
+                  statusTimer = window.setTimeout(checkDeletion, 1500);
+              }, function() {
+                // The original delete request can still confirm the result.
+              }, { skipCache: true });
+            }
+            statusTimer = window.setTimeout(checkDeletion, 1800);
             jsonpRequest(params, completed, function(error) {
-              if (error.message !== "Request timed out.") {
+              if (error.message === "Request timed out.") {
+                // Give the status check time to confirm a completed Sheets write.
+                if (!settled) statusTimer = window.setTimeout(function() {
+                  if (!settled) failed(new Error("Could not confirm deletion. Check the sheet before trying again."));
+                }, 7000);
+              } else {
                 failed(error);
-                return;
               }
-              message.textContent = "Checking whether the transaction was deleted...";
-              var checks = 0;
-              function checkDeletion() {
-                jsonpRequest({
-                  action: "transactionDeleteStatus", sheet: sheet,
-                  rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
-                }, function(result) {
-                  if (result.deleted) completed();
-                  else if (++checks < 3) window.setTimeout(checkDeletion, 1500);
-                  else failed(new Error("Deletion could not be confirmed. Check the sheet before trying again."));
-                }, function() {
-                  failed(new Error("Could not confirm deletion. Check the sheet before trying again."));
-                }, { skipCache: true });
-              }
-              checkDeletion();
             }, { skipCache: true });
           };
         }
