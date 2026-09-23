@@ -1100,10 +1100,8 @@
     }
 
     .gcash-filtered-transactions {
-      max-height: min(60dvh, 420px);
-      overflow-y: auto;
-      overscroll-behavior-y: auto;
-      -webkit-overflow-scrolling: touch;
+      max-height: none;
+      overflow: visible;
     }
 
 </style>
@@ -2318,6 +2316,8 @@
     });
 
     function scrollToFilteredTransactionBoxAfterLoad(boxId) {
+      // The transaction list now scrolls with the page. Do not move the
+      // viewport when an asynchronous history page arrives.
       syncActivePageHeight();
     }
 
@@ -4788,19 +4788,21 @@
       var recentBox = document.getElementById(config.boxId);
       var cache = getBusinessTransactionCache(pageName, category);
       document.getElementById(config.titleId).innerText = getBusinessFilterTitle(category);
-      recentBox.onscroll = function() {
-        if (activeBusinessTransactionFilters[pageName] !== category || cache.loading || !cache.hasMore) return;
-        if (recentBox.scrollTop + recentBox.clientHeight >= recentBox.scrollHeight - 80) {
-          loadBusinessTransactionPage(pageName, category, cache);
-        }
-      };
-      if (cache.transactions.length) {
+
+      var hadCachedTransactions = cache.transactions.length > 0;
+      if (hadCachedTransactions) {
         config.render(cache.transactions, true, false);
         recentBox.scrollTop = 0;
+        scrollToFilteredTransactionBoxAfterLoad(config.boxId);
       } else {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "Loading...";
       }
+
+      filteredHistoryScrollLoaders[config.boxId] = {
+        isActive: function() { return activeBusinessTransactionFilters[pageName] === category; },
+        loadNext: function() { loadBusinessTransactionPage(pageName, category, cache); }
+      };
       if (!cache.hasMore || cache.loading) return Promise.resolve(true);
       return loadBusinessTransactionPage(pageName, category, cache);
     }
@@ -4839,10 +4841,8 @@
             cache.loading = false;
             if (activeBusinessTransactionFilters[pageName] === category) {
               var recentBox = document.getElementById(config.boxId);
-              if (!cache.transactions.length) {
-                recentBox.className = "dashboard-message";
-                recentBox.innerText = "Could not load transactions.";
-              }
+              recentBox.className = "dashboard-message";
+              recentBox.innerText = "Could not load transactions.";
             }
             console.log(error);
             syncActivePageHeight();
@@ -5617,25 +5617,38 @@
     }
 
 
+    var filteredHistoryScrollLoaders = {};
+    window.addEventListener("scroll", function() {
+      Object.keys(filteredHistoryScrollLoaders).forEach(function(boxId) {
+        var entry = filteredHistoryScrollLoaders[boxId];
+        var box = document.getElementById(boxId);
+        if (!box || !entry.isActive() || box.closest(".app-page") !== getActiveAppPage()) return;
+        if (box.getBoundingClientRect().bottom <= window.innerHeight + 120) entry.loadNext();
+      });
+    }, { passive: true });
+
     function loadGcashFilteredTransactions(category) {
       var recentBox = document.getElementById("gcashRecentTransactions");
       var title = document.getElementById("gcashTransactionsTitle");
       var displayName = getGcashFilterDisplayName(category);
       var cache = getGcashTransactionCache(category);
+
       title.innerText = displayName + " Transactions";
-      recentBox.onscroll = function() {
-        if (activeGcashTransactionFilter !== category || cache.loading || !cache.hasMore) return;
-        if (recentBox.scrollTop + recentBox.clientHeight >= recentBox.scrollHeight - 80) {
-          loadGcashTransactionPage(category, cache);
-        }
-      };
-      if (cache.transactions.length) {
+
+      var hadCachedTransactions = cache.transactions.length > 0;
+      if (hadCachedTransactions) {
         renderGcashRecentTransactions(cache.transactions, true, false);
         recentBox.scrollTop = 0;
+        scrollToFilteredTransactionBoxAfterLoad("gcashRecentTransactions");
       } else {
         recentBox.className = "dashboard-message";
         recentBox.innerText = "Loading...";
       }
+
+      filteredHistoryScrollLoaders.gcashRecentTransactions = {
+        isActive: function() { return activeGcashTransactionFilter === category; },
+        loadNext: function() { loadGcashTransactionPage(category, cache); }
+      };
       if (!cache.hasMore || cache.loading) return Promise.resolve(true);
       return loadGcashTransactionPage(category, cache);
     }
@@ -5676,10 +5689,8 @@
             if (activeGcashTransactionFilter === category) {
               var recentBox = document.getElementById("gcashRecentTransactions");
               var displayName = getGcashFilterDisplayName(category);
-              if (!cache.transactions.length) {
-                recentBox.className = "dashboard-message";
-                recentBox.innerText = "Could not load " + displayName + " transactions.";
-              }
+              recentBox.className = "dashboard-message";
+              recentBox.innerText = "Could not load " + displayName + " transactions.";
             }
             console.log(error);
             syncActivePageHeight();
@@ -6848,38 +6859,40 @@
       var firstDisplay = cache.transactions.length === 0;
       if (cache.transactions.length) {
         options.render(cache.transactions, false);
+        scrollToFilteredTransactionBoxAfterLoad(options.boxId);
       } else {
         box.className = "dashboard-message";
         box.innerText = "Loading...";
       }
       function nextPage() {
-        if (cache.loading || !cache.hasMore || !options.isActive()) return;
+        if (cache.loading || !cache.hasMore) return;
         cache.loading = true;
         var params = Object.assign({}, options.params, { cursor: cache.nextCursor, limit: DASHBOARD_TRANSACTION_PAGE_SIZE });
         jsonpRequest(params, function(data) {
           cache.loading = false;
-          if (options.cacheMap[options.key] !== cache || !options.isActive()) return;
+          if (!options.isActive()) return;
           cache.transactions = cache.transactions.concat(data.transactions || []);
           cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
           cache.hasMore = !!data.hasMore;
           options.render(cache.transactions, !firstDisplay);
-          firstDisplay = false;
+          if (firstDisplay) {
+            firstDisplay = false;
+            scrollToFilteredTransactionBoxAfterLoad(options.boxId);
+          }
+
         }, function(error) {
           cache.loading = false;
           if (options.isActive()) {
-            if (cache.transactions.length) {
-              options.render(cache.transactions, true);
-            } else {
-              box.className = "dashboard-message";
-              box.innerText = options.errorMessage;
-            }
+            box.className = "dashboard-message";
+            box.innerText = options.errorMessage;
           }
           console.log(error);
           syncActivePageHeight();
         });
       }
-      box.onscroll = function() {
-        if (box.scrollTop + box.clientHeight >= box.scrollHeight - 80) nextPage();
+      filteredHistoryScrollLoaders[options.boxId] = {
+        isActive: options.isActive,
+        loadNext: nextPage
       };
       if (cache.hasMore && !cache.loading) nextPage();
     }
