@@ -6121,6 +6121,7 @@
               count(pair[1] + "Transactions", value.transactions);
             });
         }
+        refillTransactionsAfterDelete(page, data);
       }, function(error) {
         if (!attempt) {
           window.setTimeout(function() {
@@ -6130,6 +6131,79 @@
           console.log("Dashboard totals will update on the next refresh:", error);
         }
       }, { skipCache: true });
+    }
+
+    function refillTransactionsAfterDelete(page, data) {
+      var boxes = {
+        gcash: "gcashRecentTransactions",
+        printing: "printingRecentTransactions",
+        twice: "twiceRecentTransactions",
+        lifeLog: "lifeLogRecentEntries",
+        rental: "rentalRecentTransactions",
+        test: "testRecentTransactions",
+        expenses: "recentTransactions"
+      };
+      var box = document.getElementById(boxes[page]);
+      if (!box) return;
+      var scrollTop = box.scrollTop;
+      if (page === "gcash" && activeGcashTransactionFilter) {
+        loadGcashFilteredTransactions(activeGcashTransactionFilter);
+        return;
+      }
+      if ((page === "printing" || page === "twice") &&
+          activeBusinessTransactionFilters[page]) {
+        loadBusinessFilteredTransactions(page, activeBusinessTransactionFilters[page]);
+        return;
+      }
+      var filters = {
+        lifeLog: activeLifeLogTransactionFilter,
+        rental: activeRentalTransactionFilter,
+        test: activeTestTransactionFilter,
+        expenses: activeMoneyFlowTransactionFilter
+      };
+      if (filters[page]) {
+        var selected = filters[page];
+        if (page === "lifeLog") {
+          activeLifeLogTransactionFilter = "";
+          toggleLifeLogTransactionFilter(selected);
+        } else if (page === "rental") {
+          activeRentalTransactionFilter = "";
+          var parts = selected.split("|");
+          toggleRentalTransactionFilter(parts[0], parts[1]);
+        } else if (page === "test") {
+          activeTestTransactionFilter = "";
+          toggleTestTransactionFilter(selected);
+        } else {
+          activeMoneyFlowTransactionFilter = "";
+          toggleMoneyFlowTransactionFilter(selected);
+        }
+        return;
+      }
+      var items = page === "lifeLog"
+        ? (data.recentEntries || [])
+        : (data.recentTransactions || []);
+      // The dashboard response contains the newest ten remaining rows.
+      // If fewer than ten exist, show exactly the number returned.
+      if (page === "gcash") {
+        gcashRecentTransactionsCache = items;
+        renderGcashRecentTransactions(items, false, true);
+      } else if (page === "printing") {
+        businessRecentTransactionsCache.printing = items;
+        renderPrintingRecentTransactions(items, false, true);
+      } else if (page === "twice") {
+        businessRecentTransactionsCache.twice = items;
+        renderTwiceAsNyceRecentTransactions(items, false, true);
+      } else if (page === "lifeLog") {
+        renderLifeLogRecentEntries(items);
+      } else if (page === "rental") {
+        renderRentalRecentTransactions(items);
+      } else if (page === "test") {
+        renderTestRecentTransactions(items);
+      } else {
+        renderMoneyFlowRecentTransactions(items);
+      }
+      box.scrollTop = scrollTop;
+      syncActivePageHeight();
     }
 
     function enableTransactionDeletion() {
@@ -7083,16 +7157,17 @@
       );
 
 
+      renderMoneyFlowRecentTransactions(data.recentTransactions || []);
+    }
+
+    function renderMoneyFlowRecentTransactions(transactions) {
       const recentBox =
         document.getElementById(
           "recentTransactions"
         );
 
 
-      const transactions =
-        data.recentTransactions || [];
-
-      moneyFlowRecentTransactionsCache = transactions;
+moneyFlowRecentTransactionsCache = transactions;
 
       if (activeMoneyFlowTransactionFilter) {
         syncActivePageHeight();
@@ -7181,7 +7256,6 @@
           .join("");
 
     }
-
 
     function renderDesign1TransactionRows(boxId, items, emptyMessage, lifeMode, preserveScroll) {
       var box = document.getElementById(boxId);
