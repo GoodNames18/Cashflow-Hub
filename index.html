@@ -65,7 +65,7 @@
       background: linear-gradient(145deg, #ffffff 0%, #f2efff 52%, #e6e6fa 100%);
       opacity: 1;
       visibility: visible;
-      transition: opacity .25s ease, visibility .25s ease;
+      transition: opacity .1s ease, visibility .1s ease;
     }
 
     .app-loading-screen::before,
@@ -2517,7 +2517,7 @@
     // Cash In/Out is the default/main page.
     // ========================================================
 
-    window.addEventListener("load", function() {
+    window.addEventListener("DOMContentLoaded", function() {
 
       const appLoadingScreen = document.getElementById("appLoadingScreen");
       if (appLoadingScreen) {
