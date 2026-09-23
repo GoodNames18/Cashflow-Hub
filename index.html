@@ -2454,66 +2454,20 @@
     }
 
 
-    function runSequentialPagePreload_(
-      pageNames,
-      loadPage,
-      waitForRetry
-    ) {
-
-      return pageNames.reduce(
-        function(chain, pageName) {
-
-          return chain.then(
-            function() {
-
-              return loadPage(pageName)
-                .then(function(success) {
-
-                  if (success) {
-                    return true;
-                  }
-
-                  return waitForRetry()
-                    .then(function() {
-                      return loadPage(pageName);
-                    });
-                });
-            }
-          );
-        },
-        Promise.resolve()
-      );
-    }
-
-
     function preloadAllPageData() {
-
-      const registeredPages =
-        Object.keys(pageDataLoaders);
-
-      const pageNames =
-        startupPagePreloadOrder
-          .filter(function(pageName) {
-            return !!pageDataLoaders[pageName];
-          })
-          .concat(
-            registeredPages.filter(
-              function(pageName) {
-                return (
-                  startupPagePreloadOrder
-                    .indexOf(pageName) === -1
-                );
-              }
-            )
-          );
-
-      return runSequentialPagePreload_(
-        pageNames,
-        ensurePageDataLoaded,
-        function() {
-          return waitForPageRetry_(1000);
-        }
-      );
+      // Keep two dashboards in flight so one slow Sheets tab cannot
+      // block every dashboard that follows it.
+      var pages = startupPagePreloadOrder
+        .filter(function(page) { return !!pageDataLoaders[page]; })
+        .filter(function(page) { return page !== currentAppPage; });
+      var next = 0;
+      function worker() {
+        if (next >= pages.length) return Promise.resolve();
+        var page = pages[next++];
+        return ensurePageDataLoaded(page)
+          .then(function() { return worker(); });
+      }
+      return Promise.all([worker(), worker()]);
     }
 
     // One Recent Transactions limit for Cash In/Out, Expenses,
@@ -2543,9 +2497,8 @@
 
       showAppPage("gcash", false);
 
-      // Cash In/Out stays visible by default. The remaining
-      // dashboards + Recent Transactions preload automatically
-      // one at a time, with one startup retry on failure.
+      // Cash In/Out stays visible by default. Preload the remaining
+      // dashboards in the background with at most two active requests.
       preloadAllPageData();
 
       if ("serviceWorker" in navigator) {
