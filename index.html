@@ -248,6 +248,10 @@
       border-radius: 10px;
       font-size: 14px;
       cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .month-label {
@@ -2470,6 +2474,69 @@
       return Promise.all([worker(), worker()]);
     }
 
+    async function reloadCashflowHubCode(button) {
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Updating app...";
+      }
+      if ("serviceWorker" in navigator) {
+        try {
+          var registration = await navigator.serviceWorker.getRegistration("/Cashflow-Hub/");
+          if (registration) {
+            await Promise.race([
+              registration.update(),
+              new Promise(function(resolve) { window.setTimeout(resolve, 2500); })
+            ]);
+          }
+        } catch (error) {
+          console.log("Could not update service worker:", error);
+        }
+      }
+      var url = new URL(window.location.href);
+      url.searchParams.set("appUpdate", String(Date.now()));
+      window.location.replace(url.toString());
+    }
+
+    function enableRefreshLongPress() {
+      document.querySelectorAll(".refresh-button").forEach(function(button) {
+        var timer = null;
+        var startX = 0, startY = 0;
+        var blockClick = false;
+        button.title = "Tap to refresh data · hold to reload app code";
+        function cancel() {
+          window.clearTimeout(timer);
+          timer = null;
+        }
+        button.addEventListener("pointerdown", function(event) {
+          if (event.button !== 0 && event.pointerType === "mouse") return;
+          startX = event.clientX;
+          startY = event.clientY;
+          cancel();
+          timer = window.setTimeout(function() {
+            timer = null;
+            blockClick = true;
+            reloadCashflowHubCode(button);
+          }, 750);
+        });
+        button.addEventListener("pointermove", function(event) {
+          if (timer && (Math.abs(event.clientX - startX) > 12 ||
+              Math.abs(event.clientY - startY) > 12)) cancel();
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach(function(type) {
+          button.addEventListener(type, cancel);
+        });
+        button.addEventListener("contextmenu", function(event) {
+          event.preventDefault();
+        });
+        button.addEventListener("click", function(event) {
+          if (!blockClick) return;
+          blockClick = false;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }, true);
+      });
+    }
+
     // One Recent Transactions limit for Cash In/Out, Expenses,
     // and future tabs.
     const RECENT_TRANSACTION_LIMIT = 10;
@@ -2490,6 +2557,7 @@
         appLoadingScreen.classList.add("is-hidden");
       }
 
+      enableRefreshLongPress();
       enableTransactionDeletion();
       initializeTestCashOutUI();
       setupKonek2CardAutocomplete();
