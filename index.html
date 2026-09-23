@@ -2162,6 +2162,15 @@
     </div>
   </div>
 
+  <div id="transactionDeleteModal" class="month-modal" hidden>
+    <div class="month-modal-panel" role="dialog" aria-modal="true" aria-labelledby="transactionDeleteTitle">
+      <h2 id="transactionDeleteTitle" class="month-modal-title">Delete transaction?</h2>
+      <p id="transactionDeleteMessage" style="text-align:center;margin:0 0 16px;color:var(--secondary)"></p>
+      <button type="button" id="transactionDeleteConfirm" class="month-modal-cancel" style="margin-top:0;background:#b42318">Delete</button>
+      <button type="button" id="transactionDeleteCancel" class="month-modal-option" style="margin-top:10px">Cancel</button>
+    </div>
+  </div>
+
   <script>
     document.title = "Cashflow Hub";
 
@@ -6077,34 +6086,78 @@
             window.alert("Update and redeploy Code.gs to enable transaction deletion.");
             return;
           }
+          var modal = document.getElementById("transactionDeleteModal");
+          var message = document.getElementById("transactionDeleteMessage");
+          var confirm = document.getElementById("transactionDeleteConfirm");
+          var cancel = document.getElementById("transactionDeleteCancel");
           var label = item.description || item.merchant || item.category || "transaction";
-          if (!window.confirm("Delete " + label + " from " + sheet + " and Google Sheets?")) return;
-          deleting = true;
-          jsonpRequest({
-            action: "transactionDelete", sheet: sheet,
-            rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
-          }, function() {
-            deleting = false;
-            activeGcashTransactionFilter = "";
-            activeBusinessTransactionFilters = { printing: "", twice: "" };
-            activeMoneyFlowTransactionFilter = "";
-            activeTestTransactionFilter = "";
-            activeRentalTransactionFilter = "";
-            activeLifeLogTransactionFilter = "";
-            gcashTransactionHistoryCache = {};
-            businessTransactionHistoryCache = { printing: {}, twice: {} };
-            moneyFlowTransactionHistoryCache = {};
-            testTransactionHistoryCache = {};
-            rentalTransactionHistoryCache = {};
-            lifeLogTransactionHistoryCache = {};
-            box.className = "dashboard-message";
-            box.innerText = "Transaction deleted. Updating dashboard...";
-            if (page === "gcash") loadGcashDashboard(true);
-            else pageDataLoaders[page]();
-          }, function(error) {
-            deleting = false;
-            window.alert(error.message || "Could not delete transaction.");
-          });
+          message.textContent = "Remove " + label + " from " + sheet + " and Google Sheets?";
+          modal.hidden = false;
+          cancel.hidden = false;
+          confirm.hidden = false;
+          confirm.disabled = false;
+          confirm.textContent = "Delete";
+          cancel.onclick = function() { modal.hidden = true; };
+          confirm.onclick = function() {
+            if (deleting) return;
+            deleting = true;
+            confirm.disabled = true;
+            confirm.textContent = "Deleting...";
+            cancel.hidden = true;
+            var params = {
+              action: "transactionDelete", sheet: sheet,
+              rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
+            };
+            function completed() {
+              deleting = false;
+              modal.hidden = true;
+              activeGcashTransactionFilter = "";
+              activeBusinessTransactionFilters = { printing: "", twice: "" };
+              activeMoneyFlowTransactionFilter = "";
+              activeTestTransactionFilter = "";
+              activeRentalTransactionFilter = "";
+              activeLifeLogTransactionFilter = "";
+              gcashTransactionHistoryCache = {};
+              businessTransactionHistoryCache = { printing: {}, twice: {} };
+              moneyFlowTransactionHistoryCache = {};
+              testTransactionHistoryCache = {};
+              rentalTransactionHistoryCache = {};
+              lifeLogTransactionHistoryCache = {};
+              box.className = "dashboard-message";
+              box.innerText = "Transaction deleted. Updating dashboard...";
+              if (page === "gcash") loadGcashDashboard(true);
+              else pageDataLoaders[page]();
+            }
+            function failed(error) {
+              deleting = false;
+              message.textContent = error.message || "Could not delete transaction. Check the sheet before trying again.";
+              confirm.hidden = true;
+              cancel.hidden = false;
+              cancel.textContent = "Close";
+              cancel.onclick = function() { modal.hidden = true; cancel.textContent = "Cancel"; };
+            }
+            jsonpRequest(params, completed, function(error) {
+              if (error.message !== "Request timed out.") {
+                failed(error);
+                return;
+              }
+              message.textContent = "Checking whether the transaction was deleted...";
+              var checks = 0;
+              function checkDeletion() {
+                jsonpRequest({
+                  action: "transactionDeleteStatus", sheet: sheet,
+                  rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
+                }, function(result) {
+                  if (result.deleted) completed();
+                  else if (++checks < 3) window.setTimeout(checkDeletion, 1500);
+                  else failed(new Error("Deletion could not be confirmed. Check the sheet before trying again."));
+                }, function() {
+                  failed(new Error("Could not confirm deletion. Check the sheet before trying again."));
+                }, { skipCache: true });
+              }
+              checkDeletion();
+            }, { skipCache: true });
+          };
         }
         box.addEventListener("touchstart", function(event) {
           var item = selectedItem(event.target);
