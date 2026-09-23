@@ -3042,9 +3042,19 @@
     ];
 
     function dashboardCacheKey(params) {
-      if (cachedDashboardActions.indexOf(params.action) === -1) return "";
-      return "cashflow-hub:dashboard:" + DASHBOARD_CACHE_VERSION + ":" +
-        params.action + ":" + params.year + ":" + params.month;
+      if (cachedDashboardActions.indexOf(params.action) !== -1) {
+        return "cashflow-hub:dashboard:" + DASHBOARD_CACHE_VERSION + ":" +
+          params.action + ":" + params.year + ":" + params.month;
+      }
+      if (["gcashTransactions", "printingTransactions", "twiceTransactions",
+        "lifeLogTransactions", "moneyFlowTransactions", "testTransactions",
+        "rentalTransactions"].indexOf(params.action) !== -1) {
+        return "cashflow-hub:history:v2:" + params.action + ":" +
+          JSON.stringify([params.category || "", params.filter || "", params.type || "",
+            params.year || "", params.month || "", params.issue || "",
+            params.cursor || 0, params.limit || 10]);
+      }
+      return "";
     }
 
     function readDashboardCache(key) {
@@ -3083,6 +3093,10 @@
       const cachedData = options && options.skipCache
         ? null
         : readDashboardCache(cacheKey);
+      if (cachedData !== null && cacheKey.indexOf("cashflow-hub:history:") === 0) {
+        if (onSuccess) onSuccess(cachedData);
+        return;
+      }
       if (cachedData !== null && onSuccess) onSuccess(cachedData);
 
       const callbackName =
@@ -3179,6 +3193,24 @@
 
 
         saveDashboardCache(cacheKey, data);
+        var saveAction = String(params.action || "");
+        var invalidations = {
+          gcashQuickAdd: "gcashTransactions", gcashTextAdd: "gcashTransactions",
+          printingAdd: "printingTransactions", twiceAdd: "twiceTransactions",
+          lifeLogAdd: "lifeLogTransactions", rentalAdd: "rentalTransactions",
+          expense: "moneyFlowTransactions", konekAdd: "testTransactions",
+          testAapCollection: "testTransactions", testAtmWithdraw: "testTransactions",
+          testCashOut: "testTransactions", testLoan: "testTransactions",
+          testOthersLoan: "testTransactions", testTransfer: "testTransactions"
+        };
+        if (invalidations[saveAction]) {
+          try {
+            var prefix = "cashflow-hub:history:v2:" + invalidations[saveAction] + ":";
+            Object.keys(localStorage).forEach(function(key) {
+              if (key.indexOf(prefix) === 0) localStorage.removeItem(key);
+            });
+          } catch (error) {}
+        }
         if (onSuccess) {
           onSuccess(data);
         }
@@ -4771,7 +4803,8 @@
           transactions: [],
           nextCursor: 0,
           hasMore: true,
-          loading: false
+          loading: false,
+          visibleCount: 10
         };
       }
       return businessTransactionHistoryCache[pageName][category];
@@ -4790,10 +4823,11 @@
       var recentBox = document.getElementById(config.boxId);
       var cache = getBusinessTransactionCache(pageName, category);
       document.getElementById(config.titleId).innerText = getBusinessFilterTitle(category);
+      cache.visibleCount = 10;
 
       var hadCachedTransactions = cache.transactions.length > 0;
       if (hadCachedTransactions) {
-        config.render(cache.transactions, true, false);
+        config.render(cache.transactions.slice(0, cache.visibleCount), true, false);
         recentBox.scrollTop = 0;
         scrollToFilteredTransactionBoxAfterLoad(config.boxId);
       } else {
@@ -4803,7 +4837,11 @@
 
       setFilteredHistoryScrollLoader(config.boxId,
         function() { return activeBusinessTransactionFilters[pageName] === category; },
-        function() { loadBusinessTransactionPage(pageName, category, cache); });
+        function() {
+          cache.visibleCount += 10;
+          config.render(cache.transactions.slice(0, cache.visibleCount), true, true);
+          if (cache.visibleCount >= cache.transactions.length) loadBusinessTransactionPage(pageName, category, cache);
+        });
       if (!cache.hasMore || cache.loading) return Promise.resolve(true);
       return loadBusinessTransactionPage(pageName, category, cache);
     }
@@ -4834,7 +4872,11 @@
             cache.hasMore = !!data.hasMore;
 
             if (activeBusinessTransactionFilters[pageName] === category) {
-              config.render(cache.transactions, true, true);
+              config.render(cache.transactions.slice(0, cache.visibleCount), true, true);
+              if (cache.hasMore) window.setTimeout(function() {
+                if (activeBusinessTransactionFilters[pageName] === category)
+                  loadBusinessTransactionPage(pageName, category, cache);
+              }, 120);
             }
             resolve(true);
           },
@@ -4842,8 +4884,10 @@
             cache.loading = false;
             if (activeBusinessTransactionFilters[pageName] === category) {
               var recentBox = document.getElementById(config.boxId);
-              recentBox.className = "dashboard-message";
-              recentBox.innerText = "Could not load transactions.";
+              if (!cache.transactions.length) {
+                recentBox.className = "dashboard-message";
+                recentBox.innerText = "Could not load transactions.";
+              }
             }
             console.log(error);
             syncActivePageHeight();
@@ -4977,6 +5021,12 @@
       );
 
       businessRecentTransactionsCache.twice = data.recentTransactions || [];
+      ["income", "expense", "transactions"].forEach(function(category, index) {
+        window.setTimeout(function() {
+          var history = getBusinessTransactionCache("twice", category);
+          if (!history.transactions.length && !history.loading) loadBusinessTransactionPage("twice", category, history);
+        }, 1500 + index * 350);
+      });
 
       if (activeBusinessTransactionFilters.twice) {
         loadBusinessFilteredTransactions("twice", activeBusinessTransactionFilters.twice);
@@ -5471,6 +5521,12 @@
       );
 
       businessRecentTransactionsCache.printing = data.recentTransactions || [];
+      ["income", "expense", "transactions"].forEach(function(category, index) {
+        window.setTimeout(function() {
+          var history = getBusinessTransactionCache("printing", category);
+          if (!history.transactions.length && !history.loading) loadBusinessTransactionPage("printing", category, history);
+        }, 1000 + index * 350);
+      });
 
       if (activeBusinessTransactionFilters.printing) {
         loadBusinessFilteredTransactions("printing", activeBusinessTransactionFilters.printing);
@@ -5611,7 +5667,8 @@
           transactions: [],
           nextCursor: 0,
           hasMore: true,
-          loading: false
+          loading: false,
+          visibleCount: 10
         };
       }
       return gcashTransactionHistoryCache[category];
@@ -5633,10 +5690,11 @@
       var cache = getGcashTransactionCache(category);
 
       title.innerText = displayName + " Transactions";
+      cache.visibleCount = 10;
 
       var hadCachedTransactions = cache.transactions.length > 0;
       if (hadCachedTransactions) {
-        renderGcashRecentTransactions(cache.transactions, true, false);
+        renderGcashRecentTransactions(cache.transactions.slice(0, cache.visibleCount), true, false);
         recentBox.scrollTop = 0;
         scrollToFilteredTransactionBoxAfterLoad("gcashRecentTransactions");
       } else {
@@ -5646,7 +5704,11 @@
 
       setFilteredHistoryScrollLoader("gcashRecentTransactions",
         function() { return activeGcashTransactionFilter === category; },
-        function() { loadGcashTransactionPage(category, cache); });
+        function() {
+          cache.visibleCount += 10;
+          renderGcashRecentTransactions(cache.transactions.slice(0, cache.visibleCount), true, true);
+          if (cache.visibleCount >= cache.transactions.length) loadGcashTransactionPage(category, cache);
+        });
       if (!cache.hasMore || cache.loading) return Promise.resolve(true);
       return loadGcashTransactionPage(category, cache);
     }
@@ -5678,7 +5740,10 @@
             cache.hasMore = !!data.hasMore;
 
             if (activeGcashTransactionFilter === category) {
-              renderGcashRecentTransactions(cache.transactions, true, true);
+              renderGcashRecentTransactions(cache.transactions.slice(0, cache.visibleCount), true, true);
+              if (cache.hasMore) window.setTimeout(function() {
+                if (activeGcashTransactionFilter === category) loadGcashTransactionPage(category, cache);
+              }, 120);
             }
             resolve(true);
           },
@@ -5687,8 +5752,10 @@
             if (activeGcashTransactionFilter === category) {
               var recentBox = document.getElementById("gcashRecentTransactions");
               var displayName = getGcashFilterDisplayName(category);
-              recentBox.className = "dashboard-message";
-              recentBox.innerText = "Could not load " + displayName + " transactions.";
+              if (!cache.transactions.length) {
+                recentBox.className = "dashboard-message";
+                recentBox.innerText = "Could not load " + displayName + " transactions.";
+              }
             }
             console.log(error);
             syncActivePageHeight();
@@ -5855,6 +5922,12 @@
 
 
       gcashRecentTransactionsCache = data.recentTransactions || [];
+      ["gcash", "maya", "load", "bills"].forEach(function(category, index) {
+        window.setTimeout(function() {
+          var history = getGcashTransactionCache(category);
+          if (!history.transactions.length && !history.loading) loadGcashTransactionPage(category, history);
+        }, index * 350);
+      });
 
       if (activeGcashTransactionFilter) {
         loadGcashFilteredTransactions(activeGcashTransactionFilter);
@@ -6847,7 +6920,7 @@
     }
 
     function getDesign1HistoryCache(cacheMap, key) {
-      if (!cacheMap[key]) cacheMap[key] = { transactions: [], nextCursor: 0, hasMore: true, loading: false };
+      if (!cacheMap[key]) cacheMap[key] = { transactions: [], nextCursor: 0, hasMore: true, loading: false, visibleCount: 10 };
       return cacheMap[key];
     }
 
@@ -6855,8 +6928,9 @@
       var cache = getDesign1HistoryCache(options.cacheMap, options.key);
       var box = document.getElementById(options.boxId);
       var firstDisplay = cache.transactions.length === 0;
+      cache.visibleCount = 10;
       if (cache.transactions.length) {
-        options.render(cache.transactions, false);
+        options.render(cache.transactions.slice(0, cache.visibleCount), false);
         scrollToFilteredTransactionBoxAfterLoad(options.boxId);
       } else {
         box.className = "dashboard-message";
@@ -6868,19 +6942,20 @@
         var params = Object.assign({}, options.params, { cursor: cache.nextCursor, limit: DASHBOARD_TRANSACTION_PAGE_SIZE });
         jsonpRequest(params, function(data) {
           cache.loading = false;
-          if (!options.isActive()) return;
+          if (options.cacheMap[options.key] !== cache || !options.isActive()) return;
           cache.transactions = cache.transactions.concat(data.transactions || []);
           cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
           cache.hasMore = !!data.hasMore;
-          options.render(cache.transactions, !firstDisplay);
+          options.render(cache.transactions.slice(0, cache.visibleCount), !firstDisplay);
           if (firstDisplay) {
             firstDisplay = false;
             scrollToFilteredTransactionBoxAfterLoad(options.boxId);
           }
+          if (cache.hasMore) window.setTimeout(nextPage, 120);
 
         }, function(error) {
           cache.loading = false;
-          if (options.isActive()) {
+          if (options.isActive() && !cache.transactions.length) {
             box.className = "dashboard-message";
             box.innerText = options.errorMessage;
           }
@@ -6888,7 +6963,11 @@
           syncActivePageHeight();
         });
       }
-      setFilteredHistoryScrollLoader(options.boxId, options.isActive, nextPage);
+      setFilteredHistoryScrollLoader(options.boxId, options.isActive, function() {
+        cache.visibleCount += 10;
+        options.render(cache.transactions.slice(0, cache.visibleCount), true);
+        if (cache.visibleCount >= cache.transactions.length) nextPage();
+      });
       if (cache.hasMore && !cache.loading) nextPage();
     }
 
