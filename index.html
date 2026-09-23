@@ -6053,13 +6053,10 @@
         if (!item || !item.rowNumber || !item.rowFingerprint) return;
         if (!window.confirm("Delete this " + item.category + " transaction of " +
           formatPeso(item.amount) + " from Cashflow Hub and Google Sheets?")) return;
-        var pin = window.prompt("Enter your delete PIN:");
-        if (!pin) return;
         jsonpRequest({
           action: "gcashDelete",
           rowNumber: item.rowNumber,
-          rowFingerprint: item.rowFingerprint,
-          pin: pin
+          rowFingerprint: item.rowFingerprint
         }, function() {
           box.className = "dashboard-message";
           box.innerText = "Transaction deleted. Updating dashboard...";
