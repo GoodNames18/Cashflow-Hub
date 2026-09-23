@@ -2524,6 +2524,7 @@
         appLoadingScreen.classList.add("is-hidden");
       }
 
+      enableGcashTransactionDeletion();
       initializeTestCashOutUI();
       setupKonek2CardAutocomplete();
       initializePageHeightSync();
@@ -3034,7 +3035,7 @@
 
     // Save dashboard responses by month so a reopened app can show them
     // immediately while checking Apps Script for newer values.
-    const DASHBOARD_CACHE_VERSION = "v1";
+    const DASHBOARD_CACHE_VERSION = "v2";
     const DASHBOARD_CACHE_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
     const cachedDashboardActions = [
       "gcashDashboard", "lifeLogDashboard", "rentalDashboard",
@@ -3049,7 +3050,7 @@
       if (["gcashTransactions", "printingTransactions", "twiceTransactions",
         "lifeLogTransactions", "moneyFlowTransactions", "testTransactions",
         "rentalTransactions"].indexOf(params.action) !== -1) {
-        return "cashflow-hub:history:v2:" + params.action + ":" +
+        return "cashflow-hub:history:v3:" + params.action + ":" +
           JSON.stringify([params.category || "", params.filter || "", params.type || "",
             params.year || "", params.month || "", params.issue || "",
             params.cursor || 0, params.limit || 10]);
@@ -3196,6 +3197,7 @@
         var saveAction = String(params.action || "");
         var invalidations = {
           gcashQuickAdd: "gcashTransactions", gcashTextAdd: "gcashTransactions",
+          gcashDelete: "gcashTransactions",
           printingAdd: "printingTransactions", twiceAdd: "twiceTransactions",
           lifeLogAdd: "lifeLogTransactions", rentalAdd: "rentalTransactions",
           expense: "moneyFlowTransactions", konekAdd: "testTransactions",
@@ -5565,10 +5567,11 @@
       var previousScrollTop = preserveScroll ? recentBox.scrollTop : 0;
       recentBox.className = showAll ? "gcash-filtered-transactions" : "";
 
+      recentBox._displayedTransactions = showAll
+        ? transactions
+        : transactions.slice(0, RECENT_TRANSACTION_LIMIT);
       recentBox.innerHTML =
-        (showAll
-          ? transactions
-          : transactions.slice(0, RECENT_TRANSACTION_LIMIT))
+        recentBox._displayedTransactions
           .map(function(item) {
 
             var metaParts = [];
@@ -6036,6 +6039,68 @@
 
     }
 
+
+    function enableGcashTransactionDeletion() {
+      var box = document.getElementById("gcashRecentTransactions");
+      var timer, startX, startY, longPressedAt = 0;
+      function selectedTransaction(target) {
+        var row = target.closest(".transaction-row");
+        if (!row || !box.contains(row)) return null;
+        var index = Array.prototype.indexOf.call(box.children, row);
+        return (box._displayedTransactions || [])[index] || null;
+      }
+      function deleteTransaction(item) {
+        if (!item || !item.rowNumber || !item.rowFingerprint) return;
+        if (!window.confirm("Delete this " + item.category + " transaction of " +
+          formatPeso(item.amount) + " from Cashflow Hub and Google Sheets?")) return;
+        var pin = window.prompt("Enter your delete PIN:");
+        if (!pin) return;
+        jsonpRequest({
+          action: "gcashDelete",
+          rowNumber: item.rowNumber,
+          rowFingerprint: item.rowFingerprint,
+          pin: pin
+        }, function() {
+          box.className = "dashboard-message";
+          box.innerText = "Transaction deleted. Updating dashboard...";
+          loadGcashDashboard(true);
+        }, function(error) {
+          window.alert(error.message || "Could not delete transaction.");
+        });
+      }
+      box.addEventListener("touchstart", function(event) {
+        var item = selectedTransaction(event.target);
+        if (!item || !item.rowNumber || event.touches.length !== 1) return;
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+        window.clearTimeout(timer);
+        timer = window.setTimeout(function() {
+          timer = null;
+          longPressedAt = Date.now();
+          deleteTransaction(item);
+        }, 650);
+      }, { passive: true });
+      box.addEventListener("touchmove", function(event) {
+        if (timer && event.touches.length &&
+            (Math.abs(event.touches[0].clientY - startY) > 12 ||
+             Math.abs(event.touches[0].clientX - startX) > 12)) {
+          window.clearTimeout(timer);
+          timer = null;
+        }
+      }, { passive: true });
+      ["touchend", "touchcancel"].forEach(function(type) {
+        box.addEventListener(type, function() { window.clearTimeout(timer); timer = null; });
+      });
+      box.addEventListener("contextmenu", function(event) {
+        var item = selectedTransaction(event.target);
+        if (!item || !item.rowNumber) return;
+        event.preventDefault();
+        window.clearTimeout(timer);
+        timer = null;
+        if (Date.now() - longPressedAt < 1500) return;
+        deleteTransaction(item);
+      });
+    }
 
     // ========================================================
     // GCASH BUSINESS QUICK ADD
