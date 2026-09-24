@@ -2573,6 +2573,8 @@
       // dashboards in the background with at most two active requests.
       preloadAllPageData();
 
+      startRestoreRevisionChecks();
+
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("/Cashflow-Hub/sw.js?v=14", {
@@ -6118,6 +6120,63 @@
 
     }
 
+
+    // Restores happen in Sheets, so check a small revision token for each tab.
+    var restoreRevisionCheckBusy = false;
+    function startRestoreRevisionChecks() {
+      checkRestoreRevisions();
+      window.setInterval(checkRestoreRevisions, 8000);
+      window.addEventListener("focus", checkRestoreRevisions);
+      document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) checkRestoreRevisions();
+      });
+    }
+
+    function checkRestoreRevisions() {
+      if (document.hidden || restoreRevisionCheckBusy) return;
+      restoreRevisionCheckBusy = true;
+      jsonpRequest({ action: "restoreRevisions" }, function(data) {
+        restoreRevisionCheckBusy = false;
+        var tabs = {
+          "Life Log": ["lifeLog", "lifeLogDashboard", "lifeLogTransactions"],
+          "TwiceAsNyce": ["twice", "twiceDashboard", "twiceTransactions"],
+          "Printing Business": ["printing", "printingDashboard", "printingTransactions"],
+          "Cash In/Out": ["gcash", "gcashDashboard", "gcashTransactions"],
+          "Money Flow": ["expenses", "dashboard", "moneyFlowTransactions"],
+          "Konek2Card": ["test", "testDashboard", "testTransactions"],
+          "Rental": ["rental", "rentalDashboard", "rentalTransactions"]
+        };
+        Object.keys(tabs).forEach(function(sheetName) {
+          var revision = String((data.revisions || {})[sheetName] || "");
+          if (!revision) return;
+          var key = "cashflow-hub:seen-restore:" + sheetName;
+          var previous = "";
+          try { previous = localStorage.getItem(key) || ""; } catch (error) {}
+          if (previous === revision) return;
+          var tab = tabs[sheetName], page = tab[0];
+          try {
+            Object.keys(localStorage).forEach(function(cacheKey) {
+              if ((cacheKey.indexOf("cashflow-hub:dashboard:") === 0 &&
+                   cacheKey.indexOf(":" + tab[1] + ":") !== -1) ||
+                  (cacheKey.indexOf("cashflow-hub:history:") === 0 &&
+                   cacheKey.indexOf(":" + tab[2] + ":") !== -1)) {
+                localStorage.removeItem(cacheKey);
+              }
+            });
+            localStorage.setItem(key, revision);
+          } catch (error) {}
+          if (page === "gcash") gcashTransactionHistoryCache = {};
+          else if (page === "printing" || page === "twice")
+            businessTransactionHistoryCache[page] = {};
+          else if (page === "lifeLog") lifeLogTransactionHistoryCache = {};
+          else if (page === "expenses") moneyFlowTransactionHistoryCache = {};
+          else if (page === "test") testTransactionHistoryCache = {};
+          else if (page === "rental") rentalTransactionHistoryCache = {};
+          if (pageDataState[page]) pageDataState[page].status = "idle";
+          if (currentAppPage === page) refreshDashboardTotalsAfterDelete(page);
+        });
+      }, function() { restoreRevisionCheckBusy = false; }, { skipCache: true });
+    }
 
     function refreshDashboardTotalsAfterDelete(page, attempt) {
       var actions = {
