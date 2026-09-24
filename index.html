@@ -3336,7 +3336,7 @@
           }
 
         },
-        15000
+        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testOthersLoan|testLoan|testAtmWithdraw|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
       );
 
     }
@@ -4157,11 +4157,22 @@
 
 
     function markTestDashboardLoaded_(dashboard) {
-      if (dashboard) renderTestDashboard(dashboard);
-      if (pageDataState.test) {
-        pageDataState.test.status = "loaded";
-        pageDataState.test.promise = null;
+      if (dashboard) {
+        renderTestDashboard(dashboard);
+        if (pageDataState.test) {
+          pageDataState.test.status = "loaded";
+          pageDataState.test.promise = null;
+        }
+        return;
       }
+      // The save response confirms the row before the full dashboard is rebuilt.
+      // Refresh in the background without delaying the saved confirmation.
+      loadTestDashboard(true).then(function(success) {
+        if (pageDataState.test) {
+          pageDataState.test.status = success ? "loaded" : "idle";
+          pageDataState.test.promise = null;
+        }
+      });
     }
 
 
