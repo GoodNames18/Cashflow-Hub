@@ -1248,6 +1248,7 @@
                 <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Grooming')">Grooming</button>
                 <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Home')">Home</button>
                 <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Device')">Device</button>
+                <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Car')">Car</button>
                 <button class="life-log-entry-button printing-entry-button" type="button" onclick="saveLifeLogEntry('Other')">Other</button>
               </div>
 
@@ -1269,6 +1270,7 @@
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('grooming')"><div class="metric-icon">&#x2702;&#xFE0F;</div><div class="metric-label">Grooming</div><div id="lifeLogGroomingCount" class="metric-value">&#x2014;</div></div>
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('home')"><div class="metric-icon">&#x1F3E0;</div><div class="metric-label">Home</div><div id="lifeLogHomeCount" class="metric-value">&#x2014;</div></div>
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('device')"><div class="metric-icon">&#x1F4F1;</div><div class="metric-label">Device</div><div id="lifeLogDeviceCount" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleLifeLogTransactionFilter('car')"><div class="metric-icon">&#x1F697;</div><div class="metric-label">Car</div><div id="lifeLogCarCount" class="metric-value">&#x2014;</div></div>
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('other')"><div class="metric-icon">&#x1F4DD;</div><div class="metric-label">Other</div><div id="lifeLogOtherCount" class="metric-value">&#x2014;</div></div>
           </div>
 
@@ -4674,6 +4676,7 @@
             document.getElementById("lifeLogGroomingCount").innerText = Number(counts.Grooming || 0).toLocaleString("en-PH");
             document.getElementById("lifeLogHomeCount").innerText = Number(counts.Home || 0).toLocaleString("en-PH");
             document.getElementById("lifeLogDeviceCount").innerText = Number(counts.Device || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogCarCount").innerText = Number(counts.Car || 0).toLocaleString("en-PH");
             document.getElementById("lifeLogOtherCount").innerText = Number(counts.Other || 0).toLocaleString("en-PH");
             document.getElementById("lifeLogCommonIssue").innerText = data.mostCommonHealthIssue || "No Health logs";
             document.getElementById("lifeLogCommonCount").innerText = data.mostCommonHealthCount ? Number(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
@@ -7479,7 +7482,7 @@ moneyFlowRecentTransactionsCache = transactions;
         return;
       }
       activeLifeLogTransactionFilter = filter;
-      var labels = {total:"All Life Logs",health:"Health Logs",grooming:"Grooming Logs",home:"Home Logs",device:"Device Logs",other:"Other Logs","common-health":"Most Common Health Issue","latest-health":"Latest Health Log"};
+      var labels = {total:"All Life Logs",health:"Health Logs",grooming:"Grooming Logs",home:"Home Logs",device:"Device Logs",car:"Car Logs",other:"Other Logs","common-health":"Most Common Health Issue","latest-health":"Latest Health Log"};
       document.getElementById("lifeLogTransactionsTitle").innerText = labels[filter];
       var issue = document.getElementById("lifeLogCommonIssue").innerText;
       loadDesign1FilteredHistory({ key:lifeLogSelectedYear+"-"+lifeLogSelectedMonth+"|"+filter+"|"+issue, cacheMap:lifeLogTransactionHistoryCache, boxId:"lifeLogRecentEntries", params:{action:"lifeLogTransactions",filter:filter,year:lifeLogSelectedYear,month:lifeLogSelectedMonth,issue:issue}, isActive:function(){return activeLifeLogTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("lifeLogRecentEntries",items,"No Life Logs for this month.",true,preserve);}, errorMessage:"Could not load Life Logs." });
