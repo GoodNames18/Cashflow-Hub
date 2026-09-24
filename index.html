@@ -3994,7 +3994,9 @@
     function buildTestAapPreviewText(calculation) {
       return calculation.people + " people \u00B7 Book total " + formatTestAapPesoClient(calculation.bookTotal) + "\n" +
         "Total fee " + formatTestAapPesoClient(calculation.totalFee) + "\n" +
-        "Cash received " + formatTestAapPesoClient(calculation.cashReceived);
+        "Total received " + formatTestAapPesoClient(calculation.cashReceived) + "\n" +
+        "Fee earned " + formatTestAapPesoClient(calculation.feeEarned) + "\n" +
+        "Card deduction " + formatTestAapPesoClient(calculation.appDeduction);
     }
     // TEST AAP PURE HELPERS END
 
