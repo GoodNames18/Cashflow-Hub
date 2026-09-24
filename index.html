@@ -4341,11 +4341,14 @@
             }),
             "success"
           );
-          markTestDashboardLoaded_(result.dashboard);
+          if (result.dashboard) markTestDashboardLoaded_(result.dashboard);
+          else loadTestDashboard(true);
         },
         function(error) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("\u274C " + error.message, "error");
+          setTestStatus(error.message === "Request timed out."
+            ? "Could not confirm the collection. Check Konek2Card before trying again."
+            : "\u274C " + error.message, "error");
         }
       );
     }
@@ -4472,9 +4475,9 @@
     }
 
 
-    function loadTestDashboard() {
+    function loadTestDashboard(forceFresh) {
       var monthLabel = document.getElementById("testMonthLabel");
-      if (monthLabel) monthLabel.innerText = "Loading...";
+      if (monthLabel && !forceFresh) monthLabel.innerText = "Loading...";
 
       return new Promise(function(resolve) {
         var period = dashboardMonthParams("konek");
@@ -4485,6 +4488,7 @@
             resolve(true);
           },
           function(error) {
+            if (forceFresh) { console.log(error); resolve(false); return; }
             if (monthLabel) monthLabel.innerText = "Could not load dashboard";
             var recentBox = document.getElementById("testRecentTransactions");
             if (recentBox) {
@@ -4494,7 +4498,8 @@
             console.log(error);
             syncActivePageHeight();
             resolve(false);
-          }
+          },
+          { skipCache: Boolean(forceFresh) }
         );
       });
     }
