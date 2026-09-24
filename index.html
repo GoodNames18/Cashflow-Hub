@@ -5259,17 +5259,19 @@
             button.classList.remove("selected");
           });
           setRentalEntryButtonsDisabled(false);
-          loadRentalDashboard();
+          loadRentalDashboard(true);
         },
         function(error) {
-          status.innerText = "\u274C " + error.message;
+          status.innerText = error.message === "Request timed out."
+            ? "Could not confirm save. Check Rental before trying again."
+            : "\u274C " + error.message;
           setRentalEntryButtonsDisabled(false);
         }
       );
     }
 
-    function loadRentalDashboard() {
-      document.getElementById("rentalMonthLabel").innerText = "Loading...";
+    function loadRentalDashboard(forceFresh) {
+      if (!forceFresh) document.getElementById("rentalMonthLabel").innerText = "Loading...";
       return new Promise(function(resolve) {
         var period = dashboardMonthParams("rental");
         jsonpRequest(
@@ -5279,12 +5281,14 @@
             resolve(true);
           },
           function(error) {
+            if (forceFresh) { console.log(error); resolve(false); return; }
             document.getElementById("rentalMonthLabel").innerText = "Could not load dashboard";
             document.getElementById("rentalRecentTransactions").innerText = "Could not load recent transactions.";
             console.log(error);
             syncActivePageHeight();
             resolve(false);
-          }
+          },
+          { skipCache: Boolean(forceFresh) }
         );
       });
     }
