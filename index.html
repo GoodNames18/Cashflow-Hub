@@ -4544,6 +4544,10 @@
         var element = document.getElementById(id);
         if (element) element.innerText = formatPeso(map[id]);
       });
+      var gcashBalance = document.getElementById("testGcash");
+      if (gcashBalance) {
+        gcashBalance.classList.toggle("expense-value", Number(data.gcash) < 0);
+      }
 
       testRecentTransactionsCache = data.recentTransactions || [];
       if (!activeTestTransactionFilter) {
