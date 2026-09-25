@@ -2049,6 +2049,15 @@
             <div id="testRecentTransactions" class="dashboard-message">Loading...</div>
           </div>
 
+          <div id="testLoanModal" class="test-modal" hidden>
+            <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testLoanTitle">
+              <div id="testLoanTitle" class="test-modal-title">LOAN PAYMENT AMOUNT</div>
+              <div class="test-modal-note">The loan rebate stays ₱50.</div>
+              <input id="testLoanAmountInput" class="quick-custom-input" type="number" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
+              <button id="testLoanSaveButton" class="test-modal-cancel" type="button">SAVE AMOUNT</button>
+              <button id="testLoanCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
+            </div>
+          </div>
           <div id="testAtmModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testAtmTitle">
               <div id="testAtmTitle" class="test-modal-title">ATM WITHDRAW</div>
@@ -4033,8 +4042,43 @@
         addButton.addEventListener("click", saveTestCashOut);
       }
       if (loanButton) {
-        loanButton.addEventListener("click", saveTestLoan);
+        var loanPressTimer, loanLongPressed = false;
+        loanButton.addEventListener("pointerdown", function(event) {
+          if (loanButton.disabled || event.button > 0) return;
+          loanLongPressed = false;
+          clearTimeout(loanPressTimer);
+          loanPressTimer = setTimeout(function() {
+            loanLongPressed = true;
+            openTestLoanModal();
+          }, 650);
+        });
+        ["pointerup", "pointercancel", "pointerleave"].forEach(function(type) {
+          loanButton.addEventListener(type, function() { clearTimeout(loanPressTimer); });
+        });
+        loanButton.addEventListener("contextmenu", function(event) {
+          event.preventDefault();
+          clearTimeout(loanPressTimer);
+          loanLongPressed = true;
+          openTestLoanModal();
+        });
+        loanButton.addEventListener("click", function(event) {
+          if (loanLongPressed) {
+            event.preventDefault();
+            loanLongPressed = false;
+          } else {
+            saveTestLoan();
+          }
+        });
+        loanButton.setAttribute("aria-label", "Loan. Long press to edit payment amount.");
       }
+      var loanSaveButton = document.getElementById("testLoanSaveButton");
+      var loanCancelButton = document.getElementById("testLoanCancelButton");
+      if (loanSaveButton) loanSaveButton.addEventListener("click", saveTestLoanAmount);
+      if (loanCancelButton) loanCancelButton.addEventListener("click", closeTestLoanModal);
+      var loanAmountInput = document.getElementById("testLoanAmountInput");
+      if (loanAmountInput) loanAmountInput.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") saveTestLoanAmount();
+      });
       if (atmButton) {
         atmButton.addEventListener("click", openTestAtmModal);
       }
@@ -4438,15 +4482,54 @@
     }
 
 
+    function getTestLoanAmount() {
+      try {
+        var saved = Number(localStorage.getItem("cashflow-test-loan-payment"));
+        if (Number.isFinite(saved) && saved > 50) return saved;
+      } catch (error) {}
+      return 415;
+    }
+
+    function openTestLoanModal() {
+      var modal = document.getElementById("testLoanModal");
+      var input = document.getElementById("testLoanAmountInput");
+      if (input) input.value = String(getTestLoanAmount());
+      if (modal) modal.hidden = false;
+    }
+
+    function closeTestLoanModal() {
+      var modal = document.getElementById("testLoanModal");
+      if (modal) modal.hidden = true;
+    }
+
+    function saveTestLoanAmount() {
+      var input = document.getElementById("testLoanAmountInput");
+      var amount = Number(input && input.value);
+      if (!Number.isFinite(amount) || amount <= 50 || Math.round(amount * 100) !== amount * 100) {
+        setTestStatus("Enter a payment over ₱50 with at most two decimal places.", "error");
+        if (input) input.focus();
+        return;
+      }
+      try {
+        localStorage.setItem("cashflow-test-loan-payment", String(amount));
+      } catch (error) {
+        setTestStatus("Could not save the amount on this device.", "error");
+        return;
+      }
+      closeTestLoanModal();
+      setTestStatus("Loan payment set to ₱" + amount.toLocaleString("en-PH", {minimumFractionDigits: 2}) + ". Tap Loan to record.", "success");
+    }
+
     function saveTestLoan() {
+      var amount = getTestLoanAmount();
       setTestStatus("Recording loan...", "preview");
       setTestActionButtonsDisabled(true);
 
       jsonpRequest(
-        { action: "testLoan" },
+        { action: "testLoan", amount: amount },
         function(result) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("\u2713 Loan recorded \u2014 \u20B1415 payment + \u20B150 rebate", "success");
+          setTestStatus("Loan recorded — ₱" + amount.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " payment + ₱50 rebate", "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
