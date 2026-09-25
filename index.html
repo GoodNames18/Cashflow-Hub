@@ -4542,7 +4542,9 @@
         { action: "testLoan", amount: loanValues.payment, rebate: loanValues.rebate },
         function(result) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("Loan recorded — ₱" + loanValues.payment.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " payment + ₱" + loanValues.rebate.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " rebate", "success");
+          setTestStatus(result.duplicate
+            ? "This loan payment and rebate were already recorded. No second entry was added."
+            : "Loan recorded — ₱" + loanValues.payment.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " payment + ₱" + loanValues.rebate.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " rebate", "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
