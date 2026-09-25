@@ -2052,8 +2052,11 @@
           <div id="testLoanModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testLoanTitle">
               <div id="testLoanTitle" class="test-modal-title">LOAN PAYMENT AMOUNT</div>
-              <div class="test-modal-note">The loan rebate stays ₱50.</div>
+              <div class="test-modal-note">Edit both amounts. Payment must be greater than rebate.</div>
+              <label for="testLoanAmountInput">Payment</label>
               <input id="testLoanAmountInput" class="quick-custom-input" type="number" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
+              <label for="testLoanRebateInput">Rebate</label>
+              <input id="testLoanRebateInput" class="quick-custom-input" type="number" inputmode="decimal" min="0.01" step="0.01" aria-label="Loan rebate amount">
               <button id="testLoanSaveButton" class="test-modal-cancel" type="button">SAVE AMOUNT</button>
               <button id="testLoanCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -4076,6 +4079,10 @@
       if (loanSaveButton) loanSaveButton.addEventListener("click", saveTestLoanAmount);
       if (loanCancelButton) loanCancelButton.addEventListener("click", closeTestLoanModal);
       var loanAmountInput = document.getElementById("testLoanAmountInput");
+      var loanRebateInput = document.getElementById("testLoanRebateInput");
+      if (loanRebateInput) loanRebateInput.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") saveTestLoanAmount();
+      });
       if (loanAmountInput) loanAmountInput.addEventListener("keydown", function(event) {
         if (event.key === "Enter") saveTestLoanAmount();
       });
@@ -4482,18 +4489,22 @@
     }
 
 
-    function getTestLoanAmount() {
+    function getTestLoanValues() {
       try {
-        var saved = Number(localStorage.getItem("cashflow-test-loan-payment"));
-        if (Number.isFinite(saved) && saved > 50) return saved;
+        var saved = JSON.parse(localStorage.getItem("cashflow-test-loan-values"));
+        if (saved && Number.isFinite(saved.payment) && Number.isFinite(saved.rebate) &&
+            saved.rebate > 0 && saved.payment > saved.rebate) return saved;
       } catch (error) {}
-      return 415;
+      return { payment: 415, rebate: 50 };
     }
 
     function openTestLoanModal() {
+      var values = getTestLoanValues();
       var modal = document.getElementById("testLoanModal");
-      var input = document.getElementById("testLoanAmountInput");
-      if (input) input.value = String(getTestLoanAmount());
+      var paymentInput = document.getElementById("testLoanAmountInput");
+      var rebateInput = document.getElementById("testLoanRebateInput");
+      if (paymentInput) paymentInput.value = String(values.payment);
+      if (rebateInput) rebateInput.value = String(values.rebate);
       if (modal) modal.hidden = false;
     }
 
@@ -4503,33 +4514,35 @@
     }
 
     function saveTestLoanAmount() {
-      var input = document.getElementById("testLoanAmountInput");
-      var amount = Number(input && input.value);
-      if (!Number.isFinite(amount) || amount <= 50 || Math.round(amount * 100) !== amount * 100) {
-        setTestStatus("Enter a payment over ₱50 with at most two decimal places.", "error");
-        if (input) input.focus();
+      var paymentInput = document.getElementById("testLoanAmountInput");
+      var rebateInput = document.getElementById("testLoanRebateInput");
+      var payment = Number(paymentInput && paymentInput.value);
+      var rebate = Number(rebateInput && rebateInput.value);
+      if (!Number.isFinite(payment) || !Number.isFinite(rebate) || rebate <= 0 || payment <= rebate ||
+          Math.round(payment * 100) !== payment * 100 || Math.round(rebate * 100) !== rebate * 100) {
+        setTestStatus("Payment must exceed rebate; enter valid amounts with at most two decimals.", "error");
         return;
       }
       try {
-        localStorage.setItem("cashflow-test-loan-payment", String(amount));
+        localStorage.setItem("cashflow-test-loan-values", JSON.stringify({payment: payment, rebate: rebate}));
       } catch (error) {
-        setTestStatus("Could not save the amount on this device.", "error");
+        setTestStatus("Could not save the amounts on this device.", "error");
         return;
       }
       closeTestLoanModal();
-      setTestStatus("Loan payment set to ₱" + amount.toLocaleString("en-PH", {minimumFractionDigits: 2}) + ". Tap Loan to record.", "success");
+      setTestStatus("Loan set: ₱" + payment + " payment, ₱" + rebate + " rebate. Tap Loan to record.", "success");
     }
 
     function saveTestLoan() {
-      var amount = getTestLoanAmount();
+      var loanValues = getTestLoanValues();
       setTestStatus("Recording loan...", "preview");
       setTestActionButtonsDisabled(true);
 
       jsonpRequest(
-        { action: "testLoan", amount: amount },
+        { action: "testLoan", amount: loanValues.payment, rebate: loanValues.rebate },
         function(result) {
           setTestActionButtonsDisabled(false);
-          setTestStatus("Loan recorded — ₱" + amount.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " payment + ₱50 rebate", "success");
+          setTestStatus("Loan recorded — ₱" + loanValues.payment.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " payment + ₱" + loanValues.rebate.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " rebate", "success");
           markTestDashboardLoaded_(result.dashboard);
         },
         function(error) {
