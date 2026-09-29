@@ -2042,6 +2042,11 @@
               <div class="metric-label">Others Loan</div>
               <div id="testOthersLoan" class="metric-value expense-value">&#x2014;</div>
             </div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('held-money')">
+              <div class="metric-icon">&#x1F512;</div>
+              <div class="metric-label">Held Money</div>
+              <div id="testHeldMoney" class="metric-value">&#x2014;</div>
+            </div>
           </div>
 
           <div class="recent-card">
@@ -2104,6 +2109,8 @@
                 <button type="button" data-transfer-direction="cashToNanay">CASH &#x2192; NANAY</button>
                 <button type="button" data-others-loan-action="add">ADD LOAN</button>
                 <button type="button" data-others-loan-action="minus">MINUS LOAN</button>
+                <button type="button" data-hold-action="hold">HOLD MONEY</button>
+                <button type="button" data-hold-action="release">RELEASE HOLD</button>
               </div>
               <button id="testTransferCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -3279,7 +3286,8 @@
           expense: "moneyFlowTransactions", konekAdd: "testTransactions",
           testAapCollection: "testTransactions", testAtmWithdraw: "testTransactions",
           testCashOut: "testTransactions", testLoan: "testTransactions",
-          testOthersLoan: "testTransactions", testTransfer: "testTransactions"
+          testOthersLoan: "testTransactions", testTransfer: "testTransactions",
+          testHoldMoney: "testTransactions"
         };
         if (invalidations[saveAction] || saveAction === "transactionDelete") {
           try {
@@ -4144,6 +4152,15 @@
             saveTestOthersLoan(action);
           });
         });
+
+      document.querySelectorAll("#testTransferModal [data-hold-action]")
+        .forEach(function(button) {
+          button.addEventListener("click", function() {
+            var action = button.getAttribute("data-hold-action");
+            closeTestTransferModal();
+            saveTestHoldMoney(action);
+          });
+        });
     }
 
 
@@ -4200,7 +4217,7 @@
           button.disabled = disabled;
         });
 
-      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction], #testTransferModal [data-others-loan-action]")
+      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction], #testTransferModal [data-others-loan-action], #testTransferModal [data-hold-action]")
         .forEach(function(button) {
           button.disabled = disabled;
         });
@@ -4449,6 +4466,28 @@
       );
     }
 
+    function saveTestHoldMoney(action) {
+      var input = document.getElementById("testTransactionInput");
+      var raw = input ? input.value.trim().replace(/[₱,\s,]/g, "") : "";
+      var amount = Number(raw);
+      if (!raw || !Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
+        setTestStatus("❌ Enter a positive amount with at most two decimal places.", "error");
+        if (input) input.focus();
+        return;
+      }
+      setTestStatus(action === "hold" ? "Holding money..." : "Releasing hold...", "preview");
+      setTestActionButtonsDisabled(true);
+      jsonpRequest({ action: "testHoldMoney", amount: amount, holdAction: action }, function(result) {
+        setTestActionButtonsDisabled(false);
+        if (input) input.value = "";
+        setTestStatus("✓ " + result.description + " — " + formatPeso(result.amount), "success");
+        markTestDashboardLoaded_(result.dashboard);
+      }, function(error) {
+        setTestActionButtonsDisabled(false);
+        setTestStatus("❌ " + error.message, "error");
+      });
+    }
+
     function saveTestOthersLoan(action) {
       var input = document.getElementById("testTransactionInput");
       var text = input ? input.value.trim() : "";
@@ -4635,7 +4674,8 @@
         testThisWeekEarned: data.thisWeekEarned,
         testLoanRemaining: data.loanRemaining,
         testUtangKayNanay: data.utangKayNanay,
-        testOthersLoan: data.othersLoan
+        testOthersLoan: data.othersLoan,
+        testHeldMoney: data.heldMoney
       };
 
       Object.keys(map).forEach(function(id) {
@@ -6363,7 +6403,8 @@
             testThisWeekEarned: data.thisWeekEarned,
             testLoanRemaining: data.loanRemaining,
             testUtangKayNanay: data.utangKayNanay,
-            testOthersLoan: data.othersLoan
+            testOthersLoan: data.othersLoan,
+        testHeldMoney: data.heldMoney
           };
           Object.keys(values).forEach(function(id) { money(id, values[id]); });
         } else if (page === "rental") {
@@ -7615,7 +7656,7 @@ moneyFlowRecentTransactionsCache = transactions;
         return;
       }
       activeTestTransactionFilter = filter;
-      var titles = {"total-money":"Total Money Transactions","loan-remaining":"Loan Remaining Transactions","total-earned":"Total Earned Transactions","this-week-earned":"This Week Earned Transactions",card:"Money on Card Transactions",cash:"Money on Hand Transactions",gcash:"Money on GCash Transactions",nanay:"Utang kay Nanay Transactions","others-loan":"Others Loan Transactions"};
+      var titles = {"total-money":"Total Money Transactions","loan-remaining":"Loan Remaining Transactions","total-earned":"Total Earned Transactions","this-week-earned":"This Week Earned Transactions",card:"Money on Card Transactions",cash:"Money on Hand Transactions",gcash:"Money on GCash Transactions",nanay:"Utang kay Nanay Transactions","others-loan":"Others Loan Transactions","held-money":"Held Money Transactions"};
       document.getElementById("testTransactionsTitle").innerText = titles[filter];
       loadDesign1FilteredHistory({ key:filter, cacheMap:testTransactionHistoryCache, boxId:"testRecentTransactions", params:{action:"testTransactions",filter:filter}, isActive:function(){return activeTestTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("testRecentTransactions",items,"No matching transactions.",false,preserve);}, errorMessage:"Could not load Konek2Card transactions." });
     }
