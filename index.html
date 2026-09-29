@@ -2032,20 +2032,20 @@
               <div class="metric-label">Money on GCash</div>
               <div id="testGcash" class="metric-value">&#x2014;</div>
             </div>
+            <div class="metric-card" onclick="toggleTestTransactionFilter('held-money')">
+              <div class="metric-icon">&#x1F512;</div>
+              <div class="metric-label">Money on Hold</div>
+              <div id="testHeldMoney" class="metric-value">&#x2014;</div>
+            </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('nanay')">
               <div class="metric-icon">&#x1F469;</div>
-              <div class="metric-label">Utang kay Nanay</div>
+              <div class="metric-label">Nanay</div>
               <div id="testUtangKayNanay" class="metric-value expense-value">&#x2014;</div>
             </div>
             <div class="metric-card" onclick="toggleTestTransactionFilter('others-loan')">
               <div class="metric-icon">&#x1F3DB;&#xFE0F;</div>
               <div class="metric-label">Others Loan</div>
               <div id="testOthersLoan" class="metric-value expense-value">&#x2014;</div>
-            </div>
-            <div class="metric-card" onclick="toggleTestTransactionFilter('held-money')">
-              <div class="metric-icon">&#x1F512;</div>
-              <div class="metric-label">Held Money</div>
-              <div id="testHeldMoney" class="metric-value">&#x2014;</div>
             </div>
           </div>
 
@@ -7656,7 +7656,7 @@ moneyFlowRecentTransactionsCache = transactions;
         return;
       }
       activeTestTransactionFilter = filter;
-      var titles = {"total-money":"Total Money Transactions","loan-remaining":"Loan Remaining Transactions","total-earned":"Total Earned Transactions","this-week-earned":"This Week Earned Transactions",card:"Money on Card Transactions",cash:"Money on Hand Transactions",gcash:"Money on GCash Transactions",nanay:"Utang kay Nanay Transactions","others-loan":"Others Loan Transactions","held-money":"Held Money Transactions"};
+      var titles = {"total-money":"Total Money Transactions","loan-remaining":"Loan Remaining Transactions","total-earned":"Total Earned Transactions","this-week-earned":"This Week Earned Transactions",card:"Money on Card Transactions",cash:"Money on Hand Transactions",gcash:"Money on GCash Transactions",nanay:"Nanay Transactions","others-loan":"Others Loan Transactions","held-money":"Money on Hold Transactions"};
       document.getElementById("testTransactionsTitle").innerText = titles[filter];
       loadDesign1FilteredHistory({ key:filter, cacheMap:testTransactionHistoryCache, boxId:"testRecentTransactions", params:{action:"testTransactions",filter:filter}, isActive:function(){return activeTestTransactionFilter===filter;}, render:function(items,preserve){renderDesign1TransactionRows("testRecentTransactions",items,"No matching transactions.",false,preserve);}, errorMessage:"Could not load Konek2Card transactions." });
     }
