@@ -2099,7 +2099,7 @@
           <div id="testTransferModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testTransferTitle">
               <div id="testTransferTitle" class="test-modal-title">TRANSFER</div>
-              <div class="test-modal-note">Uses the amount entered in the shared textbox.</div>
+              <div class="test-modal-note">Uses the shared textbox. For Monthly Interest enter interest and tax, e.g. 100 23.</div>
               <div class="test-choice-grid">
                 <button type="button" data-transfer-direction="cashToGcash">CASH &#x2192; GCASH</button>
                 <button type="button" data-transfer-direction="gcashToCard">GCASH &#x2192; CARD</button>
@@ -2111,6 +2111,7 @@
                 <button type="button" data-others-loan-action="minus">MINUS LOAN</button>
                 <button type="button" data-hold-action="hold">HOLD MONEY</button>
                 <button type="button" data-hold-action="release">RELEASE HOLD</button>
+                <button type="button" data-monthly-interest>MONTHLY INTEREST</button>
               </div>
               <button id="testTransferCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -3287,7 +3288,7 @@
           testAapCollection: "testTransactions", testAtmWithdraw: "testTransactions",
           testCashOut: "testTransactions", testLoan: "testTransactions",
           testOthersLoan: "testTransactions", testTransfer: "testTransactions",
-          testHoldMoney: "testTransactions"
+          testHoldMoney: "testTransactions", testMonthlyInterest: "testTransactions"
         };
         if (invalidations[saveAction] || saveAction === "transactionDelete") {
           try {
@@ -3356,7 +3357,7 @@
           }
 
         },
-        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testOthersLoan|testLoan|testAtmWithdraw|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
+        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testMonthlyInterest|testOthersLoan|testLoan|testAtmWithdraw|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
       );
 
     }
@@ -4161,6 +4162,12 @@
             saveTestHoldMoney(action);
           });
         });
+
+      document.querySelector("#testTransferModal [data-monthly-interest]")
+        .addEventListener("click", function() {
+          closeTestTransferModal();
+          saveTestMonthlyInterest();
+        });
     }
 
 
@@ -4217,7 +4224,7 @@
           button.disabled = disabled;
         });
 
-      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction], #testTransferModal [data-others-loan-action], #testTransferModal [data-hold-action]")
+      document.querySelectorAll("#testCollectionModal [data-collection-destination], #testTransferModal [data-transfer-direction], #testTransferModal [data-others-loan-action], #testTransferModal [data-hold-action], #testTransferModal [data-monthly-interest]")
         .forEach(function(button) {
           button.disabled = disabled;
         });
@@ -4464,6 +4471,36 @@
           setTestStatus("\u274C " + error.message, "error");
         }
       );
+    }
+
+    function saveTestMonthlyInterest() {
+      var input = document.getElementById("testTransactionInput");
+      var raw = input ? input.value.trim() : "";
+      var parts = raw.split(/\s+/);
+      if (parts.length !== 2 || !parts.every(function(part) { return /^₱?[0-9][0-9,]*(?:\.[0-9]{1,2})?$/.test(part); })) {
+        setTestStatus("❌ Enter interest and tax, for example 100 23.", "error");
+        if (input) input.focus();
+        return;
+      }
+      var values = parts.map(function(part) { return Number(part.replace(/[₱,]/g, "")); });
+      if (!values.every(Number.isFinite) || values[0] === values[1]) {
+        setTestStatus("❌ Enter two different valid amounts; the higher is interest.", "error");
+        if (input) input.focus();
+        return;
+      }
+      var gross = Math.max.apply(null, values);
+      var tax = Math.min.apply(null, values);
+      setTestStatus("Saving monthly interest: " + formatPeso(gross) + " less " + formatPeso(tax) + " tax...", "preview");
+      setTestActionButtonsDisabled(true);
+      jsonpRequest({ action: "testMonthlyInterest", text: raw }, function(result) {
+        setTestActionButtonsDisabled(false);
+        if (input) input.value = "";
+        setTestStatus("✓ Monthly interest earned " + formatPeso(result.amount) + " after tax.", "success");
+        markTestDashboardLoaded_(result.dashboard);
+      }, function(error) {
+        setTestActionButtonsDisabled(false);
+        setTestStatus("❌ " + error.message, "error");
+      });
     }
 
     function saveTestHoldMoney(action) {
