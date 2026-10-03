@@ -141,6 +141,27 @@ revoke all on function public.cfh_set_deleted(uuid,bigint,boolean) from public, 
 grant execute on function public.cfh_save_record(uuid,text,timestamptz,numeric,text,text,jsonb,jsonb),
   public.cfh_set_deleted(uuid,bigint,boolean) to authenticated;
 
+-- Loan payment + rebate must commit together. Retrying the bundle is idempotent.
+create or replace function public.cfh_save_bundle(p_records jsonb)
+returns setof public.cfh_records language plpgsql security invoker set search_path = '' as $$
+declare item jsonb; saved public.cfh_records;
+begin
+  if jsonb_typeof(p_records) <> 'array' or jsonb_array_length(p_records) not between 1 and 20 then
+    raise exception 'Expected 1 to 20 transactions' using errcode = '22023';
+  end if;
+  for item in select value from jsonb_array_elements(p_records) loop
+    saved := public.cfh_save_record(
+      (item->>'p_request_id')::uuid, item->>'p_tab_key',
+      (item->>'p_occurred_at')::timestamptz, (item->>'p_amount')::numeric,
+      item->>'p_category', item->>'p_description',
+      item->'p_payload', item->'p_source_values'
+    );
+    return next saved;
+  end loop;
+end $$;
+revoke all on function public.cfh_save_bundle(jsonb) from public, anon;
+grant execute on function public.cfh_save_bundle(jsonb) to authenticated;
+
 alter table public.cfh_sync_outbox add column if not exists lease_token uuid;
 -- Worker-only queue leases; a crashed worker's jobs can be reclaimed.
 create or replace function public.cfh_claim_sync(p_limit integer default 25)
