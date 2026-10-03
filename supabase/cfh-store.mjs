@@ -89,6 +89,18 @@ export class CashflowStore {
     this.pending.set(key, promise);
     return promise;
   }
+  saveBundle(prepared) {
+    const key = prepared.map(record=>record.p_request_id).join(':');
+    if (this.pending.has(key)) return this.pending.get(key);
+    const promise = (async () => {
+      const { data, error } = await this.client.rpc('cfh_save_bundle', {p_records:prepared});
+      if (error) throw error;
+      for (const record of data) this.emit(record);
+      return data;
+    })().finally(()=>this.pending.delete(key));
+    this.pending.set(key,promise);
+    return promise;
+  }
   async setDeleted(record, deleted) {
     const { data, error } = await this.client.rpc('cfh_set_deleted', {
       p_id: record.id, p_expected_revision: record.revision, p_deleted: deleted
