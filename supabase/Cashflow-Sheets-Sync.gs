@@ -11,8 +11,10 @@ var CFH_SYNC_TABS_ = {
 function cfhBackend_(path,method,body) {
   var key=PropertiesService.getScriptProperties().getProperty('CFH_SUPABASE_SECRET');
   if(!key)throw new Error('Set CFH_SUPABASE_SECRET in Script Properties.');
+  var headers={apikey:key};
+  if(key.indexOf('eyJ')===0)headers.Authorization='Bearer '+key;
   var result=UrlFetchApp.fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/rest/v1/'+path,{
-    method:method||'get',headers:{apikey:key,Authorization:'Bearer '+key},
+    method:method||'get',headers:headers,
     contentType:'application/json',payload:body===undefined?undefined:JSON.stringify(body),muteHttpExceptions:true
   });
   if(result.getResponseCode()>=300)throw new Error('Supabase sync failed ('+result.getResponseCode()+'): '+result.getContentText().slice(0,500));
