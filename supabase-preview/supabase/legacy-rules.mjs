@@ -1,5 +1,5 @@
-import { ManilaDate as Date } from './manila-date.mjs?v=financial5';
-import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=financial5';
+import { ManilaDate as Date } from './manila-date.mjs?v=financial6';
+import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=financial6';
 // Business rules extracted from the current user-supplied Code.gs.
 function parseExpense(text) {
 
@@ -2768,8 +2768,8 @@ function getGcashBusinessDashboardData(selectedYear, selectedMonth) {
         // ===================================================
 
         if (
-          recentTransactions.length <
-          APP_RECENT_TRANSACTION_LIMIT
+          transactionDate >= monthStart && transactionDate < nextMonthStart &&
+          recentTransactions.length < APP_RECENT_TRANSACTION_LIMIT
         ) {
 
           var dateText =
