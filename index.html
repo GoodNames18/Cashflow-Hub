@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="theme-color" content="#00F8B9">
 
-  <title>Cashflow Hub</title>
+  <title>Cashflow Hub — Supabase Save Test</title>
   <meta name="application-name" content="Cashflow Hub">
   <meta name="apple-mobile-web-app-title" content="Cashflow Hub">
 <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
 
 
-  <link rel="manifest" href="/Cashflow-Hub/manifest.json?v=14">
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-  <link rel="apple-touch-icon" href="./icon-192.png">
+  
+  <link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
+  <link rel="apple-touch-icon" href="../icon-192.png">
 
   <style>
     * {
@@ -1116,10 +1116,10 @@
 </style>
 </head>
 
-<body>
+<body><div style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:9998;background:#19183f;color:white;padding:8px 16px;border-radius:12px;font:14px sans-serif;pointer-events:none">Supabase test v4 · Konek buttons enabled</div>
 
   <div id="appLoadingScreen" class="app-loading-screen" aria-label="Loading Cashflow Hub">
-    <img class="app-loading-logo" src="./cashflow-hub-logo.png" alt="Cashflow Hub">
+    <img class="app-loading-logo" src="../cashflow-hub-logo.png" alt="Cashflow Hub">
   </div>
 
   <main class="app-shell">
@@ -1687,7 +1687,7 @@
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('gcash')">
               <div class="metric-icon">
-                <img src="./gcash-logo.png" class="brand-logo-metric" alt="GCash">
+                <img src="../gcash-logo.png" class="brand-logo-metric" alt="GCash">
               </div>
               <div class="metric-label">GCash</div>
               <div
@@ -1701,7 +1701,7 @@
 
             <div class="metric-card gcash-card" role="button" tabindex="0" onclick="toggleGcashTransactionFilter('maya')">
               <div class="metric-icon">
-                <img src="./maya-logo.png" class="brand-logo-metric" alt="Maya">
+                <img src="../maya-logo.png" class="brand-logo-metric" alt="Maya">
               </div>
               <div class="metric-label">Maya</div>
               <div
@@ -2200,6 +2200,13 @@
   </div>
 
   <script>
+    if (true) {
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=live1");
+      window.cashflowDatabaseReady.catch(function() {});
+    }
+  </script>
+
+  <script>
     document.title = "Cashflow Hub";
 
     const APPS_SCRIPT_URL =
@@ -2597,7 +2604,7 @@
 
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
-          .register("/Cashflow-Hub/sw.js?v=14", {
+          .register("/Cashflow-Hub/sw.js?v=supabase-live1", {
             scope: "/Cashflow-Hub/",
             updateViaCache: "none"
           })
@@ -3159,6 +3166,15 @@
       onFailure,
       options
     ) {
+
+      if (true) {
+        Promise.resolve(window.cashflowDatabaseReady).then(function() {
+          if (!window.cashflowDatabase) throw new Error("Supabase could not load. Check your connection and reload.");
+          return window.cashflowDatabase.request(params, options);
+        }).then(function(result) { if (onSuccess) onSuccess(result); },
+          function(error) { if (onFailure) onFailure(error); });
+        return;
+      }
 
       const cacheKey = dashboardCacheKey(params);
       const cachedData = options && options.skipCache
@@ -5992,11 +6008,14 @@
       if (cache.loading || !cache.hasMore) return Promise.resolve(true);
 
       cache.loading = true;
+      var period = dashboardMonthParams("gcash");
 
       return new Promise(function(resolve) {
         jsonpRequest(
           {
             action: "gcashTransactions",
+            year: period.year,
+            month: period.month,
             category: category,
             cursor: cache.nextCursor,
             limit: GCASH_TRANSACTION_PAGE_SIZE
@@ -6067,6 +6086,8 @@
 
             function(data) {
 
+              var currentPeriod = dashboardMonthParams("gcash");
+              if (currentPeriod.year !== period.year || currentPeriod.month !== period.month) { resolve(false); return; }
               renderGcashDashboard(data);
               resolve(true);
             },
@@ -7798,5 +7819,17 @@ moneyFlowRecentTransactionsCache = transactions;
 
   </script>
 
+<script>
+window.cfhRefreshTestTab = function(page) {
+  gcashTransactionHistoryCache = {};
+  businessTransactionHistoryCache = {printing:{},twice:{}};
+  moneyFlowTransactionHistoryCache = {};
+  testTransactionHistoryCache = {};
+  rentalTransactionHistoryCache = {};
+  lifeLogTransactionHistoryCache = {};
+  refreshDashboardTotalsAfterDelete(page);
+};
+</script>
 </body>
 </html>
+
