@@ -98,3 +98,12 @@ test('matching database values acknowledge newer note without another write',()=
  c.cfhApplyExistingSheetEdit_('cash_in_out',{getNote:()=>note,setNote:n=>note=n},{revision:3},['same'],{id:'id',revision:4,source_values:['same']},2,2);
  assert.equal(c.cfhMarker_(note).revision,4);
 });
+test('date repair uses a single batched snapshot rather than fetching every row',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;let scans=0,repairs=0;
+ c.cfhWorkbook_=()=>({getSheetByName:()=>({getRange:()=>({})})});
+ c.LockService={getScriptLock:()=>({waitLock(){},releaseLock(){}})};c.console={log(){}};
+ const rows=Array.from({length:7700},(_,i)=>({row:i+5,marker:{id:String(i)},values:['2026-10-04','11:52',10,'Gcash','Income']}));
+ c.cfhRows_=()=>rows;c.cfhAllRecords_=()=>{scans++;return rows.map((r,i)=>({id:r.marker.id,tab_key:'cash_in_out',source_values:[i===0?'2026-09-30':'2026-10-04',...r.values.slice(1)]}));};
+ c.cfhBackend_=()=>{throw Error('unexpected per-row fetch');};c.cfhApplyExistingSheetEdit_=()=>repairs++;
+ c.cfhRepairCashDate();assert.equal(scans,1);assert.equal(repairs,1);
+});
