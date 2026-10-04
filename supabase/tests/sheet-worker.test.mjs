@@ -118,3 +118,9 @@ test('independent pending amount and date edits sync while remote time is preser
  c.cfhApplyExistingSheetEdit_('cash_in_out',cell,{id:'id',revision:5,hash:JSON.stringify(['2026-10-04','11:52',10,'Gcash','Income'])},values,old,4,4);
  assert.deepEqual(Array.from(sent),['2026-10-03','11:02',101,'Gcash','Income']);assert.deepEqual(Array.from(written),Array.from(sent));assert.equal(c.cfhMarker_(note).revision,7);
 });
+test('sheet deletion only considers tracked missing IDs, preserving moved and untagged rows',()=>{
+ const c=context();
+ const entries=[['present','cash_in_out',1,'a'],['removed-note','cash_in_out',2,'b'],['deleted','cash_in_out',3,'c']];
+ const result=c.cfhDeletionCandidates_(entries,{present:true},{'cash_in_out|b':true});
+ assert.deepEqual(Array.from(result,e=>e[0]),['deleted']);
+});
