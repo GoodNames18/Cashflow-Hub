@@ -2833,7 +2833,7 @@ function getGcashBusinessDashboardData(selectedYear, selectedMonth) {
             category: displayCategory,
             description: description,
             isExpense: isExpense,
-            rowNumber: startRow + i,
+            rowNumber: row.sourceRowNumber,
             rowFingerprint: cashflowRowFingerprint_(row)
           });
         }
@@ -3097,7 +3097,7 @@ function getGcashBusinessTransactions(category, cursor, limit) {
     );
 
     page.transactions.forEach(function(item) {
-      item.rowNumber = 5 + nextCursor + item.sourceOffset;
+      item.rowNumber = rows[item.sourceOffset].sourceRowNumber;
       item.rowFingerprint = cashflowRowFingerprint_(
         rows[item.sourceOffset]
       );
