@@ -7,11 +7,21 @@ export class CashflowSnapshot {
     this.cache = cache;
     this.records = new Map();
     this.loading = new Map();
+    this.listeners = new Set();
+    this.mutations = new Map();
     store.onChange(record => {
+      let changes = this.mutations.get(record.tab_key);
+      if (!changes) this.mutations.set(record.tab_key, changes = new Map());
+      changes.set(record.id, record);
       const tab = this.records.get(record.tab_key);
       if (tab) { tab.set(record.id, record); this.persist(record.tab_key); }
+      this.emit(record.tab_key);
     });
   }
+  onChange(listener) { this.listeners.add(listener); return () => this.listeners.delete(listener); }
+  emit(tab) { for (const listener of this.listeners) {
+    try { listener(tab); } catch (error) { console.warn("Cashflow display update failed",error); }
+  } }
   async persist(tab) {
     try { await this.cache?.put(tab, Array.from(this.records.get(tab)?.values() || [])); }
     catch (error) { console.warn('Cashflow history cache could not be saved', error); }
@@ -50,12 +60,13 @@ export class CashflowSnapshot {
         cursor = data.at(-1).id;
       }
       // Preserve mutations acknowledged while the background scan was running.
-      for (const record of this.records.get(tab)?.values() || []) {
+      for (const record of this.mutations.get(tab)?.values() || []) {
         const fetched = records.get(record.id);
         if (!fetched || fetched.revision < record.revision) records.set(record.id,record);
       }
       this.records.set(tab,records);
       await this.persist(tab);
+      this.emit(tab);
       return Array.from(records.values());
     })().finally(()=>this.loading.delete(tab));
     this.loading.set(tab,promise);
