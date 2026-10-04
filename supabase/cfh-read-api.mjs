@@ -1,6 +1,6 @@
-import * as rules from './legacy-rules.mjs';
-import { sourceDate } from './manila-date.mjs';
-import { withRecords } from './rules-environment.mjs';
+import * as rules from './legacy-rules.mjs?v=live1';
+import { sourceDate } from './manila-date.mjs?v=live1';
+import { withRecords } from './rules-environment.mjs?v=live1';
 const routes = {
   lifeLogDashboard:['life_log','getLifeLogDashboardData','year','month'],
   expenseDashboard:['money_flow','getExpenseDashboardData','year','month'],

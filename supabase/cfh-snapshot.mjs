@@ -1,4 +1,4 @@
-import { CFH_OWNER_ID } from './cfh-store.mjs';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=live1';
 // IndexedDB keeps transaction history across app closes without sharing the
 // legacy dashboard cache namespace or clearing it during an update.
 export class CashflowSnapshot {

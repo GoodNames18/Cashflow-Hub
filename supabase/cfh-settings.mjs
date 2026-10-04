@@ -1,4 +1,4 @@
-import { CFH_OWNER_ID } from './cfh-store.mjs';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=live1';
 export async function loadCashflowSettings(client) {
   const {data,error}=await client.from('cfh_settings').select('setting_key,value')
     .eq('owner_id',CFH_OWNER_ID).in('setting_key',['konek_balance_seed','workbook_reference_snapshot']);

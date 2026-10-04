@@ -1,10 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
-import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs';
-import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs';
-import { CashflowReadApi } from './cfh-read-api.mjs';
-import { CashflowWriteApi } from './cfh-write-api.mjs';
-import { loadCashflowSettings } from './cfh-settings.mjs';
-const enabled=new URL(location.href).searchParams.get('database')==='supabase';
+import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=live1';
+import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=live1';
+import { CashflowReadApi } from './cfh-read-api.mjs?v=live1';
+import { CashflowWriteApi } from './cfh-write-api.mjs?v=live1';
+import { loadCashflowSettings } from './cfh-settings.mjs?v=live1';
+const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;
   const ready=new Promise((resolve,reject)=>{resolveReady=resolve;rejectReady=reject;});
@@ -14,7 +14,7 @@ if(enabled) {
     if(api.reads.handles(params.action))return api.reads.request(params,!!options?.skipCache);
     if(api.writes.handles(params.action))return api.writes.request(params);
     if(params.action==='restoreRevisions')return {success:true,revisions:{}};
-    throw new Error('This function is not ready for the Supabase preview: '+params.action);
+    throw new Error('This action is not supported. Refresh the app and try again.');
   }};
   const client=createClient(CFH_PROJECT_URL,CFH_PUBLISHABLE_KEY,{
     auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
@@ -26,7 +26,7 @@ if(enabled) {
     try {cache=await openHistoryCache();} catch(error){console.warn('History cache unavailable',error);}
     const snapshot=new CashflowSnapshot(store,cache);
     const reads=new CashflowReadApi(snapshot,settings.referenceCells,settings.konekSeed);
-    const writes=new CashflowWriteApi(store,reads);
+    const writes=new CashflowWriteApi(store,reads,{testOnly:false,allowFinancial:true});
     resolveReady({reads,writes});
   }
   try {await start();} catch(error) {

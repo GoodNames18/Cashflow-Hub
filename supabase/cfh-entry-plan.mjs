@@ -1,5 +1,5 @@
-import * as rules from './legacy-rules.mjs';
-import { ManilaDate } from './manila-date.mjs';
+import * as rules from './legacy-rules.mjs?v=live1';
+import { ManilaDate } from './manila-date.mjs?v=live1';
 const sheets = {life_log:'Life Log',twice_as_nyce:'TwiceAsNyce',printing:'Printing Business',
   cash_in_out:'Cash In/Out',money_flow:'Money Flow',konek2card:'Konek2Card',rental:'Rental'};
 function cents(value) {

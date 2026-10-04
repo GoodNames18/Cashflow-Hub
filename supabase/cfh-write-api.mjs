@@ -1,6 +1,6 @@
-import { checkKonekEntry } from './cfh-financial-checks.mjs';
-import { planEntry } from './cfh-entry-plan.mjs';
-import { CFH_OWNER_ID } from './cfh-store.mjs';
+import { checkKonekEntry } from './cfh-financial-checks.mjs?v=live1';
+import { planEntry } from './cfh-entry-plan.mjs?v=live1';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=live1';
 const dashboards={life_log:'lifeLogDashboard',money_flow:'dashboard',rental:'rentalDashboard',
   twice_as_nyce:'twiceDashboard',printing:'printingDashboard',cash_in_out:'gcashDashboard',konek2card:'testDashboard'};
 const actions=new Set(['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd',
