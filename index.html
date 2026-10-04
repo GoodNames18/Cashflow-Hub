@@ -2200,6 +2200,13 @@
   </div>
 
   <script>
+    if (new URL(location.href).searchParams.get("database") === "supabase") {
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs");
+      window.cashflowDatabaseReady.catch(function() {});
+    }
+  </script>
+
+  <script>
     document.title = "Cashflow Hub";
 
     const APPS_SCRIPT_URL =
@@ -3159,6 +3166,15 @@
       onFailure,
       options
     ) {
+
+      if (new URL(location.href).searchParams.get("database") === "supabase") {
+        Promise.resolve(window.cashflowDatabaseReady).then(function() {
+          if (!window.cashflowDatabase) throw new Error("Supabase could not load. Check your connection and reload.");
+          return window.cashflowDatabase.request(params, options);
+        }).then(function(result) { if (onSuccess) onSuccess(result); },
+          function(error) { if (onFailure) onFailure(error); });
+        return;
+      }
 
       const cacheKey = dashboardCacheKey(params);
       const cachedData = options && options.skipCache
@@ -7800,3 +7816,4 @@ moneyFlowRecentTransactionsCache = transactions;
 
 </body>
 </html>
+
