@@ -2,6 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs';
 import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs';
 import { CashflowReadApi } from './cfh-read-api.mjs';
+import { CashflowWriteApi } from './cfh-write-api.mjs';
+import { installTestRestorePanel } from './cfh-test-panel.mjs';
 import { loadCashflowSettings } from './cfh-settings.mjs';
 const enabled=true;
 if(enabled) {
@@ -11,6 +13,7 @@ if(enabled) {
   window.cashflowDatabase={request:async(params,options)=>{
     const api=await ready;
     if(api.reads.handles(params.action))return api.reads.request(params,!!options?.skipCache);
+    if(api.writes.handles(params.action))return api.writes.request(params);
     if(params.action==='restoreRevisions')return {success:true,revisions:{}};
     throw new Error('This test version is for viewing only. Use your regular app to save or delete.');
   }};
@@ -24,7 +27,9 @@ if(enabled) {
     try {cache=await openHistoryCache();} catch(error){console.warn('History cache unavailable',error);}
     const snapshot=new CashflowSnapshot(store,cache);
     const reads=new CashflowReadApi(snapshot,settings.referenceCells,settings.konekSeed);
-    resolveReady({reads});
+    const writes=new CashflowWriteApi(store,reads,{testOnly:true});
+    installTestRestorePanel(store,writes);
+    resolveReady({reads,writes});
   }
   try {await start();} catch(error) {
     const overlay=document.createElement('div');

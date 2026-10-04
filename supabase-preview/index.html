@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="theme-color" content="#00F8B9">
 
-  <title>Cashflow Hub — Supabase Test</title>
+  <title>Cashflow Hub — Supabase Save Test</title>
   <meta name="application-name" content="Cashflow Hub">
   <meta name="apple-mobile-web-app-title" content="Cashflow Hub">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1116,7 +1116,7 @@
 </style>
 </head>
 
-<body><div style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:9998;background:#19183f;color:white;padding:8px 16px;border-radius:12px;font:14px sans-serif;pointer-events:none">Supabase test · viewing only</div>
+<body><div style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:9998;background:#19183f;color:white;padding:8px 16px;border-radius:12px;font:14px sans-serif;pointer-events:none">Supabase test · saves enabled</div>
 
   <div id="appLoadingScreen" class="app-loading-screen" aria-label="Loading Cashflow Hub">
     <img class="app-loading-logo" src="../cashflow-hub-logo.png" alt="Cashflow Hub">
@@ -7814,6 +7814,17 @@ moneyFlowRecentTransactionsCache = transactions;
 
   </script>
 
+<script>
+window.cfhRefreshTestTab = function(page) {
+  gcashTransactionHistoryCache = {};
+  businessTransactionHistoryCache = {printing:{},twice:{}};
+  moneyFlowTransactionHistoryCache = {};
+  testTransactionHistoryCache = {};
+  rentalTransactionHistoryCache = {};
+  lifeLogTransactionHistoryCache = {};
+  refreshDashboardTotalsAfterDelete(page);
+};
+</script>
 </body>
 </html>
 
