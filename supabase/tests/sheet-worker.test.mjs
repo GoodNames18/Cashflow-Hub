@@ -4,6 +4,17 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../Cashflow-Sheets-Sync.gs',import.meta.url),'utf8');
 function context(){const c={Date,JSON,Number,String,Object,Array,isFinite,isNaN,Error};vm.createContext(c);vm.runInContext(source,c);return c;}
+test('bootstrap resumes partial notes without remapping identical transactions',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;
+ const records=[{id:'a',revision:1,source_values:['same']},{id:'b',revision:1,source_values:['same']}];
+ const rows=[{row:5,values:['same'],note:'Keep this',marker:null},
+ {row:6,values:['same'],note:'Prior note',marker:{id:'a'}}];
+ const plan=c.cfhBootstrapAssignments_(rows,records,1);
+ assert.equal(c.cfhMarker_(plan[0].note).id,'b');
+ assert.equal(c.cfhMarker_(plan[1].note).id,'a');
+ assert.ok(plan[0].note.startsWith('Keep this'));
+ assert.throws(()=>c.cfhBootstrapAssignments_([{row:5,values:['changed'],marker:{id:'a'}}],[records[0]],1),/conflicts/);
+});
 test('migration repair counts duplicate rows and becomes empty after acknowledgement',()=>{
  const c=context();c.cfhHash_=JSON.stringify;
  const rows=[{values:['a']},{values:['a']},{values:['b']}];
