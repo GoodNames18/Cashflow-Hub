@@ -1,5 +1,6 @@
-import * as rules from './legacy-rules.mjs?v=financial4';
-import { withRecords } from './rules-environment.mjs?v=financial4';
+import * as rules from './legacy-rules.mjs?v=financial5';
+import { sourceDate } from './manila-date.mjs?v=financial5';
+import { withRecords } from './rules-environment.mjs?v=financial5';
 const routes = {
   lifeLogDashboard:['life_log','getLifeLogDashboardData','year','month'],
   expenseDashboard:['money_flow','getExpenseDashboardData','year','month'],
@@ -29,7 +30,14 @@ export class CashflowReadApi {
     if (!route) throw new Error('Unsupported Cashflow read action: '+params.action);
     const [tab,fn,...fields] = route;
     if (tab === 'konek2card') rules.configureKonekSeed(this.konekSeed);
-    const records = await this.snapshot.load(tab,force);
+    let records = await this.snapshot.load(tab,force);
+    if (params.action === 'gcashTransactions' && params.year && params.month) {
+      records = records.filter(record => {
+        const date = sourceDate(record.source_values[0]);
+        return date && typeof date.getFullYear === 'function' &&
+          date.getFullYear() === Number(params.year) && date.getMonth() + 1 === Number(params.month);
+      });
+    }
     const args = fields.map(field=>field.startsWith('@')?field.slice(1):params[field]);
     const data = withRecords(records,this.referenceCells,()=>rules[fn](...args));
     return { ...data, success:true };

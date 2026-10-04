@@ -1,10 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
-import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=financial4';
-import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=financial4';
-import { CashflowReadApi } from './cfh-read-api.mjs?v=financial4';
-import { CashflowWriteApi } from './cfh-write-api.mjs?v=financial4';
-import { installTestRestorePanel } from './cfh-test-panel.mjs?v=financial4';
-import { loadCashflowSettings } from './cfh-settings.mjs?v=financial4';
+import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=financial5';
+import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=financial5';
+import { CashflowReadApi } from './cfh-read-api.mjs?v=financial5';
+import { CashflowWriteApi } from './cfh-write-api.mjs?v=financial5';
+import { installTestRestorePanel } from './cfh-test-panel.mjs?v=financial5';
+import { loadCashflowSettings } from './cfh-settings.mjs?v=financial5';
 const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;

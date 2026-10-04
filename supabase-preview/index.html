@@ -2201,7 +2201,7 @@
 
   <script>
     if (true) {
-      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=financial4");
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=financial5");
       window.cashflowDatabaseReady.catch(function() {});
     }
   </script>
@@ -6008,11 +6008,14 @@
       if (cache.loading || !cache.hasMore) return Promise.resolve(true);
 
       cache.loading = true;
+      var period = dashboardMonthParams("gcash");
 
       return new Promise(function(resolve) {
         jsonpRequest(
           {
             action: "gcashTransactions",
+            year: period.year,
+            month: period.month,
             category: category,
             cursor: cache.nextCursor,
             limit: GCASH_TRANSACTION_PAGE_SIZE
@@ -6083,6 +6086,8 @@
 
             function(data) {
 
+              var currentPeriod = dashboardMonthParams("gcash");
+              if (currentPeriod.year !== period.year || currentPeriod.month !== period.month) { resolve(false); return; }
               renderGcashDashboard(data);
               resolve(true);
             },
