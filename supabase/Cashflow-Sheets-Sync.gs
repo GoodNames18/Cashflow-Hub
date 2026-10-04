@@ -33,13 +33,28 @@ function cfhNote_(cell,record,hash) {
   var original=String(cell.getNote()||'').replace(/\n?\[CFH_SYNC:\{[^\n]*\}\]/g,'');
   cell.setNote(original+'\n[CFH_SYNC:'+JSON.stringify({id:record.id,revision:Number(record.revision),hash:hash})+']');
 }
+function cfhCellDate_(value) {
+  if (value instanceof Date) return value;
+  var text = String(value || '').trim();
+  if (/^\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(text)) {
+    text = '1899-12-30T' + text + '+08:00';
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    text += 'T00:00:00+08:00';
+  } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(text)) {
+    text += '+08:00';
+  }
+  return new Date(text);
+}
 function cfhCanonical_(values) {
-  return values.map(function(v,i){
-    if(i<2 && v) {
-      var date=v instanceof Date?v:new Date(v);
-      if(!isNaN(date.getTime()))return Utilities.formatDate(date,'Asia/Manila',i===0?'yyyy-MM-dd':'HH:mm');
+  return values.map(function(v,i) {
+    if (v === null || v === undefined || v === '') return '';
+    if (i < 2) {
+      var date = cfhCellDate_(v);
+      if (!isNaN(date.getTime())) {
+        return Utilities.formatDate(date, 'Asia/Manila', i === 0 ? 'yyyy-MM-dd' : 'HH:mm');
+      }
     }
-    return typeof v==='string'?v.trim():v;
+    return typeof v === 'string' ? v.trim() : v;
   });
 }
 function cfhHash_(values) {return JSON.stringify(cfhCanonical_(values));}
@@ -99,7 +114,7 @@ function cfhBootstrapSync() {
   } finally {lock.releaseLock();}
 }
 function cfhMaterialize_(values) {
-  return values.map(function(v,i){return i<2&&v?new Date(v):v;});
+  return values.map(function(v,i){return v === null || v === undefined ? '' : i<2&&v ? cfhCellDate_(v) : v;});
 }
 function cfhProjectRecord_(book,record) {
   var config=CFH_SYNC_TABS_[record.tab_key];if(!config)throw new Error('Unknown tab.');
