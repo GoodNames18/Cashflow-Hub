@@ -117,3 +117,18 @@ test('all seven tabs preserve their original sheet values',()=>{
   assert.equal(new Set(entries.map(e=>e.tab)).size,7);
   assert.ok(entries.every(e=>e.records.every(r=>r.occurred_at===now.toISOString())));
 });
+test('GCash category history filters the selected Manila month before pagination',async()=>{
+ const records=[10,9,8,7].flatMap(month=>Array.from({length:12},(_,i)=>({
+   ...planEntry({action:'gcashQuickAdd',category:'gcash',amount:month},new ManilaDate(2026,month-1,4,12,i)).records[0],
+   id:`month-${month}-${i}`,revision:1
+ })));
+ const api=new CashflowReadApi({load:async()=>records});
+ for(const month of [9,8,7]) {
+   const first=await api.request({action:'gcashTransactions',category:'gcash',year:2026,month,limit:10});
+   assert.equal(first.transactions.length,10);
+   assert.ok(first.transactions.every(t=>t.rowNumber.startsWith(`month-${month}-`)));
+   const next=await api.request({action:'gcashTransactions',category:'gcash',year:2026,month,cursor:first.nextCursor,limit:10});
+   assert.equal(next.transactions.length,2);
+   assert.equal(next.hasMore,false);
+ }
+});
