@@ -1,5 +1,5 @@
-import * as rules from './legacy-rules.mjs';
-import { withRecords } from './rules-environment.mjs';
+import * as rules from './legacy-rules.mjs?v=delete3';
+import { withRecords } from './rules-environment.mjs?v=delete3';
 const routes = {
   lifeLogDashboard:['life_log','getLifeLogDashboardData','year','month'],
   expenseDashboard:['money_flow','getExpenseDashboardData','year','month'],

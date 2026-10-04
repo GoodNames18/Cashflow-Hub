@@ -1,5 +1,5 @@
-import { planEntry } from './cfh-entry-plan.mjs';
-import { CFH_OWNER_ID } from './cfh-store.mjs';
+import { planEntry } from './cfh-entry-plan.mjs?v=delete3';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=delete3';
 const dashboards={life_log:'lifeLogDashboard',money_flow:'dashboard',rental:'rentalDashboard',
   twice_as_nyce:'twiceDashboard',printing:'printingDashboard',cash_in_out:'gcashDashboard',konek2card:'testDashboard'};
 const actions=new Set(['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd',
@@ -13,7 +13,10 @@ export class CashflowWriteApi {
   async find(params) {
     const tab=sheets[params.sheet];
     if(!tab)throw new Error('Unknown transaction sheet.');
-    const id=String(params.rowNumber||params.id||'');
+    let id=String(params.rowNumber||params.id||'');
+    // Older cached lists contain a sheet row number but retain the UUID/revision fingerprint.
+    if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+      id=String(params.rowFingerprint||'').split(':')[0];
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
       throw new Error('Refresh this transaction before changing it.');
     const {data,error}=await this.store.client.from('cfh_records').select('*')
