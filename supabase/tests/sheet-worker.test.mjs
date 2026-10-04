@@ -4,6 +4,21 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../Cashflow-Sheets-Sync.gs',import.meta.url),'utf8');
 function context(){const c={Date,JSON,Number,String,Object,Array,isFinite,isNaN,Error};vm.createContext(c);vm.runInContext(source,c);return c;}
+test('migration repair counts duplicate rows and becomes empty after acknowledgement',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;
+ const rows=[{values:['a']},{values:['a']},{values:['b']}];
+ const records=[{source_values:['a']}];
+ const missing=c.cfhMissingRows_(rows,records,1);
+ assert.equal(missing.length,2);assert.equal(missing[0].ordinal,2);
+ records.push({source_values:['a']},{source_values:['b']});
+ assert.equal(c.cfhMissingRows_(rows,records,1).length,0);
+});
+test('migration repair rejects changed or deleted records before importing',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;
+ assert.throws(()=>c.cfhMissingRows_([{values:['new']}],[{source_values:['old']}],1),/differ/);
+ assert.throws(()=>c.cfhMissingRows_([{values:['old']}],[{source_values:['old'],deleted_at:'today'}],1),/deleted/);
+ assert.throws(()=>c.cfhMissingRows_([{values:['new'],marker:{id:'id'}}],[],1),/metadata/);
+});
 test('sync metadata preserves existing cell notes and revisions',()=>{
  const c=context();let note='Original note';
  const cell={getNote:()=>note,setNote:value=>{note=value;}};
