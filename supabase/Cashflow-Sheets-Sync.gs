@@ -47,6 +47,55 @@ function cfhAuditSync() {
     console.log(config[0]+': Sheet='+rows.length+', Supabase='+active.length+', Unmatched sheet rows='+different);
   });
 }
+function cfhMissingRows_(rows,records,width) {
+  var counts=Object.create(null),deleted=Object.create(null),seen=Object.create(null),missing=[];
+  records.forEach(function(record){
+    var hash=cfhHash_(record.source_values.slice(0,width));
+    if(record.deleted_at)deleted[hash]=true;
+    else counts[hash]=(counts[hash]||0)+1;
+  });
+  rows.forEach(function(row){
+    var hash=cfhHash_(row.values);
+    seen[hash]=(seen[hash]||0)+1;
+    if(counts[hash])counts[hash]--;
+    else {
+      if(row.marker||deleted[hash])throw new Error('A missing row has sync metadata or matches a deleted transaction. Resolve it manually.');
+      missing.push({row:row,hash:hash,ordinal:seen[hash]});
+    }
+  });
+  if(Object.keys(counts).some(function(hash){return counts[hash]>0;}))
+    throw new Error('Existing Supabase transactions differ from the sheet. No rows imported.');
+  return missing;
+}
+function cfhReconcileMissingRows() {
+  var lock=LockService.getScriptLock();lock.waitLock(10000);
+  try {
+    if(PropertiesService.getScriptProperties().getProperty('CFH_SYNC_READY')==='true')
+      throw new Error('This repair is only for migration before automatic sync is enabled.');
+    var book=cfhWorkbook_(),records=cfhAllRecords_(),pending=[];
+    Object.keys(CFH_SYNC_TABS_).forEach(function(tab){
+      var config=CFH_SYNC_TABS_[tab],sheet=book.getSheetByName(config[0]);
+      if(!sheet)throw new Error('Missing sheet: '+config[0]);
+      var rows=cfhRows_(sheet,config[1],config[2]);
+      var missing=cfhMissingRows_(rows,records.filter(function(record){return record.tab_key===tab;}),config[2]);
+      missing.forEach(function(item){
+        var record=cfhRecordFromSheet_(tab,item.row.values,{payload:{}});
+        var bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+          'cfh-migration-gap-v1|'+tab+'|'+item.hash+'|'+item.ordinal,Utilities.Charset.UTF_8);
+        var hex=bytes.map(function(byte){return ('0'+((byte+256)%256).toString(16)).slice(-2);}).join('');
+        record.id=hex.slice(0,8)+'-'+hex.slice(8,12)+'-5'+hex.slice(13,16)+'-8'+hex.slice(17,20)+'-'+hex.slice(20,32);
+        record.client_request_id=record.id;
+        record.owner_id='161ecab1-d1d7-4fef-a089-a7300b9da774';
+        record.tab_key=tab;record.source='import';
+        pending.push(record);
+      });
+    });
+    if(pending.length>20)throw new Error('More than 20 missing rows. Review the audit before importing.');
+    if(pending.length)cfhBackend_('cfh_records','post',pending);
+    console.log('Imported missing transactions: '+pending.length+'. Google Sheet rows were not changed.');
+  }finally{lock.releaseLock();}
+  cfhAuditSync();
+}
 function cfhWorkbook_() {
   var id=PropertiesService.getScriptProperties().getProperty('CFH_SPREADSHEET_ID');
   if(!id)throw new Error('Set CFH_SPREADSHEET_ID in Script Properties.');
