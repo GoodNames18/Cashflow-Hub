@@ -64,3 +64,19 @@ test('imported Manila dates and time-only cells match Sheets Date values',()=>{
    c.cfhHash_([new Date('2026-10-03T23:01:38.288+08:00'),new Date('1899-12-30T08:00:00+08:00'),'Health','']));
  assert.equal(c.cfhCellDate_('2026-10-03T23:01:38.288000').toISOString(),'2026-10-03T15:01:38.288Z');
 });
+test('archive recovery matches source tab and all transaction values',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;
+ const values=['2026-10-04T08:06:00Z','Cash In/Out',5,'2026-10-04','16:03',100,'Gcash','Income','','','','Deleted','',false];
+ const record={id:'correct',tab_key:'cash_in_out',deleted_at:values[0],source_values:values.slice(3,8)};
+ assert.equal(c.cfhArchiveCandidate_(values,[record,{...record,id:'other',tab_key:'printing'}]).id,'correct');
+ assert.throws(()=>c.cfhArchiveCandidate_(values,[{...record,source_values:['2026-10-04','15:56',100,'Gcash','Income']}]),/No matching/);
+});
+test('archive recovery uses exact deletion timestamp and refuses ambiguous duplicates',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;
+ const values=['2026-10-04T08:06:00Z','Cash In/Out',5,'2026-10-04','16:03',100,'Gcash','Income','','','','Deleted','',false];
+ const record={id:'correct',tab_key:'cash_in_out',deleted_at:values[0],source_values:values.slice(3,8)};
+ const other={...record,id:'other',deleted_at:'2026-10-04T08:05:00Z'};
+ assert.equal(c.cfhArchiveCandidate_(values,[record,other]).id,'correct');
+ assert.throws(()=>c.cfhArchiveCandidate_(values,[record,{...record,id:'duplicate'}]),/Multiple/);
+ assert.throws(()=>c.cfhArchiveCandidate_([...values.slice(0,11),'Restored'],[record]),/Select a deleted/);
+});
