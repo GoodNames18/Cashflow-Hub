@@ -91,7 +91,7 @@ test('date reverted to old note still updates newer database revision',()=>{
 test('stale date edit cannot overwrite a concurrent amount change',()=>{
  const c=context();c.cfhHash_=JSON.stringify;
  const values=['2026-10-04','11:52',10,'Gcash','Income'];
- assert.throws(()=>c.cfhApplyExistingSheetEdit_('cash_in_out',{}, {revision:3,hash:JSON.stringify(values)},values,{revision:4,source_values:['2026-09-30','11:52',20,'Gcash','Income']},2,2),/Another field/);
+ assert.throws(()=>c.cfhApplyExistingSheetEdit_('cash_in_out',{}, {revision:3,hash:JSON.stringify(['2026-10-04','11:52',5,'Gcash','Income'])},values,{revision:4,source_values:['2026-09-30','11:52',20,'Gcash','Income']},2,2),/same field/);
 });
 test('matching database values acknowledge newer note without another write',()=>{
  const c=context();c.cfhHash_=JSON.stringify;let note='';c.cfhBackend_=()=>{throw Error('unexpected write');};
@@ -106,4 +106,15 @@ test('date repair uses a single batched snapshot rather than fetching every row'
  c.cfhRows_=()=>rows;c.cfhAllRecords_=()=>{scans++;return rows.map((r,i)=>({id:r.marker.id,tab_key:'cash_in_out',source_values:[i===0?'2026-09-30':'2026-10-04',...r.values.slice(1)]}));};
  c.cfhBackend_=()=>{throw Error('unexpected per-row fetch');};c.cfhApplyExistingSheetEdit_=()=>repairs++;
  c.cfhRepairCashDate();assert.equal(scans,1);assert.equal(repairs,1);
+});
+
+test('independent pending amount and date edits sync while remote time is preserved',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;c.SpreadsheetApp={flush(){}};
+ c.cfhMaterialize_=v=>v;
+ const values=['2026-10-03','11:52',101,'Gcash','Income'];let written,note='',sent;
+ const old={id:'id',revision:6,source_values:['2026-10-04','11:02',10,'Gcash','Income']};
+ c.cfhRecordFromSheet_=(tab,v)=>{sent=v;return {};};c.cfhBackend_=()=>({...old,revision:7});
+ const cell={getNote:()=>note,setNote:n=>note=n,getRow:()=>5,getSheet:()=>({getRange:()=>({getValues:()=>[values],setValues:v=>written=v[0]})})};
+ c.cfhApplyExistingSheetEdit_('cash_in_out',cell,{id:'id',revision:5,hash:JSON.stringify(['2026-10-04','11:52',10,'Gcash','Income'])},values,old,4,4);
+ assert.deepEqual(Array.from(sent),['2026-10-03','11:02',101,'Gcash','Income']);assert.deepEqual(Array.from(written),Array.from(sent));assert.equal(c.cfhMarker_(note).revision,7);
 });
