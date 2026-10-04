@@ -20,6 +20,33 @@ function cfhBackend_(path,method,body) {
   if(result.getResponseCode()>=300)throw new Error('Supabase sync failed ('+result.getResponseCode()+'): '+result.getContentText().slice(0,500));
   return result.getContentText()?JSON.parse(result.getContentText()):null;
 }
+function cfhCheckConnection() {
+  var book=cfhWorkbook_();
+  var records=cfhBackend_('cfh_records?select=id&limit=1');
+  var settings=cfhBackend_('cfh_settings?select=setting_key&setting_key=eq.konek_balance_seed');
+  if(!records.length||!settings.length)throw new Error('Imported records or balance settings are missing.');
+  console.log('Connected to Google Sheet: '+book.getName());
+  console.log('Supabase records and balance settings found.');
+}
+function cfhAuditSync() {
+  var book=cfhWorkbook_(),records=cfhAllRecords_();
+  Object.keys(CFH_SYNC_TABS_).forEach(function(tab){
+    var config=CFH_SYNC_TABS_[tab],sheet=book.getSheetByName(config[0]);
+    if(!sheet)throw new Error('Missing sheet: '+config[0]);
+    var rows=cfhRows_(sheet,config[1],config[2]);
+    var active=records.filter(function(record){return record.tab_key===tab&&!record.deleted_at;});
+    var matches=Object.create(null),different=0;
+    active.forEach(function(record){
+      var hash=cfhHash_(record.source_values.slice(0,config[2]));
+      matches[hash]=(matches[hash]||0)+1;
+    });
+    rows.forEach(function(row){
+      var hash=cfhHash_(row.values);
+      if(matches[hash])matches[hash]--;else different++;
+    });
+    console.log(config[0]+': Sheet='+rows.length+', Supabase='+active.length+', Unmatched sheet rows='+different);
+  });
+}
 function cfhWorkbook_() {
   var id=PropertiesService.getScriptProperties().getProperty('CFH_SPREADSHEET_ID');
   if(!id)throw new Error('Set CFH_SPREADSHEET_ID in Script Properties.');
