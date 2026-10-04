@@ -1,4 +1,4 @@
-import { CFH_OWNER_ID } from './cfh-store.mjs?v=financial5';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=financial6';
 const pages={life_log:'lifeLog',twice_as_nyce:'twice',printing:'printing',cash_in_out:'gcash',money_flow:'expenses',konek2card:'test',rental:'rental'};
 const sheets={life_log:'Life Log',twice_as_nyce:'TwiceAsNyce',printing:'Printing Business',cash_in_out:'Cash In/Out',money_flow:'Money Flow',konek2card:'Konek2Card',rental:'Rental'};
 export function installTestRestorePanel(store,writes) {

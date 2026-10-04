@@ -119,11 +119,14 @@ test('all seven tabs preserve their original sheet values',()=>{
 });
 test('GCash category history filters the selected Manila month before pagination',async()=>{
  const records=[10,9,8,7].flatMap(month=>Array.from({length:12},(_,i)=>({
-   ...planEntry({action:'gcashQuickAdd',category:'gcash',amount:month},new ManilaDate(2026,month-1,4,12,i)).records[0],
+   ...planEntry({action:'gcashQuickAdd',category:'gcash',amount:month},new ManilaDate(2026,month-1,20,12,i)).records[0],
    id:`month-${month}-${i}`,revision:1
  })));
  const api=new CashflowReadApi({load:async()=>records});
  for(const month of [9,8,7]) {
+   const dashboard=await api.request({action:'gcashDashboard',year:2026,month});
+   assert.equal(dashboard.recentTransactions.length,10);
+   assert.ok(dashboard.recentTransactions.every(t=>t.rowNumber.startsWith(`month-${month}-`)));
    const first=await api.request({action:'gcashTransactions',category:'gcash',year:2026,month,limit:10});
    assert.equal(first.transactions.length,10);
    assert.ok(first.transactions.every(t=>t.rowNumber.startsWith(`month-${month}-`)));

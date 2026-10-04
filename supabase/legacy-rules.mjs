@@ -2768,8 +2768,8 @@ function getGcashBusinessDashboardData(selectedYear, selectedMonth) {
         // ===================================================
 
         if (
-          recentTransactions.length <
-          APP_RECENT_TRANSACTION_LIMIT
+          transactionDate >= monthStart && transactionDate < nextMonthStart &&
+          recentTransactions.length < APP_RECENT_TRANSACTION_LIMIT
         ) {
 
           var dateText =
