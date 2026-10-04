@@ -28,3 +28,13 @@ test('a newer sheet revision is never replaced by an older job',()=>{
  c.cfhProjectRecord_(book,{id:'id',tab_key:'life_log',revision:4});
  assert.equal(writes,0);
 });
+test('imported Manila dates and time-only cells match Sheets Date values',()=>{
+ const c=context();
+ c.Utilities={formatDate(date,zone,format){
+   const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(date).map(p=>[p.type,p.value]));
+   return format==='yyyy-MM-dd'?`${parts.year}-${parts.month}-${parts.day}`:`${parts.hour}:${parts.minute}`;
+ }};
+ assert.equal(c.cfhHash_(['2026-10-03T23:01:38.288000','08:00:00','Health',null]),
+   c.cfhHash_([new Date('2026-10-03T23:01:38.288+08:00'),new Date('1899-12-30T08:00:00+08:00'),'Health','']));
+ assert.equal(c.cfhCellDate_('2026-10-03T23:01:38.288000').toISOString(),'2026-10-03T15:01:38.288Z');
+});
