@@ -139,7 +139,7 @@ function cfhRows_(sheet,start,width) {
   if(!count)return [];
   var values=sheet.getRange(start,2,count,width).getValues();
   var notes=sheet.getRange(start,2,count,1).getNotes();
-  return values.map(function(value,i){return {row:start+i,values:value,marker:cfhMarker_(notes[i][0])};})
+  return values.map(function(value,i){return {row:start+i,values:value,note:notes[i][0],marker:cfhMarker_(notes[i][0])};})
     .filter(function(row){return row.values[0]!=='';});
 }
 function cfhAllRecords_() {
@@ -150,43 +150,84 @@ function cfhAllRecords_() {
   }
   return result;
 }
+function cfhBootstrapAssignments_(rows,active,width) {
+  if(rows.length!==active.length)throw new Error('Sheet changed since import. Reconcile before enabling sync.');
+  var byId=Object.create(null),used=Object.create(null),buckets=Object.create(null);
+  active.forEach(function(record){byId[record.id]=record;});
+  var assigned=rows.map(function(row){
+    if(!row.marker)return null;
+    var record=byId[row.marker.id];
+    if(!record||used[record.id]||cfhHash_(row.values)!==cfhHash_(record.source_values.slice(0,width)))
+      throw new Error('Existing sync ID conflicts at row '+row.row+'. No IDs were remapped.');
+    used[record.id]=true;return record;
+  });
+  active.forEach(function(record){
+    if(used[record.id])return;
+    var hash=cfhHash_(record.source_values.slice(0,width));
+    (buckets[hash]||(buckets[hash]=[])).push(record);
+  });
+  return rows.map(function(row,i){
+    var hash=cfhHash_(row.values),record=assigned[i];
+    if(!record){
+      var bucket=buckets[hash];
+      if(!bucket||!bucket.length)throw new Error('Row '+row.row+' differs from the import. No data was overwritten.');
+      record=bucket.shift();
+    }
+    var note=String(row.note||'').replace(/\n?\[CFH_SYNC:\{[^\n]*\}\]/g,'');
+    return {row:row.row,note:note+'\n[CFH_SYNC:'+JSON.stringify({id:record.id,revision:Number(record.revision),hash:hash})+']'};
+  });
+}
 function cfhBootstrapSync() {
   var lock=LockService.getScriptLock();lock.waitLock(10000);
   try {
-    var book=cfhWorkbook_(),records=cfhAllRecords_(),assignments=[];
+    var book=cfhWorkbook_(),records=cfhAllRecords_(),plans=[],mapped=0;
     Object.keys(CFH_SYNC_TABS_).forEach(function(tab){
       var config=CFH_SYNC_TABS_[tab],sheet=book.getSheetByName(config[0]);
       if(!sheet)throw new Error('Missing sheet: '+config[0]);
       var rows=cfhRows_(sheet,config[1],config[2]);
       var active=records.filter(function(r){return r.tab_key===tab&&!r.deleted_at;});
-      if(rows.length!==active.length)throw new Error(config[0]+' changed since import. Reconcile before enabling sync.');
-      var buckets={};
-      active.forEach(function(record){var hash=cfhHash_(record.source_values.slice(0,config[2]));(buckets[hash]||(buckets[hash]=[])).push(record);});
-      rows.forEach(function(row){
-        var hash=cfhHash_(row.values),bucket=buckets[hash];
-        if(!bucket||!bucket.length)throw new Error(config[0]+' row '+row.row+' differs from the import. No data was overwritten.');
-        var record=bucket.shift();
-        if(row.marker&&row.marker.id!==record.id)throw new Error('Sync is already initialized; do not remap IDs.');
-        assignments.push({cell:sheet.getRange(row.row,2),record:record,hash:hash});
-      });
+      var assignments=cfhBootstrapAssignments_(rows,active,config[2]);
+      var count=Math.max(0,sheet.getLastRow()-config[1]+1);
+      var notes=count?sheet.getRange(config[1],2,count,1).getNotes():[];
+      assignments.forEach(function(item){notes[item.row-config[1]][0]=item.note;});
+      mapped+=assignments.length;
+      plans.push({sheet:sheet,start:config[1],notes:notes});
+      console.log('Validated '+config[0]+': '+assignments.length+' rows.');
     });
-    // All seven tabs passed before metadata is written. No visible columns change.
-    assignments.forEach(function(a){cfhNote_(a.cell,a.record,a.hash);});
     var archive=book.getSheetByName('Deleted Transactions');
     if(archive&&archive.getLastRow()>=5) {
-      var archived=archive.getRange(5,2,archive.getLastRow()-4,14).getValues();
-      var used={};
+      var count=archive.getLastRow()-4;
+      var archived=archive.getRange(5,2,count,14).getValues();
+      var notes=archive.getRange(5,2,count,1).getNotes(),used={};
       archived.forEach(function(row,i){
         if(String(row[11]).toLowerCase()!=='deleted')return;
         var tab=Object.keys(CFH_SYNC_TABS_).filter(function(t){return CFH_SYNC_TABS_[t][0]===row[1];})[0];
         if(!tab)return;
-        var hash=cfhHash_(row.slice(3,3+CFH_SYNC_TABS_[tab][2]));
-        var record=records.filter(function(r){return !used[r.id]&&r.tab_key===tab&&r.deleted_at&&cfhHash_(r.source_values.slice(0,CFH_SYNC_TABS_[tab][2]))===hash;})[0];
-        if(record){used[record.id]=true;cfhNote_(archive.getRange(i+5,2),record,hash);}
+        var width=CFH_SYNC_TABS_[tab][2],hash=cfhHash_(row.slice(3,3+width));
+        var marker=cfhMarker_(notes[i][0]);
+        var record=records.filter(function(r){return !used[r.id]&&r.tab_key===tab&&r.deleted_at&&
+          (!marker||marker.id===r.id)&&cfhHash_(r.source_values.slice(0,width))===hash;})[0];
+        if(marker&&!record)throw new Error('Archive sync ID conflict at row '+(i+5));
+        if(record){
+          used[record.id]=true;
+          var original=String(notes[i][0]||'').replace(/\n?\[CFH_SYNC:\{[^\n]*\}\]/g,'');
+          notes[i][0]=original+'\n[CFH_SYNC:'+JSON.stringify({id:record.id,revision:Number(record.revision),hash:hash})+']';
+        }
       });
+      plans.push({sheet:archive,start:5,notes:notes});
     }
+    // Validate everything first; write only notes in batches, preserving other notes.
+    plans.forEach(function(plan){
+      for(var offset=0;offset<plan.notes.length;offset+=1000){
+        var batch=plan.notes.slice(offset,offset+1000);
+        plan.sheet.getRange(plan.start+offset,2,batch.length,1).setNotes(batch);
+      }
+      console.log('Linked '+plan.sheet.getName()+'.');
+    });
+    SpreadsheetApp.flush();
     PropertiesService.getScriptProperties().setProperty('CFH_SYNC_READY','true');
-    return {mapped:assignments.length,ready:true};
+    console.log('Bootstrap completed: '+mapped+' active rows linked. Automatic triggers are not installed.');
+    return {mapped:mapped,ready:true};
   } finally {lock.releaseLock();}
 }
 function cfhMaterialize_(values) {
