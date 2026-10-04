@@ -1,5 +1,5 @@
-import * as rules from './legacy-rules.mjs?v=delete3';
-import { ManilaDate } from './manila-date.mjs?v=delete3';
+import * as rules from './legacy-rules.mjs?v=financial4';
+import { ManilaDate } from './manila-date.mjs?v=financial4';
 const sheets = {life_log:'Life Log',twice_as_nyce:'TwiceAsNyce',printing:'Printing Business',
   cash_in_out:'Cash In/Out',money_flow:'Money Flow',konek2card:'Konek2Card',rental:'Rental'};
 function cents(value) {
@@ -106,6 +106,17 @@ export function planEntry(params, now = new ManilaDate()) {
       if (!['hold','release'].includes(action)) throw new Error('Choose Hold Money or Release Hold.');
       const description=action==='hold'?'Hold money':'Release hold';
       tab='konek2card';rows=[[date,date,'Card',amount,'','Hold',description]];receipt={amount,description};break;
+    }
+    case 'testMonthlyInterest': {
+      const parts=String(params.text||'').trim().split(/\s+/);
+      if(parts.length!==2)throw new Error('Enter interest and tax, for example 100 23.');
+      const values=parts.map(v=>Number(v.replace(/[₱,]/g,'')));
+      if(values.some(v=>!Number.isFinite(v)||v<0||Math.abs(v*100-Math.round(v*100))>0.000001)||values[0]===values[1])
+        throw new Error('Enter two different nonnegative amounts with at most two decimal places.');
+      const gross=Math.max(...values),tax=Math.min(...values),amount=Math.round((gross-tax)*100)/100;
+      const description='Monthly interest | Gross '+gross+' | Tax '+tax;
+      tab='konek2card';rows=[[date,date,'Card',amount,amount,'Income',description]];
+      receipt={amount,gross,tax,feeEarned:amount,description};break;
     }
     default: throw new Error('Unsupported Cashflow save action: '+params.action);
   }

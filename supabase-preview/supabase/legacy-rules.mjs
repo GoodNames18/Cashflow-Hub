@@ -1,5 +1,5 @@
-import { ManilaDate as Date } from './manila-date.mjs?v=delete3';
-import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=delete3';
+import { ManilaDate as Date } from './manila-date.mjs?v=financial4';
+import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=financial4';
 // Business rules extracted from the current user-supplied Code.gs.
 function parseExpense(text) {
 
@@ -1172,6 +1172,10 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     var category = String(row[5] || '').trim().toLowerCase();
     var description = String(row[6] || '').trim().toLowerCase();
 
+    if (category === 'income' && /^monthly interest \| gross [0-9.]+ \| tax [0-9.]+$/.test(description)) {
+      card += amount;
+      continue;
+    }
     if (category === 'hold' && description === 'hold money') {
       heldMoney += amount;
       continue;
@@ -1326,6 +1330,7 @@ function getTestRowTimestamp_(row) {
 }
 
 function getTestEarnedFeeValue_(row) {
+  if (String(row && row[5] || '').toLowerCase()==='income' && /^Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+$/.test(String(row && row[6] || ''))) return Number(row[3] || 0);
   var processing = getTestGcashAapProcessingFromRow_(row);
   if (processing) return processing.feeEarned;
   var aapCalculation = getTestAapCalculationFromRow_(row);
@@ -1467,7 +1472,7 @@ function filterTestTransactionsFromRows_(rows, requestedFilter, liveStartAt) {
     else if (filter === "nanay") matches = /nanay/.test(text);
     else if (filter === "gcash") matches = /gcash/.test(text);
     else if (filter === "cash") matches = /cash/.test(text) || /atm withdrawal/.test(text);
-    else if (filter === "card") matches = /card|cash-out|loan payment|loan rebate|atm withdrawal|others loan/.test(text);
+    else if (filter === "card") matches = /card|cash-out|loan payment|loan rebate|atm withdrawal|others loan|monthly interest/.test(text);
     if (!matches || (amount <= 0 && fee <= 0)) return null;
     return {
       timestamp: ts, dateValue: row[0], timeValue: row[1] instanceof Date ? row[1] : "",

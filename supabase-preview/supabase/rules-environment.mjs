@@ -1,4 +1,4 @@
-import { ManilaDate, sourceDate } from './manila-date.mjs?v=delete3';
+import { ManilaDate, sourceDate } from './manila-date.mjs?v=financial4';
 let state = null;
 const names = { life_log:'Life Log', twice_as_nyce:'TwiceAsNyce',
   printing:'Printing Business', cash_in_out:'Cash In/Out', money_flow:'Money Flow',

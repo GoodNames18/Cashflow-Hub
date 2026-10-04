@@ -1,10 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
-import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=delete3';
-import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=delete3';
-import { CashflowReadApi } from './cfh-read-api.mjs?v=delete3';
-import { CashflowWriteApi } from './cfh-write-api.mjs?v=delete3';
-import { installTestRestorePanel } from './cfh-test-panel.mjs?v=delete3';
-import { loadCashflowSettings } from './cfh-settings.mjs?v=delete3';
+import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=financial4';
+import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=financial4';
+import { CashflowReadApi } from './cfh-read-api.mjs?v=financial4';
+import { CashflowWriteApi } from './cfh-write-api.mjs?v=financial4';
+import { installTestRestorePanel } from './cfh-test-panel.mjs?v=financial4';
+import { loadCashflowSettings } from './cfh-settings.mjs?v=financial4';
 const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;
@@ -27,7 +27,7 @@ if(enabled) {
     try {cache=await openHistoryCache();} catch(error){console.warn('History cache unavailable',error);}
     const snapshot=new CashflowSnapshot(store,cache);
     const reads=new CashflowReadApi(snapshot,settings.referenceCells,settings.konekSeed);
-    const writes=new CashflowWriteApi(store,reads,{testOnly:true});
+    const writes=new CashflowWriteApi(store,reads,{testOnly:true,allowFinancial:true});
     installTestRestorePanel(store,writes);
     resolveReady({reads,writes});
   }

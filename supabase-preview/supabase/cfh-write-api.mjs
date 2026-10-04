@@ -1,14 +1,15 @@
-import { planEntry } from './cfh-entry-plan.mjs?v=delete3';
-import { CFH_OWNER_ID } from './cfh-store.mjs?v=delete3';
+import { checkKonekEntry } from './cfh-financial-checks.mjs?v=financial4';
+import { planEntry } from './cfh-entry-plan.mjs?v=financial4';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=financial4';
 const dashboards={life_log:'lifeLogDashboard',money_flow:'dashboard',rental:'rentalDashboard',
   twice_as_nyce:'twiceDashboard',printing:'printingDashboard',cash_in_out:'gcashDashboard',konek2card:'testDashboard'};
 const actions=new Set(['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd',
   'gcashTextAdd','testCashOut','testAapCollection','testTransfer','testOthersLoan','testLoan',
-  'testAtmWithdraw','testHoldMoney']);
+  'testAtmWithdraw','testHoldMoney','testMonthlyInterest']);
 const sheets={'Life Log':'life_log','Money Flow':'money_flow','Rental':'rental','TwiceAsNyce':'twice_as_nyce',
   'Printing Business':'printing','Cash In/Out':'cash_in_out','Konek2Card':'konek2card'};
 export class CashflowWriteApi {
-  constructor(store,reads,{testOnly=false}={}) {this.store=store;this.reads=reads;this.retries=new Map();this.testOnly=testOnly;}
+  constructor(store,reads,{testOnly=false,allowFinancial=false}={}) {this.store=store;this.reads=reads;this.retries=new Map();this.testOnly=testOnly;this.allowFinancial=allowFinancial;this.queue=Promise.resolve();}
   handles(action) {return actions.has(action)||['transactionDelete','transactionRestore','transactionDeleteStatus'].includes(action);}
   async find(params) {
     const tab=sheets[params.sheet];
@@ -24,7 +25,12 @@ export class CashflowWriteApi {
     if(error)throw error;
     return data;
   }
-  async request(params) {
+  request(params) {
+    const task=this.queue.then(()=>this.perform(params));
+    this.queue=task.catch(()=>{});
+    return task;
+  }
+  async perform(params) {
     if(params.action==='transactionDeleteStatus') {
       const record=await this.find(params);return {success:true,deleted:!!record.deleted_at};
     }
@@ -46,7 +52,7 @@ export class CashflowWriteApi {
     const key=JSON.stringify(params);
     let pending=this.retries.get(key);
     if(!pending) {
-      if(this.testOnly && !['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd','gcashTextAdd','testCashOut'].includes(params.action))
+      if(this.testOnly && !this.allowFinancial && !['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd','gcashTextAdd','testCashOut'].includes(params.action))
         throw new Error('Transfers, collections, loans, holds and interest will be tested in the next stage.');
       const plan=planEntry(params);
       if(this.testOnly) for(const record of plan.records) record.payload.cfh_preview_test=true;
@@ -56,6 +62,11 @@ export class CashflowWriteApi {
     const {plan,prepared}=pending;
     // Load before committing so acknowledged events immediately update totals.
     await this.reads.snapshot.load(plan.tab);
+    if(plan.tab==='konek2card' && !pending.checked) {
+      const balance=await this.reads.request({action:'testDashboard'},true);
+      checkKonekEntry(plan,params,balance);
+      pending.checked=true;
+    }
     const records=prepared.length===1?[await this.store.save(prepared[0])]:await this.store.saveBundle(prepared);
     this.retries.delete(key);
     const result={success:true,...plan.receipt,records};
