@@ -80,3 +80,21 @@ test('archive recovery uses exact deletion timestamp and refuses ambiguous dupli
  assert.throws(()=>c.cfhArchiveCandidate_(values,[record,{...record,id:'duplicate'}]),/Multiple/);
  assert.throws(()=>c.cfhArchiveCandidate_([...values.slice(0,11),'Restored'],[record]),/Select a deleted/);
 });
+test('date reverted to old note still updates newer database revision',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;c.SpreadsheetApp={flush(){}};
+ const values=['2026-10-04','11:52',10,'Gcash','Income'];
+ const old={id:'id',revision:4,source_values:['2026-09-30',...values.slice(1)]};
+ let call,note='';c.cfhRecordFromSheet_=()=>({});c.cfhBackend_=(path,method,body)=>{call=body;return {...old,revision:5};};
+ c.cfhApplyExistingSheetEdit_('cash_in_out',{getNote:()=>note,setNote:n=>note=n},{id:'id',revision:3,hash:JSON.stringify(values)},values,old,2,2);
+ assert.equal(call.p_expected_revision,4);assert.equal(c.cfhMarker_(note).revision,5);
+});
+test('stale date edit cannot overwrite a concurrent amount change',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;
+ const values=['2026-10-04','11:52',10,'Gcash','Income'];
+ assert.throws(()=>c.cfhApplyExistingSheetEdit_('cash_in_out',{}, {revision:3,hash:JSON.stringify(values)},values,{revision:4,source_values:['2026-09-30','11:52',20,'Gcash','Income']},2,2),/Another field/);
+});
+test('matching database values acknowledge newer note without another write',()=>{
+ const c=context();c.cfhHash_=JSON.stringify;let note='';c.cfhBackend_=()=>{throw Error('unexpected write');};
+ c.cfhApplyExistingSheetEdit_('cash_in_out',{getNote:()=>note,setNote:n=>note=n},{revision:3},['same'],{id:'id',revision:4,source_values:['same']},2,2);
+ assert.equal(c.cfhMarker_(note).revision,4);
+});
