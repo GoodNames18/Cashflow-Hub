@@ -1,4 +1,4 @@
-import { CFH_OWNER_ID } from './cfh-store.mjs?v=live1';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=live2';
 // IndexedDB keeps transaction history across app closes without sharing the
 // legacy dashboard cache namespace or clearing it during an update.
 export class CashflowSnapshot {
@@ -42,6 +42,30 @@ export class CashflowSnapshot {
     await this.refresh(tab);
     return Array.from(this.records.get(tab).values());
   }
+  async refreshChanges(tab) {
+    if(this.loading.has(tab))return this.loading.get(tab);
+    if(!this.records.has(tab))return this.load(tab);
+    const current=this.records.get(tab);
+    const dates=[...current.values()].map(r=>Date.parse(r.updated_at)).filter(Number.isFinite);
+    if(!dates.length)return this.refresh(tab);
+    // Overlap the newest timestamp; revision checks discard repeated rows.
+    const since=new Date(Math.max(...dates)-2000).toISOString();
+    let cursor=null,changed=false;
+    for(;;) {
+      let query=this.store.client.from('cfh_records').select('*')
+        .eq('owner_id',CFH_OWNER_ID).eq('tab_key',tab).gte('updated_at',since);
+      if(cursor)query=query.gt('id',cursor);
+      const {data,error}=await query.order('id',{ascending:true}).limit(1000);
+      if(error)throw error;
+      for(const record of data) {
+        const old=current.get(record.id);
+        if(!old||Number(record.revision)>Number(old.revision)) {current.set(record.id,record);changed=true;}
+      }
+      if(data.length<1000)break;
+      cursor=data.at(-1).id;
+    }
+    if(changed){await this.persist(tab);this.emit(tab);}
+  }
   refresh(tab) {
     if (this.loading.has(tab)) return this.loading.get(tab);
     const promise = (async () => {
@@ -64,9 +88,11 @@ export class CashflowSnapshot {
         const fetched = records.get(record.id);
         if (!fetched || fetched.revision < record.revision) records.set(record.id,record);
       }
+      const previous=this.records.get(tab);
+      const changed=!previous || previous.size!==records.size || [...records].some(([id,r])=>previous.get(id)?.revision!==r.revision);
       this.records.set(tab,records);
       await this.persist(tab);
-      this.emit(tab);
+      if(changed)this.emit(tab);
       return Array.from(records.values());
     })().finally(()=>this.loading.delete(tab));
     this.loading.set(tab,promise);

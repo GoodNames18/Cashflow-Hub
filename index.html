@@ -2202,7 +2202,7 @@
 
   <script>
     if (true) {
-      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=live1");
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=live2");
       window.cashflowDatabaseReady.catch(function() {});
     }
   </script>
@@ -6390,7 +6390,7 @@
       }, function() { restoreRevisionCheckBusy = false; }, { skipCache: true });
     }
 
-    function refreshDashboardTotalsAfterDelete(page, attempt) {
+    function refreshDashboardTotalsAfterDelete(page, attempt, cachedRead) {
       var actions = {
         gcash: ["gcashDashboard", "gcash"],
         printing: ["printingDashboard", "printing"],
@@ -6482,12 +6482,12 @@
       }, function(error) {
         if (!attempt) {
           window.setTimeout(function() {
-            refreshDashboardTotalsAfterDelete(page, 1);
+            refreshDashboardTotalsAfterDelete(page, 1, cachedRead);
           }, 1200);
         } else {
           console.log("Dashboard totals will update on the next refresh:", error);
         }
-      }, { skipCache: true });
+      }, { skipCache: !cachedRead });
     }
 
     function refillTransactionsAfterDelete(page, data) {
@@ -7821,6 +7821,21 @@ moneyFlowRecentTransactionsCache = transactions;
   </script>
 
 <script>
+const cfhUpdateTimers={};
+window.addEventListener('cashflow-data-changed',function(event) {
+  const pages={cash_in_out:'gcash',life_log:'lifeLog',twice_as_nyce:'twice',printing:'printing',money_flow:'expenses',konek2card:'test',rental:'rental'};
+  const page=pages[event.detail.tab];if(!page)return;
+  clearTimeout(cfhUpdateTimers[page]);
+  cfhUpdateTimers[page]=setTimeout(function(){
+    if(page==='gcash')gcashTransactionHistoryCache={};
+    if(page==='printing'||page==='twice')businessTransactionHistoryCache[page]={};
+    if(page==='expenses')moneyFlowTransactionHistoryCache={};
+    if(page==='test')testTransactionHistoryCache={};
+    if(page==='rental')rentalTransactionHistoryCache={};
+    if(page==='lifeLog')lifeLogTransactionHistoryCache={};
+    refreshDashboardTotalsAfterDelete(page,0,true);
+  },300);
+});
 window.cfhRefreshTestTab = function(page) {
   gcashTransactionHistoryCache = {};
   businessTransactionHistoryCache = {printing:{},twice:{}};

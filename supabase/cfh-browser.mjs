@@ -1,9 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
-import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=live1';
-import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=live1';
-import { CashflowReadApi } from './cfh-read-api.mjs?v=live1';
-import { CashflowWriteApi } from './cfh-write-api.mjs?v=live1';
-import { loadCashflowSettings } from './cfh-settings.mjs?v=live1';
+import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=live2';
+import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=live2';
+import { CashflowReadApi } from './cfh-read-api.mjs?v=live2';
+import { CashflowWriteApi } from './cfh-write-api.mjs?v=live2';
+import { loadCashflowSettings } from './cfh-settings.mjs?v=live2';
 const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;
@@ -27,7 +27,24 @@ if(enabled) {
     const snapshot=new CashflowSnapshot(store,cache);
     const reads=new CashflowReadApi(snapshot,settings.referenceCells,settings.konekSeed);
     const writes=new CashflowWriteApi(store,reads,{testOnly:false,allowFinancial:true});
+    snapshot.onChange(tab=>window.dispatchEvent(new CustomEvent('cashflow-data-changed',{detail:{tab}})));
     resolveReady({reads,writes});
+    const tabs=['cash_in_out','life_log','twice_as_nyce','printing','money_flow','konek2card','rental'];
+    // Warm every tab from its persistent cache; each cached load refreshes in the background.
+    await Promise.allSettled(tabs.map(tab=>snapshot.load(tab)));
+    let checking=false;
+    async function checkUpdates() {
+      if(checking||document.hidden)return;
+      checking=true;
+      try {
+        for(let i=0;i<tabs.length;i+=2)
+          await Promise.allSettled(tabs.slice(i,i+2).map(tab=>snapshot.refreshChanges(tab)));
+      }finally{checking=false;}
+    }
+    window.setInterval(checkUpdates,15000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdates();});
+    window.addEventListener('online',checkUpdates);
+    window.addEventListener('focus',checkUpdates);
   }
   try {await start();} catch(error) {
     const overlay=document.createElement('div');
