@@ -1287,6 +1287,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .app-tabs{display:flex;grid-template-columns:none;overflow-x:auto;overflow-y:hidden;gap:6px;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
 .app-tabs::-webkit-scrollbar{display:none}
 .app-tabs .app-tab{flex:0 0 auto;width:auto;min-width:max-content;padding:10px 14px;font-size:12px;white-space:nowrap}
+.cfh-calendar-title-button{border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}.cfh-calendar-title-button:after{content:'⌄';font-size:.6em;margin-left:9px;vertical-align:middle;color:#777}
 </style>
 </head>
 
@@ -1770,7 +1771,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           <div class="cfh-calendar-shell">
             <div class="cfh-calendar-card">
               <div class="cfh-calendar-head">
-                <div id="cfhCalendarMonthTitle" class="cfh-calendar-title">Calendar</div>
+                <button id="cfhCalendarMonthTitle" type="button" class="cfh-calendar-title cfh-calendar-title-button" onclick="cfhCalendarOpenMonthPicker()" aria-label="Choose calendar month and year">Calendar</button>
                 <div class="cfh-calendar-nav">
                   <button type="button" aria-label="Previous month" onclick="cfhCalendarMoveMonth(-1)">&#8249;</button>
                   <button type="button" aria-label="Next month" onclick="cfhCalendarMoveMonth(1)">&#8250;</button>
@@ -2499,14 +2500,35 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         cfhCalendarState.month = new Date(date.getFullYear(), date.getMonth(), 1);
       }
       cfhCalendarRender();
+      cfhSaveNavigationState();
     }
 
     function cfhCalendarMoveMonth(direction) {
       const view = cfhCalendarState.month;
       cfhCalendarState.month = new Date(view.getFullYear(), view.getMonth() + direction, 1);
       cfhCalendarRender();
+      cfhSaveNavigationState();
     }
 
+
+
+    function cfhCalendarOpenMonthPicker() {
+      const dialog = document.getElementById('cfhMonthPicker');
+      document.getElementById('cfhMonthSelect').value = String(cfhCalendarState.month.getMonth());
+      document.getElementById('cfhYearInput').value = String(cfhCalendarState.month.getFullYear());
+      dialog.hidden = false;
+    }
+    function cfhCalendarCloseMonthPicker() { document.getElementById('cfhMonthPicker').hidden = true; }
+    function cfhCalendarApplyMonthPicker() {
+      const month = Number(document.getElementById('cfhMonthSelect').value);
+      const year = Number(document.getElementById('cfhYearInput').value);
+      if (!Number.isInteger(year) || year < 1900 || year > 2100 || !Number.isInteger(month) || month < 0 || month > 11) return;
+      cfhCalendarState.month = new Date(year,month,1);
+      cfhCalendarState.selected = new Date(year,month,Math.min(cfhCalendarState.selected.getDate(),new Date(year,month+1,0).getDate()));
+      cfhCalendarCloseMonthPicker();
+      cfhCalendarRender();
+      cfhSaveNavigationState();
+    }
 
     // Calendar-only storage. Does not touch financial tables or transactions.
     const CFH_CALENDAR_KEY = 'cfh_calendar_entries_v1';
@@ -2640,6 +2662,45 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 
     let currentAppPage = "gcash";
+
+    const CFH_NAV_KEY = 'cashflow-hub:navigation-v2';
+    const CFH_VALID_PAGES = ['gcash','lifeLog','rental','printing','twice','test','expenses','calendar'];
+    function cfhSaveNavigationState() {
+      try {
+        const state = {page:currentAppPage,home:window.cfhLastHomePage || 'gcash',scrollY:window.scrollY,month:cfhCalendarDateKey(cfhCalendarState.month),selected:cfhCalendarDateKey(cfhCalendarState.selected),savedAt:Date.now()};
+        sessionStorage.setItem(CFH_NAV_KEY,JSON.stringify(state));
+        localStorage.setItem(CFH_NAV_KEY,JSON.stringify(state));
+      } catch(e) {}
+    }
+    function cfhRestoreNavigationState() {
+      try {
+        const raw = sessionStorage.getItem('cashflow-hub:reload-position');
+        const stored = JSON.parse(sessionStorage.getItem(CFH_NAV_KEY) || localStorage.getItem(CFH_NAV_KEY) || 'null');
+        const legacy = raw ? JSON.parse(raw) : null;
+        if (legacy) sessionStorage.removeItem('cashflow-hub:reload-position');
+        const state = legacy && Date.now()-legacy.savedAt < 60000 ? Object.assign({},stored || {},legacy) : stored;
+        if (!state || !CFH_VALID_PAGES.includes(state.page)) return null;
+        const parseDate = value => {
+          if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return null;
+          const [y,m,d] = value.split('-').map(Number);
+          const date = new Date(y,m-1,d);
+          return cfhCalendarDateKey(date) === value ? date : null;
+        };
+        const month = parseDate(state.month), selected = parseDate(state.selected);
+        if (month) cfhCalendarState.month = new Date(month.getFullYear(),month.getMonth(),1);
+        if (selected) cfhCalendarState.selected = selected;
+        window.cfhLastHomePage = CFH_VALID_PAGES.includes(state.home) && state.home !== 'calendar' ? state.home : 'gcash';
+        return state;
+      } catch(e) { return null; }
+    }
+    let cfhScrollSaveQueued = false;
+    window.addEventListener('scroll',function(){
+      if (cfhScrollSaveQueued) return;
+      cfhScrollSaveQueued = true;
+      requestAnimationFrame(function(){cfhScrollSaveQueued=false;cfhSaveNavigationState();});
+    },{passive:true});
+    window.addEventListener('pagehide',cfhSaveNavigationState);
+
     let selectedRentalCategory = "";
     let selectedGcashQuickCategory = "";
     let selectedGcashQuickAmount = 0;
@@ -3023,20 +3084,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       setupKonek2CardAutocomplete();
       initializePageHeightSync();
 
-      var reloadPosition = null;
-      try {
-        reloadPosition = JSON.parse(sessionStorage.getItem("cashflow-hub:reload-position"));
-        sessionStorage.removeItem("cashflow-hub:reload-position");
-      } catch (error) {}
-      if (!reloadPosition || Date.now() - reloadPosition.savedAt > 60000 ||
-          startupPagePreloadOrder.indexOf(reloadPosition.page) === -1) reloadPosition = null;
+      const reloadPosition = cfhRestoreNavigationState();
       showAppPage(reloadPosition ? reloadPosition.page : "gcash", false);
       if (reloadPosition) {
         const restorePosition = function() {
           syncActivePageHeight();
-          requestAnimationFrame(function() {
-            window.scrollTo(0, reloadPosition.scrollY || 0);
-          });
+          requestAnimationFrame(function() { window.scrollTo(0, reloadPosition.scrollY || 0); });
         };
         requestAnimationFrame(restorePosition);
         ensurePageDataLoaded(reloadPosition.page).then(restorePosition);
@@ -3182,6 +3235,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     function showAppPage(pageName, animate = true) {
       if (pageName !== "calendar") window.cfhLastHomePage = pageName;
+      try { cfhSaveNavigationState(); } catch(e) {}
       document.body.classList.toggle("cfh-calendar-active", pageName === "calendar");
 
       const pageChanged =
@@ -3333,6 +3387,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       ensurePageDataLoaded(
         currentAppPage
       );
+      cfhSaveNavigationState();
 
       syncActivePageHeight();
 
@@ -8413,6 +8468,15 @@ window.cfhRefreshTestTab = function(page) {
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
    <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit">Save</button></div>
    <button id="cfhEditorDelete" type="button" hidden onclick="cfhCalendarDelete()" class="cfh-editor-delete">Delete entry</button><p class="cfh-editor-note">Saved on this device only. Cloud sync is not enabled yet.</p>
+  </form>
+ </div>
+</div>
+<div id="cfhMonthPicker" class="cfh-editor-overlay" hidden>
+ <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhMonthPickerTitle">
+  <div class="cfh-editor-head"><h2 id="cfhMonthPickerTitle">Choose Month &amp; Year</h2><button type="button" class="cfh-editor-close" onclick="cfhCalendarCloseMonthPicker()" aria-label="Close">×</button></div>
+  <form onsubmit="event.preventDefault();cfhCalendarApplyMonthPicker()">
+   <div class="cfh-editor-row"><div><label for="cfhMonthSelect">Month</label><select id="cfhMonthSelect"><option value="0">January</option><option value="1">February</option><option value="2">March</option><option value="3">April</option><option value="4">May</option><option value="5">June</option><option value="6">July</option><option value="7">August</option><option value="8">September</option><option value="9">October</option><option value="10">November</option><option value="11">December</option></select></div><div><label for="cfhYearInput">Year</label><input id="cfhYearInput" type="number" min="1900" max="2100" required></div></div>
+   <div class="cfh-editor-actions"><button type="button" onclick="cfhCalendarCloseMonthPicker()">Cancel</button><button class="cfh-editor-save" type="submit">Go to month</button></div>
   </form>
  </div>
 </div>
