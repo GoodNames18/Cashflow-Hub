@@ -33,12 +33,12 @@ begin
  if session_user<>'postgres' and auth.uid() is distinct from '161ecab1-d1d7-4fef-a089-a7300b9da774'::uuid then
   raise exception 'Not authorized';
  end if;
- for p in select pay.*,plan.item,plan.months from public.cfh_installment_payments pay
+ for p in select pay.*,plan.item,plan.months,plan.created_at as plan_created_at from public.cfh_installment_payments pay
  join public.cfh_installment_plans plan on plan.id=pay.plan_id
  where not pay.posted and pay.due_date <= (now() at time zone 'Asia/Manila')::date
  and pay.owner_id='161ecab1-d1d7-4fef-a089-a7300b9da774'::uuid
  order by pay.due_date for update of pay skip locked loop
-  stamp:=p.due_date::timestamp at time zone 'Asia/Manila';
+  stamp:=(p.due_date + (p.plan_created_at at time zone 'Asia/Manila')::time) at time zone 'Asia/Manila';
   label:=p.item||' — Installment '||p.number||'/'||p.months;
   insert into public.cfh_records(owner_id,client_request_id,tab_key,occurred_at,amount,category,description,payload,source_values)
   values(p.owner_id,p.id,'money_flow',stamp,p.amount,'Installment',label,
