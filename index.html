@@ -2518,7 +2518,7 @@
     let cfhCalendarStorageError = false;
     try {
       const saved = JSON.parse(localStorage.getItem(CFH_CALENDAR_KEY) || '[]');
-      if (Array.isArray(saved)) cfhCalendarEntries = saved.filter(x => x && typeof x.id === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(x.date || ''));
+      if (Array.isArray(saved)) cfhCalendarEntries = saved.filter(x => x && typeof x.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date || ''));
     } catch(e) { cfhCalendarStorageError = true; }
     function cfhCalendarPersist() {
       try { localStorage.setItem(CFH_CALENDAR_KEY, JSON.stringify(cfhCalendarEntries)); cfhCalendarStorageError = false; return true; }
@@ -2572,7 +2572,7 @@
       const type = typeButton ? typeButton.dataset.cfhType : 'event';
       const title = document.getElementById('cfhEditorName').value.trim();
       const date = document.getElementById('cfhEditorDate').value;
-      if (!title || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return;
+      if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
       const amountValue = document.getElementById('cfhEditorAmount').value;
       const entry = {
         id: cfhEditingId || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(36).slice(2)),
