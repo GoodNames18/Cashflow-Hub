@@ -2631,6 +2631,11 @@
     }
 
     async function reloadCashflowHubCode(button) {
+      try {
+        sessionStorage.setItem("cashflow-hub:reload-position", JSON.stringify({
+          page: currentAppPage, scrollY: window.scrollY, savedAt: Date.now()
+        }));
+      } catch (error) {}
       if (button) {
         button.disabled = true;
         button.textContent = "Updating app...";
@@ -2719,7 +2724,24 @@
       setupKonek2CardAutocomplete();
       initializePageHeightSync();
 
-      showAppPage("gcash", false);
+      var reloadPosition = null;
+      try {
+        reloadPosition = JSON.parse(sessionStorage.getItem("cashflow-hub:reload-position"));
+        sessionStorage.removeItem("cashflow-hub:reload-position");
+      } catch (error) {}
+      if (!reloadPosition || Date.now() - reloadPosition.savedAt > 60000 ||
+          startupPagePreloadOrder.indexOf(reloadPosition.page) === -1) reloadPosition = null;
+      showAppPage(reloadPosition ? reloadPosition.page : "gcash", false);
+      if (reloadPosition) {
+        const restorePosition = function() {
+          syncActivePageHeight();
+          requestAnimationFrame(function() {
+            window.scrollTo(0, reloadPosition.scrollY || 0);
+          });
+        };
+        requestAnimationFrame(restorePosition);
+        ensurePageDataLoaded(reloadPosition.page).then(restorePosition);
+      }
 
       // Cash In/Out stays visible by default. Preload the remaining
       // dashboards in the background with at most two active requests.
