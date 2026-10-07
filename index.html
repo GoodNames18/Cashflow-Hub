@@ -1911,7 +1911,7 @@
                 placeholder="Enter transaction"
               >
 
-              <div class="printing-entry-grid">
+              <div class="printing-entry-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
                 <button
                   class="money-flow-entry-button printing-entry-button printing-income-button"
                   type="button"
@@ -1919,6 +1919,8 @@
                 >
                   Income
                 </button>
+
+                <button type="button" class="money-flow-entry-button printing-entry-button" onclick="openInstallmentModal()">Installment</button>
 
                 <button
                   class="money-flow-entry-button printing-entry-button printing-expense-button"
@@ -1929,7 +1931,7 @@
                 </button>
               </div>
 
-              <button type="button" class="money-flow-entry-button printing-entry-button" onclick="openInstallmentModal()">Installment</button>
+              
               <div id="moneyFlowStatus"></div>
 
             </div>
