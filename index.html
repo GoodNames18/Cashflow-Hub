@@ -183,11 +183,11 @@
     }
 
     .pages-track.show-twice {
-      transform: translateX(-14.2857143%);
+      transform: translateX(-12.5%);
     }
 
     .pages-track.show-printing {
-      transform: translateX(-28.5714286%);
+      transform: translateX(-25%);
     }
 
     .pages-track.show-calendar {
@@ -1329,7 +1329,7 @@
 
       <button
         id="calendarTab"
-        class="app-tab"
+        class="app-tab" hidden
         type="button"
         onclick="showAppPage('calendar')"
       >
@@ -3051,6 +3051,7 @@
     // ========================================================
 
     function showAppPage(pageName, animate = true) {
+      if (pageName !== "calendar") window.cfhLastHomePage = pageName;
 
       const pageChanged =
         currentAppPage !== pageName;
@@ -3296,11 +3297,6 @@
           }
 
           if (currentAppPage === "printing") {
-            showAppPage("calendar");
-            return;
-          }
-
-          if (currentAppPage === "calendar") {
             showAppPage("gcash");
             return;
           }
@@ -3341,11 +3337,6 @@
           }
 
           if (currentAppPage === "gcash") {
-            showAppPage("calendar");
-            return;
-          }
-
-          if (currentAppPage === "calendar") {
             showAppPage("printing");
             return;
           }
@@ -8262,7 +8253,7 @@ window.cfhRefreshTestTab = function(page) {
  var bar=document.querySelector('.cfh-bottom-nav');if(!bar)return;
  function sync(){var selected=(typeof currentAppPage!=='undefined'&&currentAppPage==='calendar')?'calendar':'home';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
  var toastTimer;
- bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'){if(typeof showAppPage==='function')showAppPage(dest==='calendar'?'calendar':'gcash');sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
+ bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'){if(typeof showAppPage==='function')showAppPage(dest==='calendar'?'calendar':(window.cfhLastHomePage||'gcash'));sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
  document.addEventListener('click',function(e){if(e.target.closest('.app-tab'))setTimeout(sync,0)});
  document.addEventListener('touchend',function(){setTimeout(sync,100)}, {passive:true});
  sync();
