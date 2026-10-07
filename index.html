@@ -1277,6 +1277,9 @@
 .cfh-bottom-nav .cfh-nav-add svg{width:29px;height:29px}
 .app-shell{padding-bottom:calc(98px + env(safe-area-inset-bottom))!important}
 .cfh-nav-toast{position:fixed;bottom:calc(103px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:61;background:#1B1844;color:white;border-radius:12px;padding:11px 15px;font:13px Arial,sans-serif;max-width:calc(100% - 30px);text-align:center;box-shadow:0 4px 15px #0003}
+
+/* Calendar add editor: UI only; no transaction or persistence hooks */
+.cfh-editor-overlay[hidden]{display:none}.cfh-editor-overlay{position:fixed;inset:0;background:#11132a99;z-index:10010;display:grid;place-items:center;padding:16px}.cfh-editor-panel{width:min(100%,420px);max-height:88dvh;overflow:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 16px 45px #0004;color:#1B1844}.cfh-editor-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.cfh-editor-head h2{margin:0;font-size:20px}.cfh-editor-close{border:0;background:#E6E6FA;border-radius:10px;padding:8px 12px;font-size:20px;color:#1B1844}.cfh-editor-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0}.cfh-editor-types button{border:2px solid #e5e5f2;background:white;color:#1B1844;padding:11px 7px;border-radius:12px;font-weight:650;font-size:12px}.cfh-editor-types button[aria-pressed=true]{border-color:var(--cfh-type-color);background:color-mix(in srgb,var(--cfh-type-color) 11%,white)}.cfh-editor-panel label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}.cfh-editor-panel input,.cfh-editor-panel select,.cfh-editor-panel textarea{display:block;width:100%;border:1px solid #c7c6d7;border-radius:11px;padding:12px;font:15px Arial,sans-serif;color:#1B1844;background:white}.cfh-editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cfh-editor-actions{display:flex;gap:10px;margin-top:18px}.cfh-editor-actions button{flex:1;border:0;border-radius:12px;padding:13px;font-weight:750}.cfh-editor-actions .cfh-editor-save{background:#00F8B9;color:#1B1844}.cfh-editor-actions .cfh-editor-save:disabled{opacity:.55}.cfh-editor-note{font-size:12px;color:#555;margin:10px 0 0}
 </style>
 </head>
 
@@ -2504,10 +2507,23 @@
     }
 
     function cfhCalendarAddPlaceholder() {
-      // Event editor/storage comes next; keep this UI commit free of financial/storage side effects.
-      const schedule = document.getElementById("cfhCalendarSchedule");
-      if (schedule) schedule.textContent = "Add event form is the next Calendar step.";
+      const form = document.getElementById("cfhEditorForm");
+      form.reset();
+      document.getElementById("cfhEditorDate").value = cfhCalendarDateKey(cfhCalendarState.selected);
+      cfhEditorType("event");
+      document.getElementById("cfhEditorOverlay").hidden = false;
     }
+
+    function cfhEditorType(type) {
+      const types = ['statement','due','event','task'];
+      if (!types.includes(type)) type = 'event';
+      document.querySelectorAll('[data-cfh-type]').forEach(function(btn) { btn.setAttribute('aria-pressed',String(btn.dataset.cfhType===type)); });
+      document.getElementById('cfhEditorAmountWrap').hidden = !(type==='statement'||type==='due');
+      document.getElementById('cfhEditorName').placeholder = type==='statement'?'e.g. Credit card statement':type==='due'?'e.g. Credit card payment due':type==='task'?'e.g. Pay electricity bill':'e.g. Appointment';
+    }
+    function cfhEditorClose() { document.getElementById('cfhEditorOverlay').hidden = true; }
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('cfhEditorOverlay')&&!document.getElementById('cfhEditorOverlay').hidden)cfhEditorClose()});
+
 
     let currentAppPage = "gcash";
     let selectedRentalCategory = "";
@@ -8259,6 +8275,27 @@ window.cfhRefreshTestTab = function(page) {
  sync();
 })();
 </script>
+
+<div class="cfh-editor-overlay" id="cfhEditorOverlay" hidden>
+ <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle">
+  <div class="cfh-editor-head"><h2 id="cfhEditorTitle">Add to Calendar</h2><button class="cfh-editor-close" type="button" onclick="cfhEditorClose()" aria-label="Close">×</button></div>
+  <div class="cfh-editor-types" role="group" aria-label="Schedule type">
+   <button type="button" data-cfh-type="statement" style="--cfh-type-color:#7c4dff" onclick="cfhEditorType('statement')">🟣 Card Statement</button>
+   <button type="button" data-cfh-type="due" style="--cfh-type-color:#e53935" onclick="cfhEditorType('due')">🔴 Card Due Date</button>
+   <button type="button" data-cfh-type="event" style="--cfh-type-color:#1e88e5" onclick="cfhEditorType('event')">🔵 Event</button>
+   <button type="button" data-cfh-type="task" style="--cfh-type-color:#2eaf62" onclick="cfhEditorType('task')">🟢 Task</button>
+  </div>
+  <form id="cfhEditorForm" onsubmit="event.preventDefault()">
+   <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
+   <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><input id="cfhEditorTime" type="time"></div></div>
+   <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+   <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat"><option value="none">None</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+   <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
+   <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit" disabled>Save (next step)</button></div>
+   <p class="cfh-editor-note">Form preview only. Saving and syncing calendar entries will be added separately.</p>
+  </form>
+ </div>
+</div>
 </body>
 </html>
 
