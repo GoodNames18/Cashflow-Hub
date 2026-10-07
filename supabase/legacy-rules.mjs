@@ -2417,6 +2417,7 @@ function getPrintingBusinessDashboardData(selectedYear, selectedMonth) {
 
   var income = 0;
   var totalIncome = 0;
+  var totalExpenses = 0;
   var expenses = 0;
   var transactions = 0;
   var recentTransactions = [];
@@ -2503,6 +2504,7 @@ function getPrintingBusinessDashboardData(selectedYear, selectedMonth) {
         }
 
         if (isIncome) totalIncome += amount;
+        if (isExpense) totalExpenses += amount;
 
         if (
           transactionDate >= monthStart &&
@@ -2580,7 +2582,7 @@ function getPrintingBusinessDashboardData(selectedYear, selectedMonth) {
     expenses: expenses,
     profit: income - expenses,
     transactions: transactions,
-    totalMoney: Number(sheet.getRange("H4").getValue()) || 0,
+    totalMoney: totalIncome - totalExpenses,
     recentTransactions:
       recentTransactions
   };
