@@ -114,7 +114,7 @@ export function planEntry(params, now = new ManilaDate()) {
       if(values.some(v=>!Number.isFinite(v)||v<0||Math.abs(v*100-Math.round(v*100))>0.000001)||values[0]===values[1])
         throw new Error('Enter two different nonnegative amounts with at most two decimal places.');
       const gross=Math.max(...values),tax=Math.min(...values),amount=Math.round((gross-tax)*100)/100;
-      const description='Monthly interest | Gross '+gross+' | Tax '+tax;
+      const description='Monthly interest — ₱'+gross.toFixed(2)+' interest, ₱'+tax.toFixed(2)+' tax';
       tab='konek2card';rows=[[date,date,'Card',amount,amount,'Income',description]];
       receipt={amount,gross,tax,feeEarned:amount,description};break;
     }
