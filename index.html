@@ -3181,11 +3181,23 @@
     ) {
 
       if (true) {
+        const savedKey = dashboardCacheKey(params);
+        const savedData = options && options.skipCache ? null : readDashboardCache(savedKey);
+        const generation = savedKey
+          ? (dashboardRequestGeneration[savedKey] = (dashboardRequestGeneration[savedKey] || 0) + 1) : 0;
+        // Render the last saved response before auth/network startup.
+        if (savedData !== null && onSuccess) onSuccess(savedData);
         Promise.resolve(window.cashflowDatabaseReady).then(function() {
           if (!window.cashflowDatabase) throw new Error("Supabase could not load. Check your connection and reload.");
           return window.cashflowDatabase.request(params, options);
-        }).then(function(result) { if (onSuccess) onSuccess(result); },
-          function(error) { if (onFailure) onFailure(error); });
+        }).then(function(result) {
+          if (savedKey && dashboardRequestGeneration[savedKey] !== generation) return;
+          saveDashboardCache(savedKey, result);
+          if (onSuccess && (savedData === null || JSON.stringify(savedData) !== JSON.stringify(result))) onSuccess(result);
+        }, function(error) {
+          if (savedKey && dashboardRequestGeneration[savedKey] !== generation) return;
+          if (savedData === null && onFailure) onFailure(error);
+        });
         return;
       }
 
