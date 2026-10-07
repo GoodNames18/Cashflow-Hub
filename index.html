@@ -117,7 +117,7 @@
 
     .app-tabs {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: repeat(8, minmax(0, 1fr));
       gap: 4px;
       margin-bottom: 10px;
       padding: 5px;
@@ -165,15 +165,15 @@
 
     .pages-track {
       display: flex;
-      width: 700%;
+      width: 800%;
       align-items: flex-start;
       transition: transform .26s ease;
       will-change: transform;
     }
 
     .app-page {
-      width: 14.2857143%;
-      flex: 0 0 14.2857143%;
+      width: 12.5%;
+      flex: 0 0 12.5%;
       /* Shared page spacing for current and future tabs. */
       padding: 0 2px 12px;
     }
@@ -190,20 +190,24 @@
       transform: translateX(-28.5714286%);
     }
 
+    .pages-track.show-calendar {
+      transform: translateX(-37.5%);
+    }
+
     .pages-track.show-gcash {
-      transform: translateX(-42.8571429%);
+      transform: translateX(-50%);
     }
 
     .pages-track.show-expenses {
-      transform: translateX(-57.1428572%);
+      transform: translateX(-62.5%);
     }
 
     .pages-track.show-test {
-      transform: translateX(-71.4285715%);
+      transform: translateX(-75%);
     }
 
     .pages-track.show-rental {
-      transform: translateX(-85.7142858%);
+      transform: translateX(-87.5%);
     }
 
     /* ======================================================
@@ -1289,6 +1293,15 @@
       </button>
 
       <button
+        id="calendarTab"
+        class="app-tab"
+        type="button"
+        onclick="showAppPage('calendar')"
+      >
+        Calendar
+      </button>
+
+      <button
         id="gcashTab"
         class="app-tab active"
         type="button"
@@ -1332,10 +1345,11 @@
          Page 1 = Life Log
          Page 2 = TwiceAsNyce
          Page 3 = Printing
-         Page 4 = Cash In/Out
-         Page 5 = Money Flow
-         Page 6 = Konek2Card
-         Page 7 = Rental
+         Page 4 = Calendar
+         Page 5 = Cash In/Out
+         Page 6 = Money Flow
+         Page 7 = Konek2Card
+         Page 8 = Rental
          ==================================================== -->
 
     <div id="pagesViewport" class="pages-viewport">
@@ -1710,6 +1724,24 @@
 
         <!-- =================================================
              PAGE 3: GCASH BUSINESS
+             ================================================= -->
+
+        <!-- =================================================
+             PAGE 4: CALENDAR
+             Calendar UI is intentionally isolated from financial data.
+             ================================================= -->
+        <section id="calendarPage" class="app-page" data-page="calendar">
+          <div class="gcash-hero printing-hero">
+            <div class="gcash-title printing-title">&#x1F4C5; Calendar</div>
+            <div class="gcash-subtitle">Month and schedule</div>
+          </div>
+          <div class="recent-card" style="margin-top:10px;padding:18px">
+            <div class="dashboard-message">Calendar month and schedule are being added here.</div>
+          </div>
+        </section>
+
+        <!-- =================================================
+             PAGE 5: GCASH BUSINESS
              ================================================= -->
 
         <section id="gcashPage" class="app-page gcash-page" data-page="gcash">
@@ -2915,6 +2947,9 @@
       const rentalTab =
         document.getElementById("rentalTab");
 
+      const calendarTab =
+        document.getElementById("calendarTab");
+
       const gcashTab =
         document.getElementById("gcashTab");
 
@@ -2935,6 +2970,7 @@
         "show-twice",
         "show-printing",
         "show-rental",
+        "show-calendar",
         "show-gcash",
         "show-expenses"
       );
@@ -2944,6 +2980,7 @@
       twiceTab.classList.remove("active");
       printingTab.classList.remove("active");
       rentalTab.classList.remove("active");
+      calendarTab.classList.remove("active");
       gcashTab.classList.remove("active");
       expensesTab.classList.remove("active");
 
@@ -2977,6 +3014,12 @@
         currentAppPage = "rental";
         track.classList.add("show-rental");
         rentalTab.classList.add("active");
+
+      } else if (pageName === "calendar") {
+
+        currentAppPage = "calendar";
+        track.classList.add("show-calendar");
+        calendarTab.classList.add("active");
 
       } else if (pageName === "expenses") {
 
@@ -3049,7 +3092,7 @@
 
     // ========================================================
     // LEFT / RIGHT SWIPE
-    // Swipe order: Life Log <-> TwiceAsNyce <-> Printing <-> Cash In/Out <-> Money Flow <-> Konek2Card <-> Rental
+    // Swipe order: Life Log <-> TwiceAsNyce <-> Printing <-> Calendar <-> Cash In/Out <-> Money Flow <-> Konek2Card <-> Rental
     // Vertical scrolling still works normally.
     // ========================================================
 
@@ -3126,6 +3169,11 @@
           }
 
           if (currentAppPage === "printing") {
+            showAppPage("calendar");
+            return;
+          }
+
+          if (currentAppPage === "calendar") {
             showAppPage("gcash");
             return;
           }
@@ -3166,6 +3214,11 @@
           }
 
           if (currentAppPage === "gcash") {
+            showAppPage("calendar");
+            return;
+          }
+
+          if (currentAppPage === "calendar") {
             showAppPage("printing");
             return;
           }
