@@ -1,5 +1,5 @@
 import { ManilaDate as Date } from './manila-date.mjs?v=live2';
-import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=live2';
+import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=installment-history1';
 // Business rules extracted from the current user-supplied Code.gs.
 function parseExpense(text) {
 

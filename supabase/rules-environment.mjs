@@ -12,10 +12,14 @@ export function withRecords(records, referenceCells, operation) {
     const row = record.source_values.map((v,i) => i < 2 ? sourceDate(v) : v);
     row.sourceRowNumber = record.id;
     row.sourceFingerprint = record.id + ':' + record.revision;
+    // Backdated installments are new entries; keep their due date but show them in recent history.
+    const enteredAt = record.tab_key === 'money_flow' && record.payload?.installment_plan
+      ? Date.parse(record.created_at) : NaN;
+    row.recentSortTime = Number.isFinite(enteredAt) ? Math.max(enteredAt, row[0].getTime()) : row[0].getTime();
     (sheets[name] ||= []).push(row);
   }
   for (const rows of Object.values(sheets)) rows.sort((a,b) =>
-    b[0].getTime() - a[0].getTime() || (b[1]?.getTime?.() || 0) - (a[1]?.getTime?.() || 0) ||
+    b.recentSortTime - a.recentSortTime || (b[1]?.getTime?.() || 0) - (a[1]?.getTime?.() || 0) ||
     b.sourceRowNumber.localeCompare(a.sourceRowNumber));
   state = { sheets, referenceCells };
   try { return operation(); } finally { state = previous; }
