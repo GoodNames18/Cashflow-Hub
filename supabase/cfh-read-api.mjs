@@ -1,6 +1,6 @@
-import * as rules from './legacy-rules.mjs?v=interest-compat1';
-import { sourceDate } from './manila-date.mjs?v=live2';
-import { withRecords } from './rules-environment.mjs?v=installment-history1';
+import * as rules from './legacy-rules.mjs?v=calendar3';
+import { sourceDate } from './manila-date.mjs?v=calendar3';
+import { withRecords } from './rules-environment.mjs?v=calendar3';
 const routes = {
   lifeLogDashboard:['life_log','getLifeLogDashboardData','year','month'],
   expenseDashboard:['money_flow','getExpenseDashboardData','year','month'],
@@ -43,3 +43,4 @@ export class CashflowReadApi {
     return { ...data, success:true };
   }
 }
+
