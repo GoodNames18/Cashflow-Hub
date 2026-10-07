@@ -688,6 +688,10 @@
       margin-top: 8px;
     }
 
+    #printingPage .printing-entry-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
     .printing-entry-button {
       width: 100%;
       min-width: 0;
@@ -1468,6 +1472,14 @@
                   onclick="savePrintingEntry('Income')"
                 >
                   Income
+                </button>
+
+                <button
+                  class="printing-entry-button printing-income-button"
+                  type="button"
+                  onclick="savePrintingEntry('Income', '5 Receipt')"
+                >
+                  Receipt ₱5
                 </button>
 
                 <button
@@ -5573,7 +5585,7 @@
     }
 
 
-    function savePrintingEntry(category) {
+    function savePrintingEntry(category, quickText) {
 
       var input =
         document.getElementById(
@@ -5581,7 +5593,7 @@
         );
 
       var text =
-        input.value.trim();
+        quickText || input.value.trim();
 
       var status =
         document.getElementById(
@@ -5619,7 +5631,7 @@
             ) +
             " added";
 
-          input.value = "";
+          if (!quickText) input.value = "";
 
           setPrintingEntryButtonsDisabled(
             false
