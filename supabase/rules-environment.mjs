@@ -12,10 +12,12 @@ export function withRecords(records, referenceCells, operation) {
     const row = record.source_values.map((v,i) => i < 2 ? sourceDate(v) : v);
     row.sourceRowNumber = record.id;
     row.sourceFingerprint = record.id + ':' + record.revision;
-    // Backdated installments are new entries; keep their due date but show them in recent history.
-    const enteredAt = record.tab_key === 'money_flow' && record.payload?.installment_plan
-      ? Date.parse(record.created_at) : NaN;
-    row.recentSortTime = Number.isFinite(enteredAt) ? Math.max(enteredAt, row[0].getTime()) : row[0].getTime();
+    // Money Flow history follows the transaction date and recorded time.
+    const stamp = new ManilaDate(row[0].getTime());
+    if (record.tab_key === 'money_flow' && row[1] instanceof ManilaDate) {
+      stamp.setHours(row[1].getHours(), row[1].getMinutes(), row[1].getSeconds(), 0);
+    }
+    row.recentSortTime = stamp.getTime();
     (sheets[name] ||= []).push(row);
   }
   for (const rows of Object.values(sheets)) rows.sort((a,b) =>
