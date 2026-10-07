@@ -1280,6 +1280,7 @@
 
 /* Calendar add editor: UI only; no transaction or persistence hooks */
 .cfh-editor-overlay[hidden]{display:none}.cfh-editor-overlay{position:fixed;inset:0;background:#11132a99;z-index:10010;display:grid;place-items:center;padding:16px}.cfh-editor-panel{width:min(100%,420px);max-height:88dvh;overflow:auto;background:white;border-radius:20px;padding:20px;box-shadow:0 16px 45px #0004;color:#1B1844}.cfh-editor-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.cfh-editor-head h2{margin:0;font-size:20px}.cfh-editor-close{border:0;background:#E6E6FA;border-radius:10px;padding:8px 12px;font-size:20px;color:#1B1844}.cfh-editor-types{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0}.cfh-editor-types button{border:2px solid #e5e5f2;background:white;color:#1B1844;padding:11px 7px;border-radius:12px;font-weight:650;font-size:12px}.cfh-editor-types button[aria-pressed=true]{border-color:var(--cfh-type-color);background:color-mix(in srgb,var(--cfh-type-color) 11%,white)}.cfh-editor-panel label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}.cfh-editor-panel input,.cfh-editor-panel select,.cfh-editor-panel textarea{display:block;width:100%;border:1px solid #c7c6d7;border-radius:11px;padding:12px;font:15px Arial,sans-serif;color:#1B1844;background:white}.cfh-editor-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.cfh-editor-actions{display:flex;gap:10px;margin-top:18px}.cfh-editor-actions button{flex:1;border:0;border-radius:12px;padding:13px;font-weight:750}.cfh-editor-actions .cfh-editor-save{background:#00F8B9;color:#1B1844}.cfh-editor-actions .cfh-editor-save:disabled{opacity:.55}.cfh-editor-note{font-size:12px;color:#555;margin:10px 0 0}
+.cfh-schedule-item{display:flex;flex-direction:column;text-align:left;gap:5px;width:100%;padding:12px;margin:7px 0;background:#fff;border:1px solid #ddd;border-left:5px solid;border-radius:10px;color:#1B1844}.cfh-schedule-item small{color:#5c5b6c}.cfh-schedule-item span{font-size:12px;white-space:pre-wrap}.cfh-editor-delete{margin-top:12px;border:1px solid #e53935;border-radius:10px;background:#fff;color:#c62828;padding:11px;width:100%;font-weight:700}.cfh-editor-delete[hidden],#cfhEditorAmountWrap[hidden]{display:none}
 </style>
 </head>
 
@@ -2481,6 +2482,17 @@
         cell.onclick = function () { cfhCalendarSelectDate(date); };
         grid.appendChild(cell);
       }
+      grid.querySelectorAll('.cfh-calendar-day').forEach(function(cell, i) {
+        const date = new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+        const entries = cfhCalendarForDate(cfhCalendarDateKey(date));
+        const dots = cell.querySelector('.cfh-calendar-dots');
+        [...new Set(entries.map(e=>e.type))].slice(0,4).forEach(function(type) {
+          const dot = document.createElement('span');
+          dot.className = 'cfh-calendar-dot';
+          dot.style.background = ({statement:'#7c4dff',due:'#e53935',event:'#1e88e5',task:'#2eaf62'})[type] || '#1e88e5';
+          dots.appendChild(dot);
+        });
+      });
       cfhCalendarRenderSchedule();
     }
 
@@ -2498,17 +2510,122 @@
       cfhCalendarRender();
     }
 
+
+    // Calendar-only storage. Does not touch financial tables or transactions.
+    const CFH_CALENDAR_KEY = 'cfh_calendar_entries_v1';
+    let cfhCalendarEntries = [];
+    let cfhEditingId = null;
+    let cfhCalendarStorageError = false;
+    try {
+      const saved = JSON.parse(localStorage.getItem(CFH_CALENDAR_KEY) || '[]');
+      if (Array.isArray(saved)) cfhCalendarEntries = saved.filter(x => x && typeof x.id === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(x.date || ''));
+    } catch(e) { cfhCalendarStorageError = true; }
+    function cfhCalendarPersist() {
+      try { localStorage.setItem(CFH_CALENDAR_KEY, JSON.stringify(cfhCalendarEntries)); cfhCalendarStorageError = false; return true; }
+      catch(e) { cfhCalendarStorageError = true; alert('Calendar could not save on this device. Check available browser storage.'); return false; }
+    }
+    function cfhCalendarMatches(entry, key) {
+      if (entry.date === key) return true;
+      if (!entry.repeat || entry.repeat === 'none' || key < entry.date) return false;
+      const [sy,sm,sd] = entry.date.split('-').map(Number);
+      const [y,m,d] = key.split('-').map(Number);
+      if (entry.repeat === 'monthly') {
+        // Clamp 29th-31st to the last day of short months.
+        const last = new Date(y,m,0).getDate();
+        return d === Math.min(sd,last);
+      }
+      if (entry.repeat === 'yearly') return m === sm && d === Math.min(sd,new Date(y,m,0).getDate());
+      return false;
+    }
+    function cfhCalendarForDate(key) {
+      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+    }
+    function cfhCalendarEdit(id) {
+      const entry = cfhCalendarEntries.find(e => e.id === id);
+      if (!entry) return;
+      cfhCalendarAddPlaceholder();
+      cfhEditingId = id;
+      document.getElementById('cfhEditorTitle').textContent = 'Edit Calendar Entry';
+      document.getElementById('cfhEditorName').value = entry.title || '';
+      document.getElementById('cfhEditorDate').value = entry.date;
+      document.getElementById('cfhEditorTime').value = entry.time || '';
+      document.getElementById('cfhEditorAmount').value = entry.amount ?? '';
+      document.getElementById('cfhEditorRepeat').value = entry.repeat || 'none';
+      document.getElementById('cfhEditorNotes').value = entry.notes || '';
+      cfhEditorType(entry.type);
+      document.querySelector('.cfh-editor-save').textContent = 'Update';
+      document.getElementById('cfhEditorDelete').hidden = false;
+    }
+    function cfhCalendarDelete() {
+      if (!cfhEditingId || !confirm('Delete this calendar entry and its repeating dates?')) return;
+      const next = cfhCalendarEntries.filter(e => e.id !== cfhEditingId);
+      const old = cfhCalendarEntries;
+      cfhCalendarEntries = next;
+      if (!cfhCalendarPersist()) { cfhCalendarEntries = old; return; }
+      cfhEditorClose();
+      cfhCalendarRender();
+    }
+    function cfhCalendarSave() {
+      const form = document.getElementById('cfhEditorForm');
+      if (!form.reportValidity()) return;
+      const typeButton = document.querySelector('[data-cfh-type][aria-pressed="true"]');
+      const type = typeButton ? typeButton.dataset.cfhType : 'event';
+      const title = document.getElementById('cfhEditorName').value.trim();
+      const date = document.getElementById('cfhEditorDate').value;
+      if (!title || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return;
+      const amountValue = document.getElementById('cfhEditorAmount').value;
+      const entry = {
+        id: cfhEditingId || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(36).slice(2)),
+        type, title, date,
+        time: document.getElementById('cfhEditorTime').value,
+        amount: (type === 'statement' || type === 'due') && amountValue !== '' ? Number(amountValue) : null,
+        repeat: document.getElementById('cfhEditorRepeat').value,
+        notes: document.getElementById('cfhEditorNotes').value.trim()
+      };
+      const old = cfhCalendarEntries;
+      cfhCalendarEntries = [...old.filter(e => e.id !== entry.id),entry];
+      if (!cfhCalendarPersist()) { cfhCalendarEntries = old; return; }
+      const [y,m,d] = date.split('-').map(Number);
+      cfhCalendarState.selected = new Date(y,m-1,d);
+      cfhCalendarState.month = new Date(y,m-1,1);
+      cfhEditorClose();
+      cfhCalendarRender();
+    }
+
     function cfhCalendarRenderSchedule() {
       const label = document.getElementById("cfhCalendarSelectedLabel");
       const schedule = document.getElementById("cfhCalendarSchedule");
       if (!label || !schedule) return;
       label.textContent = cfhCalendarState.selected.toLocaleDateString("en-PH", { month:"short", day:"numeric" });
-      schedule.textContent = "No events scheduled.";
+      const entries = cfhCalendarForDate(cfhCalendarDateKey(cfhCalendarState.selected));
+      schedule.replaceChildren();
+      if (!entries.length) { schedule.textContent = "No events scheduled."; return; }
+      const colors = {statement:'#7c4dff',due:'#e53935',event:'#1e88e5',task:'#2eaf62'};
+      const names = {statement:'Card Statement',due:'Card Due Date',event:'Event',task:'Task'};
+      entries.forEach(function(entry) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cfh-schedule-item';
+        button.style.borderLeftColor = colors[entry.type] || colors.event;
+        const heading = document.createElement('strong');
+        heading.textContent = entry.title;
+        const meta = document.createElement('small');
+        const amount = entry.amount != null && Number.isFinite(entry.amount) ? ' · ₱' + entry.amount.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+        meta.textContent = (names[entry.type] || 'Event') + (entry.time ? ' · ' + entry.time : '') + amount + (entry.repeat && entry.repeat !== 'none' ? ' · ' + entry.repeat : '');
+        button.append(heading,meta);
+        if (entry.notes) { const note = document.createElement('span'); note.textContent = entry.notes; button.append(note); }
+        button.onclick = function() { cfhCalendarEdit(entry.id); };
+        schedule.appendChild(button);
+      });
     }
 
     function cfhCalendarAddPlaceholder() {
       const form = document.getElementById("cfhEditorForm");
       form.reset();
+      cfhEditingId = null;
+      document.getElementById('cfhEditorTitle').textContent = 'Add to Calendar';
+      document.querySelector('.cfh-editor-save').textContent = 'Save';
+      document.getElementById('cfhEditorDelete').hidden = true;
       document.getElementById("cfhEditorDate").value = cfhCalendarDateKey(cfhCalendarState.selected);
       cfhEditorType("event");
       document.getElementById("cfhEditorOverlay").hidden = false;
@@ -8285,14 +8402,14 @@ window.cfhRefreshTestTab = function(page) {
    <button type="button" data-cfh-type="event" style="--cfh-type-color:#1e88e5" onclick="cfhEditorType('event')">🔵 Event</button>
    <button type="button" data-cfh-type="task" style="--cfh-type-color:#2eaf62" onclick="cfhEditorType('task')">🟢 Task</button>
   </div>
-  <form id="cfhEditorForm" onsubmit="event.preventDefault()">
+  <form id="cfhEditorForm" onsubmit="event.preventDefault();cfhCalendarSave()">
    <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
    <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><input id="cfhEditorTime" type="time"></div></div>
    <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
    <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat"><option value="none">None</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
-   <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit" disabled>Save (next step)</button></div>
-   <p class="cfh-editor-note">Form preview only. Saving and syncing calendar entries will be added separately.</p>
+   <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit">Save</button></div>
+   <button id="cfhEditorDelete" type="button" hidden onclick="cfhCalendarDelete()" class="cfh-editor-delete">Delete entry</button><p class="cfh-editor-note">Saved on this device only. Cloud sync is not enabled yet.</p>
   </form>
  </div>
 </div>
