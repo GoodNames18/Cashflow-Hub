@@ -1,4 +1,4 @@
-import { ManilaDate, sourceDate } from './manila-date.mjs?v=live2';
+import { ManilaDate, sourceDate } from './manila-date.mjs?v=calendar3';
 let state = null;
 const names = { life_log:'Life Log', twice_as_nyce:'TwiceAsNyce',
   printing:'Printing Business', cash_in_out:'Cash In/Out', money_flow:'Money Flow',
@@ -68,3 +68,4 @@ export const Utilities = {
     return pattern.replace(/yyyy|MMMM|MMM|MM|dd|hh|mm|yy|d|a/g, token=>tokens[token]);
   }
 };
+
