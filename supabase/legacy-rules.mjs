@@ -1,5 +1,5 @@
-import { ManilaDate as Date } from './manila-date.mjs?v=live2';
-import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=installment-history1';
+import { ManilaDate as Date } from './manila-date.mjs?v=calendar3';
+import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=calendar3';
 // Business rules extracted from the current user-supplied Code.gs.
 function parseExpense(text) {
 
@@ -1123,6 +1123,8 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     }
   }
 
+  // Edited dates may differ from physical row order. Earnings follow transaction time.
+  liveRows.sort(function(a, b) { return getTestRowTimestamp_(b) - getTestRowTimestamp_(a); });
   var totalEarned = 0;
   var thisWeekEarned = 0;
   var boundaryFound = false;
@@ -1288,19 +1290,20 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
 
   var spendableCard = card - heldMoney;
   var totalApp = gcash + spendableCard;
+  var money = function(value) { return Math.round((value + Number.EPSILON) * 100) / 100; };
   return {
-    cashOnApp: totalApp,
-    totalApp: totalApp,
-    gcash: gcash,
-    card: spendableCard,
-    cashOnHand: cashOnHand,
-    totalMoney: totalApp + cashOnHand + TEST_START_SAVINGS_INCLUDED_IN_TOTAL_,
-    heldMoney: heldMoney,
-    totalEarned: totalEarned,
-    thisWeekEarned: thisWeekEarned,
+    cashOnApp: money(totalApp),
+    totalApp: money(totalApp),
+    gcash: money(gcash),
+    card: money(spendableCard),
+    cashOnHand: money(cashOnHand),
+    totalMoney: money(totalApp + cashOnHand + TEST_START_SAVINGS_INCLUDED_IN_TOTAL_),
+    heldMoney: money(heldMoney),
+    totalEarned: money(totalEarned),
+    thisWeekEarned: money(thisWeekEarned),
     loanRemaining: Math.round(loanRemaining * 100) / 100,
-    utangKayNanay: utangKayNanay,
-    othersLoan: othersLoan
+    utangKayNanay: money(utangKayNanay),
+    othersLoan: money(othersLoan)
   };
 }
 
