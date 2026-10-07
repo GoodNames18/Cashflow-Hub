@@ -41,9 +41,9 @@ begin
   stamp:=p.due_date::timestamp at time zone 'Asia/Manila';
   label:=p.item||' — Installment '||p.number||'/'||p.months;
   insert into public.cfh_records(owner_id,client_request_id,tab_key,occurred_at,amount,category,description,payload,source_values)
-  values(p.owner_id,p.id,'money_flow',stamp,p.amount,'Other',label,
+  values(p.owner_id,p.id,'money_flow',stamp,p.amount,'Installment',label,
    jsonb_build_object('sheet','Money Flow','installment_plan',p.plan_id,'installment_number',p.number,'installment_months',p.months),
-   jsonb_build_array(stamp,stamp,'',label,'Other',p.amount,'',label))
+   jsonb_build_array(stamp,stamp,'',label,'Installment',p.amount,'',label))
   on conflict(owner_id,client_request_id) do nothing;
   update public.cfh_installment_payments set posted=true where id=p.id;
   count_posted:=count_posted+1;
