@@ -1929,6 +1929,7 @@
                 </button>
               </div>
 
+              <button type="button" class="money-flow-entry-button printing-entry-button" onclick="openInstallmentModal()">Installment</button>
               <div id="moneyFlowStatus"></div>
 
             </div>
@@ -2326,7 +2327,7 @@
 
   <script>
     if (true) {
-      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=printing-balance1");
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=installment1");
       window.cashflowDatabaseReady.catch(function() {});
     }
   </script>
@@ -5819,6 +5820,39 @@
     }
 
 
+
+    function openInstallmentModal() {
+      var modal=document.getElementById('installmentModal');
+      if(!document.getElementById('installmentDate').value)
+        document.getElementById('installmentDate').value=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      document.getElementById('installmentStatus').textContent='';
+      modal.hidden=false;modal.style.display='flex';previewInstallment();
+    }
+    function closeInstallmentModal() {
+      if(document.getElementById('installmentSave').disabled)return;
+      var modal=document.getElementById('installmentModal');modal.hidden=true;modal.style.display='none';
+    }
+    function previewInstallment() {
+      var total=Number(document.getElementById('installmentTotal').value);
+      var months=Number(document.getElementById('installmentMonths').value);
+      var date=document.getElementById('installmentDate').value;
+      document.getElementById('installmentPreview').textContent=total>0&&Number.isInteger(months)&&months>0&&months<=120?
+        formatPeso(Math.floor(total*100/months)/100)+' per month. Posts on day '+(date?Number(date.slice(-2)):'—')+' each month. The last payment adjusts any centavo difference.':'';
+    }
+    function saveInstallment(event) {
+      event.preventDefault();
+      var button=document.getElementById('installmentSave'),status=document.getElementById('installmentStatus');
+      if(button.disabled)return;
+      button.disabled=true;status.textContent='Saving…';
+      jsonpRequest({action:'installmentCreate',item:document.getElementById('installmentItem').value.trim(),
+        total:document.getElementById('installmentTotal').value,months:document.getElementById('installmentMonths').value,
+        firstDate:document.getElementById('installmentDate').value},
+        function(result){button.disabled=false;closeInstallmentModal();document.getElementById('installmentForm').reset();
+          document.getElementById('moneyFlowStatus').textContent='✓ Installment scheduled. Payments post on their due dates.';
+          loadDashboard();},
+        function(error){button.disabled=false;status.textContent=error.message;});
+    }
+
     function saveMoneyFlowEntry(entryType) {
       var input = document.getElementById("moneyFlowTransactionInput");
       var text = input.value.trim();
@@ -8012,6 +8046,19 @@ window.cfhRefreshTestTab = function(page) {
   refreshDashboardTotalsAfterDelete(page);
 };
 </script>
+<div id="installmentModal" hidden style="position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.4);padding:18px;align-items:center;justify-content:center">
+ <form id="installmentForm" style="width:min(420px,100%);max-height:85dvh;overflow:auto;background:white;border:1px solid var(--secondary);border-radius:18px;padding:20px;display:grid;gap:12px" onsubmit="saveInstallment(event)">
+  <h2 style="margin:0">Installment</h2>
+  <label>Item<input id="installmentItem" class="quick-custom-input" maxlength="120" placeholder="iPhone 18 Pro Max" required></label>
+  <label>Total amount (including interest)<input id="installmentTotal" class="quick-custom-input" type="number" min=".01" step=".01" required oninput="previewInstallment()"></label>
+  <label>Number of months<input id="installmentMonths" class="quick-custom-input" type="number" min="1" max="120" step="1" required oninput="previewInstallment()"></label>
+  <label>First payment date<input id="installmentDate" class="quick-custom-input" type="date" min="2000-01-01" max="2100-01-01" required oninput="previewInstallment()"></label>
+  <p id="installmentPreview" style="margin:0"></p>
+  <p id="installmentStatus" role="status" style="margin:0"></p>
+  <button id="installmentSave" class="printing-income-button" type="submit" style="margin:0">Save installment</button>
+  <button type="button" onclick="closeInstallmentModal()" style="margin:0;background:var(--secondary);color:white">Cancel</button>
+ </form>
+</div>
 </body>
 </html>
 

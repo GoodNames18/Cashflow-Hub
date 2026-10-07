@@ -5,7 +5,7 @@ const dashboards={life_log:'lifeLogDashboard',money_flow:'dashboard',rental:'ren
   twice_as_nyce:'twiceDashboard',printing:'printingDashboard',cash_in_out:'gcashDashboard',konek2card:'testDashboard'};
 const actions=new Set(['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd',
   'gcashTextAdd','testCashOut','testAapCollection','testTransfer','testOthersLoan','testLoan',
-  'testAtmWithdraw','testHoldMoney','testMonthlyInterest']);
+  'testAtmWithdraw','testHoldMoney','testMonthlyInterest','installmentCreate']);
 const sheets={'Life Log':'life_log','Money Flow':'money_flow','Rental':'rental','TwiceAsNyce':'twice_as_nyce',
   'Printing Business':'printing','Cash In/Out':'cash_in_out','Konek2Card':'konek2card'};
 export class CashflowWriteApi {
@@ -31,6 +31,20 @@ export class CashflowWriteApi {
     return task;
   }
   async perform(params) {
+    if(params.action==='installmentCreate') {
+      if(this.testOnly)throw new Error('Create installments in the normal app.');
+      const key=JSON.stringify(params);
+      let pending=this.retries.get(key);
+      if(!pending){pending={id:crypto.randomUUID()};this.retries.set(key,pending);}
+      const {data,error}=await this.store.client.rpc('cfh_create_installment',{
+        p_id:pending.id,p_item:params.item,p_total:Number(params.total),
+        p_months:Number(params.months),p_first_date:params.firstDate
+      });
+      if(error)throw error;
+      this.retries.delete(key);
+      try {await this.reads.snapshot.load('money_flow',true);}catch(error){console.warn('Installment saved; display will refresh',error);}
+      return data;
+    }
     if(params.action==='transactionDeleteStatus') {
       const record=await this.find(params);return {success:true,deleted:!!record.deleted_at};
     }
