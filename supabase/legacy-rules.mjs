@@ -1172,7 +1172,7 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     var category = String(row[5] || '').trim().toLowerCase();
     var description = String(row[6] || '').trim().toLowerCase();
 
-    if (category === 'income' && /^monthly interest \| gross [0-9.]+ \| tax [0-9.]+$/.test(description)) {
+    if (category === 'income' && /^(?:monthly interest \| gross [0-9.]+ \| tax [0-9.]+|monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/.test(description)) {
       card += amount;
       continue;
     }
@@ -1330,7 +1330,7 @@ function getTestRowTimestamp_(row) {
 }
 
 function getTestEarnedFeeValue_(row) {
-  if (String(row && row[5] || '').toLowerCase()==='income' && /^Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+$/.test(String(row && row[6] || ''))) return Number(row[3] || 0);
+  if (String(row && row[5] || '').toLowerCase()==='income' && /^(?:Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+|Monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/i.test(String(row && row[6] || ''))) return Number(row[3] || 0);
   var processing = getTestGcashAapProcessingFromRow_(row);
   if (processing) return processing.feeEarned;
   var aapCalculation = getTestAapCalculationFromRow_(row);
