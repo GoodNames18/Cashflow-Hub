@@ -1,4 +1,4 @@
-import * as rules from './legacy-rules.mjs?v=installment-history1';
+import * as rules from './legacy-rules.mjs?v=interest-compat1';
 import { sourceDate } from './manila-date.mjs?v=live2';
 import { withRecords } from './rules-environment.mjs?v=installment-history1';
 const routes = {
