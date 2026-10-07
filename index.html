@@ -1242,7 +1242,31 @@
       -webkit-overflow-scrolling: touch;
     }
 
-</style>
+
+    /* Calendar page: isolated UI styles */
+    .cfh-calendar-shell { padding: 12px 12px 96px; }
+    .cfh-calendar-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:0 4px 18px rgba(0,0,0,.04); }
+    .cfh-calendar-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+    .cfh-calendar-title { font-size:20px; font-weight:800; color:var(--text); }
+    .cfh-calendar-nav { display:flex; gap:6px; }
+    .cfh-calendar-nav button { width:36px; height:36px; border:1px solid var(--line); border-radius:12px; background:#fff; font-size:20px; color:var(--text); }
+    .cfh-calendar-weekdays,.cfh-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); }
+    .cfh-calendar-weekdays div { text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:5px 0 8px; }
+    .cfh-calendar-day { min-height:54px; border-top:1px solid #f0f0f0; padding:5px 2px; text-align:center; cursor:pointer; overflow:hidden; }
+    .cfh-calendar-day-number { width:27px; height:27px; margin:0 auto; display:grid; place-items:center; border-radius:50%; font-size:12px; font-weight:700; }
+    .cfh-calendar-day.is-other .cfh-calendar-day-number { color:#b8b8b8; }
+    .cfh-calendar-day.is-today .cfh-calendar-day-number { background:var(--primary); color:#071c17; }
+    .cfh-calendar-day.is-selected { background:rgba(0,248,185,.08); border-radius:10px; }
+    .cfh-calendar-dots { display:flex; justify-content:center; gap:2px; margin-top:4px; min-height:5px; }
+    .cfh-calendar-dot { width:4px; height:4px; border-radius:50%; background:var(--secondary); }
+    .cfh-schedule { margin-top:14px; }
+    .cfh-schedule-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .cfh-schedule-heading h2 { margin:0; font-size:18px; }
+    .cfh-schedule-empty { padding:22px 10px; text-align:center; color:var(--muted); font-size:13px; }
+    .cfh-calendar-fab { position:absolute; right:18px; bottom:22px; width:52px; height:52px; border:0; border-radius:18px; background:var(--primary); color:#071c17; font-size:30px; line-height:1; box-shadow:0 8px 22px rgba(0,0,0,.18); z-index:3; }
+    #calendarPage { position:relative; }
+
+  </style>
 </head>
 
 <body>
@@ -1731,13 +1755,30 @@
              Calendar UI is intentionally isolated from financial data.
              ================================================= -->
         <section id="calendarPage" class="app-page" data-page="calendar">
-          <div class="gcash-hero printing-hero">
-            <div class="gcash-title printing-title">&#x1F4C5; Calendar</div>
-            <div class="gcash-subtitle">Month and schedule</div>
+          <div class="cfh-calendar-shell">
+            <div class="cfh-calendar-card">
+              <div class="cfh-calendar-head">
+                <div id="cfhCalendarMonthTitle" class="cfh-calendar-title">Calendar</div>
+                <div class="cfh-calendar-nav">
+                  <button type="button" aria-label="Previous month" onclick="cfhCalendarMoveMonth(-1)">&#8249;</button>
+                  <button type="button" aria-label="Next month" onclick="cfhCalendarMoveMonth(1)">&#8250;</button>
+                </div>
+              </div>
+              <div class="cfh-calendar-weekdays" aria-hidden="true">
+                <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+              </div>
+              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div>
+            </div>
+
+            <div class="cfh-calendar-card cfh-schedule">
+              <div class="cfh-schedule-heading">
+                <h2>Schedule</h2>
+                <span id="cfhCalendarSelectedLabel" class="dashboard-message"></span>
+              </div>
+              <div id="cfhCalendarSchedule" class="cfh-schedule-empty">No events scheduled.</div>
+            </div>
           </div>
-          <div class="recent-card" style="margin-top:10px;padding:18px">
-            <div class="dashboard-message">Calendar month and schedule are being added here.</div>
-          </div>
+          <button class="cfh-calendar-fab" type="button" aria-label="Add schedule" onclick="cfhCalendarAddPlaceholder()">+</button>
         </section>
 
         <!-- =================================================
@@ -2383,6 +2424,80 @@
 
     let recognition;
     let deferredInstallPrompt = null;
+
+    // Calendar UI state is intentionally separate from Cashflow transaction state.
+    const cfhCalendarState = {
+      month: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      selected: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+    };
+
+    function cfhCalendarDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+
+    function cfhCalendarRender() {
+      const grid = document.getElementById("cfhCalendarGrid");
+      const title = document.getElementById("cfhCalendarMonthTitle");
+      if (!grid || !title) return;
+
+      const view = cfhCalendarState.month;
+      title.textContent = view.toLocaleDateString("en-PH", { month:"long", year:"numeric" });
+      grid.innerHTML = "";
+
+      const first = new Date(view.getFullYear(), view.getMonth(), 1);
+      const mondayOffset = (first.getDay() + 6) % 7;
+      const start = new Date(view.getFullYear(), view.getMonth(), 1 - mondayOffset);
+      const todayKey = cfhCalendarDateKey(new Date());
+      const selectedKey = cfhCalendarDateKey(cfhCalendarState.selected);
+
+      for (let i = 0; i < 42; i += 1) {
+        const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+        const key = cfhCalendarDateKey(date);
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "cfh-calendar-day";
+        if (date.getMonth() !== view.getMonth()) cell.classList.add("is-other");
+        if (key === todayKey) cell.classList.add("is-today");
+        if (key === selectedKey) cell.classList.add("is-selected");
+        cell.setAttribute("aria-label", date.toLocaleDateString("en-PH", { dateStyle:"full" }));
+        cell.innerHTML = '<span class="cfh-calendar-day-number">' + date.getDate() + '</span><span class="cfh-calendar-dots"></span>';
+        cell.onclick = function () { cfhCalendarSelectDate(date); };
+        grid.appendChild(cell);
+      }
+      cfhCalendarRenderSchedule();
+    }
+
+    function cfhCalendarSelectDate(date) {
+      cfhCalendarState.selected = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      if (date.getMonth() !== cfhCalendarState.month.getMonth() || date.getFullYear() !== cfhCalendarState.month.getFullYear()) {
+        cfhCalendarState.month = new Date(date.getFullYear(), date.getMonth(), 1);
+      }
+      cfhCalendarRender();
+    }
+
+    function cfhCalendarMoveMonth(direction) {
+      const view = cfhCalendarState.month;
+      cfhCalendarState.month = new Date(view.getFullYear(), view.getMonth() + direction, 1);
+      cfhCalendarRender();
+    }
+
+    function cfhCalendarRenderSchedule() {
+      const label = document.getElementById("cfhCalendarSelectedLabel");
+      const schedule = document.getElementById("cfhCalendarSchedule");
+      if (!label || !schedule) return;
+      label.textContent = cfhCalendarState.selected.toLocaleDateString("en-PH", { month:"short", day:"numeric" });
+      schedule.textContent = "No events scheduled.";
+    }
+
+    function cfhCalendarAddPlaceholder() {
+      // Event editor/storage comes next; keep this UI commit free of financial/storage side effects.
+      const schedule = document.getElementById("cfhCalendarSchedule");
+      if (schedule) schedule.textContent = "Add event form is the next Calendar step.";
+    }
+
     let currentAppPage = "gcash";
     let selectedRentalCategory = "";
     let selectedGcashQuickCategory = "";
@@ -3020,6 +3135,7 @@
         currentAppPage = "calendar";
         track.classList.add("show-calendar");
         calendarTab.classList.add("active");
+        cfhCalendarRender();
 
       } else if (pageName === "expenses") {
 
