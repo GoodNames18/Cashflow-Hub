@@ -1488,6 +1488,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-event-actions button{background:#E6E6FA;color:#1B1844;border:1px solid #d6d3ef}
 #cfhCardPanel .cfh-card-delete-options button{background:#E6E6FA;color:#1B1844;border-color:#d6d3ef}
 
+
+#cfhCardPanel .cfh-card-reminder-days{column-gap:6px;row-gap:8px}
+#cfhCardPanel .cfh-card-reminder-days .cfh-reminder-day-box{display:flex;align-items:center;justify-content:center;width:100%;height:44px;min-width:0;margin:0;padding:8px 2px;border:1px solid #d6d3ef;border-radius:9px;background:#E6E6FA;color:#1B1844;font-family:inherit;font-size:clamp(8px,2.5vw,11px);font-weight:600;white-space:nowrap;cursor:pointer}
+#cfhCardPanel .cfh-card-reminder-days .cfh-reminder-day-box[aria-pressed=true]{background:#00F8B9;border-color:#00F8B9}
+#cfhCardPanel .cfh-reminder-day-box:focus-visible{outline:2px solid #1B1844;outline-offset:2px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3314,12 +3319,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const savedDays=(cfhCardPanelPreferences()[bank]||{}).reminderDays;
         const selectedDays=Array.isArray(savedDays)?savedDays.filter(day=>allowedDays.includes(day)):allowedDays;
         for(const day of allowedDays){
-          const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=selectedDays.includes(day);input.value=String(day);
-          label.append(input,document.createTextNode(day===0?'Same day':day+' '+(day===1?'day':'days')+' before'));daysBox.append(label);
-          input.onchange=()=>{
-            const prefs=cfhCardPanelPreferences();
-            prefs[bank]={...(prefs[bank]||{}),reminderDays:[...daysBox.querySelectorAll('input:checked')].map(el=>Number(el.value))};
-            try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save reminder days.');}
+          const button=document.createElement('button');button.type='button';button.className='cfh-reminder-day-box';
+          button.textContent=day===0?'Same day':day+' '+(day===1?'day':'days')+' before';
+          button.dataset.day=String(day);button.setAttribute('aria-pressed',String(selectedDays.includes(day)));daysBox.append(button);
+          button.onclick=()=>{
+            const enabled=button.getAttribute('aria-pressed')!=='true';
+            const prefs=cfhCardPanelPreferences(),previous={...(prefs[bank]||{})};
+            const days=new Set(Array.isArray(previous.reminderDays)?previous.reminderDays:allowedDays);
+            if(enabled)days.add(day);else days.delete(day);
+            prefs[bank]={...previous,reminderDays:allowedDays.filter(value=>days.has(value))};
+            try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));button.setAttribute('aria-pressed',String(enabled));}
+            catch(error){alert('Could not save reminder days.');}
           };
         }
         rangeTitle.classList.add('cfh-manage-section-title');scheduleTitle.classList.add('cfh-manage-section-title');
