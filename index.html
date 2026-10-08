@@ -1508,6 +1508,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCalendarMonthTitle{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
     #cfhEditorOverlay .cfh-editor-types{grid-template-columns:repeat(3,minmax(0,1fr))}
     #cfhEditorCardTypeWrap[hidden]{display:none}
+    #cfhEditorOverlay .cfh-editor-panel{display:flex;flex-direction:column;overflow:hidden;max-height:88dvh}
+    #cfhEditorOverlay .cfh-editor-head,#cfhEditorOverlay .cfh-editor-types{flex:0 0 auto}
+    #cfhEditorForm{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+    #cfhEditorForm .cfh-editor-fields{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-right:2px}
+    #cfhEditorForm .cfh-editor-actions{flex:0 0 auto;background:#fff;margin-top:0;padding-top:14px;padding-bottom:env(safe-area-inset-bottom,0px);border-top:1px solid #E6E6FA}
+    #cfhEditorForm .cfh-editor-actions button{margin-bottom:0}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -9343,14 +9349,17 @@ window.cfhRefreshTestTab = function(page) {
    <button type="button" data-cfh-type="task" style="--cfh-type-color:#2eaf62" onclick="cfhEditorType('task')">🟢 Task</button>
   </div>
   <form id="cfhEditorForm" onsubmit="event.preventDefault();cfhCalendarSave()">
+   <div class="cfh-editor-fields">
    <div id="cfhEditorCardTypeWrap" hidden><label for="cfhEditorCardType">Card schedule</label><select id="cfhEditorCardType" onchange="cfhEditorType(this.value)"><option value="statement">Statement Date</option><option value="due">Due Date</option></select></div>
    <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
    <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><input id="cfhEditorTime" type="time"></div></div>
    <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
    <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat"><option value="none">None</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
-   <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit">Save</button></div>
+   
    <button id="cfhEditorDelete" type="button" hidden onclick="cfhCalendarDelete()" class="cfh-editor-delete">Delete entry</button><p class="cfh-editor-note">Saved on this device only. Cloud sync is not enabled yet.</p>
+   </div>
+   <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit">Save</button></div>
   </form>
  </div>
 </div>
