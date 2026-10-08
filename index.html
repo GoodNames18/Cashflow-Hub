@@ -3054,8 +3054,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       };
       inputs.end.addEventListener('input',()=>inputs.end.setCustomValidity(''));
       inputs.start.addEventListener('input',()=>inputs.end.setCustomValidity(''));
-      dialog.append(rangeForm);
-      const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);
+      addRow('Schedule Date Range',range?format(range.start)+' — '+format(range.end):'Set the start and end dates in Manage Card.');
+      const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);settings.append(rangeForm);
       const edit=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;settings.append(button);};
       if(ew&&entry.cfhEastwestCycle){
         for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
