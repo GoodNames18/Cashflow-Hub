@@ -1447,10 +1447,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 
 #cfhCardPanel .cfh-card-panel>[hidden]{display:none!important}
-#cfhCardPanel .cfh-card-panel.is-managing .cfh-card-panel-settings{position:static;padding-top:0}
-#cfhCardPanel .cfh-card-panel.is-managing .cfh-card-panel-settings::before{display:none}
+#cfhCardPanel .cfh-card-panel.is-managing .cfh-card-panel-settings{position:sticky;bottom:0;padding-top:10px}
+
 #cfhCardPanel .cfh-card-manage-reminder{display:flex;align-items:center;gap:10px;padding:16px 0;font-size:14px}
 #cfhCardPanel .cfh-card-manage-reminder input{width:auto}
+#cfhCardPanel .cfh-card-manage-fields>button{display:block;width:100%;margin:10px 0;padding:12px;border-radius:10px;border:1px solid #d5dae1;background:#fff;color:#171c26;font:inherit}
 </style>
 </head>
 
@@ -3117,6 +3118,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const reminderInput=document.createElement('input');reminderInput.type='checkbox';reminderInput.checked=cfhBellEnabled(entry.id);
         reminderInput.onchange=()=>{cfhToggleBell(entry.id);cfhCardPanelRender();};
         reminderLabel.append(reminderInput,document.createTextNode('Reminders for this event'));settings.append(reminderLabel);
+      }
+      if(cfhCardPanelManaging){
+        const editor=document.createElement('div');editor.className='cfh-card-manage-fields';
+        for(const child of [...settings.children]){if(child!==summary)editor.append(child);}
+        settings.open=false;dialog.insertBefore(editor,settings);
       }
       overlay.append(dialog);document.body.append(overlay);
       overlay.addEventListener('click',e=>{if(e.target===overlay)cfhCardPanelClose();});
