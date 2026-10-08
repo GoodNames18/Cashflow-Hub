@@ -1457,6 +1457,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-reminder-days legend{font-size:14px;font-weight:600;margin-bottom:10px}
 #cfhCardPanel .cfh-card-reminder-days label{display:flex;align-items:center;gap:12px;font-size:13px;padding:7px 0;cursor:pointer}
 #cfhCardPanel .cfh-card-reminder-days input{width:18px;height:18px;margin:0;flex:none;accent-color:#8244cf}
+
+#cfhCardPanel .cfh-card-reminder-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:10px;row-gap:8px}
+#cfhCardPanel .cfh-card-reminder-days legend{margin-bottom:12px}
+#cfhCardPanel .cfh-card-reminder-days label{gap:6px;font-size:12px;line-height:1.3;padding:5px 0;min-width:0}
+#cfhCardPanel .cfh-card-reminder-days input{width:16px;height:16px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3133,7 +3138,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const selectedDays=Array.isArray(savedDays)?savedDays.filter(day=>allowedDays.includes(day)):allowedDays;
         for(const day of allowedDays){
           const label=document.createElement('label'),input=document.createElement('input');input.type='checkbox';input.checked=selectedDays.includes(day);input.value=String(day);
-          label.append(input,document.createTextNode(day===0?'On the event date':day+' '+(day===1?'day':'days')+' before'));daysBox.append(label);
+          label.append(input,document.createTextNode(day===0?'Same day':day+' '+(day===1?'day':'days')+' before'));daysBox.append(label);
           input.onchange=()=>{
             const prefs=cfhCardPanelPreferences();
             prefs[bank]={...(prefs[bank]||{}),reminderDays:[...daysBox.querySelectorAll('input:checked')].map(el=>Number(el.value))};
