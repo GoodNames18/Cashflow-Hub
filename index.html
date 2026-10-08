@@ -3073,6 +3073,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const value=bank?(cfhCardPanelPreferences()[bank]||{}).notificationTime:entry.time;
       return /^([01]\d|2[0-3]):[0-5]\d$/.test(value||'')?value:'';
     }
+    function cfhCardDisplayNames(entry){
+      const bank=entry.cfhCard15?'eastwest':'metrobank',prefs=cfhCardPanelPreferences()[bank]||{};
+      return {bank:prefs.bankName||(bank==='eastwest'?'EastWest':'Metrobank'),card:prefs.cardName||(bank==='eastwest'?'Visa Platinum':'Travel Signature Visa')};
+    }
     function cfhCardPanelRender(){
       const existing=document.getElementById('cfhCardPanel');if(existing)existing.remove();
       const entry=cfhCardPanelEntry,ew=!!entry.cfhCard15,bank=ew?'eastwest':'metrobank';
@@ -3085,7 +3089,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const dialog=document.createElement('div');dialog.className='cfh-card-panel';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','cfhCardPanelTitle');
       const close=document.createElement('button');close.type='button';close.className='cfh-card-panel-close';close.textContent='×';close.setAttribute('aria-label','Close card details');close.onclick=cfhCardPanelClose;
       const photo=document.createElement('img');photo.src=ew?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943';photo.alt=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
-      const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
+      const displayNames=cfhCardDisplayNames(entry);
+      const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=displayNames.bank+' '+displayNames.card;
       const name=document.createElement('strong');name.className='cfh-card-panel-name';name.textContent=ew?'Visa Platinum':'Travel Signature Visa';
       photo.tabIndex=0;photo.setAttribute('role','button');photo.setAttribute('aria-label','Close card details');
       photo.onclick=cfhCardPanelClose;
@@ -3128,6 +3133,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       rangeForm.onsubmit=e=>e.preventDefault();
       addRow('Schedule Date Range',range?format(range.start)+' — '+format(range.end):'Set the start and end dates in Manage Card.');
       const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);settings.append(rangeForm);
+      const nameForm=document.createElement('div');nameForm.className='cfh-card-range';
+      const nameFields=document.createElement('div');nameFields.className='cfh-card-range-fields';
+      const nameInputs={};
+      for(const [key,labelText,current] of [['bankName','Bank name',displayNames.bank],['cardName','Card name',displayNames.card]]){
+        const label=document.createElement('label');label.textContent=labelText;
+        const input=document.createElement('input');input.type='text';input.maxLength=80;input.value=current;nameInputs[key]=input;label.append(input);nameFields.append(label);
+      }
+      nameForm.append(nameFields);settings.append(nameForm);
       const scheduleForm=document.createElement('div');scheduleForm.className='cfh-card-range';
       const scheduleTitle=document.createElement('strong');scheduleTitle.textContent='Schedule Settings';scheduleForm.append(scheduleTitle);
       const scheduleFields=document.createElement('div');scheduleFields.className='cfh-card-range-fields';
@@ -3146,6 +3159,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const prefs=cfhCardPanelPreferences(),value={...(prefs[bank]||{})};
         const start=inputs.start.value,end=inputs.end.value;
         value.rangeDraft={start,end};
+        value.bankName=nameInputs.bankName.value.trim();value.cardName=nameInputs.cardName.value.trim();
         const statementDay=Number(scheduleInputs.statementDay.value),dueDays=Number(scheduleInputs.dueDays.value);
         if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
           if(statementDay!==recurring.statementDay||dueDays!==recurring.dueDays)value.scheduleFrom=value.scheduleFrom||cfhCalendarDateKey(new Date()).slice(0,7);
@@ -3158,7 +3172,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save card settings.');return;}
         cfhCalendarRender();
       };
-      for(const input of [inputs.start,inputs.end,timeInput,scheduleInputs.statementDay,scheduleInputs.dueDays]){
+      for(const input of [inputs.start,inputs.end,timeInput,scheduleInputs.statementDay,scheduleInputs.dueDays,nameInputs.bankName,nameInputs.cardName]){
         input.addEventListener('input',savePreferences);
         input.addEventListener('change',savePreferences);
       }
@@ -3183,7 +3197,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if(cfhCardPanelManaging){
         dialog.classList.add('is-managing');
         for(const child of dialog.children){if(child!==settings)child.hidden=true;}
-        const heading=document.createElement('h2');heading.textContent='Manage '+(ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa');dialog.prepend(heading);
+        const heading=document.createElement('h2');heading.textContent='Manage '+displayNames.bank+' '+displayNames.card;dialog.prepend(heading);
         const daysBox=document.createElement('fieldset');daysBox.className='cfh-card-reminder-days';
         const daysTitle=document.createElement('legend');daysTitle.textContent='Reminder days';daysBox.append(daysTitle);
         const allowedDays=[7,5,3,2,1,0];
@@ -3251,8 +3265,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=entry.cfhAuto?'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943':'./images/Eastwest%20Visa%20Platinum.png';photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
         const details=document.createElement('div');details.className='cfh-timeline-details';
-        const bank=document.createElement('small');const cardBank=entry.cfhAuto?'Metrobank':entry.cfhCard15?'EastWest':'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='task'?'Task':'Calendar';
-        const name=document.createElement('strong');name.textContent=entry.cfhAuto?'Travel Signature Visa':entry.cfhCard15?'Visa Platinum':entry.title;
+        const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='task'?'Task':'Calendar';
+        const name=document.createElement('strong');name.textContent=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).card:entry.title;
         const time=document.createElement('small');time.textContent=cardBank?(entry.time||''):(entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');if(cardBank&&!entry.time)time.hidden=true;
         time.textContent=cardBank?'':(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');time.hidden=!!cardBank;
         details.append(bank,name,time);
