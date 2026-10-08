@@ -1453,6 +1453,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-manage-reminder input{width:auto}
 #cfhCardPanel .cfh-card-manage-fields>button{display:block;width:100%;margin:10px 0;padding:12px;border-radius:10px;border:1px solid #d5dae1;background:#fff;color:#171c26;font:inherit}
 </style>
+<link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
 
 <body>
@@ -3043,7 +3044,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const overlay=document.createElement('div');overlay.id='cfhCardPanel';overlay.className='cfh-card-panel-overlay';
       const dialog=document.createElement('div');dialog.className='cfh-card-panel';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','cfhCardPanelTitle');
       const close=document.createElement('button');close.type='button';close.className='cfh-card-panel-close';close.textContent='×';close.setAttribute('aria-label','Close card details');close.onclick=cfhCardPanelClose;
-      const photo=document.createElement('img');photo.src=ew?'./images/Eastwest%20Visa%20Platinum.png':'https://raw.githubusercontent.com/GoodNames18/Cashflow-Hub/feature/calendar/images/Metrobank%20Travel%20Signature%20Visa.png';photo.alt=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
+      const photo=document.createElement('img');photo.src=ew?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943';photo.alt=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
       const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
       const name=document.createElement('strong');name.className='cfh-card-panel-name';name.textContent=ew?'Visa Platinum':'Travel Signature Visa';
       photo.tabIndex=0;photo.setAttribute('role','button');photo.setAttribute('aria-label','Close card details');
@@ -3173,7 +3174,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         lastDate=entry.cfhDisplayDate;
         const card=document.createElement('div');card.className='cfh-timeline-event '+(entry.type==='statement'?'is-statement':entry.type==='due'?'is-due':'is-other-event');
         const visual=document.createElement('div');visual.className='cfh-timeline-visual';
-        if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=entry.cfhAuto?'https://raw.githubusercontent.com/GoodNames18/Cashflow-Hub/feature/calendar/images/Metrobank%20Travel%20Signature%20Visa.png':'./images/Eastwest%20Visa%20Platinum.png';photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
+        if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=entry.cfhAuto?'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943':'./images/Eastwest%20Visa%20Platinum.png';photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
         const details=document.createElement('div');details.className='cfh-timeline-details';
         const bank=document.createElement('small');const cardBank=entry.cfhAuto?'Metrobank':entry.cfhCard15?'EastWest':'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='task'?'Task':'Calendar';
