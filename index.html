@@ -3121,6 +3121,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhEditorClose();
       cfhCalendarRender();
     }
+    function cfhAddAtomeRule(){
+      const atome=cfhIsAtomeCard({bankName:document.getElementById('cfhAddBank').value,cardName:document.getElementById('cfhAddCardName').value});
+      const due=document.getElementById('cfhAddDueDays');
+      document.getElementById('cfhAddDueLabel').textContent=atome?'Due day (next month)':'Due after (days)';
+      if(atome&&!due.readOnly){due.dataset.previous=due.value;document.getElementById('cfhAddStatementDay').value='23';}
+      due.value=atome?'3':due.readOnly?(due.dataset.previous||'24'):due.value;due.readOnly=atome;
+    }
     function cfhAddCardPreview(){
       const photo=document.getElementById('cfhAddCardPhoto'),value=document.getElementById('cfhAddCardImage').value;
       photo.hidden=!value;if(value)photo.src=value;
@@ -3140,7 +3147,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if(!bankName||!cardName)return;
       const key='duplicate-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
       const prefs=cfhCardPanelPreferences();
-      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:Number(value('cfhAddStatementDay')),dueDays:Number(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:document.getElementById('cfhAddReminderToggle').getAttribute('aria-pressed')==='true',reminderDays:[...document.querySelectorAll('[data-cfh-add-day][aria-pressed="true"]')].map(b=>Number(b.dataset.cfhAddDay)),confirmedCycles:{}};
+      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:Number(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:Number(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:document.getElementById('cfhAddReminderToggle').getAttribute('aria-pressed')==='true',reminderDays:[...document.querySelectorAll('[data-cfh-add-day][aria-pressed="true"]')].map(b=>Number(b.dataset.cfhAddDay)),confirmedCycles:{}};
       try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save card.');return;}
       const [y,m,d]=start.split('-').map(Number);cfhCalendarState.selected=new Date(y,m-1,d);cfhCalendarState.month=new Date(y,m-1,1);
       cfhEditorClose();cfhCalendarRender();cfhSaveNavigationState();
@@ -3209,9 +3216,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const chosen=cfhCardImageCatalog.find(item=>item.url===prefs.image||(!prefs.image&&item.name.toLowerCase()===fallback.toLowerCase()));
       return (chosen&&chosen.url)||prefs.image||(entry.cfhCard15?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943');
     }
+    function cfhIsAtomeCard(config){return /\batome\b/i.test([config.bankName,config.cardName].filter(Boolean).join(' '));}
+    function cfhAtomeDueDate(year,month){return cfhCalendarDateKey(new Date(year,month+1,3));}
     function cfhDuplicateCycle(bank,year,month){
       const prefs=cfhCardPanelPreferences()[bank],cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7);
       const override=(prefs.confirmedCycles||{})[cycle]||{};
+      if(cfhIsAtomeCard(prefs))return {cycle,statement:cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhCardStatementDate(bank,year,month)),due:cfhEastwestValidDate(override.due)?override.due:cfhAtomeDueDate(year,month)};
       const adjust=date=>{
         if(prefs.sourceBank==='eastwest')return cfhEastwestBankingDate(date);
         while(date.getDay()===0||date.getDay()===6)date.setDate(date.getDate()+1);
@@ -3362,6 +3372,15 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const label=document.createElement('label');label.textContent=labelText;
         const input=document.createElement('input');input.type='number';input.min='1';input.max=String(max);input.step='1';input.value=recurring[key];scheduleInputs[key]=input;label.append(input);scheduleFields.append(label);
       }
+      const updateAtomeFields=()=>{
+        const atome=cfhIsAtomeCard({bankName:nameInputs.bankName.value,cardName:nameInputs.cardName.value});
+        const due=scheduleInputs.dueDays;
+        due.parentElement.firstChild.textContent=atome?'Due day (next month)':'Due after (days)';
+        if(atome&&!due.readOnly)due.dataset.previous=due.value;
+        due.value=atome?'3':due.readOnly?(due.dataset.previous||String(recurring.dueDays)):due.value;due.readOnly=atome;
+      };
+      updateAtomeFields();
+      nameInputs.bankName.addEventListener('input',updateAtomeFields);nameInputs.cardName.addEventListener('input',updateAtomeFields);
       scheduleForm.append(scheduleFields);settings.append(scheduleForm);
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
@@ -3378,7 +3397,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const statementDay=Number(scheduleInputs.statementDay.value),dueDays=Number(scheduleInputs.dueDays.value);
         if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
           if(statementDay!==recurring.statementDay||dueDays!==recurring.dueDays)value.scheduleFrom=value.scheduleFrom||cfhCalendarDateKey(new Date()).slice(0,7);
-          value.statementDay=statementDay;value.dueDays=dueDays;
+          value.statementDay=statementDay;if(!cfhIsAtomeCard(value))value.dueDays=dueDays;
         }
         inputs.end.min=start;inputs.end.setCustomValidity(start&&end&&start>end?'End date must be on or after start date.':'');
         if(cfhEastwestValidDate(start)&&cfhEastwestValidDate(end)&&start<=end){value.start=start;value.end=end;}
@@ -3557,6 +3576,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const end=new Date(cfhCalendarState.selected);end.setFullYear(end.getFullYear()+5);
       document.getElementById('cfhAddCardEnd').value=cfhCalendarDateKey(end);
       document.querySelectorAll('#cfhAddCardFields [aria-pressed]').forEach(button=>button.setAttribute('aria-pressed','true'));
+      document.getElementById("cfhAddDueDays").readOnly=false;document.getElementById("cfhAddDueLabel").textContent="Due after (days)";
       cfhEditorType("event");
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
@@ -9396,9 +9416,9 @@ window.cfhRefreshTestTab = function(page) {
   <form id="cfhEditorForm" onsubmit="event.preventDefault();cfhCalendarSave()">
    <div class="cfh-editor-fields">
     <div id="cfhAddCardFields" hidden>
-      <div class="cfh-editor-row"><div><label>Bank name</label><input id="cfhAddBank" maxlength="80" required></div><div><label>Card name</label><input id="cfhAddCardName" maxlength="80" required></div></div>
+      <div class="cfh-editor-row"><div><label>Bank name</label><input id="cfhAddBank" maxlength="80" required oninput="cfhAddAtomeRule()"></div><div><label>Card name</label><input id="cfhAddCardName" maxlength="80" required oninput="cfhAddAtomeRule()"></div></div>
       <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview()"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
-      <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" value="15" required></div><div><label>Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" value="24" required></div></div>
+      <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" value="15" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" value="24" required></div></div>
       <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
       <h3>Reminders</h3><button id="cfhAddReminderToggle" class="cfh-reminder-day-box" type="button" aria-label="Enable reminders" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">🔔 Reminders</button>
       <label>Notification time</label><input id="cfhAddCardTime" type="time">
