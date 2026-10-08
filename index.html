@@ -1289,6 +1289,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .app-tabs .app-tab{flex:0 0 auto;width:auto;min-width:max-content;padding:10px 14px;font-size:12px;white-space:nowrap}
 .cfh-calendar-title-button{border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}.cfh-calendar-title-button:after{content:'⌄';font-size:.6em;margin-left:9px;vertical-align:middle;color:#777}
 .cfh-metrobank-info{font-size:12px;line-height:1.5;color:var(--muted);padding:11px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
+.cfh-metrobank-notifications{padding:12px 14px;margin-top:12px;border:1px solid #ddd;border-radius:10px;font-size:12px}.cfh-metrobank-notification-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cfh-notification-status{background:#eee;color:#555;border-radius:12px;padding:3px 8px;font-size:11px}.cfh-metrobank-notifications p{margin:7px 0;color:var(--muted)}.cfh-notification-preview-title{font-weight:600;margin:10px 0 6px}.cfh-notification-preview-list{display:grid;gap:5px}.cfh-notification-preview-list>div{padding:5px 7px;background:rgba(0,0,0,.03);border-radius:5px}.cfh-metrobank-notifications small{display:block;margin-top:8px;color:var(--muted)}
 </style>
 </head>
 
@@ -1781,7 +1782,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
               <div class="cfh-calendar-weekdays" aria-hidden="true">
                 <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
               </div>
-              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div><div class="cfh-metrobank-info">Metrobank Travel Signature Visa: statement every 18th; payment due 21 days later (weekends adjusted). Future dates are estimates until confirmed on your SOA. Calendar reminders appear 7, 5, 3, 1 days before and on the due date at 9:00 AM PHT. <strong>Phone push alerts are not enabled yet.</strong> Tap an estimated payment due entry to correct its date.</div>
+              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div><div class="cfh-metrobank-info">Metrobank Travel Signature Visa: statement every 18th; payment due 21 days later (weekends adjusted). Future dates are estimates until confirmed on your SOA. Calendar reminders appear 7, 5, 3, 1 days before and on the due date at 9:00 AM PHT. <strong>Notification center is prepared; delivery is not enabled yet.</strong> Tap an estimated payment due entry to correct its date.</div>
+              <div class="cfh-metrobank-notifications"><div class="cfh-metrobank-notification-head"><strong>Metrobank Notifications</strong><span class="cfh-notification-status">Delivery pending</span></div><p>Scheduled at 9:00 AM (Philippine time) — 7, 5, 3, 1 days before and on the payment due date.</p><div id="cfhMetrobankNotificationPreview"></div></div>
             </div>
 
             <div class="cfh-calendar-card cfh-schedule">
@@ -2493,6 +2495,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         });
       });
       cfhCalendarRenderSchedule();
+      cfhMetrobankRenderNotificationPreview();
     }
 
     function cfhCalendarSelectDate(date) {
@@ -2598,6 +2601,29 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           enabledForPush:false
         };
       });
+    }
+
+    function cfhMetrobankRenderNotificationPreview() {
+      const target = document.getElementById('cfhMetrobankNotificationPreview');
+      if (!target) return;
+      const view = cfhCalendarState.month;
+      const statement = cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),18));
+      const plan = cfhMetrobankNotificationPlan(statement);
+      const heading = document.createElement('div');
+      heading.className='cfh-notification-preview-title';
+      heading.textContent='Reminder schedule for '+view.toLocaleDateString('en-PH',{month:'long',year:'numeric'})+' statement';
+      const list = document.createElement('div');
+      list.className='cfh-notification-preview-list';
+      plan.forEach(function(item){
+        const line=document.createElement('div');
+        const dateParts=item.date.split('-').map(Number);
+        const date=new Date(dateParts[0],dateParts[1]-1,dateParts[2]);
+        line.textContent=(item.daysBefore===0?'Due today':item.daysBefore+' days before')+' · '+date.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})+' · 9:00 AM';
+        list.appendChild(line);
+      });
+      const note=document.createElement('small');
+      note.textContent=plan[0].confirmed?'Due date confirmed':'Estimated dates — verify official SOA';
+      target.replaceChildren(heading,list,note);
     }
 
     function cfhMetrobankEditDue(statementKey) {
