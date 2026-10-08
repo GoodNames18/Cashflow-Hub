@@ -1249,7 +1249,7 @@
     .cfh-calendar-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
     .cfh-calendar-title { font-size:20px; font-weight:800; color:var(--text); }
     .cfh-calendar-nav { display:flex; gap:6px; }
-    .cfh-calendar-nav button { width:36px; height:36px; border:1px solid var(--line); border-radius:12px; background:#fff; font-size:20px; color:var(--text); }
+    .cfh-calendar-nav button { display:grid; place-items:center; flex:0 0 36px; padding:0; margin:0; line-height:1; width:36px; height:36px; border:1px solid var(--line); border-radius:12px; background:#fff; font-size:20px; color:var(--text); }
     .cfh-calendar-weekdays,.cfh-calendar-grid { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); }
     .cfh-calendar-weekdays div { text-align:center; font-size:11px; font-weight:700; color:var(--muted); padding:5px 0 8px; }
     .cfh-calendar-day { min-height:54px; border-top:1px solid #f0f0f0; padding:5px 2px; text-align:center; cursor:pointer; overflow:hidden; }
@@ -1986,8 +1986,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
               <div class="cfh-calendar-head">
                 <button id="cfhCalendarMonthTitle" type="button" class="cfh-calendar-title cfh-calendar-title-button" onclick="cfhCalendarOpenMonthPicker()" aria-label="Choose calendar month and year">Calendar</button>
                 <div class="cfh-calendar-nav">
-                  <button type="button" aria-label="Previous month" onclick="cfhCalendarMoveMonth(-1)">&#8249;</button>
-                  <button type="button" aria-label="Next month" onclick="cfhCalendarMoveMonth(1)">&#8250;</button>
+                  <button type="button" aria-label="Previous month" onclick="cfhCalendarMoveMonth(-1)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+                  <button type="button" aria-label="Next month" onclick="cfhCalendarMoveMonth(1)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
                 </div>
               </div>
               <div id="cfhCalendarMonthStrip" class="cfh-calendar-month-strip" hidden aria-label="Choose calendar month"></div>
