@@ -1327,6 +1327,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-event:before{left:-14px;width:10px;height:10px;background:#4962a8;z-index:1}
 .cfh-timeline-event.is-statement:before{background:#8244cf}
 .cfh-timeline-event.is-due:before{background:#df4d43}
+.cfh-timeline-row:has(.cfh-timeline-date.is-today)>.cfh-timeline-event:before{background:var(--primary)}
 /* Highlight today's event date, or the next upcoming event date. */
 .cfh-timeline-date.is-today small{color:#000}
 /* Center event text as one block alongside the image and actions. */
