@@ -1263,6 +1263,9 @@
     .cfh-schedule-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
     .cfh-schedule-heading h2 { margin:0; font-size:18px; }
     .cfh-schedule-empty { padding:22px 10px; text-align:center; color:var(--muted); font-size:13px; }
+    /* Tighten only the populated Schedule area; keep event cards unchanged. */
+    #cfhCalendarSchedule:has(.cfh-timeline-row){padding:6px 0 4px;text-align:left;}
+    #cfhCalendarSchedule .cfh-timeline-row{margin-top:4px;margin-bottom:4px;}
     .cfh-calendar-fab { position:absolute; right:18px; bottom:22px; width:52px; height:52px; border:0; border-radius:18px; background:var(--primary); color:#071c17; font-size:30px; line-height:1; box-shadow:0 8px 22px rgba(0,0,0,.18); z-index:3; }
     #calendarPage { position:relative; }
 
