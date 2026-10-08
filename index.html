@@ -1506,6 +1506,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     .cfh-calendar-search input:focus{outline:2px solid #00F8B9;outline-offset:1px}
     #cfhCalendarSearchButton[aria-expanded="true"]{background:#00F8B9;color:#1B1844}
     #cfhCalendarMonthTitle{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+    #cfhEditorOverlay .cfh-editor-types{grid-template-columns:repeat(3,minmax(0,1fr))}
+    #cfhEditorCardTypeWrap[hidden]{display:none}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3107,7 +3109,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const form = document.getElementById('cfhEditorForm');
       if (!form.reportValidity()) return;
       const typeButton = document.querySelector('[data-cfh-type][aria-pressed="true"]');
-      const type = typeButton ? typeButton.dataset.cfhType : 'event';
+      const selectedType = typeButton ? typeButton.dataset.cfhType : 'event';
+      const type = selectedType==='card'?document.getElementById('cfhEditorCardType').value:selectedType;
       const title = document.getElementById('cfhEditorName').value.trim();
       const date = document.getElementById('cfhEditorDate').value;
       if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
@@ -3514,9 +3517,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function cfhEditorType(type) {
-      const types = ['statement','due','event','task'];
+      const types = ['card','statement','due','event','task'];
       if (!types.includes(type)) type = 'event';
-      document.querySelectorAll('[data-cfh-type]').forEach(function(btn) { btn.setAttribute('aria-pressed',String(btn.dataset.cfhType===type)); });
+      const isCard=['card','statement','due'].includes(type);
+      const cardType=document.getElementById('cfhEditorCardType');
+      if(type==='card')type=cardType.value;
+      else if(isCard)cardType.value=type;
+      document.getElementById('cfhEditorCardTypeWrap').hidden=!isCard;
+      document.querySelectorAll('[data-cfh-type]').forEach(function(btn) { btn.setAttribute('aria-pressed',String(btn.dataset.cfhType===(isCard?'card':type))); });
       document.getElementById('cfhEditorAmountWrap').hidden = !(type==='statement'||type==='due');
       document.getElementById('cfhEditorName').placeholder = type==='statement'?'e.g. Credit card statement':type==='due'?'e.g. Credit card payment due':type==='task'?'e.g. Pay electricity bill':'e.g. Appointment';
     }
@@ -9328,14 +9336,14 @@ window.cfhRefreshTestTab = function(page) {
 
 <div class="cfh-editor-overlay" id="cfhEditorOverlay" hidden>
  <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle">
-  <div class="cfh-editor-head"><h2 id="cfhEditorTitle">Add to Calendar</h2><button class="cfh-editor-close" type="button" onclick="cfhEditorClose()" aria-label="Close">×</button></div>
+  <div class="cfh-editor-head"><h2 id="cfhEditorTitle">Add to Calendar</h2></div>
   <div class="cfh-editor-types" role="group" aria-label="Schedule type">
-   <button type="button" data-cfh-type="statement" style="--cfh-type-color:#7c4dff" onclick="cfhEditorType('statement')">🟣 Card Statement</button>
-   <button type="button" data-cfh-type="due" style="--cfh-type-color:#e53935" onclick="cfhEditorType('due')">🔴 Card Due Date</button>
+   <button type="button" data-cfh-type="card" style="--cfh-type-color:#1B1844" onclick="cfhEditorType('card')">Credit Card</button>
    <button type="button" data-cfh-type="event" style="--cfh-type-color:#1e88e5" onclick="cfhEditorType('event')">🔵 Event</button>
    <button type="button" data-cfh-type="task" style="--cfh-type-color:#2eaf62" onclick="cfhEditorType('task')">🟢 Task</button>
   </div>
   <form id="cfhEditorForm" onsubmit="event.preventDefault();cfhCalendarSave()">
+   <div id="cfhEditorCardTypeWrap" hidden><label for="cfhEditorCardType">Card schedule</label><select id="cfhEditorCardType" onchange="cfhEditorType(this.value)"><option value="statement">Statement Date</option><option value="due">Due Date</option></select></div>
    <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
    <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><input id="cfhEditorTime" type="time"></div></div>
    <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
