@@ -1398,6 +1398,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-card-panel-date strong{font-size:clamp(14px,3.8vw,21px);line-height:1.35;white-space:normal;overflow-wrap:anywhere;text-align:center}
 
     #cfhCardPanel #cfhCardPanelTitle{font-size:32px;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+
+    #cfhCardPanel{padding:100px 30px}
+    #cfhCardPanel .cfh-card-panel{max-height:calc(100dvh - 200px)}
 </style>
 </head>
 
@@ -3001,7 +3004,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save preference.');return;}
         cfhCalendarRender();cfhCardPanelRender();
       }));
-      const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Edit Card Settings';settings.append(summary);
+      const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);
       const edit=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;settings.append(button);};
       if(ew&&entry.cfhEastwestCycle){
         for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
