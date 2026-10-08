@@ -1553,6 +1553,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-notification-time-row .cfh-time-period{font-size:13px!important}
 
 #cfhEditorForm .cfh-editor-actions button{background:var(--secondary,#1B1844);color:#fff}
+
+.cfh-credit-card-dot{display:inline-block;width:13px;height:13px;flex-shrink:0;border-radius:50%;background:linear-gradient(90deg,#8244cf 0 50%,#df4d43 50% 100%);vertical-align:-1px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -9497,7 +9499,7 @@ window.cfhRefreshTestTab = function(page) {
  <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle" ontouchstart="cfhEditorSwipeStart(event)" ontouchend="cfhEditorSwipeEnd(event)">
   <div class="cfh-editor-head"><h2 id="cfhEditorTitle">Add to Calendar</h2></div>
   <div class="cfh-editor-types" role="group" aria-label="Schedule type">
-   <button type="button" data-cfh-type="card" style="--cfh-type-color:#1B1844" onclick="cfhEditorType('card')">Credit Card</button>
+   <button type="button" data-cfh-type="card" style="--cfh-type-color:#1B1844" onclick="cfhEditorType('card')"><span class="cfh-credit-card-dot" aria-hidden="true"></span> Credit Card</button>
    <button type="button" data-cfh-type="event" style="--cfh-type-color:#1e88e5" onclick="cfhEditorType('event')">🔵 Event</button>
    <button type="button" data-cfh-type="task" style="--cfh-type-color:#2eaf62" onclick="cfhEditorType('task')">🟢 Task</button>
   </div>
