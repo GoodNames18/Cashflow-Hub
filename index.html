@@ -3254,23 +3254,6 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         input.addEventListener('change',savePreferences);
       }
       cfhCardPanelSaveDraft=savePreferences;
-      const edit=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;settings.append(button);};
-      if(entry.cfhDuplicate){
-        for(const type of ['statement'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{
-          savePreferences();
-          const answer=prompt('Confirmed '+type+' date (YYYY-MM-DD); leave blank to restore estimate.',type==='statement'?statement:due);
-          if(answer===null)return;if(answer.trim()&&!cfhEastwestValidDate(answer.trim())){alert('Enter a valid date.');return;}
-          const prefs=cfhCardPanelPreferences(),config=prefs[bank];config.confirmedCycles=config.confirmedCycles||{};
-          const cycle=config.confirmedCycles[entry.cfhDuplicateCycle]||{};
-          if(answer.trim())cycle[type]=answer.trim();else delete cycle[type];
-          if(cycle.statement&&cycle.due&&cycle.due<cycle.statement){alert('Due date cannot be before statement date.');return;}
-          config.confirmedCycles[entry.cfhDuplicateCycle]=cycle;
-          try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save date.');return;}
-          cfhCalendarRender();cfhCardPanelRender();
-        });
-      }else if(ew&&entry.cfhEastwestCycle){
-        for(const type of ['statement'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
-      }
       const deleteOptions=document.createElement('div');deleteOptions.className='cfh-card-delete-options';deleteOptions.hidden=true;
       for(const [label,future] of [['Current event only',false],['Current and future events',true]]){
         const choice=document.createElement('button');choice.type='button';choice.textContent=label;
