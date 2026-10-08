@@ -1309,6 +1309,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-details small{font-size:10px;line-height:1.25;overflow-wrap:normal;word-break:normal}
 .cfh-timeline-action{min-width:0;width:24px;padding:3px 0;font-size:17px;flex:none}
 @media(max-width:360px){.cfh-timeline-event{grid-template-columns:48px minmax(0,1fr) 21px 17px;gap:4px;padding:8px 5px}.cfh-timeline-visual,.cfh-timeline-visual:has(.cfh-metrobank-thumb){width:48px;max-width:48px}.cfh-metrobank-thumb{width:48px;height:31px}.cfh-timeline-details strong{font-size:12px}}
+.cfh-timeline-row{grid-template-columns:32px minmax(0,1fr);gap:4px}.cfh-timeline-row:before{left:34px}.cfh-timeline-event{margin-left:7px}.cfh-timeline-date{transform:translateX(-4px)}
 </style>
 </head>
 
@@ -2818,7 +2819,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const details=document.createElement('div');details.className='cfh-timeline-details';
         const bank=document.createElement('small');bank.textContent=entry.cfhAuto?'Metrobank':entry.cfhCard15?'EastWest':entry.type==='task'?'Task':'Calendar';
         const name=document.createElement('strong');name.textContent=entry.cfhAuto?'Travel Signature Visa':entry.cfhCard15?'EastWest Visa Platinum':entry.title;
-        const time=document.createElement('small');time.textContent=(entry.time||'All day')+' · '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');
+        const time=document.createElement('small');time.textContent=(entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');
         details.append(bank,name,time);
         const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';bell.textContent=cfhBellEnabled(entry.id)?'♧':'♧';bell.innerHTML=cfhBellEnabled(entry.id)?'&#128276;':'&#128277;';bell.title=cfhBellEnabled(entry.id)?'Reminders ON (delivery not enabled)':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
         const menu=document.createElement('button');menu.type='button';menu.className='cfh-timeline-action';menu.textContent='⋮';menu.title='Event options';menu.onclick=()=>cfhCalendarEventOptions(entry);
