@@ -1516,6 +1516,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhEditorForm .cfh-editor-actions button{margin-bottom:0}
     #cfhEditorOverlay{padding:100px 30px}
     #cfhEditorOverlay .cfh-editor-panel{width:min(100%,520px);max-height:calc(100dvh - 200px)}
+    #cfhAddCardFields[hidden],#cfhAddStandardFields[hidden]{display:none}
+    #cfhAddCardPhoto{display:block;max-width:100%;width:100%;height:auto;margin:14px auto;border-radius:12px}
+    #cfhAddCardPhoto[hidden]{display:none}
+    #cfhAddCardFields h3{font-size:16px;margin:20px 0 4px}
+    #cfhAddCardFields .cfh-reminder-days{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+    #cfhAddCardFields .cfh-reminder-day-box{width:100%;min-width:0;font-size:clamp(8px,2.5vw,11px);padding:10px 2px;white-space:nowrap}
+    #cfhAddCardFields [aria-pressed="true"]{background:#00F8B9;color:#1B1844}
+    #cfhAddCardFields [aria-pressed="false"]{background:#E6E6FA;color:#1B1844}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3113,9 +3121,34 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhEditorClose();
       cfhCalendarRender();
     }
+    function cfhAddCardPreview(){
+      const photo=document.getElementById('cfhAddCardPhoto'),value=document.getElementById('cfhAddCardImage').value;
+      photo.hidden=!value;if(value)photo.src=value;
+    }
+    async function cfhAddCardImages(){
+      const select=document.getElementById('cfhAddCardImage');
+      const fill=()=>{const prior=select.value;select.replaceChildren();for(const item of cfhCardImageCatalog){const option=document.createElement('option');option.value=item.url;option.textContent=item.name;select.append(option);}if([...select.options].some(o=>o.value===prior))select.value=prior;cfhAddCardPreview();};
+      if(cfhCardImageCatalog.length){fill();return;}
+      select.replaceChildren(new Option('Loading card images…',''));
+      try{await cfhLoadCardImages();fill();}catch(e){select.replaceChildren(new Option('Images unavailable — select Credit Card to retry',''));}
+    }
+    function cfhSaveNewCard(){
+      const value=id=>document.getElementById(id).value;
+      const start=value('cfhAddCardStart'),end=value('cfhAddCardEnd');
+      if(start>end){alert('End date must be on or after start date.');return;}
+      const bankName=value('cfhAddBank').trim(),cardName=value('cfhAddCardName').trim();
+      if(!bankName||!cardName)return;
+      const key='duplicate-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
+      const prefs=cfhCardPanelPreferences();
+      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:Number(value('cfhAddStatementDay')),dueDays:Number(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:document.getElementById('cfhAddReminderToggle').getAttribute('aria-pressed')==='true',reminderDays:[...document.querySelectorAll('[data-cfh-add-day][aria-pressed="true"]')].map(b=>Number(b.dataset.cfhAddDay)),confirmedCycles:{}};
+      try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save card.');return;}
+      const [y,m,d]=start.split('-').map(Number);cfhCalendarState.selected=new Date(y,m-1,d);cfhCalendarState.month=new Date(y,m-1,1);
+      cfhEditorClose();cfhCalendarRender();cfhSaveNavigationState();
+    }
     function cfhCalendarSave() {
       const form = document.getElementById('cfhEditorForm');
       if (!form.reportValidity()) return;
+      if(!document.getElementById('cfhAddCardFields').hidden){cfhSaveNewCard();return;}
       const typeButton = document.querySelector('[data-cfh-type][aria-pressed="true"]');
       const selectedType = typeButton ? typeButton.dataset.cfhType : 'event';
       const type = selectedType==='card'?document.getElementById('cfhEditorCardType').value:selectedType;
@@ -3520,6 +3553,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.querySelector('.cfh-editor-save').textContent = 'Save';
       document.getElementById('cfhEditorDelete').hidden = true;
       document.getElementById("cfhEditorDate").value = cfhCalendarDateKey(cfhCalendarState.selected);
+      document.getElementById('cfhAddCardStart').value=cfhCalendarDateKey(cfhCalendarState.selected);
+      const end=new Date(cfhCalendarState.selected);end.setFullYear(end.getFullYear()+5);
+      document.getElementById('cfhAddCardEnd').value=cfhCalendarDateKey(end);
+      document.querySelectorAll('#cfhAddCardFields [aria-pressed]').forEach(button=>button.setAttribute('aria-pressed','true'));
       cfhEditorType("event");
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
@@ -3531,7 +3568,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const cardType=document.getElementById('cfhEditorCardType');
       if(type==='card')type=cardType.value;
       else if(isCard)cardType.value=type;
+      const newCard=isCard&&!cfhEditingId;
+      document.getElementById('cfhAddCardFields').hidden=!newCard;
+      document.getElementById('cfhAddStandardFields').hidden=newCard;
+      document.querySelectorAll('#cfhAddCardFields input,#cfhAddCardFields select').forEach(input=>input.disabled=!newCard);
+      document.querySelectorAll('#cfhAddStandardFields input,#cfhAddStandardFields select,#cfhAddStandardFields textarea').forEach(input=>input.disabled=newCard);
       document.getElementById('cfhEditorCardTypeWrap').hidden=!isCard;
+      if(newCard)cfhAddCardImages();
       document.querySelectorAll('[data-cfh-type]').forEach(function(btn) { btn.setAttribute('aria-pressed',String(btn.dataset.cfhType===(isCard?'card':type))); });
       document.getElementById('cfhEditorAmountWrap').hidden = !(type==='statement'||type==='due');
       document.getElementById('cfhEditorName').placeholder = type==='statement'?'e.g. Credit card statement':type==='due'?'e.g. Credit card payment due':type==='task'?'e.g. Pay electricity bill':'e.g. Appointment';
@@ -9352,6 +9395,17 @@ window.cfhRefreshTestTab = function(page) {
   </div>
   <form id="cfhEditorForm" onsubmit="event.preventDefault();cfhCalendarSave()">
    <div class="cfh-editor-fields">
+    <div id="cfhAddCardFields" hidden>
+      <div class="cfh-editor-row"><div><label>Bank name</label><input id="cfhAddBank" maxlength="80" required></div><div><label>Card name</label><input id="cfhAddCardName" maxlength="80" required></div></div>
+      <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview()"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
+      <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" value="15" required></div><div><label>Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" value="24" required></div></div>
+      <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
+      <h3>Reminders</h3><button id="cfhAddReminderToggle" class="cfh-reminder-day-box" type="button" aria-label="Enable reminders" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">🔔 Reminders</button>
+      <label>Notification time</label><input id="cfhAddCardTime" type="time">
+      <label>Reminder days</label><div class="cfh-reminder-days"><button type="button" class="cfh-reminder-day-box" data-cfh-add-day="7" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">7 days before</button><button type="button" class="cfh-reminder-day-box" data-cfh-add-day="5" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">5 days before</button><button type="button" class="cfh-reminder-day-box" data-cfh-add-day="3" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">3 days before</button><button type="button" class="cfh-reminder-day-box" data-cfh-add-day="2" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">2 days before</button><button type="button" class="cfh-reminder-day-box" data-cfh-add-day="1" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">1 day before</button><button type="button" class="cfh-reminder-day-box" data-cfh-add-day="0" aria-pressed="true" onclick="this.setAttribute('aria-pressed',String(this.getAttribute('aria-pressed')!=='true'))">Same day</button></div>
+    </div>
+    <div id="cfhAddStandardFields">
+
    <div id="cfhEditorCardTypeWrap" hidden><label for="cfhEditorCardType">Card schedule</label><select id="cfhEditorCardType" onchange="cfhEditorType(this.value)"><option value="statement">Statement Date</option><option value="due">Due Date</option></select></div>
    <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
    <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><input id="cfhEditorTime" type="time"></div></div>
@@ -9359,6 +9413,7 @@ window.cfhRefreshTestTab = function(page) {
    <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat"><option value="none">None</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
    
+    </div>
    <button id="cfhEditorDelete" type="button" hidden onclick="cfhCalendarDelete()" class="cfh-editor-delete">Delete entry</button><p class="cfh-editor-note">Saved on this device only. Cloud sync is not enabled yet.</p>
    </div>
    <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit">Save</button></div>
