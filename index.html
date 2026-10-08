@@ -1288,6 +1288,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .app-tabs::-webkit-scrollbar{display:none}
 .app-tabs .app-tab{flex:0 0 auto;width:auto;min-width:max-content;padding:10px 14px;font-size:12px;white-space:nowrap}
 .cfh-calendar-title-button{border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}.cfh-calendar-title-button:after{content:'⌄';font-size:.6em;margin-left:9px;vertical-align:middle;color:#777}
+.cfh-metrobank-info{font-size:12px;line-height:1.5;color:var(--muted);padding:11px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
 </style>
 </head>
 
@@ -1780,7 +1781,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
               <div class="cfh-calendar-weekdays" aria-hidden="true">
                 <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
               </div>
-              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div>
+              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div><div class="cfh-metrobank-info">Metrobank Travel Signature Visa: statement every 18th; payment due 21 days later (weekends adjusted). Future dates are estimates until confirmed on your SOA. Calendar reminders appear 7, 5, 3, 1 days before and on the due date at 9:00 AM PHT. <strong>Phone push alerts are not enabled yet.</strong> Tap an estimated payment due entry to correct its date.</div>
             </div>
 
             <div class="cfh-calendar-card cfh-schedule">
@@ -2543,6 +2544,54 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       try { localStorage.setItem(CFH_CALENDAR_KEY, JSON.stringify(cfhCalendarEntries)); cfhCalendarStorageError = false; return true; }
       catch(e) { cfhCalendarStorageError = true; alert('Calendar could not save on this device. Check available browser storage.'); return false; }
     }
+
+    // Metrobank statement schedule: historical bank-confirmed dates override estimates.
+    // Future due dates are provisional until confirmed on the Statement of Account.
+    const CFH_METROBANK_CONFIRMED = {'2026-03-18':'2026-04-08','2026-04-18':'2026-05-11','2026-05-18':'2026-06-08','2026-06-18':'2026-07-09','2026-07-18':'2026-08-10','2026-08-18':'2026-09-08','2026-09-18':'2026-10-09'};
+    const CFH_METROBANK_OVERRIDE_KEY = 'cfh_metrobank_due_overrides_v1';
+    function cfhMetrobankOverrides() { try { return JSON.parse(localStorage.getItem(CFH_METROBANK_OVERRIDE_KEY)||'{}')||{}; } catch(e){return {};} }
+    function cfhMetrobankDueDate(statementKey) {
+      const confirmed = CFH_METROBANK_CONFIRMED[statementKey];
+      const override = cfhMetrobankOverrides()[statementKey];
+      if (override && /^\d{4}-\d{2}-\d{2}$/.test(override)) return {key:override,confirmed:true};
+      if (confirmed) return {key:confirmed,confirmed:true};
+      const [y,m,d] = statementKey.split('-').map(Number);
+      const due = new Date(y,m-1,d+21);
+      // Weekends are predictable; unannounced special holidays are not.
+      while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
+      return {key:cfhCalendarDateKey(due),confirmed:false};
+    }
+    function cfhMetrobankEntriesForDate(key) {
+      const [y,m] = key.split('-').map(Number);
+      if (y<2026 || y>2100) return [];
+      const results=[];
+      for (let delta=-2;delta<=0;delta++) {
+        const base = new Date(y,m-1+delta,18);
+        const statement = cfhCalendarDateKey(base);
+        if (statement < '2026-03-18') continue;
+        const due = cfhMetrobankDueDate(statement);
+        if (key===statement) results.push({id:'metrobank-statement-'+statement,type:'statement',title:'Metrobank Travel Signature Visa — Statement',date:key,time:'',amount:null,repeat:'none',notes:'Monthly statement cut-off. Check your official SOA for the balance.' ,cfhAuto:true});
+        if (key===due.key) results.push({id:'metrobank-due-'+statement,type:'due',title:'Metrobank Travel Signature Visa — Payment Due',date:key,time:'09:00',amount:null,repeat:'none',notes:due.confirmed?'Due date confirmed from provided statement or manual override.':'Estimated due date (+21 days, weekends adjusted). Verify against official SOA; holidays may change it.',cfhAuto:true,cfhStatement:statement,cfhConfirmed:due.confirmed});
+        const [dy,dm,dd]=due.key.split('-').map(Number);
+        for (const days of [7,5,3,1]) {
+          const reminder=cfhCalendarDateKey(new Date(dy,dm-1,dd-days));
+          if(reminder===key)results.push({id:'metrobank-reminder-'+statement+'-'+days,type:'task',title:'Metrobank Visa — Due in '+days+' day'+(days===1?'':'s'),date:key,time:'09:00',amount:null,repeat:'none',notes:'9:00 AM Philippine time reminder. '+(due.confirmed?'':'Due date is estimated; check SOA.'),cfhAuto:true});
+        }
+      }
+      return results;
+    }
+    function cfhMetrobankEditDue(statementKey) {
+      const current=cfhMetrobankDueDate(statementKey).key;
+      const answer=prompt('Official Metrobank due date for statement '+statementKey+' (YYYY-MM-DD):',current);
+      if(answer===null)return;
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(answer)){alert('Use YYYY-MM-DD.');return;}
+      const [y,m,d]=answer.split('-').map(Number);
+      if(cfhCalendarDateKey(new Date(y,m-1,d))!==answer){alert('Invalid date.');return;}
+      const overrides=cfhMetrobankOverrides();overrides[statementKey]=answer;
+      try{localStorage.setItem(CFH_METROBANK_OVERRIDE_KEY,JSON.stringify(overrides));cfhCalendarRender();}
+      catch(e){alert('Could not save due date on this device.');}
+    }
+
     function cfhCalendarMatches(entry, key) {
       if (entry.date === key) return true;
       if (!entry.repeat || entry.repeat === 'none' || key < entry.date) return false;
@@ -2557,7 +2606,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       return false;
     }
     function cfhCalendarForDate(key) {
-      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
     }
     function cfhCalendarEdit(id) {
       const entry = cfhCalendarEntries.find(e => e.id === id);
@@ -2633,7 +2682,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         meta.textContent = (names[entry.type] || 'Event') + (entry.time ? ' · ' + entry.time : '') + amount + (entry.repeat && entry.repeat !== 'none' ? ' · ' + entry.repeat : '');
         button.append(heading,meta);
         if (entry.notes) { const note = document.createElement('span'); note.textContent = entry.notes; button.append(note); }
-        button.onclick = function() { cfhCalendarEdit(entry.id); };
+        button.onclick = function() { if(entry.cfhAuto){if(entry.cfhStatement)cfhMetrobankEditDue(entry.cfhStatement);else alert(entry.notes + " Automatic Metrobank calendar entry.");}else cfhCalendarEdit(entry.id); };
         schedule.appendChild(button);
       });
     }
