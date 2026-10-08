@@ -1524,6 +1524,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhAddCardFields .cfh-reminder-day-box{width:100%;min-width:0;font-size:clamp(8px,2.5vw,11px);padding:10px 2px;white-space:nowrap}
     #cfhAddCardFields [aria-pressed="true"]{background:#00F8B9;color:#1B1844}
     #cfhAddCardFields [aria-pressed="false"]{background:#E6E6FA;color:#1B1844}
+    #cfhEditorForm .cfh-editor-fields{scrollbar-width:none;-ms-overflow-style:none}
+    #cfhEditorForm .cfh-editor-fields::-webkit-scrollbar{display:none;width:0;height:0}
+    #cfhEditorOverlay .cfh-editor-panel{scrollbar-width:none}
+    #cfhEditorOverlay .cfh-editor-panel::-webkit-scrollbar{display:none}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3581,6 +3585,21 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
 
+    let cfhEditorSwipeOrigin=null;
+    function cfhEditorSwipeStart(event){
+      cfhEditorSwipeOrigin=null;
+      if(event.touches.length!==1||event.target.closest('input,textarea,select,button')||cfhEditingId)return;
+      const touch=event.touches[0];cfhEditorSwipeOrigin={x:touch.clientX,y:touch.clientY};
+    }
+    function cfhEditorSwipeEnd(event){
+      const start=cfhEditorSwipeOrigin;cfhEditorSwipeOrigin=null;
+      if(!start||event.changedTouches.length!==1)return;
+      const touch=event.changedTouches[0],dx=touch.clientX-start.x,dy=touch.clientY-start.y;
+      if(Math.abs(dx)<60||Math.abs(dx)<=Math.abs(dy)*1.5)return;
+      const types=['card','event','task'],selected=document.querySelector('[data-cfh-type][aria-pressed="true"]')?.dataset.cfhType||'event';
+      const next=types.indexOf(selected)+(dx<0?1:-1);
+      if(next>=0&&next<types.length)cfhEditorType(types[next]);
+    }
     function cfhEditorType(type) {
       const types = ['card','statement','due','event','task'];
       if (!types.includes(type)) type = 'event';
@@ -9406,7 +9425,7 @@ window.cfhRefreshTestTab = function(page) {
 </script>
 
 <div class="cfh-editor-overlay" id="cfhEditorOverlay" hidden>
- <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle">
+ <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle" ontouchstart="cfhEditorSwipeStart(event)" ontouchend="cfhEditorSwipeEnd(event)">
   <div class="cfh-editor-head"><h2 id="cfhEditorTitle">Add to Calendar</h2></div>
   <div class="cfh-editor-types" role="group" aria-label="Schedule type">
    <button type="button" data-cfh-type="card" style="--cfh-type-color:#1B1844" onclick="cfhEditorType('card')">Credit Card</button>
