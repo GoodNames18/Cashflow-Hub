@@ -1396,6 +1396,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-card-panel-date strong{font-size:clamp(10px,2.5vw,15px);white-space:normal;overflow-wrap:anywhere;text-align:center}
 
     #cfhCardPanel .cfh-card-panel-date strong{font-size:clamp(14px,3.8vw,21px);line-height:1.35;white-space:normal;overflow-wrap:anywhere;text-align:center}
+
+    #cfhCardPanel #cfhCardPanelTitle{font-size:32px;white-space:normal;overflow-wrap:anywhere;max-width:100%}
 </style>
 </head>
 
@@ -3005,7 +3007,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
       }else if(!ew){edit('Confirm due date',()=>{cfhMetrobankEditDue(statement);cfhCardPanelRender();});}
       const note=document.createElement('p');note.className='cfh-card-panel-note';note.textContent=(confirmed?'Due date confirmed. ':'Dates are estimates; check your SOA. ')+'Settings are saved on this device.';
-      dialog.append(settings,note);overlay.append(dialog);document.body.append(overlay);
+      dialog.append(settings);overlay.append(dialog);document.body.append(overlay);
       overlay.addEventListener('click',e=>{if(e.target===overlay)cfhCardPanelClose();});
       overlay.addEventListener('keydown',e=>{
         if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cfhCardPanelClose();}
