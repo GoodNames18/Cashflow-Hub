@@ -3769,6 +3769,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         }
 
 
+        // Calendar gestures change months using the same navigation as the arrows.
+        if (currentAppPage === "calendar") {
+          if (event.target.closest('input, select, textarea, button, a, [role="dialog"]')) return;
+          cfhCalendarMoveMonth(deltaX < 0 ? 1 : -1);
+          return;
+        }
+
         // Swipe LEFT
         if (deltaX < 0) {
 
