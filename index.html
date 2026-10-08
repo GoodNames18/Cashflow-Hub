@@ -1290,7 +1290,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-calendar-title-button{border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0}.cfh-calendar-title-button:after{content:'⌄';font-size:.6em;margin-left:9px;vertical-align:middle;color:#777}
 .cfh-metrobank-info{font-size:12px;line-height:1.5;color:var(--muted);padding:11px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
 .cfh-metrobank-notifications{padding:12px 14px;margin-top:12px;border:1px solid #ddd;border-radius:10px;font-size:12px}.cfh-metrobank-notification-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cfh-notification-status{background:#eee;color:#555;border-radius:12px;padding:3px 8px;font-size:11px}.cfh-metrobank-notifications p{margin:7px 0;color:var(--muted)}.cfh-notification-preview-title{font-weight:600;margin:10px 0 6px}.cfh-notification-preview-list{display:grid;gap:5px}.cfh-notification-preview-list>div{padding:5px 7px;background:rgba(0,0,0,.03);border-radius:5px}.cfh-metrobank-notifications small{display:block;margin-top:8px;color:var(--muted)}
-.cfh-calendar-day.is-other{visibility:hidden;pointer-events:none}.cfh-metrobank-toggle{margin-top:12px;padding:9px 12px;border:1px solid #bbb;border-radius:8px;background:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.cfh-metrobank-toggle{margin-top:12px;padding:9px 12px;border:1px solid #bbb;border-radius:8px;background:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer}
 </style>
 </head>
 
@@ -2477,7 +2477,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const cell = document.createElement("button");
         cell.type = "button";
         cell.className = "cfh-calendar-day";
-        if (date.getMonth() !== view.getMonth()) { cell.classList.add("is-other"); cell.disabled = true; cell.setAttribute("aria-hidden","true"); }
+        if (date.getMonth() !== view.getMonth()) cell.classList.add("is-other");
         if (key === todayKey) cell.classList.add("is-today");
         if (key === selectedKey) cell.classList.add("is-selected");
         cell.setAttribute("aria-label", date.toLocaleDateString("en-PH", { dateStyle:"full" }));
