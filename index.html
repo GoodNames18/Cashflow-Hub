@@ -1471,6 +1471,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-event-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
 #cfhCardPanel .cfh-card-event-actions button{width:100%;padding:12px 6px;border:1px solid #d5dae1;border-radius:10px;background:#fff;color:#171c26;font:inherit}
 #cfhCardPanel .cfh-card-range select{width:100%;padding:10px;border:1px solid #d5dae1;border-radius:8px;background:#fff;font:inherit}
+#cfhCardPanel .cfh-card-range select{width:100%;max-width:100%;padding:12px;border:1px solid #d5dae1;border-radius:10px;background:#fff;color:#171c26;font:inherit}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3055,9 +3056,20 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function cfhCardKey(entry){return entry.cfhDuplicate|| (entry.cfhCard15?'eastwest':entry.cfhAuto?'metrobank':'');}
+    let cfhCardImageCatalog=[];
+    async function cfhLoadCardImages(){
+      const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/functions/v1/cfh-card-images',{cache:'no-store'});
+      if(!response.ok)throw new Error('Card images unavailable');
+      const data=await response.json();
+      cfhCardImageCatalog=Array.isArray(data.images)?data.images:[];
+      return cfhCardImageCatalog;
+    }
+    cfhLoadCardImages().then(()=>{if(typeof cfhCalendarRender==='function')cfhCalendarRender();}).catch(()=>{});
     function cfhCardImage(entry){
       const prefs=cfhCardPanelPreferences()[cfhCardKey(entry)]||{};
-      return prefs.image||(entry.cfhCard15?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943');
+      const fallback=entry.cfhCard15?'Eastwest Visa Platinum':'Metrobank Travel Signature Visa';
+      const chosen=cfhCardImageCatalog.find(item=>item.url===prefs.image||(!prefs.image&&item.name.toLowerCase()===fallback.toLowerCase()));
+      return (chosen&&chosen.url)||prefs.image||(entry.cfhCard15?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943');
     }
     function cfhDuplicateCycle(bank,year,month){
       const prefs=cfhCardPanelPreferences()[bank],cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7);
@@ -3182,19 +3194,23 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       }
       nameForm.append(nameFields);settings.append(nameForm);
       const imageForm=document.createElement('div');imageForm.className='cfh-card-range';
-      const imageLabel=document.createElement('label');imageLabel.textContent='Card image URL';
-      const imageInput=document.createElement('input');imageInput.type='url';imageInput.value=(cfhCardPanelPreferences()[bank]||{}).image||'';imageInput.placeholder='https://...';imageLabel.append(imageInput);
-      const uploadLabel=document.createElement('label');uploadLabel.textContent='Or upload a card image';
-      const imageUpload=document.createElement('input');imageUpload.type='file';imageUpload.accept='image/png,image/jpeg,image/webp,image/gif';uploadLabel.append(imageUpload);imageForm.append(imageLabel,uploadLabel);settings.append(imageForm);
-      imageUpload.onchange=()=>{
-        const file=imageUpload.files[0];if(!file)return;
-        if(file.size>2*1024*1024){alert('Choose an image smaller than 2 MB.');return;}
-        const reader=new FileReader();reader.onload=()=>{
-          const prefs=cfhCardPanelPreferences();prefs[bank]={...(prefs[bank]||{}),image:reader.result};
-          try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save image; try a smaller file.');return;}
-          imageInput.value=reader.result;cfhCalendarRender();
-        };reader.readAsDataURL(file);
-      };
+      const imageLabel=document.createElement('label');imageLabel.textContent='Card image';
+      const imageInput=document.createElement('select');imageInput.setAttribute('aria-label','Card image');
+      const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Loading card images…';imageInput.append(placeholder);imageInput.disabled=true;
+      const imageStatus=document.createElement('small');imageStatus.setAttribute('role','status');
+      imageLabel.append(imageInput);imageForm.append(imageLabel,imageStatus);settings.append(imageForm);
+      cfhLoadCardImages().then(images=>{
+        if(!imageInput.isConnected)return;
+        imageInput.replaceChildren();
+        const current=cfhCardImage(entry);
+        for(const item of images){const option=document.createElement('option');option.value=item.url;option.textContent=item.name;imageInput.append(option);}
+        const currentName=decodeURIComponent(current.split('/').pop().split('?')[0]).replace(/\.[^.]+$/,'');
+        const match=images.find(item=>item.url===current||item.name.toLowerCase()===currentName.toLowerCase());
+        if(match)imageInput.value=match.url;
+        else {const option=document.createElement('option');option.value='';option.textContent='Choose a card image';option.selected=true;imageInput.prepend(option);}
+        imageInput.disabled=!images.length;
+        if(!images.length)imageStatus.textContent='No card images available yet.';
+      }).catch(()=>{placeholder.textContent='Card images unavailable';imageStatus.textContent='Could not load images. Reopen Manage Card to retry.';});
       const typeLabel=document.createElement('label');typeLabel.textContent='Event type';
       const typeInput=document.createElement('select');
       for(const value of ['statement','due']){const option=document.createElement('option');option.value=value;option.textContent=value==='statement'?'Statement':'Due date';typeInput.append(option);}
@@ -3219,7 +3235,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const start=inputs.start.value,end=inputs.end.value;
         value.rangeDraft={start,end};
         value.bankName=nameInputs.bankName.value.trim();value.cardName=nameInputs.cardName.value.trim();
-        if(!imageInput.value||/^(https?:\/\/|data:image\/)/i.test(imageInput.value))value.image=imageInput.value;
+        if(!imageInput.disabled&&imageInput.value)value.image=imageInput.value;
         if(entry.cfhDuplicate)value.eventType='both';
         const statementDay=Number(scheduleInputs.statementDay.value),dueDays=Number(scheduleInputs.dueDays.value);
         if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
@@ -3240,7 +3256,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhCardPanelSaveDraft=savePreferences;
       const edit=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;settings.append(button);};
       if(entry.cfhDuplicate){
-        for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{
+        for(const type of ['statement'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{
           savePreferences();
           const answer=prompt('Confirmed '+type+' date (YYYY-MM-DD); leave blank to restore estimate.',type==='statement'?statement:due);
           if(answer===null)return;if(answer.trim()&&!cfhEastwestValidDate(answer.trim())){alert('Enter a valid date.');return;}
@@ -3253,8 +3269,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           cfhCalendarRender();cfhCardPanelRender();
         });
       }else if(ew&&entry.cfhEastwestCycle){
-        for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
-      }else if(!ew){edit('Confirm due date',()=>{cfhMetrobankEditDue(statement);cfhCardPanelRender();});}
+        for(const type of ['statement'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
+      }
       const deleteOptions=document.createElement('div');deleteOptions.className='cfh-card-delete-options';deleteOptions.hidden=true;
       for(const [label,future] of [['Current event only',false],['Current and future events',true]]){
         const choice=document.createElement('button');choice.type='button';choice.textContent=label;
