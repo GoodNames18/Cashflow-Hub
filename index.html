@@ -2757,7 +2757,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if (override && /^\d{4}-\d{2}-\d{2}$/.test(override)) return {key:override,confirmed:true};
       if (confirmed) return {key:confirmed,confirmed:true};
       const [y,m,d] = statementKey.split('-').map(Number);
-      const due = new Date(y,m-1,d+21);
+      const due = new Date(y,m-1,d+cfhCardScheduleSettings('metrobank',statementKey.slice(0,7)).dueDays);
       // Weekends are predictable; unannounced special holidays are not.
       while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
       return {key:cfhCalendarDateKey(due),confirmed:false};
@@ -2769,7 +2769,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       return now.getMonth() === 11 ? year + 1 : year;
     }
     function cfhMetrobankStatementUnlocked(statementKey) {
-      return statementKey >= '2026-10-18' &&
+      return statementKey.slice(0,7) >= '2026-10' &&
         Number(statementKey.slice(0,4)) <= cfhMetrobankUnlockedThrough();
     }
     function cfhMetrobankEntriesForDate(key) {
@@ -2777,7 +2777,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if (y<2026 || y>2100) return [];
       const results=[];
       for (let delta=-2;delta<=0;delta++) {
-        const base = new Date(y,m-1+delta,18);
+        const base = cfhCardStatementDate('metrobank',y,m-1+delta);
         const statement = cfhCalendarDateKey(base);
         if (!cfhMetrobankStatementUnlocked(statement) || !cfhMetrobankIsActiveForStatement(statement)) continue;
         const due = cfhMetrobankDueDate(statement);
@@ -2811,7 +2811,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const target = document.getElementById('cfhMetrobankNotificationPreview');
       if (!target) return;
       const view = cfhCalendarState.month;
-      const statement = cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),18));
+      const statement = cfhCalendarDateKey(cfhCardStatementDate('metrobank',view.getFullYear(),view.getMonth()));
       const plan = cfhMetrobankStatementUnlocked(statement) && cfhMetrobankIsActiveForStatement(statement) ? cfhMetrobankNotificationPlan(statement) : [];
       const heading = document.createElement('div');
       heading.className='cfh-notification-preview-title';
@@ -2900,12 +2900,22 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       while(result.getDay()===0||result.getDay()===6||cfhEastwestHoliday(result))result.setDate(result.getDate()+1);
       return result;
     }
+    function cfhCardScheduleSettings(bank,cycle){
+      const prefs=cfhCardPanelPreferences()[bank]||{};
+      const use=!cycle||!prefs.scheduleFrom||cycle>=prefs.scheduleFrom;
+      return {statementDay:use&&Number.isInteger(prefs.statementDay)?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21)};
+    }
+    function cfhCardStatementDate(bank,year,month){
+      const cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7);
+      const day=cfhCardScheduleSettings(bank,cycle).statementDay;
+      return new Date(year,month,Math.min(day,new Date(year,month+1,0).getDate()));
+    }
     function cfhEastwestCycle(year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,15)).slice(0,7);
       const override=cfhEastwestOverrides()[cycle]||{};
-      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(year,month,15)));
+      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(cfhCardStatementDate('eastwest',year,month)));
       const [y,m,d]=statement.split('-').map(Number);
-      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(y,m-1,d+24)));
+      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(y,m-1,d+cfhCardScheduleSettings('eastwest',cycle).dueDays)));
       return {cycle,statement,due,statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
     }
     function cfhEastwestConfirmDate(entry){
@@ -3079,7 +3089,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const savedReminderTime=cfhCardNotificationTime(entry);
       const reminderTimeLabel=savedReminderTime?(()=>{const [h,m]=savedReminderTime.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');})():'';
       addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
-      addRow('Recurring Schedule',ew?'Monthly: 15th, banking-day adjustment; due +24 days.':'Monthly: 18th; estimated due +21 days, weekends adjusted.');
+      const recurring=cfhCardScheduleSettings(bank);
+      addRow('Recurring Schedule','Monthly statement day: '+recurring.statementDay+'; due +'+recurring.dueDays+' calendar days. '+(ew?'Banking-day adjustments apply.':'Due dates adjust for weekends.'));
       const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
       const rangeTitle=document.createElement('strong');rangeTitle.textContent='Schedule Date Range';rangeForm.append(rangeTitle);
       const range=cfhCardScheduleRange(bank);
@@ -3097,6 +3108,15 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       rangeForm.onsubmit=e=>e.preventDefault();
       addRow('Schedule Date Range',range?format(range.start)+' — '+format(range.end):'Set the start and end dates in Manage Card.');
       const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);settings.append(rangeForm);
+      const scheduleForm=document.createElement('div');scheduleForm.className='cfh-card-range';
+      const scheduleTitle=document.createElement('strong');scheduleTitle.textContent='Schedule Settings';scheduleForm.append(scheduleTitle);
+      const scheduleFields=document.createElement('div');scheduleFields.className='cfh-card-range-fields';
+      const scheduleInputs={};
+      for(const [key,labelText,max] of [['statementDay','Statement day',31],['dueDays','Due after (days)',60]]){
+        const label=document.createElement('label');label.textContent=labelText;
+        const input=document.createElement('input');input.type='number';input.min='1';input.max=String(max);input.step='1';input.value=recurring[key];scheduleInputs[key]=input;label.append(input);scheduleFields.append(label);
+      }
+      scheduleForm.append(scheduleFields);settings.append(scheduleForm);
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
       const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);timeLabel.append(timeInput);
@@ -3106,6 +3126,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const prefs=cfhCardPanelPreferences(),value={...(prefs[bank]||{})};
         const start=inputs.start.value,end=inputs.end.value;
         value.rangeDraft={start,end};
+        const statementDay=Number(scheduleInputs.statementDay.value),dueDays=Number(scheduleInputs.dueDays.value);
+        if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
+          if(statementDay!==recurring.statementDay||dueDays!==recurring.dueDays)value.scheduleFrom=value.scheduleFrom||cfhCalendarDateKey(new Date()).slice(0,7);
+          value.statementDay=statementDay;value.dueDays=dueDays;
+        }
         inputs.end.min=start;inputs.end.setCustomValidity(start&&end&&start>end?'End date must be on or after start date.':'');
         if(cfhEastwestValidDate(start)&&cfhEastwestValidDate(end)&&start<=end){value.start=start;value.end=end;}
         if(!timeInput.value||/^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput.value))value.notificationTime=timeInput.value;
@@ -3113,7 +3138,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save card settings.');return;}
         cfhCalendarRender();
       };
-      for(const input of [inputs.start,inputs.end,timeInput]){
+      for(const input of [inputs.start,inputs.end,timeInput,scheduleInputs.statementDay,scheduleInputs.dueDays]){
         input.addEventListener('input',savePreferences);
         input.addEventListener('change',savePreferences);
       }
