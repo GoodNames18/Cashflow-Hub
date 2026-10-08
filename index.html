@@ -1310,7 +1310,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-action{min-width:0;width:24px;padding:3px 0;font-size:17px;flex:none}
 @media(max-width:360px){.cfh-timeline-event{grid-template-columns:48px minmax(0,1fr) 21px 17px;gap:4px;padding:8px 5px}.cfh-timeline-visual,.cfh-timeline-visual:has(.cfh-metrobank-thumb){width:48px;max-width:48px}.cfh-metrobank-thumb{width:48px;height:31px}.cfh-timeline-details strong{font-size:12px}}
 .cfh-timeline-row{grid-template-columns:32px minmax(0,1fr);gap:4px}.cfh-timeline-row:before{left:34px}.cfh-timeline-event{margin-left:7px}.cfh-timeline-date{transform:translateX(-4px)}
-</style>
+.cfh-timeline-event{align-items:center}.cfh-timeline-action{height:32px;width:24px;display:flex;align-items:center;justify-content:center;align-self:center;line-height:1;color:#fff;background:transparent;border:0;padding:0}.cfh-timeline-action svg{width:18px;height:18px;display:block;flex:none}.cfh-timeline-action:active{opacity:.7}</style>
 </head>
 
 <body>
@@ -2821,8 +2821,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const name=document.createElement('strong');name.textContent=entry.cfhAuto?'Travel Signature Visa':entry.cfhCard15?'Visa Platinum':entry.title;
         const time=document.createElement('small');time.textContent=(entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');
         details.append(bank,name,time);
-        const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';bell.textContent=cfhBellEnabled(entry.id)?'♧':'♧';bell.innerHTML=cfhBellEnabled(entry.id)?'&#128276;':'&#128277;';bell.title=cfhBellEnabled(entry.id)?'Reminders ON (delivery not enabled)':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
-        const menu=document.createElement('button');menu.type='button';menu.className='cfh-timeline-action';menu.textContent='⋮';menu.title='Event options';menu.onclick=()=>cfhCalendarEventOptions(entry);
+        const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';const bellOn='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';const bellOff='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-10.7-3.7M6 8c0 7-3 7-3 9h14"/><path d="M10 21h4M3 3l18 18"/></svg>';bell.innerHTML=cfhBellEnabled(entry.id)?bellOn:bellOff;bell.title=cfhBellEnabled(entry.id)?'Reminders ON (delivery not enabled)':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
+        const menu=document.createElement('button');menu.type='button';menu.className='cfh-timeline-action';menu.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>';menu.title='Event options';menu.onclick=()=>cfhCalendarEventOptions(entry);
         card.append(visual,eventIcon,details,bell,menu);item.append(date,card);schedule.appendChild(item);
       });
     }
