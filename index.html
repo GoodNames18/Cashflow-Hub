@@ -2971,12 +2971,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhEventSeries(entry){return (cfhCardKey(entry)||entry.id)+':'+entry.type;}
     function cfhEventVisible(entry,key){
       const deleted=cfhEventDeletions(),series=cfhEventSeries(entry);
-      return !(deleted.occurrences||[]).includes(series+'|'+key)&&!(deleted.future&&deleted.future[series]&&key>=deleted.future[series]);
+      return !(deleted.all||[]).includes(series)&&!(deleted.occurrences||[]).includes(series+'|'+key)&&!(deleted.future&&deleted.future[series]&&key>=deleted.future[series]);
     }
     function cfhDeleteScheduleOccurrence(entry,future){
       if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();
       const deleted=cfhEventDeletions(),series=cfhEventSeries(entry),key=entry.cfhDisplayDate||entry.date;
-      if(future){deleted.future=deleted.future||{};deleted.future[series]=deleted.future[series]&&deleted.future[series]<key?deleted.future[series]:key;}
+      if(future==='all'){deleted.all=[...new Set([...(deleted.all||[]),series])];}
+      else if(future){deleted.future=deleted.future||{};deleted.future[series]=deleted.future[series]&&deleted.future[series]<key?deleted.future[series]:key;}
       else{deleted.occurrences=[...new Set([...(deleted.occurrences||[]),series+'|'+key])];}
       try{localStorage.setItem(CFH_EVENT_DELETIONS_KEY,JSON.stringify(deleted));}catch(e){alert('Could not delete event.');return;}
       cfhCardPanelClose();cfhCalendarRender();
@@ -3255,7 +3256,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       }
       cfhCardPanelSaveDraft=savePreferences;
       const deleteOptions=document.createElement('div');deleteOptions.className='cfh-card-delete-options';deleteOptions.hidden=true;
-      for(const [label,future] of [['Current event only',false],['Current and future events',true]]){
+      for(const [label,future] of [['Current event only',false],['Current and future events',true],['Delete all events','all']]){
         const choice=document.createElement('button');choice.type='button';choice.textContent=label;
         choice.onclick=()=>cfhDeleteScheduleOccurrence(entry,future);deleteOptions.append(choice);
       }
