@@ -1493,6 +1493,27 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-reminder-days .cfh-reminder-day-box{display:flex;align-items:center;justify-content:center;width:100%;height:44px;min-width:0;margin:0;padding:8px 2px;border:1px solid #d6d3ef;border-radius:9px;background:#E6E6FA;color:#1B1844;font-family:inherit;font-size:clamp(8px,2.5vw,11px);font-weight:600;white-space:nowrap;cursor:pointer}
 #cfhCardPanel .cfh-card-reminder-days .cfh-reminder-day-box[aria-pressed=true]{background:#00F8B9;border-color:#00F8B9}
 #cfhCardPanel .cfh-reminder-day-box:focus-visible{outline:2px solid #1B1844;outline-offset:2px}
+
+#cfhCardPanel .cfh-card-range input[hidden]{display:none!important}
+#cfhCardPanel .cfh-card-range .cfh-range-date-button{margin:6px 0 0;min-height:42px;padding:10px 6px;background:#E6E6FA;color:#1B1844;border:1px solid #d6d3ef;border-radius:9px;font:inherit;font-size:13px;white-space:nowrap}
+.cfh-date-picker-overlay{position:fixed;inset:0;z-index:21000;background:#1b184466;display:grid;place-items:center;padding:20px}
+.cfh-date-picker-panel{width:min(100%,420px);max-height:90dvh;overflow:auto;min-width:0;background:white;color:#1B1844;border-radius:22px;padding:20px;box-shadow:0 15px 45px #0003}
+.cfh-date-picker-panel *{box-sizing:border-box}
+.cfh-date-picker-panel button{border:0;background:#E6E6FA;color:#1B1844;font:inherit;cursor:pointer;margin:0;padding:10px;border-radius:10px;min-width:0}
+.cfh-date-picker-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.cfh-date-picker-nav{display:grid;grid-template-columns:36px 1fr 70px 36px;align-items:center;gap:6px;margin-bottom:12px}
+.cfh-date-picker-nav input{width:100%;min-width:0;border:1px solid #d6d3ef;border-radius:8px;padding:8px 3px;background:#E6E6FA;color:#1B1844;font:inherit}
+.cfh-date-picker-months{position:relative;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:4px 0 14px;overscroll-behavior:contain}
+.cfh-date-picker-months::-webkit-scrollbar{display:none}
+.cfh-date-picker-months button{flex:0 0 58px;padding:10px 4px}
+.cfh-date-picker-year{display:flex;align-items:center;flex:0 0 52px;justify-content:center;font-size:13px;font-weight:600}
+.cfh-date-picker-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cfh-date-picker-grid button{padding:12px 0;font-size:13px;min-height:40px}
+.cfh-date-picker-weekdays{font-size:11px;text-align:center;margin-bottom:8px}
+.cfh-date-picker-panel button[aria-pressed=true]{background:#00F8B9}
+.cfh-date-picker-grid .is-other{opacity:.45}
+.cfh-date-picker-grid button:disabled{opacity:.25;cursor:default}
+
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3151,6 +3172,58 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const bank=cfhCardKey(entry),prefs=cfhCardPanelPreferences()[bank]||{};
       return {bank:prefs.bankName||(bank==='eastwest'?'EastWest':'Metrobank'),card:prefs.cardName||(bank==='eastwest'?'Visa Platinum':'Travel Signature Visa')};
     }
+    function cfhOpenRangeDatePicker(input,label,trigger){
+      document.getElementById('cfhRangeDatePicker')?.remove();
+      const parse=value=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return null;const [y,m,d]=value.split('-').map(Number);return new Date(y,m-1,d);};
+      const selected=parse(input.value)||new Date();let month=new Date(selected.getFullYear(),selected.getMonth(),1);
+      const overlay=document.createElement('div');overlay.id='cfhRangeDatePicker';overlay.className='cfh-date-picker-overlay';
+      const panel=document.createElement('div');panel.className='cfh-date-picker-panel';panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label',label);
+      const close=()=>{overlay.remove();trigger.focus();};
+      const heading=document.createElement('div');heading.className='cfh-date-picker-heading';
+      const title=document.createElement('strong');title.textContent=label;
+      const done=document.createElement('button');done.type='button';done.textContent='Close';done.onclick=close;heading.append(title,done);panel.append(heading);
+      const nav=document.createElement('div');nav.className='cfh-date-picker-nav';
+      const prev=document.createElement('button'),next=document.createElement('button'),monthTitle=document.createElement('strong'),year=document.createElement('input');
+      prev.type=next.type='button';prev.textContent='‹';next.textContent='›';prev.setAttribute('aria-label','Previous month');next.setAttribute('aria-label','Next month');
+      year.type='number';year.min='1900';year.max='2200';year.setAttribute('aria-label','Year');
+      nav.append(prev,monthTitle,year,next);panel.append(nav);
+      const rail=document.createElement('div');rail.className='cfh-date-picker-months';rail.setAttribute('aria-label','Choose month');panel.append(rail);
+      const weekdays=document.createElement('div');weekdays.className='cfh-date-picker-grid cfh-date-picker-weekdays';
+      for(const day of ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']){const el=document.createElement('span');el.textContent=day;weekdays.append(el);}panel.append(weekdays);
+      const grid=document.createElement('div');grid.className='cfh-date-picker-grid';panel.append(grid);
+      const change=delta=>{month=new Date(month.getFullYear(),month.getMonth()+delta,1);render();};
+      prev.onclick=()=>change(-1);next.onclick=()=>change(1);
+      year.onchange=()=>{const value=Number(year.value);if(Number.isInteger(value)&&value>=1900&&value<=2200){month=new Date(value,month.getMonth(),1);render();}};
+      function render(){
+        monthTitle.textContent=month.toLocaleDateString('en-PH',{month:'long'});year.value=month.getFullYear();
+        rail.replaceChildren();
+        for(let delta=-3;delta<=8;delta++){
+          const date=new Date(month.getFullYear(),month.getMonth()+delta,1);
+          if(date.getMonth()===0){const marker=document.createElement('span');marker.className='cfh-date-picker-year';marker.textContent=date.getFullYear();rail.append(marker);}
+          const chip=document.createElement('button');chip.type='button';chip.textContent=date.toLocaleDateString('en-PH',{month:'short'});chip.setAttribute('aria-label',date.toLocaleDateString('en-PH',{month:'long',year:'numeric'}));chip.setAttribute('aria-pressed',String(delta===0));
+          chip.onclick=()=>{month=date;render();};rail.append(chip);
+        }
+        grid.replaceChildren();const offset=(month.getDay()+6)%7;
+        const count=Math.ceil((offset+new Date(month.getFullYear(),month.getMonth()+1,0).getDate())/7)*7;
+        for(let i=0;i<count;i++){
+          const date=new Date(month.getFullYear(),month.getMonth(),1-offset+i),key=cfhCalendarDateKey(date);
+          const button=document.createElement('button');button.type='button';button.textContent=date.getDate();button.setAttribute('aria-label',date.toLocaleDateString('en-PH',{dateStyle:'full'}));
+          button.className=date.getMonth()!==month.getMonth()?'is-other':'';
+          button.setAttribute('aria-pressed',String(key===input.value));
+          if(input.min&&key<input.min)button.disabled=true;
+          button.onclick=()=>{input.value=key;input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));close();};
+          grid.append(button);
+        }
+        requestAnimationFrame(()=>{const active=rail.querySelector('[aria-pressed=true]');if(active)rail.scrollLeft=active.offsetLeft-rail.offsetLeft-(rail.clientWidth-active.offsetWidth)/2;});
+      }
+      let touch=null;
+      grid.addEventListener('touchstart',e=>{const t=e.touches[0];touch={x:t.clientX,y:t.clientY};},{passive:true});
+      grid.addEventListener('touchend',e=>{if(!touch)return;const t=e.changedTouches[0],dx=t.clientX-touch.x,dy=t.clientY-touch.y;touch=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)){e.preventDefault();change(dx<0?1:-1);}},{passive:false});
+      overlay.onclick=e=>{if(e.target===overlay)close();};
+      overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}if(e.key==='Tab'){const items=[...panel.querySelectorAll('button,input')].filter(el=>!el.disabled);const first=items[0],last=items.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
+      overlay.append(panel);document.body.append(overlay);render();done.focus();
+    }
+
     function cfhCardPanelRender(){
       const existing=document.getElementById('cfhCardPanel');if(existing)existing.remove();
       const entry=cfhCardPanelEntry,ew=!!entry.cfhCard15,bank=cfhCardKey(entry);
@@ -3199,7 +3272,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const label=document.createElement('label');label.textContent=type==='start'?'Start date':'End date';
         const input=document.createElement('input');input.type='date';input.required=true;input.name=type;
         input.value=(cfhCardPanelPreferences()[bank]||{}).rangeDraft?.[type]??(range?range[type]:'');
-        inputs[type]=input;label.append(input);fields.append(label);
+        input.hidden=true;
+        const dateButton=document.createElement('button');dateButton.type='button';dateButton.className='cfh-range-date-button';
+        const refreshDate=()=>{dateButton.textContent=input.value?format(input.value):'Select date';dateButton.setAttribute('aria-label',(type==='start'?'Start date: ':'End date: ')+(input.value||'Select date'));};
+        refreshDate();input.addEventListener('change',refreshDate);
+        dateButton.onclick=()=>cfhOpenRangeDatePicker(input,type==='start'?'Start date':'End date',dateButton);
+        inputs[type]=input;label.append(input,dateButton);fields.append(label);
       }
       inputs.start.oninput=()=>{inputs.end.min=inputs.start.value;};
       inputs.end.min=inputs.start.value;
