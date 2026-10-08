@@ -1534,7 +1534,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     .cfh-weekday-date-field{position:relative;min-width:0}
     .cfh-weekday-date-field input{color:transparent!important;-webkit-text-fill-color:transparent;caret-color:transparent;width:100%}
     .cfh-weekday-date-field input::-webkit-calendar-picker-indicator{opacity:1}
-    .cfh-weekday-date-value{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#1B1844;white-space:nowrap;font-size:13px;line-height:1.2}
+    .cfh-weekday-date-value{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#1B1844;white-space:nowrap;font-size:clamp(10px,3vw,15px);line-height:1.2}
     .cfh-notification-time-row{position:relative;display:block}
     .cfh-notification-time-row input{width:100%;padding-right:90px!important}
     .cfh-notification-time-row .cfh-time-period{position:absolute;right:42px;top:50%;transform:translateY(-50%);min-width:0;padding:0;background:transparent;border-radius:0;font-size:13px;line-height:1;pointer-events:none}
@@ -1550,10 +1550,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     /* Consistent text size in card form boxes. */
     #cfhCardPanel .cfh-card-range input,#cfhCardPanel .cfh-card-range select,
     #cfhCardPanel .cfh-statement-day-field span,#cfhCardPanel .cfh-weekday-date-value,
-    #cfhCardPanel .cfh-notification-time-row .cfh-time-period,
-    #cfhAddCardFields input,#cfhAddCardFields select,
-    #cfhAddCardFields .cfh-statement-day-field span,#cfhAddCardFields .cfh-weekday-date-value,
-    #cfhAddCardFields .cfh-notification-time-row .cfh-time-period{font-size:13px!important}
+    #cfhCardPanel .cfh-notification-time-row .cfh-time-period{font-size:13px!important}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
