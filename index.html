@@ -1418,6 +1418,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     #cfhCardPanel .cfh-card-panel-toggle{display:flex!important;align-items:center!important;justify-content:center!important;line-height:1}
     #cfhCardPanel .cfh-card-panel-toggle svg{display:block;flex-shrink:0;margin:0!important;vertical-align:middle}
+
+    #cfhCardPanel .cfh-card-range{padding:16px 0;max-width:100%;border-bottom:1px solid #e7e9ee}
+    #cfhCardPanel .cfh-card-range-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:12px}
+    #cfhCardPanel .cfh-card-range label{font-size:13px;display:block;min-width:0}
+    #cfhCardPanel .cfh-card-range input{display:block;width:100%;max-width:100%;min-width:0;margin-top:6px;padding:10px 6px;border:1px solid #d5dae1;border-radius:8px;background:#fff;color:#171c26;font:inherit}
+    #cfhCardPanel .cfh-card-range button{width:100%;margin:12px 0 0;padding:11px;background:var(--primary);color:#171c26;border:0;border-radius:10px}
 </style>
 </head>
 
@@ -2970,9 +2976,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     const CFH_CARD_PANEL_KEY='cfh_card_panel_preferences_v1';
     let cfhCardPanelEntry=null,cfhCardPanelTrigger=null;
     function cfhCardPanelPreferences(){try{return JSON.parse(localStorage.getItem(CFH_CARD_PANEL_KEY)||'{}')||{};}catch(e){return {};}}
+    function cfhCardScheduleRange(bank){
+      const value=cfhCardPanelPreferences()[bank];
+      return value&&typeof value==='object'&&cfhEastwestValidDate(value.start)&&cfhEastwestValidDate(value.end)&&value.start<=value.end?value:null;
+    }
     function cfhCardFutureVisible(entry,key){
       const bank=entry.cfhAuto?'metrobank':entry.cfhCard15?'eastwest':'';
-      return !bank||cfhCardPanelPreferences()[bank]!==false||key.slice(0,7)<=cfhCalendarDateKey(new Date()).slice(0,7);
+      const range=bank?cfhCardScheduleRange(bank):null;
+      return !range||(key>=range.start&&key<=range.end);
     }
     function cfhCardPanelClose(){
       const panel=document.getElementById('cfhCardPanel');
@@ -3019,11 +3030,31 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       reminderBell.setAttribute('aria-label',cfhBellEnabled(entry.id)?'Turn reminder preference off':'Turn reminder preference on');
       addRow('Reminders','Reminder preference: 7, 5, 3, 2 and 1 day before, and on the event date.',reminderBell);
       addRow('Recurring Schedule',ew?'Monthly: 15th, banking-day adjustment; due +24 days.':'Monthly: 18th; estimated due +21 days, weekends adjusted.');
-      addRow('Show Future Schedules','Controls upcoming months for this card.',toggle(cfhCardPanelPreferences()[bank]!==false,'Show future schedules',()=>{
-        const prefs=cfhCardPanelPreferences();prefs[bank]=prefs[bank]===false;
-        try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save preference.');return;}
+      const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
+      const rangeTitle=document.createElement('strong');rangeTitle.textContent='Schedule Date Range';rangeForm.append(rangeTitle);
+      const range=cfhCardScheduleRange(bank);
+      const fields=document.createElement('div');fields.className='cfh-card-range-fields';
+      const inputs={};
+      for(const type of ['start','end']){
+        const label=document.createElement('label');label.textContent=type==='start'?'Start date':'End date';
+        const input=document.createElement('input');input.type='date';input.required=true;input.name=type;
+        input.value=range?range[type]:'';
+        inputs[type]=input;label.append(input);fields.append(label);
+      }
+      inputs.start.oninput=()=>{inputs.end.min=inputs.start.value;};
+      inputs.end.min=inputs.start.value;
+      const save=document.createElement('button');save.type='submit';save.textContent='Apply Date Range';
+      rangeForm.append(fields,save);
+      rangeForm.onsubmit=e=>{
+        e.preventDefault();const start=inputs.start.value,end=inputs.end.value;
+        if(!cfhEastwestValidDate(start)||!cfhEastwestValidDate(end)||start>end){inputs.end.setCustomValidity('Choose an end date on or after the start date.');inputs.end.reportValidity();return;}
+        const prefs=cfhCardPanelPreferences();prefs[bank]={start,end};
+        try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save date range.');return;}
         cfhCalendarRender();cfhCardPanelRender();
-      }));
+      };
+      inputs.end.addEventListener('input',()=>inputs.end.setCustomValidity(''));
+      inputs.start.addEventListener('input',()=>inputs.end.setCustomValidity(''));
+      dialog.append(rangeForm);
       const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);
       const edit=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;settings.append(button);};
       if(ew&&entry.cfhEastwestCycle){
@@ -3034,7 +3065,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       overlay.addEventListener('click',e=>{if(e.target===overlay)cfhCardPanelClose();});
       overlay.addEventListener('keydown',e=>{
         if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cfhCardPanelClose();}
-        if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,summary,[role="button"]')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+        if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,summary,[role="button"]')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
       });photo.focus();
     }
     function cfhCalendarEventOptions(entry){cfhCardPanelOpen(entry);}
