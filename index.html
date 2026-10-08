@@ -1500,7 +1500,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-calendar-month-strip button{flex:0 0 56px;border:0;border-radius:14px;background:#E6E6FA;color:#1B1844;font:inherit;font-size:13px;padding:11px 4px;margin:0;cursor:pointer}
 .cfh-calendar-month-strip button[aria-pressed=true]{background:#00F8B9}
 .cfh-calendar-month-strip span{flex:0 0 50px;display:flex;align-items:center;justify-content:center;background:#00F8B9;color:#1B1844;border-radius:14px;font-size:13px;font-weight:600}
-</style>
+.cfh-calendar-search[hidden]{display:none}
+    .cfh-calendar-search{margin:0 0 12px}
+    .cfh-calendar-search input{box-sizing:border-box;width:100%;min-width:0;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#E6E6FA;color:#1B1844;font:inherit;font-size:14px}
+    .cfh-calendar-search input:focus{outline:2px solid #00F8B9;outline-offset:1px}
+    #cfhCalendarSearchButton[aria-expanded="true"]{background:#00F8B9;color:#1B1844}
+    </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
 
@@ -1986,9 +1991,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
               <div class="cfh-calendar-head">
                 <button id="cfhCalendarMonthTitle" type="button" class="cfh-calendar-title cfh-calendar-title-button" onclick="cfhCalendarOpenMonthPicker()" aria-label="Choose calendar month and year">Calendar</button>
                 <div class="cfh-calendar-nav">
+                  <button id="cfhCalendarSearchButton" type="button" aria-label="Search schedules" aria-expanded="false" aria-controls="cfhCalendarSearchBar" onclick="cfhCalendarToggleSearch()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>
                   <button type="button" aria-label="Previous month" onclick="cfhCalendarMoveMonth(-1)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
                   <button type="button" aria-label="Next month" onclick="cfhCalendarMoveMonth(1)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
                 </div>
+              </div>
+              <div id="cfhCalendarSearchBar" class="cfh-calendar-search" hidden>
+                <input id="cfhCalendarSearchInput" type="search" placeholder="Search schedules this month" aria-label="Search schedules this month" oninput="cfhCalendarRenderSchedule()" onkeydown="if(event.key==='Escape'){cfhCalendarToggleSearch();}">
               </div>
               <div id="cfhCalendarMonthStrip" class="cfh-calendar-month-strip" hidden aria-label="Choose calendar month"></div>
               <div class="cfh-calendar-weekdays" aria-hidden="true">
@@ -3389,21 +3398,39 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
     function cfhCalendarEventOptions(entry){cfhCardPanelOpen(entry);}
 
+    function cfhCalendarToggleSearch(){
+      const bar=document.getElementById('cfhCalendarSearchBar'),input=document.getElementById('cfhCalendarSearchInput'),button=document.getElementById('cfhCalendarSearchButton');
+      if(!bar||!input||!button)return;
+      bar.hidden=!bar.hidden;button.setAttribute('aria-expanded',String(!bar.hidden));
+      if(bar.hidden){input.value='';cfhCalendarRenderSchedule();button.focus();}else input.focus();
+    }
+    function cfhCalendarSearchMatches(entry,query){
+      const words=query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+      if(!words.length)return true;
+      const names=cfhCardKey(entry)?cfhCardDisplayNames(entry):{bank:'',card:''};
+      const type=entry.type==='due'?'due date DD':entry.type==='statement'?'statement date SD':entry.type;
+      const date=entry.cfhDisplayDate||'';
+      const formatted=date?new Date(date+'T12:00:00').toLocaleDateString('en-PH',{day:'numeric',month:'long',year:'numeric'}):'';
+      const text=[entry.title,names.bank,names.card,type,entry.notes,date,formatted].filter(Boolean).join(' ').toLocaleLowerCase();
+      return words.every(word=>text.includes(word));
+    }
     function cfhCalendarRenderSchedule() {
       const label=document.getElementById('cfhCalendarSelectedLabel');
       const schedule=document.getElementById('cfhCalendarSchedule');
       if(!label||!schedule)return;
       const view=cfhCalendarState.month;
       label.textContent=view.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
-      const entries=[];
+      let entries=[];
       const days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
       for(let day=1;day<=days;day++){
         const key=cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),day));
         cfhCalendarForDate(key).filter(e=>cfhCardFutureVisible(e,key)).forEach(e=>entries.push({...e,cfhDisplayDate:key}));
       }
+      const query=document.getElementById('cfhCalendarSearchInput')?.value||'';
+      entries=entries.filter(entry=>cfhCalendarSearchMatches(entry,query));
       entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate)||(a.time||'').localeCompare(b.time||''));
       schedule.replaceChildren();
-      if(!entries.length){schedule.textContent='No events scheduled this month.';return;}
+      if(!entries.length){schedule.textContent=query.trim()?'No matching schedules this month.':'No events scheduled this month.';return;}
       const todayKey=cfhCalendarDateKey(new Date());
       const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey);
       const isCurrentMonth=view.getFullYear()===Number(todayKey.slice(0,4))&&view.getMonth()===Number(todayKey.slice(5,7))-1;
