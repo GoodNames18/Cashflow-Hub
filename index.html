@@ -1540,6 +1540,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     .cfh-notification-time-row .cfh-time-period{position:absolute;right:42px;top:50%;transform:translateY(-50%);min-width:0;padding:0;background:transparent;border-radius:0;font-size:13px;line-height:1;pointer-events:none}
     .cfh-notification-time-row input{position:relative}
     .cfh-notification-time-row input::-webkit-calendar-picker-indicator{position:absolute;right:12px;top:50%;transform:translateY(-50%);margin:0}
+    .cfh-notification-time-row input{color:transparent!important;-webkit-text-fill-color:transparent;caret-color:transparent;padding-right:42px!important}
+    .cfh-notification-time-row .cfh-time-period{left:12px;right:auto;font-weight:400;font-size:15px}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3296,6 +3298,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       input.addEventListener('input',update);input.addEventListener('change',update);update();
       wrap.append(input,text);return wrap;
     }
+    function cfhTime12Text(value){
+      if(!/^\d{2}:\d{2}$/.test(value||''))return '--:-- AM/PM';
+      const hour=Number(value.slice(0,2));return String(hour%12||12).padStart(2,'0')+value.slice(2)+' '+(hour<12?'AM':'PM');
+    }
     function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(Number(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
@@ -3415,7 +3421,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
       const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);const timeRow=document.createElement('div');timeRow.className='cfh-notification-time-row';
       const period=document.createElement('span');period.className='cfh-time-period';
-      const updatePeriod=()=>{period.textContent=cfhTimePeriod(timeInput.value);};
+      const updatePeriod=()=>{period.textContent=cfhTime12Text(timeInput.value);};
       timeInput.addEventListener('input',updatePeriod);timeInput.addEventListener('change',updatePeriod);updatePeriod();
       timeRow.append(timeInput,period);timeLabel.append(timeRow);
       const remindersTitle=document.createElement('strong');remindersTitle.textContent='Reminders';remindersTitle.className='cfh-manage-section-title';timeForm.append(remindersTitle,timeLabel);timeForm.classList.add('cfh-manage-reminders');settings.append(timeForm);
@@ -3613,10 +3619,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById('cfhAddDueLabel').textContent='Due after (days)';
       document.getElementById('cfhAddCardImage').replaceChildren(new Option('Choose card image',''));
       document.getElementById('cfhAddCardPhoto').hidden=true;
-      document.getElementById('cfhAddTimePeriod').textContent='AM/PM';
+      document.getElementById('cfhAddTimePeriod').textContent='--:-- AM/PM';
       for(const id of ['cfhAddCardStart','cfhAddCardEnd']){
         const input=document.getElementById(id);
-        if(!input.parentElement.classList.contains('cfh-weekday-date-field'))input.replaceWith(cfhWeekdayDateField(input));
+        if(!input.parentElement.classList.contains('cfh-weekday-date-field')){const parent=input.parentElement,next=input.nextSibling;parent.insertBefore(cfhWeekdayDateField(input),next);}
         input.dispatchEvent(new Event('input'));
       }
       cfhEditorType("event");
@@ -9477,7 +9483,7 @@ window.cfhRefreshTestTab = function(page) {
       <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview()"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
       <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" required></div></div>
       <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
-      <label>Notification time</label><div class="cfh-notification-time-row"><input id="cfhAddCardTime" type="time" oninput="document.getElementById('cfhAddTimePeriod').textContent=cfhTimePeriod(this.value)"><span id="cfhAddTimePeriod" class="cfh-time-period">AM/PM</span></div>
+      <label>Notification time</label><div class="cfh-notification-time-row"><input id="cfhAddCardTime" type="time" oninput="document.getElementById('cfhAddTimePeriod').textContent=cfhTime12Text(this.value)"><span id="cfhAddTimePeriod" class="cfh-time-period">AM/PM</span></div>
     </div>
     <div id="cfhAddStandardFields">
 
