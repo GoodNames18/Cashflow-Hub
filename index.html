@@ -1473,6 +1473,21 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-event-actions button{width:100%;padding:12px 6px;border:1px solid #d5dae1;border-radius:10px;background:#fff;color:#171c26;font:inherit}
 #cfhCardPanel .cfh-card-range select{width:100%;padding:10px;border:1px solid #d5dae1;border-radius:8px;background:#fff;font:inherit}
 #cfhCardPanel .cfh-card-range select{width:100%;max-width:100%;padding:12px;border:1px solid #d5dae1;border-radius:10px;background:#fff;color:#171c26;font:inherit}
+
+/* Manage Card: card identity, schedule, reminders, then actions. */
+#cfhCardPanel .is-managing{color:var(--secondary,#1B1844)}
+#cfhCardPanel .cfh-manage-section-title{display:block;position:relative;padding-left:12px;margin:0 0 12px;font-size:16px;color:var(--secondary,#1B1844);line-height:1.4}
+#cfhCardPanel .cfh-manage-section-title:before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:4px;border-radius:4px;background:var(--primary,#00F8B9)}
+#cfhCardPanel .is-managing .cfh-card-range{border-color:#E6E6FA}
+#cfhCardPanel .cfh-manage-card-details{border-bottom:0;padding-bottom:0}
+#cfhCardPanel .cfh-manage-card-details .cfh-card-range-fields{margin-top:0}
+#cfhCardPanel .is-managing .cfh-card-range input,#cfhCardPanel .is-managing .cfh-card-range select{background:#E6E6FA;border:1px solid #d6d3ef;color:#1B1844;border-radius:9px}
+#cfhCardPanel .cfh-manage-reminders{border-bottom:0;padding-bottom:0}
+#cfhCardPanel .cfh-card-reminder-days{padding-bottom:16px;border-bottom:1px solid #E6E6FA;margin-bottom:12px;color:#1B1844}
+#cfhCardPanel .cfh-card-reminder-days input{accent-color:#00F8B9}
+#cfhCardPanel .cfh-card-event-actions button{background:#E6E6FA;color:#1B1844;border:1px solid #d6d3ef}
+#cfhCardPanel .cfh-card-delete-options button{background:#E6E6FA;color:#1B1844;border-color:#d6d3ef}
+
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3194,7 +3209,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const label=document.createElement('label');label.textContent=labelText;
         const input=document.createElement('input');input.type='text';input.maxLength=80;input.value=current;nameInputs[key]=input;label.append(input);nameFields.append(label);
       }
-      nameForm.append(nameFields);settings.append(nameForm);
+      const cardTitle=document.createElement('strong');cardTitle.textContent='Card Details';cardTitle.className='cfh-manage-section-title';nameForm.append(cardTitle,nameFields);nameForm.classList.add('cfh-manage-card-details');settings.append(nameForm);
       const imageForm=document.createElement('div');imageForm.className='cfh-card-range';
       const imageLabel=document.createElement('label');imageLabel.textContent='Card image';
       const imageInput=document.createElement('select');imageInput.setAttribute('aria-label','Card image');
@@ -3230,7 +3245,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
       const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);timeLabel.append(timeInput);
-      timeForm.append(timeLabel);settings.append(timeForm);
+      const remindersTitle=document.createElement('strong');remindersTitle.textContent='Reminders';remindersTitle.className='cfh-manage-section-title';timeForm.append(remindersTitle,timeLabel);timeForm.classList.add('cfh-manage-reminders');settings.append(timeForm);
       timeForm.onsubmit=e=>e.preventDefault();
       const savePreferences=()=>{
         const prefs=cfhCardPanelPreferences(),value={...(prefs[bank]||{})};
@@ -3307,7 +3322,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
             try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save reminder days.');}
           };
         }
-        settings.append(daysBox);
+        rangeTitle.classList.add('cfh-manage-section-title');scheduleTitle.classList.add('cfh-manage-section-title');
+        settings.append(nameForm,imageForm,scheduleForm,rangeForm,timeForm,daysBox,eventActions,deleteOptions);
       }
       if(cfhCardPanelManaging){
         const editor=document.createElement('div');editor.className='cfh-card-manage-fields';
@@ -3318,7 +3334,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       overlay.addEventListener('click',e=>{if(e.target===overlay)cfhCardPanelClose();});
       overlay.addEventListener('keydown',e=>{
         if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cfhCardPanelClose();}
-        if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,summary,[role="button"]')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+        if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,select,summary,[role="button"]')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
       });(cfhCardPanelManaging?summary:photo).focus();
     }
     function cfhCalendarEventOptions(entry){cfhCardPanelOpen(entry);}
