@@ -1323,6 +1323,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-event>.cfh-timeline-action:last-child{grid-column:3;justify-self:end!important}
 .cfh-timeline-event>.cfh-timeline-action svg{display:block;width:18px;height:18px;vertical-align:middle}
 .cfh-eastwest-thumb{width:100%;height:auto;aspect-ratio:1.6;display:block;border-radius:5px}
+/* Colored event markers centered on the Schedule date rail. */
+.cfh-timeline-event:before{left:-14px;width:10px;height:10px;background:#4962a8;z-index:1}
+.cfh-timeline-event.is-statement:before{background:#8244cf}
+.cfh-timeline-event.is-due:before{background:#df4d43}
+
 @media(max-width:360px){.cfh-timeline-event{grid-template-columns:48px minmax(0,1fr) 44px!important;column-gap:4px!important}.cfh-timeline-event>.cfh-timeline-action{width:21px!important}}
 </style>
 </head>
