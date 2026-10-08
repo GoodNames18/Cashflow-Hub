@@ -1327,6 +1327,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-event:before{left:-14px;width:10px;height:10px;background:#4962a8;z-index:1}
 .cfh-timeline-event.is-statement:before{background:#8244cf}
 .cfh-timeline-event.is-due:before{background:#df4d43}
+/* Highlight today's date in the Schedule rail. */
+.cfh-timeline-date.is-today small{color:#00a98b}
+.cfh-timeline-date.is-today strong{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--primary);color:#071c17;font-size:23px;line-height:1}
+
 
 @media(max-width:360px){.cfh-timeline-event{grid-template-columns:48px minmax(0,1fr) 44px!important;column-gap:4px!important}.cfh-timeline-event>.cfh-timeline-action{width:21px!important}}
 </style>
@@ -2826,6 +2830,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if(lastDate!==entry.cfhDisplayDate){
           const [y,m,d]=entry.cfhDisplayDate.split('-').map(Number);
           const actual=new Date(y,m-1,d);
+          if(entry.cfhDisplayDate===cfhCalendarDateKey(new Date()))date.classList.add('is-today');
           const weekday=document.createElement('small');weekday.textContent=actual.toLocaleDateString('en-PH',{weekday:'short'});
           const number=document.createElement('strong');number.textContent=String(d);
           date.append(weekday,number);
