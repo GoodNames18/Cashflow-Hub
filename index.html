@@ -3013,7 +3013,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const range=bank?cfhCardScheduleRange(bank):null;
       return !range||(key>=range.start&&key<=range.end);
     }
+    let cfhCardPanelSaveDraft=null;
+    window.addEventListener('pagehide',()=>{if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();});
     function cfhCardPanelClose(){
+      if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();cfhCardPanelSaveDraft=null;
       const panel=document.getElementById('cfhCardPanel');
       if(panel)panel.remove();
       if(cfhCardPanelTrigger&&cfhCardPanelTrigger.isConnected)cfhCardPanelTrigger.focus();
@@ -3072,35 +3075,36 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       for(const type of ['start','end']){
         const label=document.createElement('label');label.textContent=type==='start'?'Start date':'End date';
         const input=document.createElement('input');input.type='date';input.required=true;input.name=type;
-        input.value=range?range[type]:'';
+        input.value=(cfhCardPanelPreferences()[bank]||{}).rangeDraft?.[type]??(range?range[type]:'');
         inputs[type]=input;label.append(input);fields.append(label);
       }
       inputs.start.oninput=()=>{inputs.end.min=inputs.start.value;};
       inputs.end.min=inputs.start.value;
-      const save=document.createElement('button');save.type='submit';save.textContent='Apply Date Range';
-      rangeForm.append(fields,save);
-      rangeForm.onsubmit=e=>{
-        e.preventDefault();const start=inputs.start.value,end=inputs.end.value;
-        if(!cfhEastwestValidDate(start)||!cfhEastwestValidDate(end)||start>end){inputs.end.setCustomValidity('Choose an end date on or after the start date.');inputs.end.reportValidity();return;}
-        const prefs=cfhCardPanelPreferences();prefs[bank]={...(prefs[bank]||{}),start,end};
-        try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save date range.');return;}
-        cfhCalendarRender();cfhCardPanelRender();
-      };
-      inputs.end.addEventListener('input',()=>inputs.end.setCustomValidity(''));
-      inputs.start.addEventListener('input',()=>inputs.end.setCustomValidity(''));
+      rangeForm.append(fields);
+      rangeForm.onsubmit=e=>e.preventDefault();
       addRow('Schedule Date Range',range?format(range.start)+' — '+format(range.end):'Set the start and end dates in Manage Card.');
       const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);settings.append(rangeForm);
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time (Philippine time)';
       const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);timeLabel.append(timeInput);
-      const timeSave=document.createElement('button');timeSave.type='submit';timeSave.textContent='Save Notification Time';
-      timeForm.append(timeLabel,timeSave);settings.append(timeForm);
-      timeForm.onsubmit=e=>{
-        e.preventDefault();if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput.value))return;
-        const prefs=cfhCardPanelPreferences();prefs[bank]={...(prefs[bank]||{}),notificationTime:timeInput.value};
-        try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save notification time.');return;}
-        cfhCalendarRender();cfhCardPanelRender();
+      timeForm.append(timeLabel);settings.append(timeForm);
+      timeForm.onsubmit=e=>e.preventDefault();
+      const savePreferences=()=>{
+        const prefs=cfhCardPanelPreferences(),value={...(prefs[bank]||{})};
+        const start=inputs.start.value,end=inputs.end.value;
+        value.rangeDraft={start,end};
+        inputs.end.min=start;inputs.end.setCustomValidity(start&&end&&start>end?'End date must be on or after start date.':'');
+        if(cfhEastwestValidDate(start)&&cfhEastwestValidDate(end)&&start<=end){value.start=start;value.end=end;}
+        if(!timeInput.value||/^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput.value))value.notificationTime=timeInput.value;
+        prefs[bank]=value;
+        try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save card settings.');return;}
+        cfhCalendarRender();
       };
+      for(const input of [inputs.start,inputs.end,timeInput]){
+        input.addEventListener('input',savePreferences);
+        input.addEventListener('change',savePreferences);
+      }
+      cfhCardPanelSaveDraft=savePreferences;
       const edit=(label,action)=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=action;settings.append(button);};
       if(ew&&entry.cfhEastwestCycle){
         for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
@@ -3109,7 +3113,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       dialog.append(settings);
       settings.open=cfhCardPanelManaging;
       summary.setAttribute('aria-expanded',String(cfhCardPanelManaging));
-      summary.onclick=e=>{e.preventDefault();cfhCardPanelManaging=!cfhCardPanelManaging;cfhCardPanelRender();};
+      summary.onclick=e=>{e.preventDefault();savePreferences();cfhCardPanelManaging=!cfhCardPanelManaging;cfhCardPanelRender();};
       if(cfhCardPanelManaging){
         dialog.classList.add('is-managing');
         for(const child of dialog.children){if(child!==settings)child.hidden=true;}
