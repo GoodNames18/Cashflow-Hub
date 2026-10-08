@@ -3440,11 +3440,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function enableRefreshLongPress() {
-      document.querySelectorAll(".refresh-button").forEach(function(button) {
+      document.querySelectorAll('.refresh-button, .cfh-bottom-nav button[data-cfh-dest="home"], .cfh-bottom-nav button[data-cfh-dest="calendar"]').forEach(function(button) {
         var timer = null;
         var startX = 0, startY = 0;
         var blockClick = false;
-        button.title = "Tap to refresh data · hold to reload app code";
+        button.title = button.dataset.cfhDest ? "Tap to navigate · hold to refresh app" : "Tap to refresh data · hold to reload app code";
         function cancel() {
           window.clearTimeout(timer);
           timer = null;
