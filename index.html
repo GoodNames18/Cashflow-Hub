@@ -1542,6 +1542,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     .cfh-notification-time-row input::-webkit-calendar-picker-indicator{position:absolute;right:12px;top:50%;transform:translateY(-50%);margin:0}
     .cfh-notification-time-row input{color:transparent!important;-webkit-text-fill-color:transparent;caret-color:transparent;padding-right:42px!important}
     .cfh-notification-time-row .cfh-time-period{left:12px;right:auto;font-weight:400;font-size:15px}
+    .cfh-statement-day-field{position:relative;min-width:0}
+    .cfh-statement-day-field span{position:absolute;left:12px;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:#1B1844;font-size:clamp(9px,2.8vw,14px);white-space:nowrap}
+    .cfh-statement-day-field input:not(:focus){color:transparent!important;-webkit-text-fill-color:transparent}
+    .cfh-statement-day-field input:focus+span{display:none}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3286,6 +3290,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhCardPanelTrigger=document.activeElement;cfhCardPanelEntry=entry;cfhCardPanelManaging=false;
       cfhCardPanelRender();
     }
+    function cfhStatementDayText(value){
+      const day=Number(value);if(!value||!Number.isInteger(day)||day<1||day>31)return '';
+      const suffix=day%100>=11&&day%100<=13?'th':({1:'st',2:'nd',3:'rd'}[day%10]||'th');
+      return day+suffix+' of every month';
+    }
+    function cfhStatementDayField(input){
+      const wrap=document.createElement('div');wrap.className='cfh-statement-day-field';
+      const text=document.createElement('span');text.setAttribute('aria-hidden','true');
+      const update=()=>{text.textContent=cfhStatementDayText(input.value);};
+      input.addEventListener('input',update);input.addEventListener('change',update);update();wrap.append(input,text);return wrap;
+    }
     function cfhWeekdayDateText(value){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
       const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d);
@@ -3405,7 +3420,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const scheduleInputs={};
       for(const [key,labelText,max] of [['statementDay','Statement day',31],['dueDays','Due after (days)',60]]){
         const label=document.createElement('label');label.textContent=labelText;
-        const input=document.createElement('input');input.type='number';input.min='1';input.max=String(max);input.step='1';input.value=recurring[key];scheduleInputs[key]=input;label.append(input);scheduleFields.append(label);
+        const input=document.createElement('input');input.type='number';input.min='1';input.max=String(max);input.step='1';input.value=recurring[key];scheduleInputs[key]=input;label.append(key==='statementDay'?cfhStatementDayField(input):input);scheduleFields.append(label);
       }
       const updateAtomeFields=()=>{
         const atome=cfhIsAtomeCard({bankName:nameInputs.bankName.value,cardName:nameInputs.cardName.value});
@@ -3620,6 +3635,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById('cfhAddCardImage').replaceChildren(new Option('Choose card image',''));
       document.getElementById('cfhAddCardPhoto').hidden=true;
       document.getElementById('cfhAddTimePeriod').textContent='--:-- AM/PM';
+      const statementInput=document.getElementById('cfhAddStatementDay');
+      if(!statementInput.parentElement.classList.contains('cfh-statement-day-field')){const parent=statementInput.parentElement,next=statementInput.nextSibling;parent.insertBefore(cfhStatementDayField(statementInput),next);}
+      statementInput.dispatchEvent(new Event('input'));
       for(const id of ['cfhAddCardStart','cfhAddCardEnd']){
         const input=document.getElementById(id);
         if(!input.parentElement.classList.contains('cfh-weekday-date-field')){const parent=input.parentElement,next=input.nextSibling;parent.insertBefore(cfhWeekdayDateField(input),next);}
