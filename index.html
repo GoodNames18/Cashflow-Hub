@@ -3067,7 +3067,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       reminderBell.setAttribute('aria-label',cfhBellEnabled(entry.id)?'Turn reminder preference off':'Turn reminder preference on');
       const savedReminderTime=cfhCardNotificationTime(entry);
       const reminderTimeLabel=savedReminderTime?(()=>{const [h,m]=savedReminderTime.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');})():'';
-      addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" (PH Time) on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
+      addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
       addRow('Recurring Schedule',ew?'Monthly: 15th, banking-day adjustment; due +24 days.':'Monthly: 18th; estimated due +21 days, weekends adjusted.');
       const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
       const rangeTitle=document.createElement('strong');rangeTitle.textContent='Schedule Date Range';rangeForm.append(rangeTitle);
@@ -3087,7 +3087,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       addRow('Schedule Date Range',range?format(range.start)+' — '+format(range.end):'Set the start and end dates in Manage Card.');
       const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);settings.append(rangeForm);
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
-      const timeLabel=document.createElement('label');timeLabel.textContent='Notification time (Philippine time)';
+      const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
       const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);timeLabel.append(timeInput);
       timeForm.append(timeLabel);settings.append(timeForm);
       timeForm.onsubmit=e=>e.preventDefault();
