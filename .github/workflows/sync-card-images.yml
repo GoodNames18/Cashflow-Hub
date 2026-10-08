@@ -1,0 +1,24 @@
+name: Sync card images to Supabase
+on:
+  push:
+    branches: ['Haeo!', 'feature/calendar']
+    paths: ['images/**', '.github/workflows/sync-card-images.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: cfh-card-image-sync
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync GitHub images to Supabase
+        env:
+          SYNC_URL: https://mssrsogwxvxyyjnavdiu.supabase.co/functions/v1/cfh-card-images
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl --fail --silent --show-error -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=cfh-card-image-sync" | jq -er '.value')
+          echo "::add-mask::$TOKEN"
+          curl --fail-with-body --silent --show-error --retry 2 -X POST -H "Authorization: Bearer $TOKEN" "$SYNC_URL"
