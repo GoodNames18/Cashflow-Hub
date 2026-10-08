@@ -2841,7 +2841,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       return entries;
     }
     function cfhCalendarForDate(key) {
-      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
     }
     function cfhCalendarEdit(id) {
       const entry = cfhCalendarEntries.find(e => e.id === id);
@@ -3853,6 +3853,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           return;
         }
 
+
+        if (document.getElementById("cfhCardPanel")) return;
 
         // Calendar gestures change months using the same navigation as the arrows.
         if (currentAppPage === "calendar") {
