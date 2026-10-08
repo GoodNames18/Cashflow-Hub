@@ -2657,7 +2657,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if (!cfhMetrobankStatementUnlocked(statement) || !cfhMetrobankIsActiveForStatement(statement)) continue;
         const due = cfhMetrobankDueDate(statement);
         if (key===statement) results.push({id:'metrobank-statement-'+statement,type:'statement',title:'Metrobank Travel Signature Visa — Statement',date:key,time:'',amount:null,repeat:'none',notes:'Monthly statement cut-off. Check your official SOA for the balance.' ,cfhAuto:true});
-        if (key===due.key) results.push({id:'metrobank-due-'+statement,type:'due',title:'Metrobank Travel Signature Visa — Payment Due',date:key,time:'09:00',amount:null,repeat:'none',notes:due.confirmed?'Due date confirmed from provided statement or manual override.':'Estimated due date (+21 days, weekends adjusted). Verify against official SOA; holidays may change it.',cfhAuto:true,cfhStatement:statement,cfhConfirmed:due.confirmed});
+        if (key===due.key) results.push({id:'metrobank-due-'+statement,type:'due',title:'Metrobank Travel Signature Visa — Payment Due',date:key,time:'',amount:null,repeat:'none',notes:due.confirmed?'Due date confirmed from provided statement or manual override.':'Estimated due date (+21 days, weekends adjusted). Verify against official SOA; holidays may change it.',cfhAuto:true,cfhStatement:statement,cfhConfirmed:due.confirmed});
 
       }
       return results;
@@ -2673,7 +2673,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           statementDate:statementKey,
           dueDate:due.key,
           date:cfhCalendarDateKey(new Date(year,month-1,day-daysBefore)),
-          time:'09:00',
+          time:'',
           timeZone:'Asia/Manila',
           daysBefore:daysBefore,
           confirmed:due.confirmed,
@@ -2903,7 +2903,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if(!entries.length){schedule.textContent='No events scheduled this month.';return;}
       const todayKey=cfhCalendarDateKey(new Date());
       const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey);
-      const highlightedDate=nextScheduledEntry?nextScheduledEntry.cfhDisplayDate:null;
+      const isCurrentMonth=view.getFullYear()===Number(todayKey.slice(0,4))&&view.getMonth()===Number(todayKey.slice(5,7))-1;
+      const highlightedDate=isCurrentMonth&&nextScheduledEntry?nextScheduledEntry.cfhDisplayDate:null;
       let lastDate='';
       entries.forEach(entry=>{
         const item=document.createElement('div');item.className='cfh-timeline-row';
