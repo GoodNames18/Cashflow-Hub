@@ -1444,6 +1444,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 @media(max-width:360px){#cfhCalendarSchedule .cfh-timeline-event.has-notification-time{grid-template-columns:48px minmax(0,1fr) 36px!important}#cfhCalendarSchedule .cfh-timeline-notification-time{width:36px;padding-left:6px}}
 #cfhCalendarSchedule .cfh-timeline-event.has-notification-time{padding-right:7px}
 #cfhCalendarSchedule .cfh-timeline-notification-time{padding-left:7px}
+
+#cfhCardPanel .cfh-card-panel-metrobank-image{position:relative;width:100%;aspect-ratio:706 / 442;overflow:hidden;border-radius:8px;margin:0 0 18px}
+#cfhCardPanel .cfh-card-panel-metrobank-image>img{display:block;position:absolute;top:0;left:0;width:100%;max-width:100%;height:auto;margin:0;transform:translateY(-18.6969%);cursor:pointer}
+#cfhCardPanel .cfh-card-panel-metrobank-image:has(img:focus-visible){outline:2px solid var(--secondary);outline-offset:3px}
 </style>
 </head>
 
@@ -3037,7 +3041,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       photo.tabIndex=0;photo.setAttribute('role','button');photo.setAttribute('aria-label','Close card details');
       photo.onclick=cfhCardPanelClose;
       photo.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cfhCardPanelClose();}};
-      dialog.append(photo,title);
+      if(ew){dialog.append(photo,title);}else{
+        const frame=document.createElement('div');frame.className='cfh-card-panel-metrobank-image';
+        frame.append(photo);dialog.append(frame,title);
+      }
       const format=key=>{if(!key)return 'Not available';const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',weekday:'short'});};
       const dates=document.createElement('div');dates.className='cfh-card-panel-dates';
       for(const [label,key,type] of [['Statement Date',statement,'statement'],['Due Date',due,'due']]){
