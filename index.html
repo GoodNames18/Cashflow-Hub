@@ -2737,15 +2737,34 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
     function cfhCalendarRenderMonthStrip(){
       const strip=document.getElementById('cfhCalendarMonthStrip');if(!strip||strip.hidden)return;
-      strip.replaceChildren();const view=cfhCalendarState.month;
-      for(let delta=-12;delta<=24;delta++){
-        const date=new Date(view.getFullYear(),view.getMonth()+delta,1);
-        if(delta===-12||date.getMonth()===0){const year=document.createElement('span');year.textContent=date.getFullYear();strip.append(year);}
-        const button=document.createElement('button');button.type='button';button.textContent=date.toLocaleDateString('en-PH',{month:'short'});
-        button.setAttribute('aria-label',date.toLocaleDateString('en-PH',{month:'long',year:'numeric'}));button.setAttribute('aria-pressed',String(delta===0));
-        button.onclick=()=>{cfhCalendarState.month=date;cfhCalendarRender();cfhSaveNavigationState();};strip.append(button);
-      }
-      requestAnimationFrame(()=>{const active=strip.querySelector('[aria-pressed=true]');if(active)strip.scrollLeft=active.offsetLeft-strip.offsetLeft-(strip.clientWidth-active.offsetWidth)/2;});
+      strip.onscroll=null;strip.replaceChildren();
+      const view=cfhCalendarState.month,selected=view.getFullYear()*12+view.getMonth();
+      let first=selected-18,last=selected+18,extending=true;
+      const makeMonths=(from,to)=>{
+        const fragment=document.createDocumentFragment();
+        for(let serial=from;serial<to;serial++){
+          const year=Math.floor(serial/12),month=serial-year*12,date=new Date(year,month,1);if(year>=0&&year<100)date.setFullYear(year);
+          if(month===0){const marker=document.createElement('span');marker.textContent=year;fragment.append(marker);}
+          const button=document.createElement('button');button.type='button';button.textContent=date.toLocaleDateString('en-PH',{month:'short'});
+          button.setAttribute('aria-label',date.toLocaleDateString('en-PH',{month:'long',year:'numeric'}));button.setAttribute('aria-pressed',String(serial===selected));
+          button.onclick=()=>{cfhCalendarState.month=date;cfhCalendarRender();cfhSaveNavigationState();};fragment.append(button);
+        }
+        return fragment;
+      };
+      strip.append(makeMonths(first,last));
+      strip.onscroll=()=>{
+        if(extending||strip.hidden)return;
+        extending=true;
+        if(strip.scrollLeft<120){
+          const width=strip.scrollWidth,left=strip.scrollLeft;
+          strip.prepend(makeMonths(first-12,first));first-=12;
+          strip.scrollLeft=left+strip.scrollWidth-width;
+        }else if(strip.scrollWidth-strip.clientWidth-strip.scrollLeft<120){
+          strip.append(makeMonths(last,last+12));last+=12;
+        }
+        requestAnimationFrame(()=>{extending=false;});
+      };
+      requestAnimationFrame(()=>{const active=strip.querySelector('[aria-pressed=true]');if(active)strip.scrollLeft=active.offsetLeft-strip.offsetLeft-(strip.clientWidth-active.offsetWidth)/2;requestAnimationFrame(()=>{extending=false;});});
     }
     function cfhCalendarCloseMonthPicker() { document.getElementById('cfhMonthPicker').hidden = true; }
     function cfhCalendarApplyMonthPicker() {
