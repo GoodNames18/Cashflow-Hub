@@ -1465,8 +1465,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 #cfhCardPanel .cfh-card-delete-event{color:#c62828!important;border-color:#e7a4a4!important}
 #cfhCardPanel .cfh-card-delete-options[hidden]{display:none!important}
-#cfhCardPanel .cfh-card-delete-options{display:grid;gap:8px;margin:10px 0}
-#cfhCardPanel .cfh-card-delete-options button{width:100%;padding:12px;border:1px solid #e7a4a4;border-radius:10px;background:#fff;color:#c62828;font:inherit}
+#cfhCardPanel .cfh-card-delete-options{display:grid;grid-template-columns:1fr 1.35fr .85fr;gap:4px;margin:10px 0}
+#cfhCardPanel .cfh-card-delete-options button{width:100%;min-width:0;margin:0;padding:10px 3px;border:1px solid #e7a4a4;border-radius:10px;background:#fff;color:#c62828;font:inherit;font-size:clamp(8px,2.5vw,11px);white-space:nowrap}
 
 #cfhCardPanel .cfh-card-event-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
 #cfhCardPanel .cfh-card-event-actions button{width:100%;padding:12px 6px;border:1px solid #d5dae1;border-radius:10px;background:#fff;color:#171c26;font:inherit}
@@ -3256,7 +3256,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       }
       cfhCardPanelSaveDraft=savePreferences;
       const deleteOptions=document.createElement('div');deleteOptions.className='cfh-card-delete-options';deleteOptions.hidden=true;
-      for(const [label,future] of [['Current event only',false],['Current and future events',true],['Delete all events','all']]){
+      for(const [label,future] of [['Current only',false],['Current & future',true],['Delete all','all']]){
         const choice=document.createElement('button');choice.type='button';choice.textContent=label;
         choice.onclick=()=>cfhDeleteScheduleOccurrence(entry,future);deleteOptions.append(choice);
       }
