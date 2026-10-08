@@ -3011,7 +3011,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const row=document.createElement('div');row.className='cfh-card-panel-row';const text=document.createElement('div');const labelEl=document.createElement('strong');labelEl.textContent=label;const noteEl=document.createElement('small');noteEl.textContent=note;text.append(labelEl,noteEl);row.append(text);if(button)row.append(button);dialog.append(row);
       };
       const toggle=(enabled,label,action)=>{const button=document.createElement('button');button.type='button';button.className='cfh-card-panel-toggle';button.setAttribute('role','switch');button.setAttribute('aria-checked',String(enabled));button.setAttribute('aria-label',label);button.textContent=enabled?'ON':'OFF';button.onclick=action;return button;};
-      addRow('Reminders','For this event. Phone notification delivery is not enabled.',toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();}));
+      const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
+      reminderBell.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'+(!cfhBellEnabled(entry.id)?'<path d="M3 3l18 18"/>':'')+'</svg>';
+      reminderBell.setAttribute('aria-label',cfhBellEnabled(entry.id)?'Turn reminder preference off':'Turn reminder preference on');
+      addRow('Reminders','Reminder preference: 7, 5, 3, 2 and 1 day before, and on the event date.',reminderBell);
       addRow('Recurring Schedule',ew?'Monthly: 15th, banking-day adjustment; due +24 days.':'Monthly: 18th; estimated due +21 days, weekends adjusted.');
       addRow('Show Future Schedules','Controls upcoming months for this card.',toggle(cfhCardPanelPreferences()[bank]!==false,'Show future schedules',()=>{
         const prefs=cfhCardPanelPreferences();prefs[bank]=prefs[bank]===false;
