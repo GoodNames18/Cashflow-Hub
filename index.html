@@ -3129,8 +3129,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const atome=cfhIsAtomeCard({bankName:document.getElementById('cfhAddBank').value,cardName:document.getElementById('cfhAddCardName').value});
       const due=document.getElementById('cfhAddDueDays');
       document.getElementById('cfhAddDueLabel').textContent=atome?'Due day (next month)':'Due after (days)';
-      if(atome&&!due.readOnly){due.dataset.previous=due.value;document.getElementById('cfhAddStatementDay').value='23';}
-      due.value=atome?'3':due.readOnly?(due.dataset.previous||'24'):due.value;due.readOnly=atome;
+      if(atome&&!due.readOnly){due.dataset.previous=due.value;}
+      due.value=atome?'3':due.readOnly?(due.dataset.previous||''):due.value;due.readOnly=atome;
     }
     function cfhAddCardPreview(){
       const photo=document.getElementById('cfhAddCardPhoto'),value=document.getElementById('cfhAddCardImage').value;
@@ -3138,7 +3138,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
     async function cfhAddCardImages(){
       const select=document.getElementById('cfhAddCardImage');
-      const fill=()=>{const prior=select.value;select.replaceChildren();for(const item of cfhCardImageCatalog){const option=document.createElement('option');option.value=item.url;option.textContent=item.name;select.append(option);}if([...select.options].some(o=>o.value===prior))select.value=prior;cfhAddCardPreview();};
+      const fill=()=>{const prior=select.value;select.replaceChildren(new Option('Choose card image',''));for(const item of cfhCardImageCatalog){const option=document.createElement('option');option.value=item.url;option.textContent=item.name;select.append(option);}if([...select.options].some(o=>o.value===prior))select.value=prior;cfhAddCardPreview();};
       if(cfhCardImageCatalog.length){fill();return;}
       select.replaceChildren(new Option('Loading card images…',''));
       try{await cfhLoadCardImages();fill();}catch(e){select.replaceChildren(new Option('Images unavailable — select Credit Card to retry',''));}
@@ -3576,11 +3576,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.querySelector('.cfh-editor-save').textContent = 'Save';
       document.getElementById('cfhEditorDelete').hidden = true;
       document.getElementById("cfhEditorDate").value = cfhCalendarDateKey(cfhCalendarState.selected);
-      document.getElementById('cfhAddCardStart').value=cfhCalendarDateKey(cfhCalendarState.selected);
-      const end=new Date(cfhCalendarState.selected);end.setFullYear(end.getFullYear()+5);
-      document.getElementById('cfhAddCardEnd').value=cfhCalendarDateKey(end);
-      document.querySelectorAll('#cfhAddCardFields [aria-pressed]').forEach(button=>button.setAttribute('aria-pressed','true'));
-      document.getElementById("cfhAddDueDays").readOnly=false;document.getElementById("cfhAddDueLabel").textContent="Due after (days)";
+      document.getElementById('cfhAddCardStart').value='';
+      document.getElementById('cfhAddCardEnd').value='';
+      document.getElementById('cfhAddStatementDay').value='';
+      document.getElementById('cfhAddDueDays').value='';
+      document.getElementById('cfhAddDueDays').readOnly=false;
+      document.getElementById('cfhAddDueLabel').textContent='Due after (days)';
+      document.getElementById('cfhAddCardImage').replaceChildren(new Option('Choose card image',''));
+      document.getElementById('cfhAddCardPhoto').hidden=true;
       cfhEditorType("event");
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
@@ -9437,7 +9440,7 @@ window.cfhRefreshTestTab = function(page) {
     <div id="cfhAddCardFields" hidden>
       <div class="cfh-editor-row"><div><label>Bank name</label><input id="cfhAddBank" maxlength="80" required oninput="cfhAddAtomeRule()"></div><div><label>Card name</label><input id="cfhAddCardName" maxlength="80" required oninput="cfhAddAtomeRule()"></div></div>
       <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview()"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
-      <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" value="15" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" value="24" required></div></div>
+      <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" required></div></div>
       <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
       <label>Notification time</label><input id="cfhAddCardTime" type="time">
     </div>
