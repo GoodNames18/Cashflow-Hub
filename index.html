@@ -1383,6 +1383,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     #cfhCardPanel{padding:30px}
     #cfhCardPanel .cfh-card-panel{max-height:calc(100dvh - 60px)}
+
+    #cfhCardPanel .cfh-card-panel{padding-top:clamp(14px,4vw,28px)}
+    #cfhCardPanel .cfh-card-panel>img{margin-top:0;cursor:pointer}
 </style>
 </head>
 
@@ -2963,7 +2966,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const photo=document.createElement('img');photo.src=ew?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png';photo.alt=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
       const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
       const name=document.createElement('strong');name.className='cfh-card-panel-name';name.textContent=ew?'Visa Platinum':'Travel Signature Visa';
-      dialog.append(close,photo,title);
+      photo.tabIndex=0;photo.setAttribute('role','button');photo.setAttribute('aria-label','Close card details');
+      photo.onclick=cfhCardPanelClose;
+      photo.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cfhCardPanelClose();}};
+      dialog.append(photo,title);
       const format=key=>{if(!key)return 'Not available';const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',weekday:'short'});};
       for(const [label,key,type] of [['Statement Date',statement,'statement'],['Due Date',due,'due']]){
         const row=document.createElement('div');row.className='cfh-card-panel-date '+type;
@@ -2991,8 +2997,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       overlay.addEventListener('click',e=>{if(e.target===overlay)cfhCardPanelClose();});
       overlay.addEventListener('keydown',e=>{
         if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cfhCardPanelClose();}
-        if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,summary')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
-      });close.focus();
+        if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,summary,[role="button"]')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+      });photo.focus();
     }
     function cfhCalendarEventOptions(entry){cfhCardPanelOpen(entry);}
 
