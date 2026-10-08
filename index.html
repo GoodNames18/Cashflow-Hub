@@ -3065,7 +3065,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
       reminderBell.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'+(!cfhBellEnabled(entry.id)?'<path d="M3 3l18 18"/>':'')+'</svg>';
       reminderBell.setAttribute('aria-label',cfhBellEnabled(entry.id)?'Turn reminder preference off':'Turn reminder preference on');
-      addRow('Reminders','Reminder preference: 7, 5, 3, 2 and 1 day before, and on the event date.',reminderBell);
+      const savedReminderTime=cfhCardNotificationTime(entry);
+      const reminderTimeLabel=savedReminderTime?(()=>{const [h,m]=savedReminderTime.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');})():'';
+      addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" (PH Time) on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
       addRow('Recurring Schedule',ew?'Monthly: 15th, banking-day adjustment; due +24 days.':'Monthly: 18th; estimated due +21 days, weekends adjusted.');
       const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
       const rangeTitle=document.createElement('strong');rangeTitle.textContent='Schedule Date Range';rangeForm.append(rangeTitle);
