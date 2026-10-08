@@ -1408,6 +1408,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-card-panel-settings summary::marker{content:''}
 
     #cfhCardPanel .cfh-card-panel{padding-bottom:clamp(14px,4vw,28px)}
+
+    #cfhCardPanel .cfh-card-panel-settings{background:#fff;isolation:isolate}
+    #cfhCardPanel .cfh-card-panel-settings::before{content:'';position:absolute;inset:-10px calc(-1 * clamp(14px,4vw,28px)) calc(-1 * clamp(14px,4vw,28px));background:#fff;z-index:-1;pointer-events:none}
 </style>
 </head>
 
