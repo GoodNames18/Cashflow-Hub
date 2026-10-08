@@ -1329,6 +1329,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-event.is-due:before{background:#df4d43}
 /* Highlight today's event date, or the next upcoming event date. */
 .cfh-timeline-date.is-today small{color:#000}
+/* Center event text as one block alongside the image and actions. */
+.cfh-timeline-event>.cfh-timeline-details{grid-row:1;grid-column:2;align-self:center;display:flex;flex-direction:column;justify-content:center;margin:0;padding:0}
+.cfh-timeline-details>[hidden]{display:none!important}
+
 .cfh-timeline-date.is-today strong{width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:var(--primary);color:#071c17;font-size:23px;line-height:1}
 
 
