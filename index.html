@@ -1505,6 +1505,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     .cfh-calendar-search input{box-sizing:border-box;width:100%;min-width:0;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#E6E6FA;color:#1B1844;font:inherit;font-size:14px}
     .cfh-calendar-search input:focus{outline:2px solid #00F8B9;outline-offset:1px}
     #cfhCalendarSearchButton[aria-expanded="true"]{background:#00F8B9;color:#1B1844}
+    #cfhCalendarMonthTitle{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -1989,7 +1990,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           <div class="cfh-calendar-shell">
             <div class="cfh-calendar-card">
               <div class="cfh-calendar-head">
-                <button id="cfhCalendarMonthTitle" type="button" class="cfh-calendar-title cfh-calendar-title-button" onclick="cfhCalendarOpenMonthPicker()" aria-label="Choose calendar month and year">Calendar</button>
+                <button id="cfhCalendarMonthTitle" type="button" class="cfh-calendar-title cfh-calendar-title-button" onclick="cfhCalendarMonthTitleClick()" onpointerdown="cfhCalendarMonthHoldStart(event)" onpointerup="cfhCalendarMonthHoldCancel()" onpointercancel="cfhCalendarMonthHoldCancel()" onpointerleave="cfhCalendarMonthHoldCancel()" oncontextmenu="event.preventDefault()" aria-label="Choose calendar month and year; hold to return to today">Calendar</button>
                 <div class="cfh-calendar-nav">
                   <button id="cfhCalendarSearchButton" type="button" aria-label="Search schedules" aria-expanded="false" aria-controls="cfhCalendarSearchBar" onclick="cfhCalendarToggleSearch()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>
                   <button type="button" aria-label="Previous month" onclick="cfhCalendarMoveMonth(-1)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
@@ -2738,6 +2739,28 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 
 
+    let cfhCalendarMonthHoldTimer=null,cfhCalendarMonthHeld=false;
+    function cfhCalendarMonthHoldStart(event){
+      if(event.button!==0)return;
+      cfhCalendarMonthHoldCancel();cfhCalendarMonthHeld=false;
+      cfhCalendarMonthHoldTimer=setTimeout(()=>{
+        cfhCalendarMonthHeld=true;cfhCalendarMonthHoldTimer=null;
+        const today=new Date();
+        cfhCalendarState.month=new Date(today.getFullYear(),today.getMonth(),1);
+        cfhCalendarState.selected=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+        const strip=document.getElementById('cfhCalendarMonthStrip');if(strip)strip.hidden=true;
+        document.getElementById('cfhCalendarMonthTitle').setAttribute('aria-expanded','false');
+        const search=document.getElementById('cfhCalendarSearchInput');if(search)search.value='';
+        cfhCalendarRender();cfhSaveNavigationState();
+      },750);
+    }
+    function cfhCalendarMonthHoldCancel(){
+      clearTimeout(cfhCalendarMonthHoldTimer);cfhCalendarMonthHoldTimer=null;
+    }
+    function cfhCalendarMonthTitleClick(){
+      if(cfhCalendarMonthHeld){cfhCalendarMonthHeld=false;return;}
+      cfhCalendarOpenMonthPicker();
+    }
     function cfhCalendarOpenMonthPicker(){
       const strip=document.getElementById('cfhCalendarMonthStrip');
       strip.hidden=!strip.hidden;
