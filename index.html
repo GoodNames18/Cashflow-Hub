@@ -1294,7 +1294,22 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 /* Compact month agenda: date rail + statement/due cards */
 .cfh-timeline-row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;align-items:stretch;margin:8px 0}.cfh-timeline-date{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1B1844}.cfh-timeline-date small{font-size:11px}.cfh-timeline-date strong{font-size:23px}.cfh-timeline-event{display:flex;align-items:center;gap:9px;border-radius:14px;padding:12px 9px;min-width:0;color:white;background:#4962a8}.cfh-timeline-event.is-statement{background:#8244cf}.cfh-timeline-event.is-due{background:#df4d43}.cfh-timeline-visual{flex:0 0 42px;text-align:center;font-size:25px}.cfh-timeline-details{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.cfh-timeline-details small{font-size:11px;opacity:.9}.cfh-timeline-details strong{font-size:14px;line-height:1.25;overflow-wrap:anywhere}.cfh-timeline-action{flex:0 0 28px;border:0;background:transparent;color:inherit;font-size:20px;cursor:pointer;padding:4px 0}.cfh-timeline-action:focus-visible{outline:2px solid currentColor;border-radius:6px}
- .cfh-timeline-visual:has(.cfh-metrobank-thumb){flex:0 0 83px}.cfh-metrobank-thumb{width:83px;height:54px;object-fit:cover;display:block;border-radius:6px}.cfh-timeline-type-icon{font-size:20px;font-weight:800;flex:0 0 20px;text-align:center}.cfh-timeline-row{position:relative}.cfh-timeline-row:before{content:'';position:absolute;left:50px;top:-8px;bottom:-8px;width:1px;background:#d9d4e4;opacity:.55}.cfh-timeline-event{position:relative;margin-left:10px}.cfh-timeline-event:before{content:'';position:absolute;left:-17px;top:50%;width:8px;height:8px;border-radius:50%;background:currentColor;transform:translateY(-50%)}@media(max-width:390px){.cfh-timeline-visual:has(.cfh-metrobank-thumb){flex-basis:66px}.cfh-metrobank-thumb{width:66px;height:42px}.cfh-timeline-type-icon{display:none}.cfh-timeline-event{gap:5px}} </style>
+ .cfh-timeline-visual:has(.cfh-metrobank-thumb){flex:0 0 83px}.cfh-metrobank-thumb{width:83px;height:54px;object-fit:cover;display:block;border-radius:6px}.cfh-timeline-type-icon{font-size:20px;font-weight:800;flex:0 0 20px;text-align:center}.cfh-timeline-row{position:relative}.cfh-timeline-row:before{content:'';position:absolute;left:50px;top:-8px;bottom:-8px;width:1px;background:#d9d4e4;opacity:.55}.cfh-timeline-event{position:relative;margin-left:10px}.cfh-timeline-event:before{content:'';position:absolute;left:-17px;top:50%;width:8px;height:8px;border-radius:50%;background:currentColor;transform:translateY(-50%)}@media(max-width:390px){.cfh-timeline-visual:has(.cfh-metrobank-thumb){flex-basis:66px}.cfh-metrobank-thumb{width:66px;height:42px}.cfh-timeline-type-icon{display:none}.cfh-timeline-event{gap:5px}} 
+/* Mobile-safe calendar agenda: no vertical word wrapping */
+#cfhCalendarSchedule{min-width:0;width:100%;box-sizing:border-box}
+.cfh-timeline-row{grid-template-columns:38px minmax(0,1fr);gap:5px;min-width:0}
+.cfh-timeline-row:before{left:40px}
+.cfh-timeline-event{min-width:0;width:auto;box-sizing:border-box;margin-left:7px;padding:9px 7px;gap:6px;border-radius:12px;display:grid;grid-template-columns:64px minmax(0,1fr) 24px 20px;align-items:center}
+.cfh-timeline-event:before{left:-11px}
+.cfh-timeline-visual,.cfh-timeline-visual:has(.cfh-metrobank-thumb){width:64px;min-width:0;max-width:64px;flex:none}
+.cfh-metrobank-thumb{width:64px;height:41px;object-fit:cover}
+.cfh-timeline-type-icon{display:none}
+.cfh-timeline-details{min-width:0;max-width:100%;width:100%;overflow:hidden}
+.cfh-timeline-details strong{font-size:13px;line-height:1.22;overflow-wrap:normal;word-break:normal;white-space:normal;hyphens:none}
+.cfh-timeline-details small{font-size:10px;line-height:1.25;overflow-wrap:normal;word-break:normal}
+.cfh-timeline-action{min-width:0;width:24px;padding:3px 0;font-size:17px;flex:none}
+@media(max-width:360px){.cfh-timeline-event{grid-template-columns:48px minmax(0,1fr) 21px 17px;gap:4px;padding:8px 5px}.cfh-timeline-visual,.cfh-timeline-visual:has(.cfh-metrobank-thumb){width:48px;max-width:48px}.cfh-metrobank-thumb{width:48px;height:31px}.cfh-timeline-details strong{font-size:12px}}
+</style>
 </head>
 
 <body>
