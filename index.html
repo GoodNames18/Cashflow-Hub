@@ -1555,6 +1555,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhEditorForm .cfh-editor-actions button{background:var(--secondary,#1B1844);color:#fff}
 
 .cfh-credit-card-dot{display:inline-block;width:13px;height:13px;flex-shrink:0;border-radius:50%;background:linear-gradient(90deg,#8244cf 0 50%,#df4d43 50% 100%);vertical-align:-1px}
+
+#cfhCalendarSchedule .cfh-timeline-event.is-scheduled-today{background:var(--primary,#00F8B9);color:var(--secondary,#1B1844)}
+#cfhCalendarSchedule .cfh-timeline-event.is-scheduled-today .cfh-timeline-notification-time{border-left-color:var(--secondary,#1B1844)}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3598,6 +3601,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         }
         lastDate=entry.cfhDisplayDate;
         const card=document.createElement('div');card.className='cfh-timeline-event '+(entry.type==='statement'?'is-statement':entry.type==='due'?'is-due':'is-other-event');
+        if(entry.cfhDisplayDate===todayKey)card.classList.add('is-scheduled-today');
         const visual=document.createElement('div');visual.className='cfh-timeline-visual';
         if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=cfhCardImage(entry);photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
@@ -3626,6 +3630,15 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         card.append(visual,eventIcon,details,clock);item.append(date,card);schedule.appendChild(item);
       });
     }
+
+
+    let cfhScheduleLastDay=cfhCalendarDateKey(new Date());
+    function cfhScheduleCheckDay(){
+      const day=cfhCalendarDateKey(new Date());
+      if(day!==cfhScheduleLastDay){cfhScheduleLastDay=day;cfhCalendarRender();cfhCalendarRenderSchedule();}
+    }
+    setInterval(cfhScheduleCheckDay,30000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)cfhScheduleCheckDay();});
 
     function cfhCalendarAddPlaceholder() {
       const form = document.getElementById("cfhEditorForm");
