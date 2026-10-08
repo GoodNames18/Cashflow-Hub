@@ -1528,6 +1528,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhEditorForm .cfh-editor-fields::-webkit-scrollbar{display:none;width:0;height:0}
     #cfhEditorOverlay .cfh-editor-panel{scrollbar-width:none}
     #cfhEditorOverlay .cfh-editor-panel::-webkit-scrollbar{display:none}
+    .cfh-notification-time-row{display:flex;align-items:center;gap:8px;min-width:0}
+    .cfh-notification-time-row input{flex:1;min-width:0}
+    .cfh-time-period{flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:48px;padding:12px 7px;border-radius:11px;background:#E6E6FA;color:#1B1844;font-size:13px;font-weight:700}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3272,6 +3275,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhCardPanelTrigger=document.activeElement;cfhCardPanelEntry=entry;cfhCardPanelManaging=false;
       cfhCardPanelRender();
     }
+    function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(Number(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
       const value=bank?(cfhCardPanelPreferences()[bank]||{}).notificationTime:entry.time;
@@ -3388,7 +3392,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       scheduleForm.append(scheduleFields);settings.append(scheduleForm);
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
-      const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);timeLabel.append(timeInput);
+      const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);const timeRow=document.createElement('div');timeRow.className='cfh-notification-time-row';
+      const period=document.createElement('span');period.className='cfh-time-period';
+      const updatePeriod=()=>{period.textContent=cfhTimePeriod(timeInput.value);};
+      timeInput.addEventListener('input',updatePeriod);timeInput.addEventListener('change',updatePeriod);updatePeriod();
+      timeRow.append(timeInput,period);timeLabel.append(timeRow);
       const remindersTitle=document.createElement('strong');remindersTitle.textContent='Reminders';remindersTitle.className='cfh-manage-section-title';timeForm.append(remindersTitle,timeLabel);timeForm.classList.add('cfh-manage-reminders');settings.append(timeForm);
       timeForm.onsubmit=e=>e.preventDefault();
       const savePreferences=()=>{
@@ -3584,6 +3592,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById('cfhAddDueLabel').textContent='Due after (days)';
       document.getElementById('cfhAddCardImage').replaceChildren(new Option('Choose card image',''));
       document.getElementById('cfhAddCardPhoto').hidden=true;
+      document.getElementById('cfhAddTimePeriod').textContent='AM/PM';
       cfhEditorType("event");
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
@@ -9442,7 +9451,7 @@ window.cfhRefreshTestTab = function(page) {
       <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview()"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
       <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" required></div></div>
       <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
-      <label>Notification time</label><input id="cfhAddCardTime" type="time">
+      <label>Notification time</label><div class="cfh-notification-time-row"><input id="cfhAddCardTime" type="time" oninput="document.getElementById('cfhAddTimePeriod').textContent=cfhTimePeriod(this.value)"><span id="cfhAddTimePeriod" class="cfh-time-period">AM/PM</span></div>
     </div>
     <div id="cfhAddStandardFields">
 
