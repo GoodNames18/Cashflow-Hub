@@ -1386,6 +1386,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     #cfhCardPanel .cfh-card-panel{padding-top:clamp(14px,4vw,28px)}
     #cfhCardPanel .cfh-card-panel>img{margin-top:0;cursor:pointer}
+
+    #cfhCardPanel{padding:50px 30px}
+    #cfhCardPanel .cfh-card-panel{max-height:calc(100dvh - 100px)}
+    #cfhCardPanel #cfhCardPanelTitle{font-size:clamp(15px,4.2vw,26px);white-space:normal;overflow-wrap:anywhere}
+    #cfhCardPanel .cfh-card-panel-dates{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;width:100%;max-width:100%}
+    #cfhCardPanel .cfh-card-panel-date{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:12px 6px;min-width:0}
+    #cfhCardPanel .cfh-card-panel-date small{font-size:clamp(10px,2.7vw,14px);white-space:normal}
+    #cfhCardPanel .cfh-card-panel-date strong{font-size:clamp(10px,2.5vw,15px);white-space:normal;overflow-wrap:anywhere;text-align:center}
 </style>
 </head>
 
@@ -2971,11 +2979,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       photo.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cfhCardPanelClose();}};
       dialog.append(photo,title);
       const format=key=>{if(!key)return 'Not available';const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',weekday:'short'});};
+      const dates=document.createElement('div');dates.className='cfh-card-panel-dates';
       for(const [label,key,type] of [['Statement Date',statement,'statement'],['Due Date',due,'due']]){
         const row=document.createElement('div');row.className='cfh-card-panel-date '+type;
         const small=document.createElement('small');small.textContent=label;
-        const date=document.createElement('strong');date.textContent=format(key);row.append(small,date);dialog.append(row);
+        const date=document.createElement('strong');date.textContent=format(key);row.append(small,date);dates.append(row);
       }
+      dialog.append(dates);
       const addRow=(label,note,button)=>{
         const row=document.createElement('div');row.className='cfh-card-panel-row';const text=document.createElement('div');const labelEl=document.createElement('strong');labelEl.textContent=label;const noteEl=document.createElement('small');noteEl.textContent=note;text.append(labelEl,noteEl);row.append(text);if(button)row.append(button);dialog.append(row);
       };
