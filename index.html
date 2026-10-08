@@ -1462,6 +1462,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-card-reminder-days legend{margin-bottom:12px}
 #cfhCardPanel .cfh-card-reminder-days label{gap:6px;font-size:12px;line-height:1.3;padding:5px 0;min-width:0}
 #cfhCardPanel .cfh-card-reminder-days input{width:16px;height:16px}
+
+#cfhCardPanel .cfh-card-delete-event{color:#c62828!important;border-color:#e7a4a4!important}
+#cfhCardPanel .cfh-card-delete-options[hidden]{display:none!important}
+#cfhCardPanel .cfh-card-delete-options{display:grid;gap:8px;margin:10px 0}
+#cfhCardPanel .cfh-card-delete-options button{width:100%;padding:12px;border:1px solid #e7a4a4;border-radius:10px;background:#fff;color:#c62828;font:inherit}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -2956,8 +2961,23 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       });
       return entries;
     }
+    const CFH_EVENT_DELETIONS_KEY='cfh_calendar_event_deletions_v1';
+    function cfhEventDeletions(){try{return JSON.parse(localStorage.getItem(CFH_EVENT_DELETIONS_KEY)||'{}');}catch(e){return {};}}
+    function cfhEventSeries(entry){return (entry.cfhCard15?'eastwest':entry.cfhAuto?'metrobank':entry.id)+':'+entry.type;}
+    function cfhEventVisible(entry,key){
+      const deleted=cfhEventDeletions(),series=cfhEventSeries(entry);
+      return !(deleted.occurrences||[]).includes(series+'|'+key)&&!(deleted.future&&deleted.future[series]&&key>=deleted.future[series]);
+    }
+    function cfhDeleteScheduleOccurrence(entry,future){
+      if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();
+      const deleted=cfhEventDeletions(),series=cfhEventSeries(entry),key=entry.cfhDisplayDate||entry.date;
+      if(future){deleted.future=deleted.future||{};deleted.future[series]=deleted.future[series]&&deleted.future[series]<key?deleted.future[series]:key;}
+      else{deleted.occurrences=[...new Set([...(deleted.occurrences||[]),series+'|'+key])];}
+      try{localStorage.setItem(CFH_EVENT_DELETIONS_KEY,JSON.stringify(deleted));}catch(e){alert('Could not delete event.');return;}
+      cfhCardPanelClose();cfhCalendarRender();
+    }
     function cfhCalendarForDate(key) {
-      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
     }
     function cfhCalendarEdit(id) {
       const entry = cfhCalendarEntries.find(e => e.id === id);
@@ -3147,6 +3167,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if(ew&&entry.cfhEastwestCycle){
         for(const type of ['statement','due'])edit('Confirm '+(type==='statement'?'statement':'due')+' date',()=>{cfhEastwestConfirmDate({...entry,type,cfhDisplayDate:type==='statement'?statement:due});cfhCardPanelRender();});
       }else if(!ew){edit('Confirm due date',()=>{cfhMetrobankEditDue(statement);cfhCardPanelRender();});}
+      const deleteOptions=document.createElement('div');deleteOptions.className='cfh-card-delete-options';deleteOptions.hidden=true;
+      for(const [label,future] of [['Current event only',false],['Current and future events',true]]){
+        const choice=document.createElement('button');choice.type='button';choice.textContent=label;
+        choice.onclick=()=>cfhDeleteScheduleOccurrence(entry,future);deleteOptions.append(choice);
+      }
+      const deleteButton=document.createElement('button');deleteButton.type='button';deleteButton.className='cfh-card-delete-event';deleteButton.textContent='Delete Event';
+      deleteButton.onclick=()=>{deleteOptions.hidden=!deleteOptions.hidden;deleteButton.setAttribute('aria-expanded',String(!deleteOptions.hidden));};
+      deleteButton.setAttribute('aria-expanded','false');settings.append(deleteButton,deleteOptions);
       const note=document.createElement('p');note.className='cfh-card-panel-note';note.textContent=(confirmed?'Due date confirmed. ':'Dates are estimates; check your SOA. ')+'Settings are saved on this device.';
       dialog.append(settings);
       settings.open=cfhCardPanelManaging;
