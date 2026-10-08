@@ -2580,6 +2580,26 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       }
       return results;
     }
+    // Future notification integration point only. No permission prompts, push,
+    // service-worker alarms or background notifications are triggered here.
+    function cfhMetrobankNotificationPlan(statementKey) {
+      const due = cfhMetrobankDueDate(statementKey);
+      const [year,month,day] = due.key.split('-').map(Number);
+      return [7,5,3,1,0].map(function(daysBefore) {
+        return {
+          id:'metrobank-notification-'+statementKey+'-'+daysBefore,
+          statementDate:statementKey,
+          dueDate:due.key,
+          date:cfhCalendarDateKey(new Date(year,month-1,day-daysBefore)),
+          time:'09:00',
+          timeZone:'Asia/Manila',
+          daysBefore:daysBefore,
+          confirmed:due.confirmed,
+          enabledForPush:false
+        };
+      });
+    }
+
     function cfhMetrobankEditDue(statementKey) {
       const current=cfhMetrobankDueDate(statementKey).key;
       const answer=prompt('Official Metrobank due date for statement '+statementKey+' (YYYY-MM-DD):',current);
