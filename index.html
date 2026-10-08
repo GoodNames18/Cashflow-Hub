@@ -3061,7 +3061,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/functions/v1/cfh-card-images',{cache:'no-store'});
       if(!response.ok)throw new Error('Card images unavailable');
       const data=await response.json();
-      cfhCardImageCatalog=Array.isArray(data.images)?data.images:[];
+      cfhCardImageCatalog=(Array.isArray(data.images)?data.images:[]).sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true}));
       return cfhCardImageCatalog;
     }
     cfhLoadCardImages().then(()=>{if(typeof cfhCalendarRender==='function')cfhCalendarRender();}).catch(()=>{});
