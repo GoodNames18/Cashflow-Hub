@@ -2733,19 +2733,91 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       return false;
     }
     // Separate 15th-cycle card: exact user-provided statement/due pairs.
-    // Bank identity not yet supplied; do not infer future dates.
+    // Preserve exact historical EastWest dates; future cycles use estimates below.
     const CFH_FIFTEENTH_CYCLES = [
       ['2026-02-15','2026-03-11'],['2026-03-15','2026-04-08'],
       ['2026-04-15','2026-05-11'],['2026-05-17','2026-06-10'],
       ['2026-06-15','2026-07-09'],['2026-07-15','2026-08-10'],
       ['2026-08-16','2026-09-09'],['2026-09-15','2026-10-09']
     ];
+
+    // EastWest estimates: monthly 15th, next banking day, then +24 calendar days.
+    const CFH_EASTWEST_OVERRIDES_KEY='cfh_eastwest_cycle_overrides_v1';
+    const CFH_EASTWEST_EXTRA_HOLIDAYS={
+      2026:['2026-02-17','2026-03-20','2026-05-27','2026-11-02','2026-12-24'],
+      2027:['2027-02-06']
+    };
+    function cfhEastwestOverrides(){
+      try{const value=JSON.parse(localStorage.getItem(CFH_EASTWEST_OVERRIDES_KEY)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}
+    }
+    function cfhEastwestValidDate(key){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key||''))return false;
+      const [y,m,d]=key.split('-').map(Number);
+      return cfhCalendarDateKey(new Date(y,m-1,d))===key;
+    }
+    function cfhEastwestHoliday(date){
+      const y=date.getFullYear(),key=cfhCalendarDateKey(date);
+      const fixed=['01-01','04-09','05-01','06-12','08-21','11-01','11-30','12-08','12-25','12-30','12-31'];
+      if(fixed.includes(key.slice(5))||(CFH_EASTWEST_EXTRA_HOLIDAYS[y]||[]).includes(key))return true;
+      const lastMonday=new Date(y,7,31);
+      while(lastMonday.getDay()!==1)lastMonday.setDate(lastMonday.getDate()-1);
+      if(key===cfhCalendarDateKey(lastMonday))return true;
+      // Gregorian Easter calculation: Holy Thursday, Good Friday and Black Saturday.
+      const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4;
+      const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+      const h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4;
+      const l=(32+2*e+2*i-h-k)%7,n=Math.floor((a+11*h+22*l)/451);
+      const month=Math.floor((h+l-7*n+114)/31),day=(h+l-7*n+114)%31+1;
+      return [-3,-2,-1].some(offset=>key===cfhCalendarDateKey(new Date(y,month-1,day+offset)));
+    }
+    function cfhEastwestBankingDate(date){
+      const result=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+      while(result.getDay()===0||result.getDay()===6||cfhEastwestHoliday(result))result.setDate(result.getDate()+1);
+      return result;
+    }
+    function cfhEastwestCycle(year,month){
+      const cycle=cfhCalendarDateKey(new Date(year,month,15)).slice(0,7);
+      const override=cfhEastwestOverrides()[cycle]||{};
+      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(year,month,15)));
+      const [y,m,d]=statement.split('-').map(Number);
+      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(y,m-1,d+24)));
+      return {cycle,statement,due,statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
+    }
+    function cfhEastwestConfirmDate(entry){
+      const type=entry.type==='statement'?'statement':'due';
+      const answer=prompt('EastWest '+(type==='statement'?'statement':'due')+' date for '+entry.cfhEastwestCycle+' (YYYY-MM-DD). Enter the exact date from your SOA, or leave blank to restore the estimate.',entry.cfhDisplayDate);
+      if(answer===null)return;
+      const key=answer.trim();
+      if(key&&!cfhEastwestValidDate(key)){alert('Enter a valid date in YYYY-MM-DD format.');return;}
+      const overrides=cfhEastwestOverrides();
+      const cycle=overrides[entry.cfhEastwestCycle]||{};
+      if(key)cycle[type]=key;else delete cycle[type];
+      if(cycle.statement&&cycle.due&&cycle.due<cycle.statement){alert('Due date cannot be earlier than the statement date.');return;}
+      overrides[entry.cfhEastwestCycle]=cycle;
+      try{localStorage.setItem(CFH_EASTWEST_OVERRIDES_KEY,JSON.stringify(overrides));cfhCalendarRender();}catch(e){alert('Could not save the confirmed date.');}
+    }
+
     function cfhFifteenthCardEntriesForDate(key) {
       const entries=[];
       CFH_FIFTEENTH_CYCLES.forEach(function(pair) {
         const statement=pair[0],due=pair[1];
         if(key===statement)entries.push({id:'fifteenth-statement-'+statement,type:'statement',title:'EastWest Visa Platinum — Statement',date:key,time:'',amount:null,repeat:'none',notes:'User-provided statement date (historical). EastWest Visa Platinum.',cfhCard15:true});
         if(key===due)entries.push({id:'fifteenth-due-'+statement,type:'due',title:'EastWest Visa Platinum — Payment Due',date:key,time:'',amount:null,repeat:'none',notes:'User-provided payment due date (historical). EastWest Visa Platinum.',cfhCard15:true});
+      });
+
+      const [year,month]=key.split('-').map(Number);
+      // Include neighboring cycles for due dates crossing month/year boundaries.
+      const cycles=new Set();
+      for(let delta=-2;delta<=0;delta++)cycles.add(cfhCalendarDateKey(new Date(year,month-1+delta,15)).slice(0,7));
+      Object.keys(cfhEastwestOverrides()).filter(cycle=>/^\d{4}-\d{2}$/.test(cycle)).forEach(cycle=>cycles.add(cycle));
+      cycles.forEach(cycleKey=>{
+        if(cycleKey<'2026-10')return;
+        const [y,m]=cycleKey.split('-').map(Number),cycle=cfhEastwestCycle(y,m-1);
+        ['statement','due'].forEach(type=>{
+          if(key!==cycle[type])return;
+          const confirmed=type==='statement'?cycle.statementConfirmed:cycle.dueConfirmed;
+          entries.push({id:'eastwest-'+type+'-'+cycleKey,type,title:'EastWest Visa Platinum — '+(type==='statement'?'Statement':'Payment Due'),date:key,time:'',amount:null,repeat:'none',notes:confirmed?'Confirmed SOA date saved on this device.':'Estimated: statement on the 15th, due 24 calendar days later; weekends and known Philippine non-working holidays adjusted. Newly announced holidays may change dates.',cfhCard15:true,cfhEastwestCycle:cycleKey,cfhConfirmed:confirmed});
+        });
       });
       return entries;
     }
@@ -2806,6 +2878,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     function cfhCalendarEventOptions(entry) {
       const isAuto=!!entry.cfhAuto;
+      if(entry.cfhEastwestCycle){cfhEastwestConfirmDate(entry);return;}
       if(entry.cfhCard15){alert(entry.title+'\nDate: '+entry.cfhDisplayDate+'\n'+entry.notes+'\nReminder preference: '+(cfhBellEnabled(entry.id)?'ON':'OFF')+' (phone delivery not enabled)');return;}
       const action=prompt((entry.title||'Event')+'\\n\\n1 — View details\\n2 — '+(isAuto?'Change due date':'Edit event')+'\\n3 — '+(isAuto?(cfhMetrobankStoppedAfter()?'Resume future schedules':'Stop future schedules'):'Duplicate event')+'\\n4 — '+(isAuto?'Reminder status':'Delete event')+'\\n\\nEnter 1, 2, 3 or 4:','1');
       if(action==='1')alert(entry.title+'\\nDate: '+entry.cfhDisplayDate+'\\nTime: '+(entry.time||'Not set')+'\\nReminders: '+(cfhBellEnabled(entry.id)?'ON (7, 5, 3, 2, 1 days and same day; delivery not enabled)':'OFF')+'\\n'+(entry.notes||''));
