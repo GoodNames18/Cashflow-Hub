@@ -3282,7 +3282,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhWeekdayDateText(value){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
       const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d);
-      return date.toLocaleDateString('en-PH',{weekday:'short'})+' '+String(d).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+String(y).padStart(4,'0');
+      return date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
     }
     function cfhWeekdayDateField(input){
       const wrap=document.createElement('div');wrap.className='cfh-weekday-date-field';
