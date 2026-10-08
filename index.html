@@ -1291,6 +1291,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-metrobank-info{font-size:12px;line-height:1.5;color:var(--muted);padding:11px 14px;margin-top:10px;border:1px solid #ddd;border-radius:10px}
 .cfh-metrobank-notifications{padding:12px 14px;margin-top:12px;border:1px solid #ddd;border-radius:10px;font-size:12px}.cfh-metrobank-notification-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.cfh-notification-status{background:#eee;color:#555;border-radius:12px;padding:3px 8px;font-size:11px}.cfh-metrobank-notifications p{margin:7px 0;color:var(--muted)}.cfh-notification-preview-title{font-weight:600;margin:10px 0 6px}.cfh-notification-preview-list{display:grid;gap:5px}.cfh-notification-preview-list>div{padding:5px 7px;background:rgba(0,0,0,.03);border-radius:5px}.cfh-metrobank-notifications small{display:block;margin-top:8px;color:var(--muted)}
 .cfh-metrobank-toggle{margin-top:12px;padding:9px 12px;border:1px solid #bbb;border-radius:8px;background:transparent;color:inherit;font-size:12px;font-weight:600;cursor:pointer}
+
+/* Compact month agenda: date rail + statement/due cards */
+.cfh-timeline-row{display:grid;grid-template-columns:48px minmax(0,1fr);gap:8px;align-items:stretch;margin:8px 0}.cfh-timeline-date{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#1B1844}.cfh-timeline-date small{font-size:11px}.cfh-timeline-date strong{font-size:23px}.cfh-timeline-event{display:flex;align-items:center;gap:9px;border-radius:14px;padding:12px 9px;min-width:0;color:white;background:#4962a8}.cfh-timeline-event.is-statement{background:#8244cf}.cfh-timeline-event.is-due{background:#df4d43}.cfh-timeline-visual{flex:0 0 42px;text-align:center;font-size:25px}.cfh-timeline-details{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.cfh-timeline-details small{font-size:11px;opacity:.9}.cfh-timeline-details strong{font-size:14px;line-height:1.25;overflow-wrap:anywhere}.cfh-timeline-action{flex:0 0 28px;border:0;background:transparent;color:inherit;font-size:20px;cursor:pointer;padding:4px 0}.cfh-timeline-action:focus-visible{outline:2px solid currentColor;border-radius:6px}
 </style>
 </head>
 
@@ -2554,6 +2557,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     const CFH_METROBANK_CONFIRMED = {'2026-03-18':'2026-04-08','2026-04-18':'2026-05-11','2026-05-18':'2026-06-08','2026-06-18':'2026-07-09','2026-07-18':'2026-08-10','2026-08-18':'2026-09-08','2026-09-18':'2026-10-09'};
     const CFH_METROBANK_OVERRIDE_KEY = 'cfh_metrobank_due_overrides_v1';
     const CFH_METROBANK_STATUS_KEY = 'cfh_metrobank_status_v1';
+    const CFH_CALENDAR_BELLS_KEY = 'cfh_calendar_bells_v1';
+    function cfhBellSettings(){try{return JSON.parse(localStorage.getItem(CFH_CALENDAR_BELLS_KEY)||'{}')||{};}catch(e){return {};}}
+    function cfhBellEnabled(id){return cfhBellSettings()[id]!==false;}
+    function cfhToggleBell(id){const settings=cfhBellSettings();settings[id]=!cfhBellEnabled(id);try{localStorage.setItem(CFH_CALENDAR_BELLS_KEY,JSON.stringify(settings));}catch(e){alert('Could not save reminder preference.');return;}cfhCalendarRender();}
     function cfhMetrobankStoppedAfter() { try { return localStorage.getItem(CFH_METROBANK_STATUS_KEY) || ''; } catch(e) { return ''; } }
     function cfhMetrobankIsActiveForStatement(statement) {
       const stopped = cfhMetrobankStoppedAfter();
@@ -2567,9 +2574,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       } else {
         if (!confirm('Stop future Metrobank statements, payment due dates and reminders? Past statement cycles will remain.')) return;
         const now = new Date();
-        const lastStatement = new Date(now.getFullYear(),now.getMonth(),18);
-        if (now.getDate()<18) lastStatement.setMonth(lastStatement.getMonth()-1);
-        try { localStorage.setItem(CFH_METROBANK_STATUS_KEY,cfhCalendarDateKey(lastStatement)); } catch(e) { alert('Could not save preference.'); return; }
+        const cutoff = new Date(now.getFullYear(),now.getMonth(),1);
+        cutoff.setDate(cutoff.getDate()-1);
+        try { localStorage.setItem(CFH_METROBANK_STATUS_KEY,cfhCalendarDateKey(cutoff)); } catch(e) { alert('Could not save preference.'); return; }
       }
       cfhCalendarRender();
     }
@@ -2736,39 +2743,52 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhCalendarRender();
     }
 
+    function cfhCalendarEventOptions(entry) {
+      const isAuto=!!entry.cfhAuto;
+      const action=prompt((entry.title||'Event')+'\\n\\n1 — View details\\n2 — '+(isAuto?'Change due date':'Edit event')+'\\n3 — '+(isAuto?(cfhMetrobankStoppedAfter()?'Resume future schedules':'Stop future schedules'):'Duplicate event')+'\\n4 — '+(isAuto?'Reminder status':'Delete event')+'\\n\\nEnter 1, 2, 3 or 4:','1');
+      if(action==='1')alert(entry.title+'\\nDate: '+entry.cfhDisplayDate+'\\nTime: '+(entry.time||'Not set')+'\\nReminders: '+(cfhBellEnabled(entry.id)?'ON (7, 5, 3, 2, 1 days and same day; delivery not enabled)':'OFF')+'\\n'+(entry.notes||''));
+      if(action==='2'){if(isAuto){if(entry.cfhStatement)cfhMetrobankEditDue(entry.cfhStatement);else alert('Statement date: 18th of each month.');}else cfhCalendarEdit(entry.id);}
+      if(action==='3'){if(isAuto)cfhMetrobankToggleActive();else{cfhCalendarAddPlaceholder();document.getElementById('cfhEditorName').value=entry.title;document.getElementById('cfhEditorTime').value=entry.time||'';document.getElementById('cfhEditorNotes').value=entry.notes||'';cfhEditorType(entry.type);}}
+      if(action==='4'){if(isAuto)alert('Reminders: '+(cfhBellEnabled(entry.id)?'ON':'OFF')+'. Tap the bell on the event card to toggle. Phone notification delivery is not enabled.');else{cfhCalendarEdit(entry.id);cfhCalendarDelete();}}
+    }
     function cfhCalendarRenderSchedule() {
-      const label = document.getElementById("cfhCalendarSelectedLabel");
-      const schedule = document.getElementById("cfhCalendarSchedule");
-      if (!label || !schedule) return;
-      const view = cfhCalendarState.month;
-      label.textContent = view.toLocaleDateString("en-PH", { month:"long", year:"numeric" });
-      const entries = [];
-      const days = new Date(view.getFullYear(), view.getMonth()+1, 0).getDate();
-      for (let day=1; day<=days; day++) {
-        const key = cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),day));
-        cfhCalendarForDate(key).forEach(function(entry){ entries.push({...entry, cfhDisplayDate:key}); });
+      const label=document.getElementById('cfhCalendarSelectedLabel');
+      const schedule=document.getElementById('cfhCalendarSchedule');
+      if(!label||!schedule)return;
+      const view=cfhCalendarState.month;
+      label.textContent=view.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
+      const entries=[];
+      const days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
+      for(let day=1;day<=days;day++){
+        const key=cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),day));
+        cfhCalendarForDate(key).forEach(e=>entries.push({...e,cfhDisplayDate:key}));
       }
-      entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate) || (a.time||'').localeCompare(b.time||''));
+      entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate)||(a.time||'').localeCompare(b.time||''));
       schedule.replaceChildren();
-      if (!entries.length) { schedule.textContent = "No events scheduled this month."; return; }
-      const colors = {statement:'#7c4dff',due:'#e53935',event:'#1e88e5',task:'#2eaf62'};
-      const names = {statement:'Card Statement',due:'Card Due Date',event:'Event',task:'Task'};
-      entries.forEach(function(entry) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'cfh-schedule-item';
-        button.style.borderLeftColor = colors[entry.type] || colors.event;
-        const heading = document.createElement('strong');
-        heading.textContent = entry.title;
-        const meta = document.createElement('small');
-        const amount = entry.amount != null && Number.isFinite(entry.amount) ? ' · ₱' + entry.amount.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
-        const [ey,em,ed] = entry.cfhDisplayDate.split('-').map(Number);
-        const displayDate = new Date(ey,em-1,ed).toLocaleDateString('en-PH',{month:'short',day:'numeric'});
-        meta.textContent = displayDate + ' · ' + (names[entry.type] || 'Event') + (entry.time ? ' · ' + entry.time : '') + amount + (entry.repeat && entry.repeat !== 'none' ? ' · ' + entry.repeat : '');
-        button.append(heading,meta);
-        if (entry.notes) { const note = document.createElement('span'); note.textContent = entry.notes; button.append(note); }
-        button.onclick = function() { if(entry.cfhAuto){if(entry.cfhStatement)cfhMetrobankEditDue(entry.cfhStatement);else alert(entry.notes + " Automatic Metrobank calendar entry.");}else cfhCalendarEdit(entry.id); };
-        schedule.appendChild(button);
+      if(!entries.length){schedule.textContent='No events scheduled this month.';return;}
+      let lastDate='';
+      entries.forEach(entry=>{
+        const item=document.createElement('div');item.className='cfh-timeline-row';
+        const date=document.createElement('div');date.className='cfh-timeline-date';
+        if(lastDate!==entry.cfhDisplayDate){
+          const [y,m,d]=entry.cfhDisplayDate.split('-').map(Number);
+          const actual=new Date(y,m-1,d);
+          const weekday=document.createElement('small');weekday.textContent=actual.toLocaleDateString('en-PH',{weekday:'short'});
+          const number=document.createElement('strong');number.textContent=String(d);
+          date.append(weekday,number);
+        }
+        lastDate=entry.cfhDisplayDate;
+        const card=document.createElement('div');card.className='cfh-timeline-event '+(entry.type==='statement'?'is-statement':entry.type==='due'?'is-due':'is-other-event');
+        const visual=document.createElement('div');visual.className='cfh-timeline-visual';
+        visual.textContent=entry.cfhAuto?'💳':entry.type==='task'?'🔧':'📅';
+        const details=document.createElement('div');details.className='cfh-timeline-details';
+        const bank=document.createElement('small');bank.textContent=entry.cfhAuto?'Metrobank':entry.type==='task'?'Task':'Calendar';
+        const name=document.createElement('strong');name.textContent=entry.cfhAuto?'Travel Signature Visa':entry.title;
+        const time=document.createElement('small');time.textContent=(entry.time||'All day')+' · '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');
+        details.append(bank,name,time);
+        const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';bell.textContent=cfhBellEnabled(entry.id)?'♧':'♧';bell.innerHTML=cfhBellEnabled(entry.id)?'&#128276;':'&#128277;';bell.title=cfhBellEnabled(entry.id)?'Reminders ON (delivery not enabled)':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
+        const menu=document.createElement('button');menu.type='button';menu.className='cfh-timeline-action';menu.textContent='⋮';menu.title='Event options';menu.onclick=()=>cfhCalendarEventOptions(entry);
+        card.append(visual,details,bell,menu);item.append(date,card);schedule.appendChild(item);
       });
     }
 
