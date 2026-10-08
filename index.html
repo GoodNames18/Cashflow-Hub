@@ -3181,6 +3181,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
       const reloadPosition = cfhRestoreNavigationState();
       showAppPage(reloadPosition ? reloadPosition.page : "gcash", false);
+      if (typeof window.cfhSyncBottomNav === "function") window.cfhSyncBottomNav();
       if (reloadPosition) {
         const restorePosition = function() {
           syncActivePageHeight();
@@ -3482,6 +3483,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         currentAppPage
       );
       cfhSaveNavigationState();
+      if (typeof window.cfhSyncBottomNav === "function") window.cfhSyncBottomNav();
 
       syncActivePageHeight();
 
@@ -8537,6 +8539,7 @@ window.cfhRefreshTestTab = function(page) {
 (function(){
  var bar=document.querySelector('.cfh-bottom-nav');if(!bar)return;
  function sync(){var selected=(typeof currentAppPage!=='undefined'&&currentAppPage==='calendar')?'calendar':'home';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+ window.cfhSyncBottomNav=sync;
  var toastTimer;
  bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'){if(typeof showAppPage==='function')showAppPage(dest==='calendar'?'calendar':(window.cfhLastHomePage||'gcash'));sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
  document.addEventListener('click',function(e){if(e.target.closest('.app-tab'))setTimeout(sync,0)});
