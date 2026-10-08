@@ -3126,10 +3126,6 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         dialog.classList.add('is-managing');
         for(const child of dialog.children){if(child!==settings)child.hidden=true;}
         const heading=document.createElement('h2');heading.textContent='Manage '+(ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa');dialog.prepend(heading);
-        const reminderLabel=document.createElement('label');reminderLabel.className='cfh-card-manage-reminder';
-        const reminderInput=document.createElement('input');reminderInput.type='checkbox';reminderInput.checked=cfhBellEnabled(entry.id);
-        reminderInput.onchange=()=>{cfhToggleBell(entry.id);cfhCardPanelRender();};
-        reminderLabel.append(reminderInput,document.createTextNode('Reminders for this event'));settings.append(reminderLabel);
         const daysBox=document.createElement('fieldset');daysBox.className='cfh-card-reminder-days';
         const daysTitle=document.createElement('legend');daysTitle.textContent='Reminder days';daysBox.append(daysTitle);
         const allowedDays=[7,5,3,2,1,0];
