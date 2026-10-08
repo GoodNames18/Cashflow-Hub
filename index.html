@@ -1531,6 +1531,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     .cfh-notification-time-row{display:flex;align-items:center;gap:8px;min-width:0}
     .cfh-notification-time-row input{flex:1;min-width:0}
     .cfh-time-period{flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:48px;padding:12px 7px;border-radius:11px;background:#E6E6FA;color:#1B1844;font-size:13px;font-weight:700}
+    .cfh-weekday-date-field{position:relative;min-width:0}
+    .cfh-weekday-date-field input{color:transparent!important;-webkit-text-fill-color:transparent;caret-color:transparent;width:100%}
+    .cfh-weekday-date-field input::-webkit-calendar-picker-indicator{opacity:1}
+    .cfh-weekday-date-value{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#1B1844;white-space:nowrap;font-size:clamp(10px,3vw,15px);line-height:1.2}
     </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3275,6 +3279,18 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhCardPanelTrigger=document.activeElement;cfhCardPanelEntry=entry;cfhCardPanelManaging=false;
       cfhCardPanelRender();
     }
+    function cfhWeekdayDateText(value){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
+      const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d);
+      return date.toLocaleDateString('en-PH',{weekday:'short'})+' '+String(d).padStart(2,'0')+'/'+String(m).padStart(2,'0')+'/'+String(y).padStart(4,'0');
+    }
+    function cfhWeekdayDateField(input){
+      const wrap=document.createElement('div');wrap.className='cfh-weekday-date-field';
+      const text=document.createElement('span');text.className='cfh-weekday-date-value';text.setAttribute('aria-hidden','true');
+      const update=()=>{text.textContent=cfhWeekdayDateText(input.value)||'dd/mm/yyyy';};
+      input.addEventListener('input',update);input.addEventListener('change',update);update();
+      wrap.append(input,text);return wrap;
+    }
     function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(Number(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
@@ -3333,7 +3349,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const label=document.createElement('label');label.textContent=type==='start'?'Start date':'End date';
         const input=document.createElement('input');input.type='date';input.required=true;input.name=type;
         input.value=(cfhCardPanelPreferences()[bank]||{}).rangeDraft?.[type]??(range?range[type]:'');
-        inputs[type]=input;label.append(input);fields.append(label);
+        inputs[type]=input;label.append(cfhWeekdayDateField(input));fields.append(label);
       }
       inputs.start.oninput=()=>{inputs.end.min=inputs.start.value;};
       inputs.end.min=inputs.start.value;
@@ -3593,6 +3609,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById('cfhAddCardImage').replaceChildren(new Option('Choose card image',''));
       document.getElementById('cfhAddCardPhoto').hidden=true;
       document.getElementById('cfhAddTimePeriod').textContent='AM/PM';
+      for(const id of ['cfhAddCardStart','cfhAddCardEnd']){
+        const input=document.getElementById(id);
+        if(!input.parentElement.classList.contains('cfh-weekday-date-field'))input.replaceWith(cfhWeekdayDateField(input));
+        input.dispatchEvent(new Event('input'));
+      }
       cfhEditorType("event");
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
