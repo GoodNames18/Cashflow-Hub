@@ -1433,6 +1433,15 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCalendarSchedule .cfh-timeline-notification-time[hidden]{display:none!important}
 #cfhCalendarSchedule .cfh-timeline-notification-time span:last-child{font-size:10px;margin-top:2px}
 @media(max-width:360px){#cfhCalendarSchedule .cfh-timeline-event.has-notification-time{grid-template-columns:48px minmax(0,1fr) 30px!important}}
+
+/* Schedule name and notification time layout */
+#cfhCalendarSchedule .cfh-timeline-event.has-notification-time{grid-template-columns:64px minmax(0,1fr) 42px!important}
+#cfhCalendarSchedule .cfh-timeline-notification-time{box-sizing:border-box;width:42px;padding-left:8px;border-left:1px solid rgba(255,255,255,.9);line-height:1.25;font-weight:500}
+#cfhCalendarSchedule .cfh-timeline-notification-time span:last-child{font-size:12px;margin-top:0}
+#cfhCalendarSchedule .cfh-timeline-details{container-type:inline-size}
+#cfhCalendarSchedule .cfh-timeline-details>small:not([hidden]){font-size:clamp(8px,5cqi,11px);white-space:nowrap;max-width:100%}
+#cfhCalendarSchedule .cfh-timeline-details>strong{font-size:clamp(9px,6cqi,14px);white-space:nowrap;max-width:100%;line-height:1.25}
+@media(max-width:360px){#cfhCalendarSchedule .cfh-timeline-event.has-notification-time{grid-template-columns:48px minmax(0,1fr) 36px!important}#cfhCalendarSchedule .cfh-timeline-notification-time{width:36px;padding-left:6px}}
 </style>
 </head>
 
