@@ -1371,6 +1371,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-card-panel-settings button{width:100%!important;max-width:100%}
     @media(max-width:380px){#cfhCardPanel .cfh-card-panel{max-height:calc(100dvh - 16px)}#cfhCardPanel .cfh-card-panel-row{gap:10px}}
 
+
+    #cfhCardPanel #cfhCardPanelTitle{white-space:nowrap;font-size:clamp(12px,3.6vw,22px);line-height:1.35;margin:0 0 20px;text-align:center;font-weight:700;max-width:100%}
 </style>
 </head>
 
@@ -2949,9 +2951,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const dialog=document.createElement('div');dialog.className='cfh-card-panel';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','cfhCardPanelTitle');
       const close=document.createElement('button');close.type='button';close.className='cfh-card-panel-close';close.textContent='×';close.setAttribute('aria-label','Close card details');close.onclick=cfhCardPanelClose;
       const photo=document.createElement('img');photo.src=ew?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png';photo.alt=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
-      const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=ew?'EastWest':'Metrobank';
+      const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=ew?'EastWest Visa Platinum':'Metrobank Travel Signature Visa';
       const name=document.createElement('strong');name.className='cfh-card-panel-name';name.textContent=ew?'Visa Platinum':'Travel Signature Visa';
-      dialog.append(close,photo,title,name);
+      dialog.append(close,photo,title);
       const format=key=>{if(!key)return 'Not available';const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',weekday:'short'});};
       for(const [label,key,type] of [['Statement Date',statement,'statement'],['Due Date',due,'due']]){
         const row=document.createElement('div');row.className='cfh-card-panel-date '+type;
