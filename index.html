@@ -3080,9 +3080,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         Object.keys(config.confirmedCycles||{}).forEach(cycle=>cycles.add(cycle));
         for(const cycleKey of cycles){
           const [year,month]=cycleKey.split('-').map(Number),cycle=cfhDuplicateCycle(bank,year,month-1);
-          const type=config.eventType||'statement';
+          for(const type of ['statement','due']){
           if(key!==cycle[type==='due'?'due':'statement'])continue;
           entries.push({id:bank+'|'+cycleKey+'|'+type,type,title:config.bankName+' '+config.cardName,date:key,time:config.notificationTime||'',cfhDuplicate:bank,cfhDuplicateCycle:cycleKey,cfhCard15:config.sourceBank==='eastwest',cfhAuto:config.sourceBank!=='eastwest',cfhStatement:cycle.statement});
+          }
         }
       }
       return entries;
@@ -3198,7 +3199,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const typeInput=document.createElement('select');
       for(const value of ['statement','due']){const option=document.createElement('option');option.value=value;option.textContent=value==='statement'?'Statement':'Due date';typeInput.append(option);}
       typeInput.value=(cfhCardPanelPreferences()[bank]||{}).eventType||entry.type;
-      if(entry.cfhDuplicate){typeLabel.append(typeInput);imageForm.append(typeLabel);}
+      
       const scheduleForm=document.createElement('div');scheduleForm.className='cfh-card-range';
       const scheduleTitle=document.createElement('strong');scheduleTitle.textContent='Schedule Settings';scheduleForm.append(scheduleTitle);
       const scheduleFields=document.createElement('div');scheduleFields.className='cfh-card-range-fields';
@@ -3219,7 +3220,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         value.rangeDraft={start,end};
         value.bankName=nameInputs.bankName.value.trim();value.cardName=nameInputs.cardName.value.trim();
         if(!imageInput.value||/^(https?:\/\/|data:image\/)/i.test(imageInput.value))value.image=imageInput.value;
-        if(entry.cfhDuplicate)value.eventType=typeInput.value;
+        if(entry.cfhDuplicate)value.eventType='both';
         const statementDay=Number(scheduleInputs.statementDay.value),dueDays=Number(scheduleInputs.dueDays.value);
         if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
           if(statementDay!==recurring.statementDay||dueDays!==recurring.dueDays)value.scheduleFrom=value.scheduleFrom||cfhCalendarDateKey(new Date()).slice(0,7);
@@ -3266,7 +3267,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         savePreferences();
         const prefs=cfhCardPanelPreferences(),key='duplicate-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),config=JSON.parse(JSON.stringify(prefs[bank]||{}));
         const cycleKey=entry.cfhDuplicateCycle||entry.cfhEastwestCycle||(statement||entry.date).slice(0,7);
-        config.sourceBank=ew?'eastwest':'metrobank';config.eventType=entry.type;config.bankName=displayNames.bank;config.cardName=displayNames.card;
+        config.sourceBank=ew?'eastwest':'metrobank';config.eventType='both';config.bankName=displayNames.bank;config.cardName=displayNames.card;
         config.image=cfhCardImage(entry);config.statementDay=recurring.statementDay;config.dueDays=recurring.dueDays;delete config.scheduleFrom;
         config.reminderDays=config.reminderDays||[7,5,3,2,1,0];config.remindersEnabled=cfhBellEnabled(entry.id);
         config.confirmedCycles=config.confirmedCycles||{};
