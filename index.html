@@ -1783,8 +1783,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
               <div class="cfh-calendar-weekdays" aria-hidden="true">
                 <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
               </div>
-              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div><div class="cfh-metrobank-info">Metrobank Travel Signature Visa: schedules start October 2026 and remain visible; each next calendar year unlocks on December 1. Statement every 18th; payment due 21 days later (weekends adjusted). Future dates are estimates until confirmed on your SOA. Calendar reminders appear 7, 5, 3, 1 days before and on the due date at 9:00 AM PHT. <strong>Notification center is prepared; delivery is not enabled yet.</strong> Tap an estimated payment due entry to correct its date.</div>
-              <div class="cfh-metrobank-notifications"><div class="cfh-metrobank-notification-head"><strong>Metrobank Notifications</strong><span class="cfh-notification-status">Delivery pending</span></div><p>Scheduled at 9:00 AM (Philippine time) — 7, 5, 3, 1 days before and on the payment due date.</p><div id="cfhMetrobankNotificationPreview"></div><button type="button" id="cfhMetrobankToggle" class="cfh-metrobank-toggle" onclick="cfhMetrobankToggleActive()">Stop future statements</button></div>
+              <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div>
             </div>
 
             <div class="cfh-calendar-card cfh-schedule">
@@ -2497,7 +2496,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         });
       });
       cfhCalendarRenderSchedule();
-      cfhMetrobankRenderNotificationPreview();
+
     }
 
     function cfhCalendarSelectDate(date) {
@@ -2741,10 +2740,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const label = document.getElementById("cfhCalendarSelectedLabel");
       const schedule = document.getElementById("cfhCalendarSchedule");
       if (!label || !schedule) return;
-      label.textContent = cfhCalendarState.selected.toLocaleDateString("en-PH", { month:"short", day:"numeric" });
-      const entries = cfhCalendarForDate(cfhCalendarDateKey(cfhCalendarState.selected));
+      const view = cfhCalendarState.month;
+      label.textContent = view.toLocaleDateString("en-PH", { month:"long", year:"numeric" });
+      const entries = [];
+      const days = new Date(view.getFullYear(), view.getMonth()+1, 0).getDate();
+      for (let day=1; day<=days; day++) {
+        const key = cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),day));
+        cfhCalendarForDate(key).forEach(function(entry){ entries.push({...entry, cfhDisplayDate:key}); });
+      }
+      entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate) || (a.time||'').localeCompare(b.time||''));
       schedule.replaceChildren();
-      if (!entries.length) { schedule.textContent = "No events scheduled."; return; }
+      if (!entries.length) { schedule.textContent = "No events scheduled this month."; return; }
       const colors = {statement:'#7c4dff',due:'#e53935',event:'#1e88e5',task:'#2eaf62'};
       const names = {statement:'Card Statement',due:'Card Due Date',event:'Event',task:'Task'};
       entries.forEach(function(entry) {
@@ -2756,7 +2762,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         heading.textContent = entry.title;
         const meta = document.createElement('small');
         const amount = entry.amount != null && Number.isFinite(entry.amount) ? ' · ₱' + entry.amount.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
-        meta.textContent = (names[entry.type] || 'Event') + (entry.time ? ' · ' + entry.time : '') + amount + (entry.repeat && entry.repeat !== 'none' ? ' · ' + entry.repeat : '');
+        const [ey,em,ed] = entry.cfhDisplayDate.split('-').map(Number);
+        const displayDate = new Date(ey,em-1,ed).toLocaleDateString('en-PH',{month:'short',day:'numeric'});
+        meta.textContent = displayDate + ' · ' + (names[entry.type] || 'Event') + (entry.time ? ' · ' + entry.time : '') + amount + (entry.repeat && entry.repeat !== 'none' ? ' · ' + entry.repeat : '');
         button.append(heading,meta);
         if (entry.notes) { const note = document.createElement('span'); note.textContent = entry.notes; button.append(note); }
         button.onclick = function() { if(entry.cfhAuto){if(entry.cfhStatement)cfhMetrobankEditDue(entry.cfhStatement);else alert(entry.notes + " Automatic Metrobank calendar entry.");}else cfhCalendarEdit(entry.id); };
