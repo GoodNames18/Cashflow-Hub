@@ -2818,7 +2818,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
         const details=document.createElement('div');details.className='cfh-timeline-details';
         const bank=document.createElement('small');bank.textContent=entry.cfhAuto?'Metrobank':entry.cfhCard15?'EastWest':entry.type==='task'?'Task':'Calendar';
-        const name=document.createElement('strong');name.textContent=entry.cfhAuto?'Travel Signature Visa':entry.cfhCard15?'EastWest Visa Platinum':entry.title;
+        const name=document.createElement('strong');name.textContent=entry.cfhAuto?'Travel Signature Visa':entry.cfhCard15?'Visa Platinum':entry.title;
         const time=document.createElement('small');time.textContent=(entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');
         details.append(bank,name,time);
         const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';bell.textContent=cfhBellEnabled(entry.id)?'♧':'♧';bell.innerHTML=cfhBellEnabled(entry.id)?'&#128276;':'&#128277;';bell.title=cfhBellEnabled(entry.id)?'Reminders ON (delivery not enabled)':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
