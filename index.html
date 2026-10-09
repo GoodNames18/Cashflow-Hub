@@ -1588,6 +1588,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-edit-scopes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:16px 0 10px}.cfh-edit-scopes button{font-size:clamp(9px,2.4vw,12px);padding:12px 3px;white-space:nowrap;background:#e8e6fa;color:var(--secondary);border:0;border-radius:10px}.cfh-edit-scopes button[aria-pressed="true"]{background:var(--primary)}.cfh-scope-confirm{position:fixed;inset:0;z-index:100000;background:#0006;display:grid;place-items:center;padding:24px}.cfh-scope-confirm>div{background:white;border-radius:20px;padding:24px;max-width:380px;color:var(--secondary)}.cfh-scope-confirm button{padding:12px 24px;margin:6px;border:0;border-radius:10px;background:var(--secondary);color:white}
 
 
+
+/* Searching shows schedule results without the calendar dates. */
+#calendarPage.cfh-searching-schedules .cfh-calendar-grid,
+#calendarPage.cfh-searching-schedules .cfh-calendar-weekdays,
+#calendarPage.cfh-searching-schedules .cfh-calendar-month-strip{display:none!important}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3668,6 +3673,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         cfhCalendarForDate(key).filter(e=>cfhCardFutureVisible(e,key)).forEach(e=>entries.push({...e,cfhDisplayDate:key}));
       }
       const query=document.getElementById('cfhCalendarSearchInput')?.value||'';
+      document.getElementById('calendarPage')?.classList.toggle('cfh-searching-schedules',!!query.trim());
       entries=entries.filter(entry=>cfhCalendarSearchMatches(entry,query));
       entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate)||(a.time||'').localeCompare(b.time||''));
       schedule.replaceChildren();
