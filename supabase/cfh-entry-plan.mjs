@@ -1,4 +1,4 @@
-import * as rules from './legacy-rules.mjs?v=calendar3';
+import * as rules from './legacy-rules.mjs?v=moneyflow-digits1';
 import { ManilaDate } from './manila-date.mjs?v=calendar3';
 const sheets = {life_log:'Life Log',twice_as_nyce:'TwiceAsNyce',printing:'Printing Business',
   cash_in_out:'Cash In/Out',money_flow:'Money Flow',konek2card:'Konek2Card',rental:'Rental'};
