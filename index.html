@@ -3194,7 +3194,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const old = cfhCalendarEntries;
       cfhCalendarEntries = next;
       if (!cfhCalendarPersist()) { cfhCalendarEntries = old; return; }
-      cfhEditorClose();
+      cfhEditorClose(true);
       cfhCalendarRender();
     }
     function cfhAddAtomeRule(){
@@ -3237,7 +3237,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:Number(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:Number(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:true,reminderDays:[7,5,3,2,1,0],confirmedCycles:{}};
       try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save card.');return;}
       const [y,m,d]=start.split('-').map(Number);cfhCalendarState.selected=new Date(y,m-1,d);cfhCalendarState.month=new Date(y,m-1,1);
-      cfhEditorClose();cfhCalendarRender();cfhSaveNavigationState();
+      cfhEditorClose(true);cfhCalendarRender();cfhSaveNavigationState();
     }
     function cfhCalendarSave() {
       const form = document.getElementById('cfhEditorForm');
@@ -3270,7 +3270,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const [y,m,d] = date.split('-').map(Number);
       cfhCalendarState.selected = new Date(y,m-1,d);
       cfhCalendarState.month = new Date(y,m-1,1);
-      cfhEditorClose();
+      cfhEditorClose(true);
       cfhCalendarRender();
     }
 
@@ -3777,6 +3777,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       }
       cfhEditorType("event");cfhEventFieldsUpdate();
       document.getElementById("cfhEditorOverlay").hidden = false;
+      cfhEditorRestoreDraft();
     }
 
     let cfhEditorSwipeOrigin=null;
@@ -3820,7 +3821,34 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById('cfhEditorAmountWrap').hidden = !(type==='statement'||type==='due');
       document.getElementById('cfhEditorName').placeholder = type==='statement'?'e.g. Credit card statement':type==='due'?'e.g. Credit card payment due':type==='task'?'e.g. Pay electricity bill':'e.g. Appointment';
     }
-    function cfhEditorClose() { document.getElementById('cfhEditorOverlay').hidden = true; }
+    
+    const CFH_EDITOR_DRAFT_KEY='cfh-calendar-editor-draft-v1';
+    function cfhEditorKeepDraft(){
+      const overlay=document.getElementById('cfhEditorOverlay');if(!overlay||overlay.hidden)return;
+      const fields={};document.querySelectorAll('#cfhEditorForm input[id],#cfhEditorForm select[id],#cfhEditorForm textarea[id]').forEach(input=>{fields[input.id]={value:input.value,checked:input.checked};});
+      const type=document.querySelector('[data-cfh-type][aria-pressed="true"]')?.dataset.cfhType||'event';
+      try{sessionStorage.setItem(CFH_EDITOR_DRAFT_KEY,JSON.stringify({expires:Date.now()+120000,fields,type,editingId:cfhEditingId}));}catch(e){}
+    }
+    function cfhEditorRestoreDraft(){
+      let draft;try{draft=JSON.parse(sessionStorage.getItem(CFH_EDITOR_DRAFT_KEY)||'null');}catch(e){return;}
+      if(!draft)return;
+      if(draft.expires<=Date.now()){sessionStorage.removeItem(CFH_EDITOR_DRAFT_KEY);return;}
+      if(draft.editingId&&!cfhCalendarEntries.some(entry=>entry.id===draft.editingId)){sessionStorage.removeItem(CFH_EDITOR_DRAFT_KEY);return;}
+      cfhEditingId=draft.editingId||null;
+      for(const [id,field] of Object.entries(draft.fields||{})){
+        const input=document.getElementById(id);if(!input)continue;
+        if(input.tagName==='SELECT'&&field.value&&![...input.options].some(option=>option.value===field.value))input.add(new Option(field.value,field.value));
+        input.value=field.value;input.checked=field.checked;
+      }
+      cfhEditorType(draft.type);cfhEventFieldsUpdate();
+      document.querySelectorAll('#cfhEditorForm input').forEach(input=>input.dispatchEvent(new Event('input')));
+      cfhAddCardPreview();
+      if(cfhEditingId){document.getElementById('cfhEditorTitle').textContent='Edit Calendar Entry';document.querySelector('.cfh-editor-save').textContent='Update';document.getElementById('cfhEditorDelete').hidden=false;}
+    }
+    function cfhEditorClearDraft(){try{sessionStorage.removeItem(CFH_EDITOR_DRAFT_KEY);}catch(e){}}
+    window.addEventListener('pagehide',cfhEditorKeepDraft);
+
+    function cfhEditorClose(saved=false) { if(saved)cfhEditorClearDraft();else cfhEditorKeepDraft();document.getElementById('cfhEditorOverlay').hidden = true; }
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('cfhEditorOverlay')&&!document.getElementById('cfhEditorOverlay').hidden)cfhEditorClose()});
 
 
