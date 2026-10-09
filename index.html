@@ -1571,6 +1571,20 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhAddCardFields .cfh-time-period{font-size:12px!important}
 
 #cfhCalendarSchedule .cfh-timeline-event.is-next-scheduled:before{background:var(--primary,#00F8B9)}
+
+    /* Recent transaction descriptions wrap to at most three lines. */
+    .recent-card .transaction-row > div:first-child { min-width: 0; }
+    .recent-card .transaction-name,
+    .recent-card #recentTransactions .transaction-name {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      white-space: normal;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      text-overflow: ellipsis;
+      line-height: 1.35;
+    }
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
