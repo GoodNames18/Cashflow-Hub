@@ -1593,6 +1593,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #calendarPage.cfh-searching-schedules .cfh-calendar-grid,
 #calendarPage.cfh-searching-schedules .cfh-calendar-weekdays,
 #calendarPage.cfh-searching-schedules .cfh-calendar-month-strip{display:none!important}
+.cfh-event-all-day{display:flex!important;align-items:center;gap:8px;margin-top:16px!important}.cfh-event-all-day input{width:20px!important;height:20px;accent-color:var(--primary)}#cfhEventCustomRepeat[hidden]{display:none}#cfhEventCustomRepeat{margin-top:12px;padding:12px;background:var(--lavender);border-radius:12px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3034,17 +3035,18 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       catch(e){alert('Could not save due date on this device.');}
     }
 
-    function cfhCalendarMatches(entry, key) {
-      if (entry.date === key) return true;
-      if (!entry.repeat || entry.repeat === 'none' || key < entry.date) return false;
-      const [sy,sm,sd] = entry.date.split('-').map(Number);
-      const [y,m,d] = key.split('-').map(Number);
-      if (entry.repeat === 'monthly') {
-        // Clamp 29th-31st to the last day of short months.
-        const last = new Date(y,m,0).getDate();
-        return d === Math.min(sd,last);
-      }
-      if (entry.repeat === 'yearly') return m === sm && d === Math.min(sd,new Date(y,m,0).getDate());
+    function cfhCalendarMatches(entry,key){
+      if(key<entry.date||entry.repeatUntil&&key>entry.repeatUntil)return false;
+      if(entry.date===key)return true;
+      const custom=entry.repeat==='custom',unit=custom?entry.repeatUnit:entry.repeat;
+      if(!unit||unit==='none')return false;
+      const interval=custom?Math.max(1,Number(entry.repeatInterval)||1):1;
+      const [sy,sm,sd]=entry.date.split('-').map(Number),[y,m,d]=key.split('-').map(Number);
+      const days=Math.round((Date.UTC(y,m-1,d)-Date.UTC(sy,sm-1,sd))/86400000);
+      if(unit==='daily')return days%interval===0;
+      if(unit==='weekly')return days%(7*interval)===0;
+      if(unit==='monthly')return ((y-sy)*12+m-sm)%interval===0&&d===Math.min(sd,new Date(y,m,0).getDate());
+      if(unit==='yearly')return (y-sy)%interval===0&&m===sm&&d===Math.min(sd,new Date(y,m,0).getDate());
       return false;
     }
     // Separate 15th-cycle card: exact user-provided statement/due pairs.
@@ -3177,7 +3179,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       document.getElementById('cfhEditorAmount').value = entry.amount ?? '';
       document.getElementById('cfhEditorRepeat').value = entry.repeat || 'none';
       document.getElementById('cfhEditorNotes').value = entry.notes || '';
-      cfhEditorType(entry.type);
+      document.getElementById('cfhEventAllDay').checked=!!entry.allDay;
+      document.getElementById('cfhEventDeadline').value=entry.deadline||'';
+      document.getElementById('cfhEventInterval').value=entry.repeatInterval||1;
+      document.getElementById('cfhEventUnit').value=entry.repeatUnit||'daily';
+      document.getElementById('cfhEventRepeatEnd').value=entry.repeatUntil||'';
+      cfhEditorType(entry.type);cfhEventFieldsUpdate();
       document.querySelector('.cfh-editor-save').textContent = 'Update';
       document.getElementById('cfhEditorDelete').hidden = false;
     }
@@ -3242,11 +3249,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const title = document.getElementById('cfhEditorName').value.trim();
       const date = document.getElementById('cfhEditorDate').value;
       if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+      if(document.getElementById('cfhEditorRepeat').value==='custom'&&document.getElementById('cfhEventRepeatEnd').value&&document.getElementById('cfhEventRepeatEnd').value<date){alert('Repeat end must be on or after the event date.');return;}
       const amountValue = document.getElementById('cfhEditorAmount').value;
       const entry = {
         id: cfhEditingId || (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(36).slice(2)),
         type, title, date,
-        time: document.getElementById('cfhEditorTime').value,
+        time: document.getElementById('cfhEventAllDay').checked?'':document.getElementById('cfhEditorTime').value,
+        allDay:document.getElementById('cfhEventAllDay').checked,
+        deadline:document.getElementById('cfhEventDeadline').value,
+        repeatInterval:Number(document.getElementById('cfhEventInterval').value)||1,
+        repeatUnit:document.getElementById('cfhEventUnit').value,
+        repeatUntil:document.getElementById('cfhEditorRepeat').value==='custom'?document.getElementById('cfhEventRepeatEnd').value:'',
         amount: (type === 'statement' || type === 'due') && amountValue !== '' ? Number(amountValue) : null,
         repeat: document.getElementById('cfhEditorRepeat').value,
         notes: document.getElementById('cfhEditorNotes').value.trim()
@@ -3704,8 +3717,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const details=document.createElement('div');details.className='cfh-timeline-details';
         const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='task'?'Task':'Calendar';
         const name=document.createElement('strong');name.textContent=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).card:entry.title;
-        const time=document.createElement('small');time.textContent=cardBank?(entry.time||''):(entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');if(cardBank&&!entry.time)time.hidden=true;
+        const time=document.createElement('small');time.textContent=cardBank?(entry.time||''):(entry.allDay?'All-day · ':entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');if(cardBank&&!entry.time)time.hidden=true;
         time.textContent=cardBank?'':(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');time.hidden=!!cardBank;
+        if(!cardBank){time.textContent=(entry.allDay?'All-day':entry.time?cfhTime12Text(entry.time):'')+(entry.deadline?' · Deadline '+cfhWeekdayDateText(entry.deadline):'');time.hidden=!time.textContent;}
         details.append(bank,name,time);
         const notificationTime=cfhCardNotificationTime(entry);
         const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime;
@@ -3761,7 +3775,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if(!input.parentElement.classList.contains('cfh-weekday-date-field')){const parent=input.parentElement,next=input.nextSibling;parent.insertBefore(cfhWeekdayDateField(input),next);}
         input.dispatchEvent(new Event('input'));
       }
-      cfhEditorType("event");
+      cfhEditorType("event");cfhEventFieldsUpdate();
       document.getElementById("cfhEditorOverlay").hidden = false;
     }
 
@@ -3779,6 +3793,14 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const types=['card','event','task'],selected=document.querySelector('[data-cfh-type][aria-pressed="true"]')?.dataset.cfhType||'event';
       const next=types.indexOf(selected)+(dx<0?1:-1);
       if(next>=0&&next<types.length)cfhEditorType(types[next]);
+    }
+    function cfhEventFieldsUpdate(){
+      const custom=document.getElementById('cfhEditorRepeat').value==='custom';
+      document.getElementById('cfhEventCustomRepeat').hidden=!custom;
+      document.getElementById('cfhEventInterval').required=custom;
+      const time=document.getElementById('cfhEditorTime'),allDay=document.getElementById('cfhEventAllDay').checked;
+      time.disabled=allDay||document.getElementById('cfhAddStandardFields').hidden;
+      time.closest('.cfh-editor-row')?.classList.toggle('cfh-event-is-all-day',allDay);
     }
     function cfhEditorType(type) {
       const types = ['card','statement','due','event','task'];
@@ -9627,7 +9649,10 @@ window.cfhRefreshTestTab = function(page) {
    <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
    <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><input id="cfhEditorTime" type="time"></div></div>
    <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
-   <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat"><option value="none">None</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+   <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat" onchange="cfhEventFieldsUpdate()"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option><option value="custom">Custom…</option></select>
+<div id="cfhEventCustomRepeat" hidden><div class="cfh-editor-row"><div><label for="cfhEventInterval">Repeat every</label><input id="cfhEventInterval" type="number" min="1" max="999" value="1"></div><div><label for="cfhEventUnit">Unit</label><select id="cfhEventUnit"><option value="daily">Days</option><option value="weekly">Weeks</option><option value="monthly">Months</option><option value="yearly">Years</option></select></div></div><label for="cfhEventRepeatEnd">Repeat until (optional)</label><input id="cfhEventRepeatEnd" type="date"></div>
+<label class="cfh-event-all-day"><input id="cfhEventAllDay" type="checkbox" onchange="cfhEventFieldsUpdate()"> All-day</label>
+<label for="cfhEventDeadline">Deadline (optional)</label><input id="cfhEventDeadline" type="date">
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
    
     </div>
