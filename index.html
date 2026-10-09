@@ -1570,6 +1570,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhAddCardFields .cfh-statement-day-field span,
 #cfhAddCardFields .cfh-time-period{font-size:12px!important}
 
+#cfhCalendarSchedule .cfh-timeline-event.is-next-scheduled:before{background:var(--primary,#00F8B9)}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3625,6 +3626,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         lastDate=entry.cfhDisplayDate;
         const card=document.createElement('div');card.className='cfh-timeline-event '+(entry.type==='statement'?'is-statement':entry.type==='due'?'is-due':'is-other-event');
         if(entry.cfhDisplayDate===todayKey)card.classList.add('is-scheduled-today');
+        if(entry.cfhDisplayDate===highlightedDate&&entry.cfhDisplayDate>todayKey)card.classList.add('is-next-scheduled');
         const visual=document.createElement('div');visual.className='cfh-timeline-visual';
         if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=cfhCardImage(entry);photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
