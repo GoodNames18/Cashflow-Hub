@@ -3174,9 +3174,20 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       if(atome&&!due.readOnly){due.dataset.previous=due.value;}
       due.value=atome?'3':due.readOnly?(due.dataset.previous||''):due.value;due.readOnly=atome;
     }
-    function cfhAddCardPreview(){
+    function cfhAddCardPreview(fillNames=false){
       const photo=document.getElementById('cfhAddCardPhoto'),value=document.getElementById('cfhAddCardImage').value;
       photo.hidden=!value;if(value)photo.src=value;
+      if(fillNames&&value){
+        const item=cfhCardImageCatalog.find(image=>image.url===value);
+        if(item){
+          const name=String(item.name||'').trim(),parts=name.split(/\s+/);
+          const first=parts.shift()||'';
+          const bank=String(item.bankName||first).trim();
+          document.getElementById('cfhAddBank').value=/^eastwest$/i.test(bank)?'EastWest':bank;
+          document.getElementById('cfhAddCardName').value=String(item.cardName||parts.join(' ')).trim();
+          cfhAddAtomeRule();
+        }
+      }
     }
     async function cfhAddCardImages(){
       const select=document.getElementById('cfhAddCardImage');
@@ -9532,7 +9543,7 @@ window.cfhRefreshTestTab = function(page) {
    <div class="cfh-editor-fields">
     <div id="cfhAddCardFields" hidden>
       <div class="cfh-editor-row"><div><label>Bank name</label><input id="cfhAddBank" maxlength="80" required oninput="cfhAddAtomeRule()"></div><div><label>Card name</label><input id="cfhAddCardName" maxlength="80" required oninput="cfhAddAtomeRule()"></div></div>
-      <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview()"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
+      <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview(true)"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
       <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" required></div></div>
       <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
       <label>Notification time</label><div class="cfh-notification-time-row"><input id="cfhAddCardTime" type="time" oninput="document.getElementById('cfhAddTimePeriod').textContent=cfhTime12Text(this.value)"><span id="cfhAddTimePeriod" class="cfh-time-period">AM/PM</span></div>
