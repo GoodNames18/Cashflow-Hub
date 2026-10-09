@@ -1585,6 +1585,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       text-overflow: ellipsis;
       line-height: 1.35;
     }
+.cfh-edit-scopes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:16px 0 10px}.cfh-edit-scopes button{font-size:clamp(9px,2.4vw,12px);padding:12px 3px;white-space:nowrap;background:#e8e6fa;color:var(--secondary);border:0;border-radius:10px}.cfh-edit-scopes button[aria-pressed="true"]{background:var(--primary)}.cfh-scope-confirm{position:fixed;inset:0;z-index:100000;background:#0006;display:grid;place-items:center;padding:24px}.cfh-scope-confirm>div{background:white;border-radius:20px;padding:24px;max-width:380px;color:var(--secondary)}.cfh-scope-confirm button{padding:12px 24px;margin:6px;border:0;border-radius:10px;background:var(--secondary);color:white}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3083,7 +3084,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       return result;
     }
     function cfhCardScheduleSettings(bank,cycle){
-      const prefs=cfhCardPanelPreferences()[bank]||{};
+      const prefs=cfhScopedPrefs(bank,cycle||'');
       const use=!cycle||!prefs.scheduleFrom||cycle>=prefs.scheduleFrom;
       return {statementDay:use&&Number.isInteger(prefs.statementDay)?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21)};
     }
@@ -3267,8 +3268,29 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     const CFH_CARD_PANEL_KEY='cfh_card_panel_preferences_v1';
     let cfhCardPanelEntry=null,cfhCardPanelTrigger=null;
     function cfhCardPanelPreferences(){try{return JSON.parse(localStorage.getItem(CFH_CARD_PANEL_KEY)||'{}')||{};}catch(e){return {};}}
-    function cfhCardScheduleRange(bank){
-      const value=cfhCardPanelPreferences()[bank];
+    
+    let cfhEditSession=null;
+    function cfhEntryCycle(entry){return entry.cfhDuplicateCycle||entry.cfhEastwestCycle||(entry.cfhStatement||entry.date||entry.cfhDisplayDate||'').slice(0,7);}
+    function cfhScopedPrefs(bank,cycle){
+      const base=cfhCardPanelPreferences()[bank]||{},result={...base};
+      for(const edit of base.scopedEdits||[]){
+        if(edit.scope==='all'||edit.scope==='future'&&cycle>=edit.cycle||edit.scope==='current'&&cycle===edit.cycle)Object.assign(result,edit.patch);
+      }
+      return result;
+    }
+    function cfhEntryPrefs(entry){return cfhScopedPrefs(cfhCardKey(entry),cfhEntryCycle(entry));}
+    function cfhSaveScopedPatch(bank,patch){
+      if(!cfhEditSession||cfhEditSession.bank!==bank)return;
+      Object.assign(cfhEditSession.patch,patch);
+      const prefs=cfhCardPanelPreferences(),base=prefs[bank]||{};
+      const edits=(base.scopedEdits||[]).filter(edit=>edit.id!==cfhEditSession.id);
+      if(Object.keys(cfhEditSession.patch).length)edits.push({id:cfhEditSession.id,cycle:cfhEditSession.cycle,scope:cfhEditSession.scope,patch:{...cfhEditSession.patch}});
+      prefs[bank]={...base,scopedEdits:edits};
+      localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));
+    }
+
+    function cfhCardScheduleRange(bank,cycle){
+      const value=cfhScopedPrefs(bank,cycle||'');
       return value&&typeof value==='object'&&cfhEastwestValidDate(value.start)&&cfhEastwestValidDate(value.end)&&value.start<=value.end?value:null;
     }
 
@@ -3283,7 +3305,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
     cfhLoadCardImages().then(()=>{if(typeof cfhCalendarRender==='function')cfhCalendarRender();}).catch(()=>{});
     function cfhCardImage(entry){
-      const prefs=cfhCardPanelPreferences()[cfhCardKey(entry)]||{};
+      const prefs=cfhEntryPrefs(entry);
       const fallback=entry.cfhCard15?'Eastwest Visa Platinum':'Metrobank Travel Signature Visa';
       const chosen=cfhCardImageCatalog.find(item=>item.url===prefs.image||(!prefs.image&&item.name.toLowerCase()===fallback.toLowerCase()));
       return (chosen&&chosen.url)||prefs.image||(entry.cfhCard15?'./images/Eastwest%20Visa%20Platinum.png':'./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943');
@@ -3291,7 +3313,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhIsAtomeCard(config){return /\batome\b/i.test([config.bankName,config.cardName].filter(Boolean).join(' '));}
     function cfhAtomeDueDate(year,month){return cfhCalendarDateKey(new Date(year,month+1,3));}
     function cfhDuplicateCycle(bank,year,month){
-      const prefs=cfhCardPanelPreferences()[bank],cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7);
+      const cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7),prefs=cfhScopedPrefs(bank,cycle);
       const override=(prefs.confirmedCycles||{})[cycle]||{};
       if(cfhIsAtomeCard(prefs))return {cycle,statement:cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhCardStatementDate(bank,year,month)),due:cfhEastwestValidDate(override.due)?override.due:cfhAtomeDueDate(year,month)};
       const adjust=date=>{
@@ -3323,13 +3345,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     function cfhCardFutureVisible(entry,key){
       const bank=cfhCardKey(entry);
-      const range=bank?cfhCardScheduleRange(bank):null;
+      const range=bank?cfhCardScheduleRange(bank,cfhEntryCycle(entry)):null;
       return !range||(key>=range.start&&key<=range.end);
     }
     let cfhCardPanelSaveDraft=null;
     window.addEventListener('pagehide',()=>{if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();});
     function cfhCardPanelClose(){
-      if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();cfhCardPanelSaveDraft=null;
+      if(cfhCardPanelSaveDraft)cfhCardPanelSaveDraft();cfhCardPanelSaveDraft=null;cfhEditSession=null;
       const panel=document.getElementById('cfhCardPanel');
       if(panel)panel.remove();
       if(cfhCardPanelTrigger&&cfhCardPanelTrigger.isConnected)cfhCardPanelTrigger.focus();
@@ -3338,6 +3360,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhCardPanelOpen(entry){
       if(!entry.cfhAuto&&!entry.cfhCard15){cfhCalendarLegacyEventOptions(entry);return;}
       cfhCardPanelTrigger=document.activeElement;cfhCardPanelEntry=entry;cfhCardPanelManaging=false;
+      cfhEditSession={id:'edit-'+Date.now()+'-'+Math.random().toString(36).slice(2),bank:cfhCardKey(entry),cycle:cfhEntryCycle(entry),scope:'current',patch:{}};
       cfhCardPanelRender();
     }
     function cfhStatementDayText(value){
@@ -3370,11 +3393,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(Number(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
-      const value=bank?(cfhCardPanelPreferences()[bank]||{}).notificationTime:entry.time;
+      const value=bank?cfhEntryPrefs(entry).notificationTime:entry.time;
       return /^([01]\d|2[0-3]):[0-5]\d$/.test(value||'')?value:'';
     }
     function cfhCardDisplayNames(entry){
-      const bank=cfhCardKey(entry),prefs=cfhCardPanelPreferences()[bank]||{};
+      const bank=cfhCardKey(entry),prefs=cfhEntryPrefs(entry);
       return {bank:prefs.bankName||(bank==='eastwest'?'EastWest':'Metrobank'),card:prefs.cardName||(bank==='eastwest'?'Visa Platinum':'Travel Signature Visa')};
     }
     function cfhCardPanelRender(){
@@ -3414,17 +3437,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const savedReminderTime=cfhCardNotificationTime(entry);
       const reminderTimeLabel=savedReminderTime?(()=>{const [h,m]=savedReminderTime.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');})():'';
       addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
-      const recurring=cfhCardScheduleSettings(bank);
+      const recurring=cfhCardScheduleSettings(bank,cfhEntryCycle(entry));
       addRow('Recurring Schedule','Monthly statement day: '+recurring.statementDay+'; due +'+recurring.dueDays+' calendar days. '+(ew?'Banking-day adjustments apply.':'Due dates adjust for weekends.'));
       const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
       const rangeTitle=document.createElement('strong');rangeTitle.textContent='Schedule Date Range';rangeForm.append(rangeTitle);
-      const range=cfhCardScheduleRange(bank);
+      const range=cfhCardScheduleRange(bank,cfhEntryCycle(entry));
       const fields=document.createElement('div');fields.className='cfh-card-range-fields';
       const inputs={};
       for(const type of ['start','end']){
         const label=document.createElement('label');label.textContent=type==='start'?'Start date':'End date';
         const input=document.createElement('input');input.type='date';input.required=true;input.name=type;
-        input.value=(cfhCardPanelPreferences()[bank]||{}).rangeDraft?.[type]??(range?range[type]:'');
+        input.value=cfhEntryPrefs(entry).rangeDraft?.[type]??(range?range[type]:'');
         inputs[type]=input;label.append(cfhWeekdayDateField(input));fields.append(label);
       }
       inputs.start.oninput=()=>{inputs.end.min=inputs.start.value;};
@@ -3457,6 +3480,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if(match)imageInput.value=match.url;
         else {const option=document.createElement('option');option.value='';option.textContent='Choose a card image';option.selected=true;imageInput.prepend(option);}
         imageInput.disabled=!images.length;
+        if(initialFormValues)initialFormValues.image=imageInput.value||initialFormValues.image;
         if(!images.length)imageStatus.textContent='No card images available yet.';
       }).catch(()=>{placeholder.textContent='Card images unavailable';imageStatus.textContent='Could not load images. Reopen Manage Card to retry.';});
       const typeLabel=document.createElement('label');typeLabel.textContent='Event type';
@@ -3491,8 +3515,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       timeRow.append(timeInput,period);timeLabel.append(timeRow);
       const remindersTitle=document.createElement('strong');remindersTitle.textContent='Reminders';remindersTitle.className='cfh-manage-section-title';timeForm.append(remindersTitle,timeLabel);timeForm.classList.add('cfh-manage-reminders');settings.append(timeForm);
       timeForm.onsubmit=e=>e.preventDefault();
+      let initialFormValues=null;
       const savePreferences=()=>{
-        const prefs=cfhCardPanelPreferences(),value={...(prefs[bank]||{})};
+        const prefs=cfhCardPanelPreferences(),value={...cfhEntryPrefs(entry)};
         const start=inputs.start.value,end=inputs.end.value;
         value.rangeDraft={start,end};
         value.bankName=nameInputs.bankName.value.trim();value.cardName=nameInputs.cardName.value.trim();
@@ -3506,10 +3531,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         inputs.end.min=start;inputs.end.setCustomValidity(start&&end&&start>end?'End date must be on or after start date.':'');
         if(cfhEastwestValidDate(start)&&cfhEastwestValidDate(end)&&start<=end){value.start=start;value.end=end;}
         if(!timeInput.value||/^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput.value))value.notificationTime=timeInput.value;
-        prefs[bank]=value;
-        try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(error){alert('Could not save card settings.');return;}
+        if(!initialFormValues){initialFormValues=JSON.parse(JSON.stringify(value));return;}
+        const before=initialFormValues,patch={};
+        for(const key of ['rangeDraft','bankName','cardName','image','eventType','statementDay','dueDays','start','end','notificationTime'])if(JSON.stringify(value[key])!==JSON.stringify(before[key]))patch[key]=value[key];
+        try{cfhSaveScopedPatch(bank,patch);}catch(error){alert('Could not save card settings.');return;}
         cfhCalendarRender();
       };
+      savePreferences();
       for(const input of [inputs.start,inputs.end,timeInput,scheduleInputs.statementDay,scheduleInputs.dueDays,nameInputs.bankName,nameInputs.cardName,imageInput,typeInput]){
         input.addEventListener('input',savePreferences);
         input.addEventListener('change',savePreferences);
@@ -3540,8 +3568,29 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not duplicate event.');return;}
         cfhCardPanelSaveDraft=null;
         cfhCardPanelEntry={...entry,id:key+'|'+cycleKey+'|'+entry.type,cfhDuplicate:key,cfhDuplicateCycle:cycleKey};
+        cfhEditSession={id:'edit-'+Date.now(),bank:key,cycle:cycleKey,scope:'current',patch:{}};
         cfhCardPanelManaging=true;cfhCalendarRender();cfhCardPanelRender();
       };
+      
+      const scopeButtons=document.createElement('div');scopeButtons.className='cfh-edit-scopes';
+      for(const [label,scope] of [['Current Only','current'],['Current & Future','future'],['All Schedules','all']]){
+        const button=document.createElement('button');button.type='button';button.textContent=label;
+        button.setAttribute('aria-pressed',String(cfhEditSession?.scope===scope));
+        button.onclick=()=>{
+          savePreferences();
+          if(cfhEditSession.scope===scope)return;
+          const apply=()=>{cfhEditSession.scope=scope;cfhSaveScopedPatch(bank,{});cfhCalendarRender();cfhCardPanelRender();};
+          if(scope==='current'){apply();return;}
+          const confirmBox=document.createElement('div');confirmBox.className='cfh-scope-confirm';
+          confirmBox.setAttribute('role','alertdialog');confirmBox.setAttribute('aria-modal','true');
+          const box=document.createElement('div'),message=document.createElement('p');message.textContent=scope==='all'?'Apply changes to all schedules?':'Apply changes to current and future schedules?';
+          const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.onclick=()=>{confirmBox.remove();button.focus();};
+          const confirm=document.createElement('button');confirm.type='button';confirm.textContent='Apply';confirm.onclick=()=>{confirmBox.remove();apply();};
+          box.append(message,cancel,confirm);confirmBox.append(box);document.body.append(confirmBox);cancel.focus();
+          confirmBox.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();cancel.click();}if(e.key==='Tab'){e.preventDefault();(document.activeElement===cancel?confirm:cancel).focus();}};
+        };scopeButtons.append(button);
+      }
+
       const eventActions=document.createElement('div');eventActions.className='cfh-card-event-actions';eventActions.append(deleteButton,duplicateButton);settings.append(eventActions,deleteOptions);
       const note=document.createElement('p');note.className='cfh-card-panel-note';note.textContent=(confirmed?'Due date confirmed. ':'Dates are estimates; check your SOA. ')+'Settings are saved on this device.';
       dialog.append(settings);
@@ -3555,7 +3604,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const daysBox=document.createElement('fieldset');daysBox.className='cfh-card-reminder-days';
         const daysTitle=document.createElement('legend');daysTitle.textContent='Reminder days';daysBox.append(daysTitle);
         const allowedDays=[7,5,3,2,1,0];
-        const savedDays=(cfhCardPanelPreferences()[bank]||{}).reminderDays;
+        const savedDays=cfhEntryPrefs(entry).reminderDays;
         const selectedDays=Array.isArray(savedDays)?savedDays.filter(day=>allowedDays.includes(day)):allowedDays;
         for(const day of allowedDays){
           const button=document.createElement('button');button.type='button';button.className='cfh-reminder-day-box';
@@ -3563,16 +3612,16 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           button.dataset.day=String(day);button.setAttribute('aria-pressed',String(selectedDays.includes(day)));daysBox.append(button);
           button.onclick=()=>{
             const enabled=button.getAttribute('aria-pressed')!=='true';
-            const prefs=cfhCardPanelPreferences(),previous={...(prefs[bank]||{})};
+            const prefs=cfhCardPanelPreferences(),previous={...cfhEntryPrefs(entry)};
             const days=new Set(Array.isArray(previous.reminderDays)?previous.reminderDays:allowedDays);
             if(enabled)days.add(day);else days.delete(day);
             prefs[bank]={...previous,reminderDays:allowedDays.filter(value=>days.has(value))};
-            try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));button.setAttribute('aria-pressed',String(enabled));}
+            try{cfhSaveScopedPatch(bank,{reminderDays:allowedDays.filter(value=>days.has(value))});button.setAttribute('aria-pressed',String(enabled));}
             catch(error){alert('Could not save reminder days.');}
           };
         }
         rangeTitle.classList.add('cfh-manage-section-title');scheduleTitle.classList.add('cfh-manage-section-title');
-        settings.append(nameForm,imageForm,scheduleForm,rangeForm,timeForm,daysBox,eventActions,deleteOptions);
+        settings.append(nameForm,imageForm,scheduleForm,rangeForm,timeForm,daysBox,scopeButtons,eventActions,deleteOptions);
       }
       if(cfhCardPanelManaging){
         const editor=document.createElement('div');editor.className='cfh-card-manage-fields';
