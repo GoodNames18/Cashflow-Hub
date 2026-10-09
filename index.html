@@ -1586,6 +1586,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       line-height: 1.35;
     }
 .cfh-edit-scopes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:16px 0 10px}.cfh-edit-scopes button{font-size:clamp(9px,2.4vw,12px);padding:12px 3px;white-space:nowrap;background:#e8e6fa;color:var(--secondary);border:0;border-radius:10px}.cfh-edit-scopes button[aria-pressed="true"]{background:var(--primary)}.cfh-scope-confirm{position:fixed;inset:0;z-index:100000;background:#0006;display:grid;place-items:center;padding:24px}.cfh-scope-confirm>div{background:white;border-radius:20px;padding:24px;max-width:380px;color:var(--secondary)}.cfh-scope-confirm button{padding:12px 24px;margin:6px;border:0;border-radius:10px;background:var(--secondary);color:white}
+
+/* Keep Home tabs readable and snap swipes to a complete selected label. */
+.app-tabs{scroll-snap-type:x proximity;scroll-padding-inline:12px;padding-inline:12px}
+.app-tabs .app-tab{scroll-snap-align:center;flex-shrink:0;line-height:1.25}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -4530,7 +4534,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const tabBar = document.querySelector(".app-tabs");
         const activeTab = tabBar && tabBar.querySelector(".app-tab.active");
         if (activeTab) {
-          const target = activeTab.offsetLeft - tabBar.offsetLeft - (tabBar.clientWidth - activeTab.offsetWidth) / 2;
+          const barRect=tabBar.getBoundingClientRect(),tabRect=activeTab.getBoundingClientRect();
+          const target=tabBar.scrollLeft+tabRect.left-barRect.left-(tabBar.clientWidth-tabRect.width)/2;
           tabBar.scrollTo({left:Math.max(0,target),behavior:animate?"smooth":"instant"});
         }
       }
