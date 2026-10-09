@@ -603,16 +603,26 @@ function detectKnownMerchant(text) {
 }
 
 function extractSimpleMoneyFlowDescription(text) {
-  var description = String(text || "")
-    .replace(/₱?\s*\d[\d,]*(?:\.\d+)?/g, " ")
-    .replace(/\b(?:php|peso|pesos|cash|gcash|maya|paymaya|income|expense)\b/gi, " ")
+  var raw = String(text || "");
+  var patterns = [
+    /(?:₱|\b(?:php|pesos?|p))\s*([0-9,]+(?:\.[0-9]+)?)/i,
+    /\b([0-9,]+(?:\.[0-9]+)?)\s*(?:php|pesos?)\b/i,
+    /\b([0-9]+(?:\.[0-9]+)?)\s*k\b/i,
+    /\b[0-9,]+(?:\.[0-9]+)?\b/
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    var match = patterns[i].exec(raw);
+    if (match) {
+      raw = raw.slice(0, match.index) + " " + raw.slice(match.index + match[0].length);
+      break;
+    }
+  }
+  var description = raw
+    .replace(/\b(?:cash|gcash|maya|paymaya|income|expense)\b/gi, " ")
     .replace(/\s+/g, " ")
     .replace(/^[,.;:\-\s]+|[,.;:\-\s]+$/g, "")
     .trim();
-
-  if (!description) return "";
-
-  return description.charAt(0).toUpperCase() + description.slice(1);
+  return description ? description.charAt(0).toUpperCase() + description.slice(1) : "";
 }
 
 function cleanMerchant(merchant) {
