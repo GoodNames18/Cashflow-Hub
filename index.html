@@ -9626,7 +9626,7 @@ window.cfhRefreshTestTab = function(page) {
 })();
 </script>
 
-<div class="cfh-editor-overlay" id="cfhEditorOverlay" hidden>
+<div class="cfh-editor-overlay" id="cfhEditorOverlay" hidden onclick="if(event.target===this)cfhEditorClose()">
  <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle" ontouchstart="cfhEditorSwipeStart(event)" ontouchend="cfhEditorSwipeEnd(event)">
   <div class="cfh-editor-head"><h2 id="cfhEditorTitle">Add to Calendar</h2></div>
   <div class="cfh-editor-types" role="group" aria-label="Schedule type">
