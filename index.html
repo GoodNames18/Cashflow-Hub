@@ -2851,7 +2851,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     function cfhCalendarSelectDate(date) {
       const sameDate=cfhCalendarDateKey(date)===cfhCalendarDateKey(cfhCalendarState.selected);
-      cfhCalendarState.selectionCleared=sameDate&&!cfhCalendarState.selectionCleared;
+      cfhCalendarState.selectionCleared=sameDate&&cfhCalendarState.filterSelectedDate===true;
+      cfhCalendarState.filterSelectedDate=!cfhCalendarState.selectionCleared;
       cfhCalendarState.selected = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if (date.getMonth() !== cfhCalendarState.month.getMonth() || date.getFullYear() !== cfhCalendarState.month.getFullYear()) {
         cfhCalendarState.month = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -2861,6 +2862,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function cfhCalendarMoveMonth(direction) {
+      cfhCalendarState.filterSelectedDate=false;cfhCalendarState.selectionCleared=true;
       const view = cfhCalendarState.month;
       cfhCalendarState.month = new Date(view.getFullYear(), view.getMonth() + direction, 1);
       cfhCalendarRender();
@@ -2877,7 +2879,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         cfhCalendarMonthHeld=true;cfhCalendarMonthHoldTimer=null;
         const today=new Date();
         cfhCalendarState.month=new Date(today.getFullYear(),today.getMonth(),1);
-        cfhCalendarState.selected=new Date(today.getFullYear(),today.getMonth(),today.getDate());cfhCalendarState.selectionCleared=false;
+        cfhCalendarState.selected=new Date(today.getFullYear(),today.getMonth(),today.getDate());cfhCalendarState.selectionCleared=false;cfhCalendarState.filterSelectedDate=false;
         const strip=document.getElementById('cfhCalendarMonthStrip');if(strip)strip.hidden=true;
         document.getElementById('cfhCalendarMonthTitle').setAttribute('aria-expanded','false');
         const search=document.getElementById('cfhCalendarSearchInput');if(search)search.value='';
@@ -3735,9 +3737,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       schedule.replaceChildren();
       const todayKey=cfhCalendarDateKey(new Date());
       const isCurrentMonth=view.getFullYear()===Number(todayKey.slice(0,4))&&view.getMonth()===Number(todayKey.slice(5,7))-1;
+      const selectedDateKey=cfhCalendarState.filterSelectedDate&&!cfhCalendarState.selectionCleared&&!query.trim()?cfhCalendarDateKey(cfhCalendarState.selected):null;
+      if(selectedDateKey){entries=entries.filter(entry=>entry.cfhDisplayDate===selectedDateKey);label.textContent=cfhCalendarState.selected.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
       const monthKey=todayKey.slice(0,7);
       const pastCount=entries.filter(entry=>entry.cfhDisplayDate<todayKey).length;
-      if(isCurrentMonth&&!query.trim()&&pastCount){
+      if(isCurrentMonth&&!selectedDateKey&&!query.trim()&&pastCount){
         const showPast=cfhSchedulePastMonth===monthKey;
         const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-schedule-past-toggle';
         toggle.textContent=showPast?'Hide past schedules':'Show past schedules';
@@ -3748,7 +3752,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       }
       if(!entries.length){
         const empty=document.createElement('p');
-        empty.textContent=query.trim()?'No matching schedules this month.':isCurrentMonth?'No upcoming schedules this month.':'No events scheduled this month.';
+        empty.textContent=selectedDateKey?'No schedules on this date.':query.trim()?'No matching schedules this month.':isCurrentMonth?'No upcoming schedules this month.':'No events scheduled this month.';
         schedule.appendChild(empty);return;
       }
       const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey);
