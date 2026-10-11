@@ -1595,6 +1595,35 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #calendarPage.cfh-searching-schedules .cfh-calendar-month-strip{display:none!important}
 .cfh-event-all-day{display:flex!important;align-items:center;gap:8px;margin-top:16px!important}.cfh-event-all-day input{width:20px!important;height:20px;accent-color:var(--primary)}#cfhEventCustomRepeat[hidden]{display:none}#cfhEventCustomRepeat{margin-top:12px;padding:12px;background:var(--lavender);border-radius:12px}
 .cfh-schedule-past-toggle{display:block;margin:0 0 14px auto;padding:8px 12px;border:1px solid #e4e2f2;border-radius:10px;background:white;color:var(--secondary,#1d1845);font:inherit;font-size:12px;cursor:pointer}
+
+/* Calendar panel design: violet header and alternating rectangular date tiles. */
+#calendarPage .cfh-calendar-shell>.cfh-calendar-card:first-child{padding:0;border:1px solid #ece9ff;border-radius:18px;background:#fff;box-shadow:0 6px 22px rgba(29,24,69,.07)}
+#calendarPage .cfh-calendar-head{margin:0;padding:14px 12px;background:#1d1845;border-radius:17px 17px 0 0;gap:8px}
+#calendarPage .cfh-calendar-title-button{min-width:0;font-size:18px;font-weight:800;color:#fff;white-space:nowrap}
+#calendarPage .cfh-calendar-nav{gap:6px;flex-shrink:0}
+#calendarPage .cfh-calendar-nav button{width:32px;height:32px;flex-basis:32px;border:0;border-radius:8px;background:#49407e;color:#fff}
+#calendarPage #cfhCalendarSearchButton{background:transparent}
+#calendarPage .cfh-calendar-weekdays{padding:6px 12px 0}
+#calendarPage .cfh-calendar-weekdays div{color:#5b548a;padding:5px 0 7px}
+#calendarPage .cfh-calendar-grid{padding:0 12px;gap:4px}
+#calendarPage .cfh-calendar-day{box-sizing:border-box;min-width:0;min-height:48px;margin:0;border:1px solid #e5e1ff;border-radius:5px;padding:4px 1px;background:#fff;color:#1d1845}
+#calendarPage .cfh-calendar-day:nth-child(even){background:#f0edff}
+#calendarPage .cfh-calendar-day-number{width:auto;height:25px;border-radius:0;background:transparent;font-size:12px;color:#1d1845}
+#calendarPage .cfh-calendar-day.is-other .cfh-calendar-day-number{color:#b6b0d3}
+#calendarPage .cfh-calendar-day.is-selected{border-color:#00efb5;background:#fff}
+#calendarPage .cfh-calendar-day.is-today{background:#9af7df;border-color:#9af7df}
+#calendarPage .cfh-calendar-day.is-today .cfh-calendar-day-number{background:transparent;color:#1d1845}
+#calendarPage .cfh-calendar-day.is-today::after{content:'Today';display:block;font-size:9px;line-height:12px;color:#008b70}
+#calendarPage .cfh-calendar-day.is-today .cfh-calendar-dots:empty{display:none}
+#calendarPage .cfh-calendar-dots{margin-top:1px;gap:3px}
+#calendarPage .cfh-calendar-dot{width:5px;height:5px}
+#calendarPage .cfh-calendar-legend{display:flex;gap:16px;padding:14px 16px 16px;background:transparent;border:0;font-size:10px;color:#655e8e}
+#calendarPage .cfh-calendar-legend span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+#calendarPage .cfh-calendar-legend i{display:block;width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#calendarPage .cfh-calendar-search{margin:12px}
+#calendarPage .cfh-calendar-month-strip{margin:10px 12px 0}
+#calendarPage.cfh-searching-schedules .cfh-calendar-legend{display:none}
+@media(max-width:350px){#calendarPage .cfh-calendar-title-button{font-size:16px}#calendarPage .cfh-calendar-head{padding:12px 10px}#calendarPage .cfh-calendar-nav button{width:28px;height:28px;flex-basis:28px}#calendarPage .cfh-calendar-legend{gap:12px}}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -2094,6 +2123,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
                 <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
               </div>
               <div id="cfhCalendarGrid" class="cfh-calendar-grid"></div>
+              <div class="cfh-calendar-legend" aria-label="Schedule colors">
+                <span><i style="background:#7c4dff"></i>Statement</span>
+                <span><i style="background:#e53935"></i>Due date</span>
+                <span><i style="background:#1e88e5"></i>Event</span>
+              </div>
             </div>
 
             <div class="cfh-calendar-card cfh-schedule">
