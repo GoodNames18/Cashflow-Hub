@@ -1629,6 +1629,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 #calendarPage .cfh-calendar-day.is-today.is-selected{background:var(--secondary,#1d1845);border-color:var(--secondary,#1d1845)}
 #calendarPage .cfh-calendar-day.is-selected .cfh-calendar-day-number,#calendarPage .cfh-calendar-day.is-today.is-selected::after{color:#fff}
+#calendarPage .cfh-calendar-grid{touch-action:pan-y}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -2849,6 +2850,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
     }
 
+    let cfhCalendarSwipeClickUntil=0;
+    document.addEventListener('click',event=>{
+      if(Date.now()<cfhCalendarSwipeClickUntil&&event.target.closest('#cfhCalendarGrid')){
+        event.preventDefault();event.stopImmediatePropagation();
+      }
+    },true);
     function cfhCalendarSelectDate(date) {
       const sameDate=cfhCalendarDateKey(date)===cfhCalendarDateKey(cfhCalendarState.selected);
       cfhCalendarState.selectionCleared=sameDate&&cfhCalendarState.filterSelectedDate===true;
@@ -4733,7 +4740,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
         // Calendar gestures change months using the same navigation as the arrows.
         if (currentAppPage === "calendar") {
-          if (event.target.closest('input, select, textarea, button, a, [role="dialog"]')) return;
+          if (event.target.closest('input, select, textarea, a, [role="dialog"], .cfh-calendar-month-strip')) return;
+          const button=event.target.closest('button');
+          if(button&&!button.classList.contains('cfh-calendar-day'))return;
+          if(event.target.closest('.cfh-calendar-grid')){
+            cfhCalendarSwipeClickUntil=Date.now()+450;
+          }
           cfhCalendarMoveMonth(deltaX < 0 ? 1 : -1);
           return;
         }
