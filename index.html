@@ -1610,7 +1610,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #calendarPage .cfh-calendar-day:nth-child(even){background:#f0edff}
 #calendarPage .cfh-calendar-day-number{width:auto;height:25px;border-radius:0;background:transparent;font-size:12px;color:#1d1845}
 #calendarPage .cfh-calendar-day.is-other .cfh-calendar-day-number{color:#b6b0d3}
-#calendarPage .cfh-calendar-day.is-selected{background:#9af7df;border-color:#9af7df}
+#calendarPage .cfh-calendar-day.is-selected{background:var(--secondary,#1d1845);border-color:var(--secondary,#1d1845)}
 #calendarPage .cfh-calendar-day.is-today{background:#9af7df;border-color:#9af7df}
 #calendarPage .cfh-calendar-day.is-today .cfh-calendar-day-number{background:transparent;color:#1d1845}
 #calendarPage .cfh-calendar-day.is-today::after{content:'Today';display:block;font-size:9px;line-height:12px;color:#008b70}
@@ -1626,6 +1626,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 @media(max-width:350px){#calendarPage .cfh-calendar-title-button{font-size:16px}#calendarPage .cfh-calendar-head{padding:12px 10px}#calendarPage .cfh-calendar-nav button{width:28px;height:28px;flex-basis:28px}#calendarPage .cfh-calendar-legend{gap:12px}}
 
 
+
+#calendarPage .cfh-calendar-day.is-today.is-selected{background:var(--secondary,#1d1845);border-color:var(--secondary,#1d1845)}
+#calendarPage .cfh-calendar-day.is-selected .cfh-calendar-day-number,#calendarPage .cfh-calendar-day.is-today.is-selected::after{color:#fff}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -2825,7 +2828,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         cell.className = "cfh-calendar-day";
         if (date.getMonth() !== view.getMonth()) cell.classList.add("is-other");
         if (key === todayKey) cell.classList.add("is-today");
-        if (key === selectedKey) cell.classList.add("is-selected");
+        if (key === selectedKey && !cfhCalendarState.selectionCleared) cell.classList.add("is-selected");
         cell.setAttribute("aria-label", date.toLocaleDateString("en-PH", { dateStyle:"full" }));
         cell.innerHTML = '<span class="cfh-calendar-day-number">' + date.getDate() + '</span><span class="cfh-calendar-dots"></span>';
         cell.onclick = function () { cfhCalendarSelectDate(date); };
@@ -2847,6 +2850,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function cfhCalendarSelectDate(date) {
+      const sameDate=cfhCalendarDateKey(date)===cfhCalendarDateKey(cfhCalendarState.selected);
+      cfhCalendarState.selectionCleared=sameDate&&!cfhCalendarState.selectionCleared;
       cfhCalendarState.selected = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       if (date.getMonth() !== cfhCalendarState.month.getMonth() || date.getFullYear() !== cfhCalendarState.month.getFullYear()) {
         cfhCalendarState.month = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -2872,7 +2877,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         cfhCalendarMonthHeld=true;cfhCalendarMonthHoldTimer=null;
         const today=new Date();
         cfhCalendarState.month=new Date(today.getFullYear(),today.getMonth(),1);
-        cfhCalendarState.selected=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+        cfhCalendarState.selected=new Date(today.getFullYear(),today.getMonth(),today.getDate());cfhCalendarState.selectionCleared=false;
         const strip=document.getElementById('cfhCalendarMonthStrip');if(strip)strip.hidden=true;
         document.getElementById('cfhCalendarMonthTitle').setAttribute('aria-expanded','false');
         const search=document.getElementById('cfhCalendarSearchInput');if(search)search.value='';
