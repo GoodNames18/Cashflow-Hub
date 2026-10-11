@@ -2828,7 +2828,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         cell.className = "cfh-calendar-day";
         if (date.getMonth() !== view.getMonth()) cell.classList.add("is-other");
         if (key === todayKey) cell.classList.add("is-today");
-        if (key === selectedKey && !cfhCalendarState.selectionCleared) cell.classList.add("is-selected");
+        if (key === selectedKey && cfhCalendarState.filterSelectedDate === true && !cfhCalendarState.selectionCleared) cell.classList.add("is-selected");
         cell.setAttribute("aria-label", date.toLocaleDateString("en-PH", { dateStyle:"full" }));
         cell.innerHTML = '<span class="cfh-calendar-day-number">' + date.getDate() + '</span><span class="cfh-calendar-dots"></span>';
         cell.onclick = function () { cfhCalendarSelectDate(date); };
@@ -3942,6 +3942,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         const month = parseDate(state.month), selected = parseDate(state.selected);
         if (month) cfhCalendarState.month = new Date(month.getFullYear(),month.getMonth(),1);
         if (selected) cfhCalendarState.selected = selected;
+        cfhCalendarState.filterSelectedDate=false;cfhCalendarState.selectionCleared=true;
         window.cfhLastHomePage = CFH_VALID_PAGES.includes(state.home) && state.home !== 'calendar' ? state.home : 'gcash';
         return state;
       } catch(e) { return null; }
