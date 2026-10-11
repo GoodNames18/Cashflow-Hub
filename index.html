@@ -1594,6 +1594,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #calendarPage.cfh-searching-schedules .cfh-calendar-weekdays,
 #calendarPage.cfh-searching-schedules .cfh-calendar-month-strip{display:none!important}
 .cfh-event-all-day{display:flex!important;align-items:center;gap:8px;margin-top:16px!important}.cfh-event-all-day input{width:20px!important;height:20px;accent-color:var(--primary)}#cfhEventCustomRepeat[hidden]{display:none}#cfhEventCustomRepeat{margin-top:12px;padding:12px;background:var(--lavender);border-radius:12px}
+.cfh-schedule-past-toggle{display:block;margin:0 0 14px auto;padding:8px 12px;border:1px solid #e4e2f2;border-radius:10px;background:white;color:var(--secondary,#1d1845);font:inherit;font-size:12px;cursor:pointer}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3673,6 +3674,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const text=[entry.title,names.bank,names.card,type,entry.notes,date,formatted].filter(Boolean).join(' ').toLocaleLowerCase();
       return words.every(word=>text.includes(word));
     }
+    let cfhSchedulePastMonth=null;
     function cfhCalendarRenderSchedule() {
       const label=document.getElementById('cfhCalendarSelectedLabel');
       const schedule=document.getElementById('cfhCalendarSchedule');
@@ -3690,10 +3692,25 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       entries=entries.filter(entry=>cfhCalendarSearchMatches(entry,query));
       entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate)||(a.time||'').localeCompare(b.time||''));
       schedule.replaceChildren();
-      if(!entries.length){schedule.textContent=query.trim()?'No matching schedules this month.':'No events scheduled this month.';return;}
       const todayKey=cfhCalendarDateKey(new Date());
-      const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey);
       const isCurrentMonth=view.getFullYear()===Number(todayKey.slice(0,4))&&view.getMonth()===Number(todayKey.slice(5,7))-1;
+      const monthKey=todayKey.slice(0,7);
+      const pastCount=entries.filter(entry=>entry.cfhDisplayDate<todayKey).length;
+      if(isCurrentMonth&&!query.trim()&&pastCount){
+        const showPast=cfhSchedulePastMonth===monthKey;
+        const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-schedule-past-toggle';
+        toggle.textContent=showPast?'Hide past schedules':'Show past schedules';
+        toggle.setAttribute('aria-expanded',String(showPast));
+        toggle.onclick=()=>{cfhSchedulePastMonth=showPast?null:monthKey;cfhCalendarRenderSchedule();};
+        schedule.appendChild(toggle);
+        if(!showPast)entries=entries.filter(entry=>entry.cfhDisplayDate>=todayKey);
+      }
+      if(!entries.length){
+        const empty=document.createElement('p');
+        empty.textContent=query.trim()?'No matching schedules this month.':isCurrentMonth?'No upcoming schedules this month.':'No events scheduled this month.';
+        schedule.appendChild(empty);return;
+      }
+      const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey);
       const highlightedDate=isCurrentMonth&&nextScheduledEntry?nextScheduledEntry.cfhDisplayDate:null;
       let lastDate='';
       entries.forEach(entry=>{
