@@ -4,6 +4,7 @@ import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=live2';
 import { CashflowReadApi } from './cfh-read-api.mjs?v=transaction-order4';
 import { CashflowWriteApi } from './cfh-write-api.mjs?v=moneyflow-digits1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=live2';
+import { startCalendarSync } from './cfh-calendar-sync.mjs?v=android1';
 const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;
@@ -21,6 +22,7 @@ if(enabled) {
   const store=new CashflowStore(client);
   async function start() {
     await store.requireOwner();
+    if(!window.cfhCalendarSyncStarted){window.cfhCalendarSyncStarted=true;await startCalendarSync(client,'161ecab1-d1d7-4fef-a089-a7300b9da774');}
     const settings=await loadCashflowSettings(client);
     let cache=null;
     try {cache=await openHistoryCache();} catch(error){console.warn('History cache unavailable',error);}

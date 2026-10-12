@@ -3018,6 +3018,9 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const saved = JSON.parse(localStorage.getItem(CFH_CALENDAR_KEY) || '[]');
       if (Array.isArray(saved)) cfhCalendarEntries = saved.filter(x => x && typeof x.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date || ''));
     } catch(e) { cfhCalendarStorageError = true; }
+    window.cfhReloadCalendarFromStorage=function(){
+      try{const saved=JSON.parse(localStorage.getItem(CFH_CALENDAR_KEY)||'[]');if(Array.isArray(saved))cfhCalendarEntries=saved;cfhCalendarRender();}catch(error){console.error('Could not reload synced calendar',error);}
+    };
     function cfhCalendarPersist() {
       try { localStorage.setItem(CFH_CALENDAR_KEY, JSON.stringify(cfhCalendarEntries)); cfhCalendarStorageError = false; return true; }
       catch(e) { cfhCalendarStorageError = true; alert('Calendar could not save on this device. Check available browser storage.'); return false; }
@@ -3529,7 +3532,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhCardKey(entry){return entry.cfhDuplicate|| (entry.cfhCard15?'eastwest':entry.cfhAuto?'metrobank':'');}
     let cfhCardImageCatalog=[];
     async function cfhLoadCardImages(){
-      const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/functions/v1/cfh-card-images',{cache:'no-store'});
+      const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/storage/v1/object/public/cfh-card-images/catalog.json',{cache:'no-store'});
       if(!response.ok)throw new Error('Card images unavailable');
       const data=await response.json();
       cfhCardImageCatalog=(Array.isArray(data.images)?data.images:[]).sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true}));
@@ -9935,7 +9938,7 @@ window.cfhRefreshTestTab = function(page) {
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
    
     </div>
-   <button id="cfhEditorDelete" type="button" hidden onclick="cfhCalendarDelete()" class="cfh-editor-delete">Delete entry</button><p class="cfh-editor-note">Saved on this device only. Cloud sync is not enabled yet.</p>
+   <button id="cfhEditorDelete" type="button" hidden onclick="cfhCalendarDelete()" class="cfh-editor-delete">Delete entry</button><p class="cfh-editor-note">Saved on this device. Changes sync to your Cashflow Hub account when connected.</p>
    </div>
    <div class="cfh-editor-actions"><button type="button" onclick="cfhEditorClose()">Cancel</button><button class="cfh-editor-save" type="submit">Save</button></div>
   </form>
@@ -9966,7 +9969,7 @@ async function cfhPushRequest(action,body={}){
  const response=await fetch(CFH_PUSH_API+'?action='+action,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfhPushToken()},body:JSON.stringify(body)});
  const data=await response.json();if(!response.ok)throw Error(data.error||'Could not sync notifications');return data;
 }
-function cfhPushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
+function cfhPushSupported(){return !window.CFH_NATIVE&&'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
 async function cfhPushSync(force=false){
  if(!cfhPushSupported()||localStorage.getItem('cfh-push-enabled')!=='true')return;
  if(Notification.permission!=='granted'){cfhPushStatus('Permission needed. Tap Enable notifications.');return;}
@@ -10016,7 +10019,7 @@ function cfhPushMount(){
  const panel=document.createElement('div');panel.id='cfhPushPanel';panel.className='cfh-push-panel';
  panel.innerHTML='<strong>Notifications</strong><p id="cfhPushStatus" role="status">Enable notifications on this device to receive reminders.</p><div><button type="button" onclick="cfhEnablePush()">Enable notifications</button><button type="button" onclick="cfhTestPush()">Test</button><button type="button" onclick="cfhDisablePush()">Disable</button></div>';
  target.before(panel);
- if(!cfhPushSupported())cfhPushStatus('Push notifications are unavailable in this browser.');
+ if(window.CFH_NATIVE)cfhPushStatus('Enable native reminders on this device.');else if(!cfhPushSupported())cfhPushStatus('Push notifications are unavailable in this browser.');
  else if(localStorage.getItem('cfh-push-enabled')==='true')cfhPushSync(true);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',cfhPushMount);else cfhPushMount();

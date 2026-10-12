@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cashflow Hub</string>
+    <string name="title_activity_main">Cashflow Hub</string>
+    <string name="package_name">com.vergel.cashflowhub</string>
+    <string name="custom_url_scheme">com.vergel.cashflowhub</string>
+</resources>

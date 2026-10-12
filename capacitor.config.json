@@ -1,0 +1,7 @@
+{
+ "appId":"com.vergel.cashflowhub",
+ "appName":"Cashflow Hub",
+ "webDir":"www",
+ "android":{"allowMixedContent":false},
+ "plugins":{"LocalNotifications":{"smallIcon":"ic_stat_reminder","iconColor":"#1B1844"}}
+}
