@@ -66,10 +66,19 @@ self.addEventListener("fetch", function(event) {
 
 self.addEventListener("push",function(event){
  let data={};try{data=event.data?event.data.json():{};}catch(e){data={body:event.data?event.data.text():""};}
- event.waitUntil(self.registration.showNotification(data.title||"Cashflow Hub",{
- body:data.body||"You have a scheduled reminder.",icon:"/Cashflow-Hub/icon-192.png",badge:"/Cashflow-Hub/icon-192.png",
- tag:data.tag||"cfh-reminder",data:{url:data.url||"/Cashflow-Hub/?page=calendar"},vibrate:[150,80,150]
- }));
+ event.waitUntil((async function(){
+  let error='';
+  try{await self.registration.showNotification(data.title||"Cashflow Hub",{
+   body:data.body||"You have a scheduled reminder.",icon:"/Cashflow-Hub/icon-192.png",badge:"/Cashflow-Hub/icon-192.png",
+   tag:data.tag||"cfh-reminder",data:{url:data.url||"/Cashflow-Hub/?page=calendar"},vibrate:[150,80,150]
+  });}catch(e){error=e.message||String(e);}
+  if(data.receipt&&data.device)try{
+   await fetch("https://mssrsogwxvxyyjnavdiu.supabase.co/functions/v1/cfh-push?action=receipt",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({device:data.device,key:data.tag,receipt:data.receipt,error:error})
+   });
+  }catch(e){}
+ })());
 });
 self.addEventListener("notificationclick",function(event){
  event.notification.close();
