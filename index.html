@@ -1647,6 +1647,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhEditorForm .cfh-editor-row>div{min-width:0}
 #cfhEditorForm .cfh-editor-row input,#cfhEditorForm .cfh-editor-row select{box-sizing:border-box;width:100%;min-width:0;max-width:100%}
 #cfhEditorTimeText{max-width:calc(100% - 46px);white-space:nowrap;font-size:12px}
+
+#cfhEditorForm .cfh-event-deadline-row{align-items:end}
+#cfhEditorForm .cfh-event-deadline-row .cfh-event-all-day{box-sizing:border-box;width:100%;min-height:46px;margin:0!important;padding:12px;border:1px solid #c7c6d7;border-radius:11px;background:#fff;cursor:pointer;justify-content:center}
+#cfhEditorForm .cfh-event-all-day input{margin:0;padding:0;flex:0 0 18px;width:18px!important;height:18px}
+#cfhEditorForm .cfh-event-all-day:has(input:checked){background:var(--primary-soft);border-color:var(--primary)}
+#cfhEditorForm .cfh-event-all-day:focus-within{outline:2px solid var(--secondary);outline-offset:2px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -9852,8 +9858,8 @@ window.cfhRefreshTestTab = function(page) {
    <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
    <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat" onchange="cfhEventFieldsUpdate()"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option><option value="custom">Custom…</option></select>
 <div id="cfhEventCustomRepeat" hidden><div class="cfh-editor-row"><div><label for="cfhEventInterval">Repeat every</label><input id="cfhEventInterval" type="number" min="1" max="999" value="1"></div><div><label for="cfhEventUnit">Unit</label><select id="cfhEventUnit"><option value="daily">Days</option><option value="weekly">Weeks</option><option value="monthly">Months</option><option value="yearly">Years</option></select></div></div><label for="cfhEventRepeatEnd">Repeat until (optional)</label><input id="cfhEventRepeatEnd" type="date"></div>
-<label class="cfh-event-all-day"><input id="cfhEventAllDay" type="checkbox" onchange="cfhEventFieldsUpdate()"> All-day</label>
-<label for="cfhEventDeadline">Deadline (optional)</label><input id="cfhEventDeadline" type="date">
+
+<div class="cfh-editor-row cfh-event-deadline-row"><div><label for="cfhEventDeadline">Deadline (optional)</label><input id="cfhEventDeadline" type="date"></div><div><label class="cfh-event-all-day" for="cfhEventAllDay"><input id="cfhEventAllDay" type="checkbox" onchange="cfhEventFieldsUpdate()"><span>All-day</span></label></div></div>
    <label for="cfhEditorNotes">Notes (optional)</label><textarea id="cfhEditorNotes" rows="2" maxlength="500" placeholder="Details"></textarea>
    
     </div>
