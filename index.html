@@ -1641,6 +1641,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhCardPanel .cfh-event-panel-reminder{width:100%;border:0;border-radius:10px;padding:12px;background:#E6E6FA;color:var(--secondary)}
 #cfhCardPanel .cfh-event-panel-reminder[aria-pressed=true]{background:var(--primary)}
 #cfhCardPanel .cfh-card-panel-settings .cfh-event-panel-manage{background:var(--secondary);color:white;font-weight:700;border:0}
+
+/* Equal date/time columns in Add to Calendar, including narrow phones. */
+#cfhEditorForm .cfh-editor-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+#cfhEditorForm .cfh-editor-row>div{min-width:0}
+#cfhEditorForm .cfh-editor-row input,#cfhEditorForm .cfh-editor-row select{box-sizing:border-box;width:100%;min-width:0;max-width:100%}
+#cfhEditorTimeText{max-width:calc(100% - 46px);white-space:nowrap;font-size:12px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
