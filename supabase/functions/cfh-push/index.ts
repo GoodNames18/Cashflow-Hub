@@ -18,6 +18,13 @@ Deno.serve(async req=>{
  if(req.method==="OPTIONS")return new Response(null,{headers:cors});
  const {data:config,error:configError}=await db.from("cfh_push_config").select("*").eq("id",true).single();if(configError)throw configError;
  const action=new URL(req.url).searchParams.get("action");
+ if(action==="receipt"&&req.method==="POST"){
+ const raw=await req.text();if(raw.length>2000)return reply({error:"Invalid receipt"},400);
+ const body=JSON.parse(raw);if(!/^[a-f0-9]{64}$/.test(body.device||"")||typeof body.key!=="string"||typeof body.receipt!=="string")return reply({error:"Invalid receipt"},400);
+ const update=body.error?{display_error:String(body.error).slice(0,300)}:{displayed_at:new Date().toISOString(),display_error:null};
+ const result=await db.from("cfh_push_deliveries").update(update).eq("device_hash",body.device).eq("occurrence_key",body.key).eq("payload->>receipt",body.receipt);if(result.error)throw result.error;
+ return reply({recorded:true});
+ }
  if(req.method==="GET"&&action==="config")return reply({publicKey:config.public_key});
  if(action==="dispatch"){
  if(req.method!=="POST"||req.headers.get("authorization")!=="Bearer "+config.dispatch_token)return reply({error:"Unauthorized"},401);
@@ -33,7 +40,7 @@ Deno.serve(async req=>{
  const due=zonedInstant(today,event.time,device.timezone);
  if(due>minute+59999||due<minute-10*60000)continue;
  const occurrence_key=event.id+"|"+date+"|"+offset+"|"+event.time;
- const payload={title:event.title,body:(offset===0?"Today":offset===1?"Tomorrow":"In "+offset+" days")+" · "+date,tag:occurrence_key,url:"/Cashflow-Hub/?page=calendar",due};
+ const payload={receipt:crypto.randomUUID(),device:device.token_hash,title:event.title,body:(offset===0?"Today":offset===1?"Tomorrow":"In "+offset+" days")+" · "+date,tag:occurrence_key,url:"/Cashflow-Hub/?page=calendar",due};
  const result=await db.from("cfh_push_deliveries").upsert({device_hash:device.token_hash,occurrence_key,payload},{onConflict:"device_hash,occurrence_key",ignoreDuplicates:true});if(result.error)throw result.error;
  }
  }
@@ -43,7 +50,7 @@ Deno.serve(async req=>{
  for(const job of pending||[]){
  const device=(devices||[]).find(d=>d.token_hash===job.device_hash);if(!device)continue;
  try{
- await webpush.sendNotification(device.subscription,JSON.stringify(job.payload),{TTL:3600,timeout:10000});
+ await webpush.sendNotification(device.subscription,JSON.stringify(job.payload),{TTL:3600,timeout:10000,urgency:"high"});
  const r=await db.from("cfh_push_deliveries").update({status:"delivered",delivered_at:new Date().toISOString()}).eq("device_hash",job.device_hash).eq("occurrence_key",job.occurrence_key);if(r.error)throw r.error;sent++;
  }catch(e){
  failed++;if(e.statusCode===404||e.statusCode===410){await db.from("cfh_push_devices").delete().eq("token_hash",job.device_hash);}
@@ -59,7 +66,7 @@ Deno.serve(async req=>{
  if(action==="test"){
  const {data:device,error}=await db.from("cfh_push_devices").select("subscription").eq("token_hash",token_hash).single();if(error)return reply({error:"Enable notifications first"},404);
  webpush.setVapidDetails("https://goodnames18.github.io/Cashflow-Hub/",config.public_key,config.private_key);
- await webpush.sendNotification(device.subscription,JSON.stringify({title:"Cashflow Hub",body:"Notifications are working on this device.",tag:"cfh-push-test",url:"/Cashflow-Hub/?page=calendar"}),{TTL:60,timeout:10000});return reply({sent:true});
+ await webpush.sendNotification(device.subscription,JSON.stringify({title:"Cashflow Hub",body:"Notifications are working on this device.",tag:"cfh-push-test",url:"/Cashflow-Hub/?page=calendar"}),{TTL:60,timeout:10000,urgency:"high"});return reply({sent:true});
  }
  if(action==="disable"){const r=await db.from("cfh_push_devices").delete().eq("token_hash",token_hash);if(r.error)throw r.error;return reply({enabled:false});}
  const raw=await req.text();if(raw.length>500000)return reply({error:"Schedule data too large"},413);const body=JSON.parse(raw);
