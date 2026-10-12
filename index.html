@@ -1678,6 +1678,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhEditorForm .cfh-event-all-day:focus-within{outline:none}
 #cfhEditorForm .cfh-event-all-day:has(input:focus-visible){outline:2px solid var(--secondary);outline-offset:-3px}
 
+
+.cfh-outline-visual{display:flex;align-items:center;justify-content:center}
+.cfh-schedule-icon-badge{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.18);color:inherit}
+.cfh-schedule-icon-badge svg{display:block;width:29px;height:29px}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3904,7 +3908,12 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if(entry.cfhDisplayDate===todayKey)card.classList.add('is-scheduled-today');
         if(entry.cfhDisplayDate===highlightedDate&&entry.cfhDisplayDate>todayKey)card.classList.add('is-next-scheduled');
         const visual=document.createElement('div');visual.className='cfh-timeline-visual';
-        if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=cfhCardImage(entry);photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
+        if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=cfhCardImage(entry);photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else if(entry.type==='event'||entry.type==='task'){
+          visual.classList.add('cfh-outline-visual');
+          const badge=document.createElement('span');badge.className='cfh-schedule-icon-badge';badge.setAttribute('aria-hidden','true');
+          badge.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(entry.type==='task'?'<path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><rect x="9" y="2" width="6" height="4" rx="2"/><path d="m8 14 3 3 5-6"/>':'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 2v6M17 2v6M3 10h18"/>')+'</svg>';
+          visual.appendChild(badge);
+        }else{visual.textContent='📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
         const details=document.createElement('div');details.className='cfh-timeline-details';
         const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':entry.type==='task'?'Task':'Event';
