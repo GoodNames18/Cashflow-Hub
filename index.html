@@ -3431,6 +3431,26 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         field('Repeat until (optional)','repeatUntil','date');field('Deadline (optional)','deadline','date');field('Notes (optional)','notes','textarea');
         content.querySelector('[data-field="repeat"]').addEventListener('change',()=>cfhEventPanelOpen(entry,true));
         cfhCardPanelSaveDraft=save;
+        const reminderDays=document.createElement('fieldset');reminderDays.className='cfh-card-reminder-days';
+        const legend=document.createElement('legend');legend.textContent='Reminder days';reminderDays.append(legend);
+        const allowedDays=[7,5,3,2,1,0];
+        for(const day of allowedDays){
+          const button=document.createElement('button');button.type='button';button.className='cfh-reminder-day-box';
+          button.textContent=day===0?'Same day':day+' '+(day===1?'day':'days')+' before';
+          button.setAttribute('aria-pressed',String((Array.isArray(entry.reminderDays)?entry.reminderDays:allowedDays).includes(day)));
+          button.onclick=()=>{
+            save();
+            const index=cfhCalendarEntries.findIndex(e=>e.id===entry.id);if(index<0)return;
+            const previous=cfhCalendarEntries[index],days=new Set(Array.isArray(previous.reminderDays)?previous.reminderDays:allowedDays);
+            if(days.has(day))days.delete(day);else days.add(day);
+            const updated={...previous,reminderDays:allowedDays.filter(value=>days.has(value))};
+            cfhCalendarEntries[index]=updated;
+            if(!cfhCalendarPersist()){cfhCalendarEntries[index]=previous;return;}
+            entry={...entry,...updated};button.setAttribute('aria-pressed',String(days.has(day)));cfhCalendarRender();
+          };
+          reminderDays.append(button);
+        }
+        content.append(reminderDays);
         const actions=document.createElement('div');actions.className='cfh-event-panel-actions';
         const duplicate=document.createElement('button');duplicate.type='button';duplicate.textContent='Duplicate '+kind;
         duplicate.onclick=()=>{save();cfhCardPanelClose();cfhCalendarEdit(entry.id);cfhEditingId=null;document.getElementById('cfhEditorTitle').textContent='Duplicate '+kind;document.querySelector('.cfh-editor-save').textContent='Save';document.getElementById('cfhEditorDelete').hidden=true;};
