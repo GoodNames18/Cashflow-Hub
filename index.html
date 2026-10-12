@@ -3348,7 +3348,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const icon=document.createElement('button');icon.type='button';icon.className='cfh-event-panel-icon';icon.textContent=entry.type==='task'?'🔧':'📅';icon.setAttribute('aria-label','Close '+kind+' details');icon.onclick=cfhCardPanelClose;
       const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=(managing?'Manage '+kind+': ':'')+entry.title;
       dialog.append(title);
-      if(!managing)dialog.append(icon);
+
       const content=document.createElement('div');content.className='cfh-event-panel-content';dialog.append(content);
       const row=(label,value)=>{const box=document.createElement('div');box.className='cfh-card-panel-date';const name=document.createElement('small');name.textContent=label;const text=document.createElement('strong');text.textContent=value;box.append(name,text);return box;};
       const save=()=>{
