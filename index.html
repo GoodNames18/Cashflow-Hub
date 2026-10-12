@@ -3364,8 +3364,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         entry={...entry,...updated};cfhCalendarRender();
       };
       if(!managing){
-        const dates=document.createElement('div');dates.className='cfh-card-panel-dates';dates.append(row('Date',cfhWeekdayDateText(entry.cfhDisplayDate||entry.date)),row('Time',entry.allDay?'All-day':entry.time?cfhTime12Text(entry.time):'Not set'));content.append(dates);
-        for(const [label,value]of [['Repeat',entry.repeat==='custom'?('Every '+(entry.repeatInterval||1)+' '+(entry.repeatUnit||'daily')):entry.repeat||'none'],['Deadline',entry.deadline?cfhWeekdayDateText(entry.deadline):''],['Notes',entry.notes||'']]){
+        const dates=document.createElement('div');dates.className='cfh-card-panel-dates';dates.append(row(kind+' Date',cfhWeekdayDateText(entry.cfhDisplayDate||entry.date)),row(kind+' Time',entry.allDay?'All-day':entry.time?cfhTime12Text(entry.time):'Not set'));content.append(dates);
+        for(const [label,value]of [['Notes',entry.notes||''],['Repeat',entry.repeat==='custom'?('Every '+(entry.repeatInterval||1)+' '+(entry.repeatUnit||'daily')):entry.repeat||'none'],['Deadline',entry.deadline?cfhWeekdayDateText(entry.deadline):'']]){
           if(!value)continue;const box=document.createElement('div');box.className='cfh-card-panel-row';const text=document.createElement('div');const strong=document.createElement('strong');strong.textContent=label;const small=document.createElement('small');small.textContent=value;text.append(strong,small);box.append(text);content.append(box);
         }
       }else{
