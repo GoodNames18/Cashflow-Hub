@@ -29,7 +29,7 @@ Deno.serve(async req=>{
  for(let offset=0;offset<=7;offset++){
  const date=plusDay(today,offset);
  for(const event of notificationEntries(device.snapshot,date)){
- if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(event.time)||!event.days.includes(offset))continue;
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(event.time)||!event.days.includes(offset))continue;
  const due=zonedInstant(today,event.time,device.timezone);
  if(due>minute+59999||due<minute-10*60000)continue;
  const occurrence_key=event.id+"|"+date+"|"+offset+"|"+event.time;
