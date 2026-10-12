@@ -1630,6 +1630,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #calendarPage .cfh-calendar-day.is-today.is-selected{background:var(--secondary,#1d1845);border-color:var(--secondary,#1d1845)}
 #calendarPage .cfh-calendar-day.is-selected .cfh-calendar-day-number,#calendarPage .cfh-calendar-day.is-today.is-selected::after{color:#fff}
 #calendarPage .cfh-calendar-grid{touch-action:pan-y}
+
+#cfhCardPanel .cfh-event-panel-icon{display:block;width:100%;border:0;background:transparent;font-size:54px;padding:0;cursor:pointer}
+#cfhCardPanel .cfh-event-panel-field{display:block;margin:14px 0;font-size:13px}
+#cfhCardPanel .cfh-event-panel-field input,#cfhCardPanel .cfh-event-panel-field select,#cfhCardPanel .cfh-event-panel-field textarea{box-sizing:border-box;width:100%;min-width:0;margin-top:6px;padding:12px;border:1px solid #d5d1ef;border-radius:11px;background:#E6E6FA;color:#1B1844;font:13px Arial}
+#cfhCardPanel .cfh-event-panel-field input[type=checkbox]{width:auto}
+#cfhCardPanel .cfh-event-panel-field textarea{min-height:90px;resize:vertical}
+#cfhCardPanel .cfh-event-panel-actions{display:flex;gap:8px}
+#cfhCardPanel .cfh-event-panel-actions button{flex:1;border:0;border-radius:10px;padding:12px 5px;background:#E6E6FA;color:var(--secondary);font-size:13px}
+#cfhCardPanel .cfh-event-panel-reminder{width:100%;border:0;border-radius:10px;padding:12px;background:#E6E6FA;color:var(--secondary)}
+#cfhCardPanel .cfh-event-panel-reminder[aria-pressed=true]{background:var(--primary)}
+#cfhCardPanel .cfh-card-panel-settings .cfh-event-panel-manage{background:var(--secondary);color:white;font-weight:700;border:0}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -3325,6 +3336,72 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       cfhCalendarRender();
     }
 
+
+    function cfhEventPanelOpen(entry,managing=false){
+      const existing=document.getElementById('cfhCardPanel');if(existing)existing.remove();
+      cfhCardPanelSaveDraft=null;
+      if(!managing)cfhCardPanelTrigger=document.activeElement;
+      const kind=entry.type==='task'?'Task':entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event';
+      const overlay=document.createElement('div');overlay.id='cfhCardPanel';overlay.className='cfh-card-panel-overlay';
+      const dialog=document.createElement('div');dialog.className='cfh-card-panel'+(managing?' is-managing':'');
+      dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','cfhCardPanelTitle');
+      const icon=document.createElement('button');icon.type='button';icon.className='cfh-event-panel-icon';icon.textContent=entry.type==='task'?'🔧':'📅';icon.setAttribute('aria-label','Close '+kind+' details');icon.onclick=cfhCardPanelClose;
+      const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=(managing?'Manage '+kind+': ':'')+entry.title;
+      dialog.append(icon,title);
+      const content=document.createElement('div');content.className='cfh-event-panel-content';dialog.append(content);
+      const row=(label,value)=>{const box=document.createElement('div');box.className='cfh-card-panel-date';const name=document.createElement('small');name.textContent=label;const text=document.createElement('strong');text.textContent=value;box.append(name,text);return box;};
+      const save=()=>{
+        const index=cfhCalendarEntries.findIndex(e=>e.id===entry.id);if(index<0)return;
+        const updated={...cfhCalendarEntries[index]};
+        for(const input of content.querySelectorAll('[data-field]')){
+          if(!input.checkValidity())return;
+          updated[input.dataset.field]=input.type==='checkbox'?input.checked:input.value;
+        }
+        if(updated.allDay)updated.time='';
+        const previous=cfhCalendarEntries[index];cfhCalendarEntries[index]=updated;
+        if(!cfhCalendarPersist()){cfhCalendarEntries[index]=previous;return;}
+        entry={...entry,...updated};cfhCalendarRender();
+      };
+      if(!managing){
+        const dates=document.createElement('div');dates.className='cfh-card-panel-dates';dates.append(row('Date',cfhWeekdayDateText(entry.cfhDisplayDate||entry.date)),row('Time',entry.allDay?'All-day':entry.time?cfhTime12Text(entry.time):'Not set'));content.append(dates);
+        for(const [label,value]of [['Repeat',entry.repeat==='custom'?('Every '+(entry.repeatInterval||1)+' '+(entry.repeatUnit||'daily')):entry.repeat||'none'],['Deadline',entry.deadline?cfhWeekdayDateText(entry.deadline):''],['Notes',entry.notes||'']]){
+          if(!value)continue;const box=document.createElement('div');box.className='cfh-card-panel-row';const text=document.createElement('div');const strong=document.createElement('strong');strong.textContent=label;const small=document.createElement('small');small.textContent=value;text.append(strong,small);box.append(text);content.append(box);
+        }
+      }else{
+        const field=(label,key,type='text',options=null)=>{
+          const wrap=document.createElement('label');wrap.className='cfh-event-panel-field';wrap.textContent=label;
+          const input=document.createElement(options?'select':type==='textarea'?'textarea':'input');
+          if(options)for(const [value,text]of options)input.add(new Option(text,value));else if(type!=='textarea')input.type=type;
+          input.dataset.field=key;if(type==='checkbox')input.checked=!!entry[key];else input.value=entry[key]??'';
+          if(key==='title'||key==='date')input.required=true;
+          if(key==='repeatInterval'){input.min='1';input.max='999';}
+          let display=input;
+          if(type==='date')display=cfhWeekdayDateField(input);
+          if(type==='time'){display=document.createElement('div');display.className='cfh-notification-time-row';const text=document.createElement('span');text.className='cfh-time-period';text.textContent=cfhTime12Text(input.value);input.addEventListener('input',()=>text.textContent=cfhTime12Text(input.value));display.append(input,text);}
+          input.addEventListener('change',save);if(type==='text'||type==='textarea')input.addEventListener('input',save);
+          wrap.append(display);content.append(wrap);return input;
+        };
+        field('Title','title');field('Date','date','date');field('Time (optional)','time','time');field('All-day','allDay','checkbox');
+        field('Repeat','repeat','text',[['none','Does not repeat'],['daily','Every day'],['weekly','Every week'],['monthly','Every month'],['yearly','Every year'],['custom','Custom']]);
+        if(entry.repeat==='custom'){field('Repeat interval','repeatInterval','number');field('Repeat unit','repeatUnit','text',[['daily','Days'],['weekly','Weeks'],['monthly','Months'],['yearly','Years']]);}
+        field('Repeat until (optional)','repeatUntil','date');field('Deadline (optional)','deadline','date');field('Notes (optional)','notes','textarea');
+        content.querySelector('[data-field="repeat"]').addEventListener('change',()=>cfhEventPanelOpen(entry,true));
+        cfhCardPanelSaveDraft=save;
+        const actions=document.createElement('div');actions.className='cfh-event-panel-actions';
+        const duplicate=document.createElement('button');duplicate.type='button';duplicate.textContent='Duplicate '+kind;
+        duplicate.onclick=()=>{save();cfhCardPanelClose();cfhCalendarEdit(entry.id);cfhEditingId=null;document.getElementById('cfhEditorTitle').textContent='Duplicate '+kind;document.querySelector('.cfh-editor-save').textContent='Save';document.getElementById('cfhEditorDelete').hidden=true;};
+        const remove=document.createElement('button');remove.type='button';remove.textContent='Delete '+kind;
+        remove.onclick=()=>{if(!confirm('Delete this '+kind.toLowerCase()+' and its repeating schedules?'))return;const previous=cfhCalendarEntries;cfhCalendarEntries=previous.filter(e=>e.id!==entry.id);if(!cfhCalendarPersist()){cfhCalendarEntries=previous;return;}cfhCardPanelSaveDraft=null;cfhCardPanelClose();cfhCalendarRender();};
+        actions.append(duplicate,remove);content.append(actions);
+      }
+      const reminder=document.createElement('button');reminder.type='button';reminder.className='cfh-event-panel-reminder';reminder.textContent=cfhBellEnabled(entry.id)?'🔔 Reminders':'🔕 Reminders';reminder.setAttribute('aria-pressed',String(cfhBellEnabled(entry.id)));
+      reminder.onclick=()=>{if(managing)save();cfhToggleBell(entry.id);cfhEventPanelOpen(entry,managing);};content.append(reminder);
+      const footer=document.createElement('div');footer.className='cfh-card-panel-settings';const manage=document.createElement('button');manage.type='button';manage.className='cfh-event-panel-manage';manage.textContent='Manage '+kind;manage.onclick=()=>{if(managing)save();cfhEventPanelOpen(entry,!managing);};footer.append(manage);dialog.append(footer);
+      overlay.onclick=e=>{if(e.target===overlay)cfhCardPanelClose();};
+      overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cfhCardPanelClose();}if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,select,textarea')].filter(x=>x.getClientRects().length);if(e.shiftKey&&document.activeElement===items[0]){e.preventDefault();items.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===items.at(-1)){e.preventDefault();items[0].focus();}}};
+      overlay.append(dialog);document.body.append(overlay);manage.focus();
+    }
+
     function cfhCalendarLegacyEventOptions(entry) {
       const isAuto=!!entry.cfhAuto;
       if(entry.cfhEastwestCycle){cfhEastwestConfirmDate(entry);return;}
@@ -3429,7 +3506,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
     let cfhCardPanelManaging=false;
     function cfhCardPanelOpen(entry){
-      if(!entry.cfhAuto&&!entry.cfhCard15){cfhCalendarLegacyEventOptions(entry);return;}
+      if(!entry.cfhAuto&&!entry.cfhCard15){cfhEventPanelOpen(entry);return;}
       cfhCardPanelTrigger=document.activeElement;cfhCardPanelEntry=entry;cfhCardPanelManaging=false;
       cfhEditSession={id:'edit-'+Date.now()+'-'+Math.random().toString(36).slice(2),bank:cfhCardKey(entry),cycle:cfhEntryCycle(entry),scope:'current',patch:{}};
       cfhCardPanelRender();
