@@ -63,3 +63,20 @@ self.addEventListener("fetch", function(event) {
       })
   );
 });
+
+self.addEventListener("push",function(event){
+ let data={};try{data=event.data?event.data.json():{};}catch(e){data={body:event.data?event.data.text():""};}
+ event.waitUntil(self.registration.showNotification(data.title||"Cashflow Hub",{
+ body:data.body||"You have a scheduled reminder.",icon:"/Cashflow-Hub/icon-192.png",badge:"/Cashflow-Hub/icon-192.png",
+ tag:data.tag||"cfh-reminder",data:{url:data.url||"/Cashflow-Hub/?page=calendar"},vibrate:[150,80,150]
+ }));
+});
+self.addEventListener("notificationclick",function(event){
+ event.notification.close();
+ const target=new URL(event.notification.data?.url||"/Cashflow-Hub/?page=calendar",self.location.origin);
+ if(target.origin!==self.location.origin)return;
+ event.waitUntil(self.clients.matchAll({type:"window",includeUncontrolled:true}).then(async clients=>{
+ for(const client of clients)if(client.url.startsWith(self.location.origin+"/Cashflow-Hub/")){await client.navigate(target.href);return client.focus();}
+ return self.clients.openWindow(target.href);
+ }));
+});
