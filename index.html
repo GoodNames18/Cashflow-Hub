@@ -1684,6 +1684,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-schedule-icon-badge svg{display:block;width:29px;height:29px}
 .cfh-schedule-icon-badge.cfh-glossy-icon{background:transparent;border-radius:0}
 .cfh-glossy-icon img{display:block;width:44px;height:44px;object-fit:contain}
+
+.cfh-push-panel{padding:14px;margin:14px 0;border:1px solid #d6d3ef;border-radius:14px;background:#E6E6FA;color:#1B1844}
+.cfh-push-panel strong{font-size:15px}.cfh-push-panel p{font-size:12px;margin:8px 0}
+.cfh-push-panel>div{display:flex;gap:6px;flex-wrap:wrap}
+.cfh-push-panel button{border:0;border-radius:9px;padding:10px 12px;background:#1B1844;color:#fff;font:12px Arial,sans-serif;cursor:pointer}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 </head>
@@ -2859,6 +2864,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function cfhCalendarRender() {
+      if(typeof cfhPushQueue==='function')cfhPushQueue();
       const grid = document.getElementById("cfhCalendarGrid");
       const title = document.getElementById("cfhCalendarMonthTitle");
       if (!grid || !title) return;
@@ -3964,7 +3970,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           }
           card.classList.add('has-notification-time');
         }
-        const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';const bellOn='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';const bellOff='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-10.7-3.7M6 8c0 7-3 7-3 9h14"/><path d="M10 21h4M3 3l18 18"/></svg>';bell.innerHTML=cfhBellEnabled(entry.id)?bellOn:bellOff;bell.title=cfhBellEnabled(entry.id)?'Reminders ON (delivery not enabled)':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
+        const bell=document.createElement('button');bell.type='button';bell.className='cfh-timeline-action';const bellOn='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>';const bellOff='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-10.7-3.7M6 8c0 7-3 7-3 9h14"/><path d="M10 21h4M3 3l18 18"/></svg>';bell.innerHTML=cfhBellEnabled(entry.id)?bellOn:bellOff;bell.title=cfhBellEnabled(entry.id)?'Reminders ON':'Reminders OFF';bell.setAttribute('aria-label',bell.title);bell.onclick=()=>cfhToggleBell(entry.id);
         const menu=document.createElement('button');menu.type='button';menu.className='cfh-timeline-action';menu.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>';menu.title='Event options';menu.onclick=()=>cfhCalendarEventOptions(entry);
         card.setAttribute('role','button');card.tabIndex=0;card.setAttribute('aria-label','Open '+entry.title+' details');
         card.onclick=()=>cfhCalendarEventOptions(entry);
@@ -9943,6 +9949,81 @@ window.cfhRefreshTestTab = function(page) {
   </form>
  </div>
 </div>
+
+<script>
+const CFH_PUSH_API='https://mssrsogwxvxyyjnavdiu.supabase.co/functions/v1/cfh-push';
+const CFH_PUSH_KEYS=["cfh_card_panel_preferences_v1","cfh_eastwest_cycle_overrides_v1","cfh_calendar_bells_v1","cfh_calendar_event_deletions_v1","cfh_metrobank_due_overrides_v1","cfh_metrobank_status_v1","cfh_calendar_entries_v1"];
+let cfhPushTimer=null,cfhPushLastSnapshot='',cfhPushBusy=false;
+function cfhPushToken(){
+ let token=localStorage.getItem('cfh-push-device-token');
+ if(!token){token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(v=>v.toString(16).padStart(2,'0')).join('');localStorage.setItem('cfh-push-device-token',token);}
+ return token;
+}
+function cfhPushStatus(text){const el=document.getElementById('cfhPushStatus');if(el)el.textContent=text;}
+function cfhPushSnapshot(){const data={};for(const key of CFH_PUSH_KEYS)data[key]=localStorage.getItem(key)||(key==='cfh_calendar_entries_v1'?'[]':'');return data;}
+async function cfhPushRequest(action,body={}){
+ const response=await fetch(CFH_PUSH_API+'?action='+action,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfhPushToken()},body:JSON.stringify(body)});
+ const data=await response.json();if(!response.ok)throw Error(data.error||'Could not sync notifications');return data;
+}
+function cfhPushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
+async function cfhPushSync(force=false){
+ if(!cfhPushSupported()||localStorage.getItem('cfh-push-enabled')!=='true')return;
+ if(Notification.permission!=='granted'){cfhPushStatus('Permission needed. Tap Enable notifications.');return;}
+ if(cfhPushBusy){cfhPushQueue();return;}
+ cfhPushBusy=true;
+ try{
+ const registration=await navigator.serviceWorker.getRegistration('/Cashflow-Hub/');
+ const subscription=await registration?.pushManager.getSubscription();
+ if(!subscription){cfhPushStatus('Tap Enable notifications to reconnect this device.');return;}
+ const snapshot=cfhPushSnapshot(),timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Asia/Manila',signature=JSON.stringify({snapshot,timezone});
+ if(!force&&signature===cfhPushLastSnapshot)return;
+ cfhPushStatus('Syncing reminders…');await cfhPushRequest('sync',{subscription:subscription.toJSON(),snapshot,timezone});
+ cfhPushLastSnapshot=signature;cfhPushStatus('Notifications enabled · Reminders synced');
+ }catch(e){cfhPushStatus('Reminders not synced. Tap Enable to retry.');console.error('Reminder sync:',e.message);}
+ finally{cfhPushBusy=false;}
+}
+function cfhPushQueue(){clearTimeout(cfhPushTimer);cfhPushTimer=setTimeout(()=>cfhPushSync(),800);}
+async function cfhEnablePush(){
+ if(!cfhPushSupported()){cfhPushStatus('Push notifications are unavailable in this browser.');return;}
+ try{
+ const permission=await Notification.requestPermission();
+ if(permission!=='granted'){cfhPushStatus('Allow notifications in this browser’s site settings.');return;}
+ cfhPushStatus('Connecting notifications…');
+ const response=await fetch(CFH_PUSH_API+'?action=config',{cache:'no-store'});if(!response.ok)throw Error('Service unavailable');const config=await response.json();
+ const registration=await navigator.serviceWorker.register('/Cashflow-Hub/sw.js',{scope:'/Cashflow-Hub/'});
+ await registration.update();await navigator.serviceWorker.ready;
+ let subscription=await registration.pushManager.getSubscription();
+ const binary=atob(config.publicKey.replace(/-/g,'+').replace(/_/g,'/')),key=Uint8Array.from(binary,c=>c.charCodeAt(0));
+ if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:key});
+ localStorage.setItem('cfh-push-enabled','true');await cfhPushSync(true);
+ }catch(e){cfhPushStatus('Could not enable notifications. Please try again.');console.error('Enable notifications:',e.message);}
+}
+async function cfhTestPush(){
+ try{await cfhPushRequest('test');cfhPushStatus('Test sent. Check your device notifications.');}
+ catch(e){cfhPushStatus(e.message);}
+}
+async function cfhDisablePush(){
+ try{
+ await cfhPushRequest('disable');
+ localStorage.removeItem('cfh-push-enabled');cfhPushLastSnapshot='';
+ const registration=await navigator.serviceWorker.getRegistration('/Cashflow-Hub/');const sub=await registration?.pushManager.getSubscription();if(sub)await sub.unsubscribe();
+ cfhPushStatus('Notifications disabled on this device');
+ }catch(e){cfhPushStatus('Could not disable notifications. Please retry.');}
+}
+function cfhPushMount(){
+ const target=document.getElementById('cfhCalendarSchedule');if(!target||document.getElementById('cfhPushPanel'))return;
+ const panel=document.createElement('div');panel.id='cfhPushPanel';panel.className='cfh-push-panel';
+ panel.innerHTML='<strong>Notifications</strong><p id="cfhPushStatus" role="status">Enable notifications on this device to receive reminders.</p><div><button type="button" onclick="cfhEnablePush()">Enable notifications</button><button type="button" onclick="cfhTestPush()">Test</button><button type="button" onclick="cfhDisablePush()">Disable</button></div>';
+ target.before(panel);
+ if(!cfhPushSupported())cfhPushStatus('Push notifications are unavailable in this browser.');
+ else if(localStorage.getItem('cfh-push-enabled')==='true')cfhPushSync(true);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',cfhPushMount);else cfhPushMount();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){cfhPushMount();cfhPushQueue();}});
+window.addEventListener('storage',cfhPushQueue);window.addEventListener('online',()=>cfhPushSync(true));
+setInterval(()=>cfhPushSync(),60000);
+</script>
+
 </body>
 </html>
 
