@@ -3347,7 +3347,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-labelledby','cfhCardPanelTitle');
       const icon=document.createElement('button');icon.type='button';icon.className='cfh-event-panel-icon';icon.textContent=entry.type==='task'?'🔧':'📅';icon.setAttribute('aria-label','Close '+kind+' details');icon.onclick=cfhCardPanelClose;
       const title=document.createElement('h2');title.id='cfhCardPanelTitle';title.textContent=(managing?'Manage '+kind+': ':'')+entry.title;
-      dialog.append(icon,title);
+      dialog.append(title);
+      if(!managing)dialog.append(icon);
       const content=document.createElement('div');content.className='cfh-event-panel-content';dialog.append(content);
       const row=(label,value)=>{const box=document.createElement('div');box.className='cfh-card-panel-date';const name=document.createElement('small');name.textContent=label;const text=document.createElement('strong');text.textContent=value;box.append(name,text);return box;};
       const save=()=>{
@@ -3403,7 +3404,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const enabled=cfhBellEnabled(entry.id);reminder.setAttribute('role','switch');reminder.setAttribute('aria-checked',String(enabled));reminder.setAttribute('aria-label',enabled?'Turn reminder preference off':'Turn reminder preference on');
       reminder.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'+(!enabled?'<path d="M3 3l18 18"/>':'')+'</svg>';
       reminder.onclick=()=>{if(managing)save();cfhToggleBell(entry.id);cfhEventPanelOpen(entry,managing);};
-      reminderRow.append(reminderText,reminder);content.append(reminderRow);
+      reminderRow.append(reminderText,reminder);if(!managing)content.append(reminderRow);
       const footer=document.createElement('div');footer.className='cfh-card-panel-settings';const manage=document.createElement('button');manage.type='button';manage.className='cfh-event-panel-manage';manage.textContent='Manage '+kind;manage.onclick=()=>{if(managing)save();cfhEventPanelOpen(entry,!managing);};footer.append(manage);dialog.append(footer);
       overlay.onclick=e=>{if(e.target===overlay)cfhCardPanelClose();};
       overlay.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();cfhCardPanelClose();}if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,select,textarea')].filter(x=>x.getClientRects().length);if(e.shiftKey&&document.activeElement===items[0]){e.preventDefault();items.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===items.at(-1)){e.preventDefault();items[0].focus();}}};
