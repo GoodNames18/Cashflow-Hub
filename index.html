@@ -4109,6 +4109,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
     function cfhRestoreNavigationState() {
       try {
+        if(new URLSearchParams(location.search).get('page')==='calendar')return {page:'calendar',home:'gcash',scrollY:0};
         const raw = sessionStorage.getItem('cashflow-hub:reload-position');
         const stored = JSON.parse(sessionStorage.getItem(CFH_NAV_KEY) || localStorage.getItem(CFH_NAV_KEY) || 'null');
         const legacy = raw ? JSON.parse(raw) : null;
