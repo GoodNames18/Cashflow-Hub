@@ -3784,11 +3784,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
         if(entry.cfhAuto||entry.cfhCard15){const photo=document.createElement('img');photo.src=cfhCardImage(entry);photo.className='cfh-metrobank-thumb';photo.alt=entry.cfhAuto?'Metrobank Travel Signature Visa':'EastWest Visa Platinum';visual.appendChild(photo);}else{visual.textContent=entry.type==='task'?'🔧':'📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
         const details=document.createElement('div');details.className='cfh-timeline-details';
-        const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='task'?'Task':'Calendar';
+        const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':entry.type==='task'?'Task':'Event';
         const name=document.createElement('strong');name.textContent=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).card:entry.title;
         const time=document.createElement('small');time.textContent=cardBank?(entry.time||''):(entry.allDay?'All-day · ':entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');if(cardBank&&!entry.time)time.hidden=true;
         time.textContent=cardBank?'':(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');time.hidden=!!cardBank;
-        if(!cardBank){time.textContent=(entry.allDay?'All-day':entry.time?cfhTime12Text(entry.time):'')+(entry.deadline?' · Deadline '+cfhWeekdayDateText(entry.deadline):'');time.hidden=!time.textContent;}
+        if(!cardBank){time.textContent=[entry.allDay?'All-day':'',entry.deadline?'Deadline '+cfhWeekdayDateText(entry.deadline):''].filter(Boolean).join(' · ');time.hidden=!time.textContent;}
         details.append(bank,name,time);
         const notificationTime=cfhCardNotificationTime(entry);
         const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime;
