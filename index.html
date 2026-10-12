@@ -1328,6 +1328,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-timeline-event:before{left:-14px;width:10px;height:10px;background:#4962a8;z-index:1}
 .cfh-timeline-event.is-statement:before{background:#8244cf}
 .cfh-timeline-event.is-due:before{background:#df4d43}
+.cfh-timeline-event.is-task{background:#2eaf62}
+.cfh-timeline-event.is-task:before{background:#2eaf62}
 
 /* Highlight today's event date, or the next upcoming event date. */
 .cfh-timeline-date.is-today small{color:#000}
@@ -3898,7 +3900,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           date.append(weekday,number);
         }
         lastDate=entry.cfhDisplayDate;
-        const card=document.createElement('div');card.className='cfh-timeline-event '+(entry.type==='statement'?'is-statement':entry.type==='due'?'is-due':'is-other-event');
+        const card=document.createElement('div');card.className='cfh-timeline-event '+(entry.type==='statement'?'is-statement':entry.type==='due'?'is-due':entry.type==='task'?'is-task':'is-other-event');
         if(entry.cfhDisplayDate===todayKey)card.classList.add('is-scheduled-today');
         if(entry.cfhDisplayDate===highlightedDate&&entry.cfhDisplayDate>todayKey)card.classList.add('is-next-scheduled');
         const visual=document.createElement('div');visual.className='cfh-timeline-visual';
