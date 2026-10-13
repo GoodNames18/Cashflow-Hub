@@ -5,7 +5,8 @@
   "main": "sw.js",
   "scripts": {
     "build:android-web": "node mobile/build.mjs",
-    "test": "node --test mobile/tests/*.test.mjs"
+    "test": "node --test mobile/tests/*.test.mjs",
+    "postinstall": "node mobile/patch-android-notifications.mjs"
   },
   "repository": {
     "type": "git",
