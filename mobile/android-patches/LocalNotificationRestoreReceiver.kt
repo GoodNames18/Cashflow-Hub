@@ -12,7 +12,7 @@ class LocalNotificationRestoreReceiver : BroadcastReceiver() {
   if(user==null||!user.isUserUnlocked)return
   CfhAlarmJournal.record(context,"boot-received",-1,detail=intent.action ?: "unknown")
   try {
-   val scheduler=context.getSystemService(JobScheduler::class.java)
+   val scheduler=context.getSystemService(JobScheduler::class.java) ?: throw IllegalStateException("JobScheduler unavailable")
    val job=JobInfo.Builder(734201,ComponentName(context,CfhReminderRestoreJob::class.java))
     .setOverrideDeadline(0).build()
    val accepted=scheduler.schedule(job)==JobScheduler.RESULT_SUCCESS

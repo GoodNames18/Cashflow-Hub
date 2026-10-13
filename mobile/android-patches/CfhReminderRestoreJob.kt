@@ -13,7 +13,7 @@ class CfhReminderRestoreJob : JobService() {
   Thread({
    var retry=false
    try {
-    if(!getSystemService(UserManager::class.java).isUserUnlocked)throw IllegalStateException("Device locked")
+    if(getSystemService(UserManager::class.java)?.isUserUnlocked != true)throw IllegalStateException("Device locked")
     CfhAlarmJournal.record(this,"restore-started",-1)
     val storage=NotificationStorage(this)
     val now=System.currentTimeMillis()
