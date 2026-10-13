@@ -3547,13 +3547,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     }
 
     function cfhCardKey(entry){return entry.cfhDuplicate|| (entry.cfhCard15?'eastwest':entry.cfhAuto?'metrobank':'');}
-    let cfhCardImageCatalog=[];
-    async function cfhLoadCardImages(){
-      const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/storage/v1/object/public/cfh-card-images/catalog.json',{cache:'no-store'});
-      if(!response.ok)throw new Error('Card images unavailable');
-      const data=await response.json();
-      cfhCardImageCatalog=(Array.isArray(data.images)?data.images:[]).sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true}));
-      return cfhCardImageCatalog;
+    let cfhCardImageCatalog=[],cfhCardImageCatalogRequest=null;
+    function cfhLoadCardImages(){
+      if(cfhCardImageCatalogRequest)return cfhCardImageCatalogRequest;
+      cfhCardImageCatalogRequest=(async()=>{
+        const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/storage/v1/object/public/cfh-card-images/catalog.json',{cache:'no-store'});
+        if(!response.ok)throw new Error('Card images unavailable');
+        const data=await response.json();
+        cfhCardImageCatalog=(Array.isArray(data.images)?data.images:[]).sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true}));
+        return cfhCardImageCatalog;
+      })().catch(error=>{cfhCardImageCatalogRequest=null;throw error;});
+      return cfhCardImageCatalogRequest;
     }
     cfhLoadCardImages().then(()=>{if(typeof cfhCalendarRender==='function')cfhCalendarRender();}).catch(()=>{});
     function cfhCardImage(entry){
@@ -3626,10 +3630,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const update=()=>{text.textContent=cfhStatementDayText(input.value);};
       input.addEventListener('input',update);input.addEventListener('change',update);update();wrap.append(input,text);return wrap;
     }
+    const cfhWeekdayDateFormatter=new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
     function cfhWeekdayDateText(value){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';
       const [y,m,d]=value.split('-').map(Number),date=new Date(y,m-1,d);
-      return date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+      return cfhWeekdayDateFormatter.format(date);
     }
     function cfhWeekdayDateField(input){
       const wrap=document.createElement('div');wrap.className='cfh-weekday-date-field';
@@ -3707,6 +3712,19 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       rangeForm.append(fields);
       rangeForm.onsubmit=e=>e.preventDefault();
       addRow('Schedule Date Range',range?format(range.start)+' — '+format(range.end):'Set the start and end dates in Manage Card.');
+      if(!cfhCardPanelManaging){
+        cfhCardPanelSaveDraft=null;
+        const settings=document.createElement('details');settings.className='cfh-card-panel-settings';
+        const summary=document.createElement('summary');summary.textContent='Manage Card';summary.setAttribute('aria-expanded','false');settings.append(summary);dialog.append(settings);
+        summary.onclick=e=>{e.preventDefault();cfhCardPanelManaging=true;cfhCardPanelRender();};
+        overlay.append(dialog);document.body.append(overlay);
+        overlay.addEventListener('click',e=>{if(e.target===overlay)cfhCardPanelClose();});
+        overlay.addEventListener('keydown',e=>{
+          if(e.key==='Escape'){e.preventDefault();e.stopPropagation();cfhCardPanelClose();}
+          if(e.key==='Tab'){const items=[...dialog.querySelectorAll('button,input,select,summary,[role="button"]')].filter(el=>el.getClientRects().length);const first=items[0],last=items[items.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+        });
+        photo.focus({preventScroll:true});return;
+      }
       const settings=document.createElement('details');settings.className='cfh-card-panel-settings';const summary=document.createElement('summary');summary.textContent='Manage Card';settings.append(summary);settings.append(rangeForm);
       const nameForm=document.createElement('div');nameForm.className='cfh-card-range';
       const nameFields=document.createElement('div');nameFields.className='cfh-card-range-fields';
