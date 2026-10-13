@@ -3483,7 +3483,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
           choice.onclick=()=>cfhDeleteScheduleOccurrence(entry,scope);deleteOptions.append(choice);
         }
         remove.setAttribute('aria-expanded','false');
-        remove.onclick=()=>{deleteOptions.hidden=!deleteOptions.hidden;remove.setAttribute('aria-expanded',String(!deleteOptions.hidden));};
+        remove.onclick=()=>{deleteOptions.hidden=!deleteOptions.hidden;remove.setAttribute('aria-expanded',String(!deleteOptions.hidden));if(!deleteOptions.hidden)requestAnimationFrame(()=>{if(!deleteOptions.hidden)dialog.scrollTo({top:dialog.scrollHeight,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});};
         actions.append(remove,duplicate);content.append(actions,deleteOptions);
       }
       const reminderRow=document.createElement('div');reminderRow.className='cfh-card-panel-row';
