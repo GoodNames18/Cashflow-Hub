@@ -1691,6 +1691,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 .cfh-push-panel button{border:0;border-radius:9px;padding:10px 12px;background:#1B1844;color:#fff;font:12px Arial,sans-serif;cursor:pointer}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
+<style>
+#cfhEditorOverlay.cfh-editor-keyboard-open{top:var(--cfh-editor-visible-top,0px);bottom:auto;height:var(--cfh-editor-visible-height);padding:20px 30px;box-sizing:border-box}
+#cfhEditorOverlay.cfh-editor-keyboard-open .cfh-editor-panel{max-height:calc(var(--cfh-editor-visible-height) - 40px)}
+</style>
 </head>
 
 <body>
@@ -10042,6 +10046,29 @@ window.addEventListener('storage',cfhPushQueue);window.addEventListener('online'
 setInterval(()=>cfhPushSync(),60000);
 </script>
 
+<script>
+(function(){
+ const overlay=document.getElementById('cfhEditorOverlay'),form=document.getElementById('cfhEditorForm');
+ if(!overlay||!form)return;
+ const viewport=window.visualViewport;
+ let fullHeight=Math.max(window.innerHeight,viewport?.height||0);
+ function update(){
+  const height=viewport?.height||window.innerHeight;
+  const focused=form.contains(document.activeElement)&&document.activeElement?.matches('input,textarea,select');
+  if(height>fullHeight)fullHeight=height;
+  const keyboard=!overlay.hidden&&window.matchMedia('(pointer:coarse)').matches&&focused&&fullHeight-height>120;
+  overlay.style.setProperty('--cfh-editor-visible-height',height+'px');
+  overlay.style.setProperty('--cfh-editor-visible-top',(viewport?.offsetTop||0)+'px');
+  overlay.classList.toggle('cfh-editor-keyboard-open',!!keyboard);
+ }
+ window.addEventListener('resize',update);
+ viewport?.addEventListener('resize',update);viewport?.addEventListener('scroll',update);
+ document.addEventListener('focusin',update);
+ document.addEventListener('focusout',()=>setTimeout(update,80));
+ new MutationObserver(update).observe(overlay,{attributes:true,attributeFilter:['hidden']});
+ update();
+})();
+</script>
 </body>
 </html>
 
