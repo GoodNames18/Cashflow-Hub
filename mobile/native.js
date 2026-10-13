@@ -2,36 +2,41 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { reminderJobs } from './reminders.mjs';
 import { reminderDelta } from './reconcile-reminders.mjs';
+import { createReminderScheduler } from './reminder-scheduler.mjs';
 const Diagnostics=registerPlugin('ReminderDiagnostics');
 const PLAN='cfh-native-alarm-plan-v1';
 const KEYS=['cfh_card_panel_preferences_v1','cfh_eastwest_cycle_overrides_v1','cfh_calendar_bells_v1','cfh_calendar_event_deletions_v1','cfh_metrobank_due_overrides_v1','cfh_metrobank_status_v1','cfh_calendar_entries_v1'];
-const ENABLED='cfh-native-reminders-enabled';let timer,busy=false,last='',requested=false;
+const ENABLED='cfh-native-reminders-enabled';let timer,last='';
 const status=text=>window.cfhPushStatus?.(text);
 function key(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
-async function schedule(force=false){
- if(busy){requested=true;return;}if(localStorage.getItem(ENABLED)!=='true')return;
- busy=true;
+async function runSchedule(force=false){
+ if(localStorage.getItem(ENABLED)!=='true')return {enabled:false};
  try{
-  const permission=await LocalNotifications.checkPermissions();if(permission.display!=='granted'){status('Notification permission needed');return;}
+  const permission=await LocalNotifications.checkPermissions();if(permission.display!=='granted')throw new Error('Notification permission needed');
   const exact=await LocalNotifications.checkExactNotificationSetting();
   const report=await Diagnostics.getReport();
   const snapshot=Object.fromEntries(KEYS.map(k=>[k,localStorage.getItem(k)||'']));
   const signature=JSON.stringify(snapshot)+key(new Date())+Intl.DateTimeFormat().resolvedOptions().timeZone+exact.exact_alarm+report.alarmClock;
-  if(!force&&last===signature)return;
+  if(!force&&last===signature)return {enabled:true,registered:true};
   const notifications=reminderJobs(snapshot);
   const pending=await LocalNotifications.getPending();
   let previous={};try{previous=JSON.parse(localStorage.getItem(PLAN)||'{}');}catch{}
   const delta=reminderDelta(notifications,pending.notifications,force?{}:previous,report.alarmClock);
   if(delta.cancel.length)await LocalNotifications.cancel({notifications:delta.cancel});
   for(let i=0;i<delta.schedule.length;i+=100)await LocalNotifications.schedule({notifications:delta.schedule.slice(i,i+100)});
+  const verified=await Diagnostics.getReport();
+  const registered=new Map(verified.events.filter(e=>e.event==='scheduled').map(e=>[e.id,e]));
+  for(const job of delta.schedule){if(registered.get(job.id)?.target!==job.schedule.at.getTime())throw new Error('Android did not confirm '+job.title);}
   localStorage.setItem(PLAN,JSON.stringify(delta.next));
-  last=signature;status(exact.exact_alarm==='granted'?'Native reminders scheduled on this device':'Reminders scheduled · Allow alarms for exact timing');
- }catch(error){status('Could not schedule reminders: '+error.message);last='';}
- finally{busy=false;if(requested){requested=false;queue();}}
+  last=signature;status(exact.exact_alarm==='granted'?'Reminder scheduled on this device':'Reminder registered · Allow alarms for exact timing');return {enabled:true,registered:true};
+ }catch(error){status('Could not schedule reminders: '+error.message);last='';throw error;}
 }
-function queue(){clearTimeout(timer);timer=setTimeout(()=>schedule(),800);}
+const schedule=createReminderScheduler(runSchedule);
+const backgroundSchedule=()=>schedule().catch(()=>{});
+function queue(){clearTimeout(timer);timer=setTimeout(backgroundSchedule,800);}
 if(Capacitor.isNativePlatform()){
  window.CFH_NATIVE=true;
+ window.cfhRegisterReminders=async()=>{clearTimeout(timer);return schedule();};
  window.cfhEnablePush=async()=>{
   const permission=await LocalNotifications.requestPermissions();if(permission.display!=='granted'){status('Allow notifications in Android settings');return;}
   await LocalNotifications.createChannel({id:'cfh-reminders',name:'Schedule reminders',importance:5,visibility:1,vibration:true});
@@ -42,7 +47,7 @@ if(Capacitor.isNativePlatform()){
  window.cfhDisablePush=async()=>{const pending=await LocalNotifications.getPending();await LocalNotifications.cancel({notifications:pending.notifications});localStorage.removeItem(ENABLED);localStorage.removeItem(PLAN);last='';status('Notifications disabled on this device');};
  window.cfhPushSync=async()=>schedule();window.cfhPushQueue=queue;
  window.addEventListener('cfh-native-schedule-change',queue);
- document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(timer);schedule();}else queue();});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(timer);backgroundSchedule();}else queue();});
  LocalNotifications.addListener('localNotificationActionPerformed',()=>{window.showAppPage?.('calendar');});
  mountDiagnostics();queue();
 }
@@ -66,7 +71,7 @@ function mountDiagnostics(){
    const delivery=r.events.filter(e=>e.event!=='scheduled'&&e.event!=='cancelled').slice(-30);
    const latest=new Map(r.events.filter(e=>e.event==='scheduled').map(e=>[e.id,e]));
    const upcoming=[...latest.values()].filter(e=>e.target>Date.now()-6*3600000).sort((a,b)=>a.target-b.target).slice(0,20);
-   output.textContent='Exact alarms: '+r.exactAllowed+'\nNotifications: '+r.notificationsAllowed+'\nReminder channel: '+r.channelAllowed+'\nBattery saver: '+r.powerSave+'\nStored reminders: '+p.notifications.length+'\n\nNearest scheduled reminders\n'+upcoming.map(e=>(e.detail||e.id)+' · '+e.mode+' · due '+time(e.target)+' · registered '+time(e.at)).join('\n')+'\n\nDelivery log\n'+(delivery.map(e=>e.id+' · '+e.event+' · '+time(e.at)+(e.target?' · due '+time(e.target):'')+(e.detail?' · '+e.detail:'')).join('\n')||'No alarm delivery recorded yet.');return r;};
+   output.textContent='Exact alarms: '+r.exactAllowed+'\nNotifications: '+r.notificationsAllowed+'\nReminder channel: '+r.channelAllowed+'\nBattery saver: '+r.powerSave+'\nStored reminders: '+p.notifications.length+'\nTray notifications: '+r.active.length+'\n\nNearest scheduled reminders\n'+upcoming.map(e=>(e.detail||e.id)+' · '+e.mode+' · due '+time(e.target)+' · registered '+time(e.at)).join('\n')+'\n\nCurrently in notification tray\n'+(r.active.map(n=>n.id+' · '+n.title+' · posted '+time(n.at)).join('\n')||'None')+'\n\nDelivery log\n'+(delivery.map(e=>e.id+' · '+e.event+' · '+time(e.at)+(e.target?' · due '+time(e.target):'')+(e.detail?' · '+e.detail:'')).join('\n')||'No alarm delivery recorded yet.');return r;};
   mode.onclick=async()=>{mode.disabled=true;try{const r=await Diagnostics.getReport();if(!r.alarmClock){const exact=await LocalNotifications.checkExactNotificationSetting();if(exact.exact_alarm!=='granted'){await LocalNotifications.changeExactNotificationSetting();status('Allow alarms in Android settings, then enable alarm mode');return;}}
    await Diagnostics.setAlarmMode({enabled:!r.alarmClock});last='';await schedule(true);await refresh();
   }catch(e){output.textContent=e.message;}finally{mode.disabled=false;}};

@@ -3340,20 +3340,33 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       select.replaceChildren(new Option('Loading card images…',''));
       try{await cfhLoadCardImages();fill();}catch(e){select.replaceChildren(new Option('Images unavailable — select Credit Card to retry',''));}
     }
-    function cfhSaveNewCard(){
+    let cfhCalendarRegistering=false;
+    async function cfhFinishCalendarSave(){
+      const button=document.querySelector('.cfh-editor-save');const label=button?.textContent;
+      cfhCalendarRegistering=true;if(button){button.disabled=true;button.textContent='Registering reminder…';}
+      try{
+        if(window.CFH_NATIVE&&window.cfhRegisterReminders)await window.cfhRegisterReminders();
+        cfhEditorClose(true);cfhCalendarRender();
+      }catch(error){alert('Your entry is saved, but its reminder was not confirmed. Keep the app open and tap Save to retry. '+error.message);}
+      finally{cfhCalendarRegistering=false;if(button){button.disabled=false;button.textContent=label;}}
+    }
+    async function cfhSaveNewCard(){
       const value=id=>document.getElementById(id).value;
       const start=value('cfhAddCardStart'),end=value('cfhAddCardEnd');
       if(start>end){alert('End date must be on or after start date.');return;}
       const bankName=value('cfhAddBank').trim(),cardName=value('cfhAddCardName').trim();
       if(!bankName||!cardName)return;
-      const key='duplicate-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
+      const form=document.getElementById('cfhEditorForm');
+      const key=form.dataset.savedCardKey||('duplicate-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2)));
+      form.dataset.savedCardKey=key;
       const prefs=cfhCardPanelPreferences();
       prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:Number(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:Number(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:true,reminderDays:[7,5,3,2,1,0],confirmedCycles:{}};
       try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save card.');return;}
       const [y,m,d]=start.split('-').map(Number);cfhCalendarState.selected=new Date(y,m-1,d);cfhCalendarState.month=new Date(y,m-1,1);
-      cfhEditorClose(true);cfhCalendarRender();cfhSaveNavigationState();
+      await cfhFinishCalendarSave();cfhSaveNavigationState();
     }
-    function cfhCalendarSave() {
+    async function cfhCalendarSave() {
+      if(cfhCalendarRegistering)return;
       const form = document.getElementById('cfhEditorForm');
       if (!form.reportValidity()) return;
       if(!document.getElementById('cfhAddCardFields').hidden){cfhSaveNewCard();return;}
@@ -3384,8 +3397,8 @@ body.cfh-calendar-active .app-tabs{display:none!important}
       const [y,m,d] = date.split('-').map(Number);
       cfhCalendarState.selected = new Date(y,m-1,d);
       cfhCalendarState.month = new Date(y,m-1,1);
-      cfhEditorClose(true);
-      cfhCalendarRender();
+      cfhEditingId=entry.id;
+      await cfhFinishCalendarSave();
     }
 
 
@@ -3992,6 +4005,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)cfhScheduleCheckDay();});
 
     function cfhCalendarAddPlaceholder() {
+      delete document.getElementById('cfhEditorForm').dataset.savedCardKey;
       const form = document.getElementById("cfhEditorForm");
       form.reset();
       cfhEditingId = null;
@@ -4095,7 +4109,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     function cfhEditorClearDraft(){try{sessionStorage.removeItem(CFH_EDITOR_DRAFT_KEY);}catch(e){}}
     window.addEventListener('pagehide',cfhEditorKeepDraft);
 
-    function cfhEditorClose(saved=false) { if(saved)cfhEditorClearDraft();else cfhEditorKeepDraft();document.getElementById('cfhEditorOverlay').hidden = true; }
+    function cfhEditorClose(saved=false) { if(cfhCalendarRegistering&&!saved)return;if(saved)delete document.getElementById('cfhEditorForm').dataset.savedCardKey; if(saved)cfhEditorClearDraft();else cfhEditorKeepDraft();document.getElementById('cfhEditorOverlay').hidden = true; }
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('cfhEditorOverlay')&&!document.getElementById('cfhEditorOverlay').hidden)cfhEditorClose()});
 
 

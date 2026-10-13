@@ -16,6 +16,12 @@ public class ReminderDiagnosticsPlugin extends Plugin {
    var notifications=(NotificationManager)getContext().getSystemService(Context.NOTIFICATION_SERVICE);
    var power=(PowerManager)getContext().getSystemService(Context.POWER_SERVICE);
    JSObject result=new JSObject();
+   JSONArray active=new JSONArray();
+   for(var item:notifications.getActiveNotifications()) {
+    JSObject n=new JSObject();n.put("id",item.getId());n.put("at",item.getPostTime());
+    n.put("title",item.getNotification().extras.getCharSequence(android.app.Notification.EXTRA_TITLE,""));active.put(n);
+   }
+   result.put("active",active);
    result.put("events",new JSONArray(prefs.getString("events","[]")));
    result.put("alarmClock",prefs.getBoolean("alarmClock",false));
    result.put("exactAllowed",Build.VERSION.SDK_INT<31||alarms.canScheduleExactAlarms());
