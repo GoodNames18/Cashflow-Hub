@@ -36,7 +36,7 @@ jobs:
       cd android
       chmod +x gradlew
       export CFH_ANDROID_VERSION_CODE=$((1000 + ${{ github.run_number }}))
-      ./gradlew assembleRelease --no-daemon
+      ./gradlew :capacitor-local-notifications:testDebugUnitTest assembleRelease --no-daemon
    - name: Verify release signature
      run: |
       APK=android/app/build/outputs/apk/release/app-release.apk

@@ -1,4 +1,4 @@
-import {readFile,writeFile,copyFile} from 'node:fs/promises';
+import {readFile,writeFile,copyFile,mkdir} from 'node:fs/promises';
 const root='node_modules/@capacitor/local-notifications/android/src/main/kotlin/com/capacitorjs/plugins/localnotifications/';
 async function patch(file,edits){let s=await readFile(root+file,'utf8');if(s.includes('// CFH alarm diagnostics v2'))return;for(const [before,after]of edits){if(!s.includes(before))throw Error('Pinned notification source changed: '+file);s=s.replace(before,after)}await writeFile(root+file,s+'\n// CFH alarm diagnostics v2\n')}
 await copyFile('mobile/android-patches/CfhAlarmJournal.kt',root+'CfhAlarmJournal.kt');
@@ -38,4 +38,13 @@ await patch('NotificationDismissReceiver.kt',[[
  '        val storage = NotificationStorage(context)',
  '        CfhAlarmJournal.record(context,"dismissed",intExtra)\n        val storage = NotificationStorage(context)'
 ]]);
+for(const file of ['CfhRestorePolicy.kt','CfhReminderRestoreJob.kt','LocalNotificationRestoreReceiver.kt'])await copyFile('mobile/android-patches/'+file,root+file);
+const testRoot=root.replace('/src/main/','/src/test/');await mkdir(testRoot,{recursive:true});
+await copyFile('mobile/android-patches/CfhRestorePolicyTest.kt',testRoot+'CfhRestorePolicyTest.kt');
+const manifestPath='node_modules/@capacitor/local-notifications/android/src/main/AndroidManifest.xml';
+let manifest=await readFile(manifestPath,'utf8');
+if(!manifest.includes('CfhReminderRestoreJob')){
+ manifest=manifest.replace('<application>','<application>\n        <service android:name="com.capacitorjs.plugins.localnotifications.CfhReminderRestoreJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />');
+ await writeFile(manifestPath,manifest);
+}
 console.log('Native alarm diagnostics and optional alarm-clock mode installed');
