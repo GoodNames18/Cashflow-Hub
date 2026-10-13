@@ -3,6 +3,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { reminderJobs } from './reminders.mjs';
 import { reminderDelta } from './reconcile-reminders.mjs';
 import { createReminderScheduler } from './reminder-scheduler.mjs';
+import { registerReminderDelta } from './register-reminders.mjs';
 const Diagnostics=registerPlugin('ReminderDiagnostics');
 const PLAN='cfh-native-alarm-plan-v1';
 const KEYS=['cfh_card_panel_preferences_v1','cfh_eastwest_cycle_overrides_v1','cfh_calendar_bells_v1','cfh_calendar_event_deletions_v1','cfh_metrobank_due_overrides_v1','cfh_metrobank_status_v1','cfh_calendar_entries_v1'];
@@ -12,23 +13,18 @@ function key(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padSt
 async function runSchedule(force=false){
  if(localStorage.getItem(ENABLED)!=='true')return {enabled:false};
  try{
-  const permission=await LocalNotifications.checkPermissions();if(permission.display!=='granted')throw new Error('Notification permission needed');
-  const exact=await LocalNotifications.checkExactNotificationSetting();
-  const report=await Diagnostics.getReport();
+  const report=await Diagnostics.getSchedulingState();
+  if(!report.notificationsAllowed||!report.channelAllowed)throw new Error('Notification permission needed');
   const snapshot=Object.fromEntries(KEYS.map(k=>[k,localStorage.getItem(k)||'']));
-  const signature=JSON.stringify(snapshot)+key(new Date())+Intl.DateTimeFormat().resolvedOptions().timeZone+exact.exact_alarm+report.alarmClock;
+  const signature=JSON.stringify(snapshot)+key(new Date())+Intl.DateTimeFormat().resolvedOptions().timeZone+report.exactAllowed+report.alarmClock;
   if(!force&&last===signature)return {enabled:true,registered:true};
   const notifications=reminderJobs(snapshot);
   const pending=await LocalNotifications.getPending();
   let previous={};try{previous=JSON.parse(localStorage.getItem(PLAN)||'{}');}catch{}
   const delta=reminderDelta(notifications,pending.notifications,force?{}:previous,report.alarmClock);
-  if(delta.cancel.length)await LocalNotifications.cancel({notifications:delta.cancel});
-  for(let i=0;i<delta.schedule.length;i+=100)await LocalNotifications.schedule({notifications:delta.schedule.slice(i,i+100)});
-  const verified=await Diagnostics.getReport();
-  const registered=new Map(verified.events.filter(e=>e.event==='scheduled').map(e=>[e.id,e]));
-  for(const job of delta.schedule){if(registered.get(job.id)?.target!==job.schedule.at.getTime())throw new Error('Android did not confirm '+job.title);}
+  await registerReminderDelta(delta,LocalNotifications,Diagnostics);
   localStorage.setItem(PLAN,JSON.stringify(delta.next));
-  last=signature;status(exact.exact_alarm==='granted'?'Reminder scheduled on this device':'Reminder registered · Allow alarms for exact timing');return {enabled:true,registered:true};
+  last=signature;status(report.exactAllowed?'Reminder scheduled on this device':'Reminder registered · Allow alarms for exact timing');return {enabled:true,registered:true};
  }catch(error){status('Could not schedule reminders: '+error.message);last='';throw error;}
 }
 const schedule=createReminderScheduler(runSchedule);
