@@ -4,7 +4,7 @@ import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=live2';
 import { CashflowReadApi } from './cfh-read-api.mjs?v=transaction-order4';
 import { CashflowWriteApi } from './cfh-write-api.mjs?v=gcash-fast1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=live2';
-import { startCalendarSync } from './cfh-calendar-sync.mjs?v=android1';
+import { startCalendarSync } from './cfh-calendar-sync.mjs?v=events1';
 const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;

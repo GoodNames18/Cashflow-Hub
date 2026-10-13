@@ -4,7 +4,7 @@ export async function startCalendarSync(client,owner) {
  const META='cfh-cloud-calendar-v1',BACKUP='cfh-calendar-before-cloud-v1';
  const originalSet=Storage.prototype.setItem,originalRemove=Storage.prototype.removeItem;
  let meta;try{meta=JSON.parse(localStorage.getItem(META)||'{}');}catch{meta={};}
- meta.revisions||={};meta.pending||={};let busy=false,applying=false,ready=false,timer;
+ meta.revisions||={};meta.pending||={};let busy=false,applying=false,ready=false,timer,requested=false,deferred=false,channel;
  const panel=document.createElement('div');panel.className='cfh-push-panel';panel.id='cfhCloudPanel';
  panel.innerHTML='<strong>Calendar sync</strong><p role="status">Connecting your saved schedules…</p><button type="button">Sync now</button>';
  document.getElementById('cfhCalendarSchedule')?.prepend(panel);
@@ -19,7 +19,7 @@ export async function startCalendarSync(client,owner) {
  function apply(row){applying=true;try{if(row.value===null)originalRemove.call(localStorage,row.storage_key);else originalSet.call(localStorage,row.storage_key,row.value);meta.revisions[row.storage_key]=row.revision;}finally{applying=false;}}
  function render(){window.cfhReloadCalendarFromStorage?.();window.dispatchEvent(new Event('cfh-native-schedule-change'));}
  async function sync(){
-  if(busy)return;if(!navigator.onLine){status('Saved on this device · Waiting for connection');return;}
+  if(busy){requested=true;return;}if(!navigator.onLine){status('Saved on this device · Waiting for connection');return;}
   busy=true;
   try{
    const {data,error}=await client.from('cfh_calendar_state').select('*').eq('owner_id',owner);if(error)throw error;
@@ -48,15 +48,32 @@ export async function startCalendarSync(client,owner) {
      // A user may keep typing while this request is in flight.
      if(meta.pending[key]?.value===sent.value)delete meta.pending[key];else meta.pending[key].revision=saved[0].revision;
      persist();
-    }else if(row&&row.revision!==meta.revisions[key]&&!editorOpen()){apply(row);refreshed=true;}
+    }else if(row&&row.revision!==meta.revisions[key]){if(editorOpen())deferred=true;else {apply(row);refreshed=true;}}
    }
    if(refreshed)render();persist();status(Object.keys(meta.pending).length?'Saving calendar changes…':'Calendar synced across devices');
   }catch(error){status('Saved on this device · Sync will retry');console.error('Calendar sync:',error.message);}
-  finally{busy=false;}
+  finally{busy=false;if(requested){requested=false;queue();}}
  }
  panel.querySelector('button').onclick=sync;
- window.addEventListener('online',sync);window.addEventListener('focus',sync);
+ function disconnect(){if(channel){const previous=channel;channel=null;client.removeChannel(previous);}}
+ function connect(){
+  if(channel||document.hidden||!navigator.onLine)return;
+  const current=client.channel('cfh-calendar-'+owner);channel=current;
+  current.on('postgres_changes',{event:'*',schema:'public',table:'cfh_calendar_state',filter:'owner_id=eq.'+owner},payload=>{
+   if(channel!==current||document.hidden)return;
+   const row=payload.new;
+   if(row?.storage_key&&row.revision===meta.revisions[row.storage_key]&&!meta.pending[row.storage_key])return;
+   queue();
+  }).subscribe(state=>{if(channel===current&&state==='SUBSCRIBED')queue();});
+ }
+ window.addEventListener('online',()=>{connect();queue();});window.addEventListener('offline',disconnect);
+ window.addEventListener('focus',()=>{connect();queue();});
  window.addEventListener('storage',event=>{if(KEYS.includes(event.key)){changed(event.key,event.newValue);render();}});
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync();});
- setInterval(()=>{if(!document.hidden)sync();},5000);await sync();
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)disconnect();else {connect();queue();}});
+ // Apply remote changes deferred during editing when the editor actually closes.
+ const observer=new MutationObserver(()=>{if(deferred&&!editorOpen()){deferred=false;queue();}});
+ for(const id of ['cfhEditorOverlay','cfhCardPanel']){const el=document.getElementById(id);if(el)observer.observe(el,{attributes:true,attributeFilter:['hidden','class','style']});}
+ window.addEventListener('pagehide',disconnect);
+ window.addEventListener('pageshow',()=>{connect();queue();});
+ connect();await sync();
 }

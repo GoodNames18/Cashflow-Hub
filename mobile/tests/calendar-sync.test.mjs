@@ -7,12 +7,13 @@ test('migration, offline edits, remote changes and concurrent-edit protection',a
  class Storage {data=new Map();getItem(k){return this.data.get(k)??null;}setItem(k,v){this.data.set(k,String(v));}removeItem(k){this.data.delete(k);}}
  class Element {children=[];status={textContent:''};button={};querySelector(q){if(q==='[role=status]')return this.status;if(q==='button')return this.button;if(q==='[data-conflict]')return this.children.find(c=>c.dataset?.conflict);}append(c){this.children.push(c);}prepend(c){this.append(c);}replaceChildren(){this.children=[];}remove(){}dataset={};}
  globalThis.Storage=Storage;globalThis.localStorage=new Storage();
+ globalThis.MutationObserver=class {observe(){}};
  const target=new Element();globalThis.document={createElement:()=>new Element(),getElementById:id=>id==='cfhCalendarSchedule'?target:null,addEventListener(){},hidden:false};
  globalThis.window={addEventListener(){},dispatchEvent(){},cfhReloadCalendarFromStorage(){}};
  Object.defineProperty(globalThis,'navigator',{value:{onLine:true},configurable:true});
  const key=KEYS.at(-1),initial='[{"id":"first","date":"2026-10-13"}]';localStorage.setItem(key,initial);
  const rows=new Map();let hold;
- const client={from(){return {select(){return {eq:async()=>({data:[...rows.values()]})};}};},rpc:async(name,args)=>{
+ const client={channel(){return {on(){return this},subscribe(){return this}}},removeChannel(){},from(){return {select(){return {eq:async()=>({data:[...rows.values()]})};}};},rpc:async(name,args)=>{
   if(hold){const fn=hold;hold=null;await fn();}
   const row=rows.get(args.p_key);if((row?.revision||0)!==args.p_revision)return {data:[]};
   const saved={storage_key:args.p_key,value:args.p_value,revision:(row?.revision||0)+1};rows.set(args.p_key,saved);return {data:[saved]};
