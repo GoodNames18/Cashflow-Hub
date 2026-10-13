@@ -30,7 +30,7 @@ if(Capacitor.isNativePlatform()){
   const exact=await LocalNotifications.checkExactNotificationSetting();if(exact.exact_alarm!=='granted')await LocalNotifications.changeExactNotificationSetting();
   localStorage.setItem(ENABLED,'true');await schedule(true);
  };
- window.cfhTestPush=async()=>{try{await LocalNotifications.schedule({notifications:[{id:2147483647,title:'Cashflow Hub',body:'Native notifications are working on this device.',channelId:'cfh-reminders',schedule:{at:new Date(Date.now()+3000),allowWhileIdle:true}}]});status('Test scheduled in 3 seconds');}catch(e){status(e.message);}};
+ window.cfhTestPush=async()=>{try{await LocalNotifications.schedule({notifications:[{id:2147483647,title:'Cashflow Hub',body:'Native notifications are working on this device.',smallIcon:'ic_stat_reminder',largeIcon:'cfh_app_icon',channelId:'cfh-reminders',schedule:{at:new Date(Date.now()+3000),allowWhileIdle:true}}]});status('Test scheduled in 3 seconds');}catch(e){status(e.message);}};
  window.cfhDisablePush=async()=>{const pending=await LocalNotifications.getPending();await LocalNotifications.cancel({notifications:pending.notifications});localStorage.removeItem(ENABLED);last='';status('Notifications disabled on this device');};
  window.cfhPushSync=async()=>schedule();window.cfhPushQueue=queue;
  window.addEventListener('cfh-native-schedule-change',queue);

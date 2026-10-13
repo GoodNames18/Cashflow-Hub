@@ -21,7 +21,7 @@ export function reminderJobs(snapshot,now=new Date()){
   const notifications=Array.from(jobs.values()).sort((a,b)=>a.at-b.at).slice(0,400).map(job=>{
    const titles=job.entries.map(({entry,before})=>entry.title+' · '+(before===0?'Today':before+' days before'));
    let id=idFor('cfh|'+job.at.toISOString());while(used.has(id))id=id%2147483646+1;used.add(id);
-   return {id,title:job.entries.length===1?job.entries[0].entry.title:'Cashflow Hub · '+job.entries.length+' reminders',body:titles.join('\n'),largeBody:titles.join('\n'),channelId:'cfh-reminders',schedule:{at:job.at,allowWhileIdle:true},extra:{page:'calendar'}};
+   return {id,title:job.entries.length===1?job.entries[0].entry.title:'Cashflow Hub · '+job.entries.length+' reminders',body:titles.join('\n'),largeBody:titles.join('\n'),smallIcon:'ic_stat_reminder',largeIcon:'cfh_app_icon',channelId:'cfh-reminders',schedule:{at:job.at,allowWhileIdle:true},extra:{page:'calendar'}};
   });
   return notifications;
 }
