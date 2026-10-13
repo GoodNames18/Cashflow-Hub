@@ -5,6 +5,7 @@ on:
  workflow_dispatch:
 permissions:
  contents: read
+ id-token: write
 jobs:
  build:
   runs-on: ubuntu-latest
@@ -26,9 +27,27 @@ jobs:
    - run: npm test
    - run: node mobile/build.mjs
    - run: npx cap sync android
-   - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+   - name: Load permanent signing key
+     run: node mobile/fetch-signing.mjs
+   - name: Build signed release APK
+     env:
+      CFH_SIGNING_PROPERTIES: ${{ runner.temp }}/cfh-release-signing/signing.properties
+     run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+   - name: Verify release signature
+     run: |
+      APK=android/app/build/outputs/apk/release/app-release.apk
+      SIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+      "$SIGNER" verify --verbose --print-certs "$APK" > "$RUNNER_TEMP/cfh-cert-report.txt"
+      EXPECTED=$(cat "$RUNNER_TEMP/cfh-release-signing/expected-cert.sha256")
+      ACTUAL=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/cfh-cert-report.txt")
+      test "$ACTUAL" = "$EXPECTED"
+      echo "Release signature verified against permanent certificate"
    - uses: actions/upload-artifact@v4
      with:
       name: Cashflow-Hub-Android
-      path: android/app/build/outputs/apk/debug/app-debug.apk
+      path: android/app/build/outputs/apk/release/app-release.apk
       retention-days: 30
+
+   - name: Remove signing material
+     if: always()
+     run: rm -rf "$RUNNER_TEMP/cfh-release-signing"

@@ -16,7 +16,7 @@ npm test
 npm run build:android-web
 npx cap sync android
 cd android
-./gradlew assembleDebug
+CFH_SIGNING_PROPERTIES=/absolute/path/to/private/signing.properties ./gradlew assembleRelease
 ```
 
-The workflow uploads a **test APK**. Debug signing keys can differ across build machines, so a production update channel needs a stable private release key before distributing further updates. Do not commit signing keys. The website URL stays https://goodnames18.github.io/Cashflow-Hub/.
+The workflow uploads a **signed release APK** using the permanent certificate. Signing material is encrypted in Supabase Vault and released only to the verified GitHub Actions build on Haeo!. The APK never contains the private signing material. Future updates must retain this key and application ID and increase versionCode. Do not regenerate the key or commit it. Legacy debug test APKs require one final reinstall because their ephemeral signing keys were not retained. The website URL stays https://goodnames18.github.io/Cashflow-Hub/.
