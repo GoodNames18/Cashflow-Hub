@@ -75,7 +75,7 @@ export class CashflowWriteApi {
     }
     const {plan,prepared}=pending;
     // Load before committing so acknowledged events immediately update totals.
-    await this.reads.snapshot.load(plan.tab);
+    if(plan.tab!=='cash_in_out')await this.reads.snapshot.load(plan.tab);
     if(plan.tab==='konek2card' && !pending.checked) {
       const balance=await this.reads.request({action:'testDashboard'},true);
       checkKonekEntry(plan,params,balance);
@@ -84,6 +84,8 @@ export class CashflowWriteApi {
     const records=prepared.length===1?[await this.store.save(prepared[0])]:await this.store.saveBundle(prepared);
     this.retries.delete(key);
     const result={success:true,...plan.receipt,records};
+    // GCash UI refreshes its dashboard after acknowledgement. Do not hold the save for a history scan.
+    if(plan.tab==='cash_in_out')return result;
     try {result.dashboard=await this.reads.request({action:dashboards[plan.tab],year:params.year,month:params.month});}
     catch(error){console.warn('Saved; dashboard display will refresh separately',error);}
     return result;

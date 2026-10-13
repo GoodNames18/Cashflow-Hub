@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2';
 import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=live2';
 import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=live2';
 import { CashflowReadApi } from './cfh-read-api.mjs?v=transaction-order4';
-import { CashflowWriteApi } from './cfh-write-api.mjs?v=moneyflow-digits1';
+import { CashflowWriteApi } from './cfh-write-api.mjs?v=gcash-fast1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=live2';
 import { startCalendarSync } from './cfh-calendar-sync.mjs?v=android1';
 const enabled=true;
