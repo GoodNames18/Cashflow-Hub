@@ -32,7 +32,11 @@ jobs:
    - name: Build signed release APK
      env:
       CFH_SIGNING_PROPERTIES: ${{ runner.temp }}/cfh-release-signing/signing.properties
-     run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+     run: |
+      cd android
+      chmod +x gradlew
+      export CFH_ANDROID_VERSION_CODE=$((1000 + ${{ github.run_number }}))
+      ./gradlew assembleRelease --no-daemon
    - name: Verify release signature
      run: |
       APK=android/app/build/outputs/apk/release/app-release.apk
