@@ -13,7 +13,7 @@ await patch('LocalNotificationManager.kt',[
             if (schedule.allowWhileIdle()) {`],
  ['    /** Whether the app can currently schedule exact alarms.',`    /** Whether the app can currently schedule exact alarms.`],
  ['        }\n    }\n\n    /** Whether the app can currently schedule exact alarms.',`        }
-        CfhAlarmJournal.record(context,"scheduled",localNotification.id ?: -1,trigger,if(useExact && alarmMode) "alarm-clock" else if(useExact) "exact" else "inexact")
+        CfhAlarmJournal.record(context,"scheduled",localNotification.id ?: -1,trigger,if(useExact && alarmMode) "alarm-clock" else if(useExact) "exact" else "inexact",localNotification.title ?: "")
     }
 
     /** Whether the app can currently schedule exact alarms.`],

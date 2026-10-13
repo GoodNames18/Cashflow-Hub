@@ -64,8 +64,9 @@ function mountDiagnostics(){
   const refresh=async()=>{const r=await Diagnostics.getReport();const p=await LocalNotifications.getPending();
    mode.textContent='Alarm mode: '+(r.alarmClock?'On':'Off');
    const delivery=r.events.filter(e=>e.event!=='scheduled'&&e.event!=='cancelled').slice(-30);
-   const upcoming=r.events.filter(e=>e.event==='scheduled').slice(-5);
-   output.textContent='Exact alarms: '+r.exactAllowed+'\nNotifications: '+r.notificationsAllowed+'\nReminder channel: '+r.channelAllowed+'\nBattery saver: '+r.powerSave+'\nStored reminders: '+p.notifications.length+'\n\nRecent scheduling\n'+upcoming.map(e=>e.id+' · '+e.mode+' · due '+time(e.target)+' · registered '+time(e.at)).join('\n')+'\n\nDelivery log\n'+(delivery.map(e=>e.id+' · '+e.event+' · '+time(e.at)+(e.target?' · due '+time(e.target):'')+(e.detail?' · '+e.detail:'')).join('\n')||'No alarm delivery recorded yet.');return r;};
+   const latest=new Map(r.events.filter(e=>e.event==='scheduled').map(e=>[e.id,e]));
+   const upcoming=[...latest.values()].filter(e=>e.target>Date.now()-6*3600000).sort((a,b)=>a.target-b.target).slice(0,20);
+   output.textContent='Exact alarms: '+r.exactAllowed+'\nNotifications: '+r.notificationsAllowed+'\nReminder channel: '+r.channelAllowed+'\nBattery saver: '+r.powerSave+'\nStored reminders: '+p.notifications.length+'\n\nNearest scheduled reminders\n'+upcoming.map(e=>(e.detail||e.id)+' · '+e.mode+' · due '+time(e.target)+' · registered '+time(e.at)).join('\n')+'\n\nDelivery log\n'+(delivery.map(e=>e.id+' · '+e.event+' · '+time(e.at)+(e.target?' · due '+time(e.target):'')+(e.detail?' · '+e.detail:'')).join('\n')||'No alarm delivery recorded yet.');return r;};
   mode.onclick=async()=>{mode.disabled=true;try{const r=await Diagnostics.getReport();if(!r.alarmClock){const exact=await LocalNotifications.checkExactNotificationSetting();if(exact.exact_alarm!=='granted'){await LocalNotifications.changeExactNotificationSetting();status('Allow alarms in Android settings, then enable alarm mode');return;}}
    await Diagnostics.setAlarmMode({enabled:!r.alarmClock});last='';await schedule(true);await refresh();
   }catch(e){output.textContent=e.message;}finally{mode.disabled=false;}};
