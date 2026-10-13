@@ -31,7 +31,8 @@ class CfhReminderRestoreJob : JobService() {
       if(!CfhRestorePolicy.eligible(current.cancelled,current.schedule?.isPerpetual() ?: false,current.schedule?.at?.time,System.currentTimeMillis()))continue
       val ids=manager.schedule(null,listOf(current)) ?: throw IllegalStateException("Notifications blocked")
       restored+=ids.length()
-      if(restored%20==0){CfhAlarmJournal.flushBatch(this);CfhAlarmJournal.record(this,"restore-progress",-1,detail="$restored/${ordered.size}")}
+      if(restored%20==0)CfhAlarmJournal.flushBatch(this)
+      if(restored%100==0)CfhAlarmJournal.record(this,"restore-progress",-1,detail="$restored/${ordered.size}")
      }
     }finally{CfhAlarmJournal.endBatch(this)}
     if(!stop.get())CfhAlarmJournal.record(this,"restore-completed",-1,detail="$restored reminders; ${saved.size-ordered.size} past or cancelled skipped")
