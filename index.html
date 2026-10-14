@@ -1716,6 +1716,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
 
 
 </style>
+<style>#cfhPushPanel[hidden]{display:none!important}.cfh-reminder-settings-button{font-family:inherit;font-size:12px;border:1px solid #dedbef;background:#E6E6FA;color:#1B1844;border-radius:10px;padding:8px 12px;margin:0 0 12px;cursor:pointer}</style>
 </head>
 
 <body>
@@ -2888,14 +2889,38 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       return y + "-" + m + "-" + d;
     }
 
-    function cfhCalendarRender() {
+    let cfhCalendarRenderCache=null,cfhCalendarRenderedSignature='';
+    function cfhCalendarReadJSON(key,fallback={}){
+      if(cfhCalendarRenderCache?.json.has(key))return cfhCalendarRenderCache.json.get(key);
+      let value;try{value=JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback));}catch{value=fallback;}
+      cfhCalendarRenderCache?.json.set(key,value);return value;
+    }
+    function cfhCalendarViewSignature(){
+      return JSON.stringify([cfhCalendarDateKey(cfhCalendarState.month),cfhCalendarDateKey(cfhCalendarState.selected),!!cfhCalendarState.filterSelectedDate,!!cfhCalendarState.selectionCleared,cfhCalendarDateKey(new Date()),document.getElementById('cfhCalendarSearchInput')?.value||'',cfhSchedulePastMonth,cfhCardImageCatalog,
+        ...['cfh_card_panel_preferences_v1','cfh_eastwest_cycle_overrides_v1','cfh_calendar_bells_v1','cfh_calendar_event_deletions_v1','cfh_metrobank_due_overrides_v1','cfh_metrobank_status_v1','cfh_calendar_entries_v1'].map(key=>localStorage.getItem(key))]);
+    }
+    function cfhCalendarRender(){
+      const previous=cfhCalendarRenderCache;cfhCalendarRenderCache={json:new Map(),dates:new Map()};
+      try{cfhCalendarRenderContents();cfhCalendarRenderedSignature=cfhCalendarViewSignature();}
+      finally{cfhCalendarRenderCache=previous;}
+    }
+    function cfhCalendarRenderIfChanged(){
+      if(!document.getElementById('cfhCalendarGrid')?.children.length||cfhCalendarViewSignature()!==cfhCalendarRenderedSignature)cfhCalendarRender();
+    }
+    const cfhCalendarDateFormatters=new Map();
+    function cfhCalendarFormat(date,options){
+      const key=JSON.stringify(options);if(!cfhCalendarDateFormatters.has(key))cfhCalendarDateFormatters.set(key,new Intl.DateTimeFormat('en-PH',options));
+      return cfhCalendarDateFormatters.get(key).format(date);
+    }
+
+    function cfhCalendarRenderContents() {
       if(typeof cfhPushQueue==='function')cfhPushQueue();
       const grid = document.getElementById("cfhCalendarGrid");
       const title = document.getElementById("cfhCalendarMonthTitle");
       if (!grid || !title) return;
 
       const view = cfhCalendarState.month;
-      title.textContent = view.toLocaleDateString("en-PH", { month:"long", year:"numeric" });
+      title.textContent = cfhCalendarFormat(view,{month:"long",year:"numeric"});
       cfhCalendarRenderMonthStrip();
       grid.innerHTML = "";
 
@@ -2915,7 +2940,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
         if (date.getMonth() !== view.getMonth()) cell.classList.add("is-other");
         if (key === todayKey) cell.classList.add("is-today");
         if (key === selectedKey && cfhCalendarState.filterSelectedDate === true && !cfhCalendarState.selectionCleared) cell.classList.add("is-selected");
-        cell.setAttribute("aria-label", date.toLocaleDateString("en-PH", { dateStyle:"full" }));
+        cell.setAttribute("aria-label", cfhCalendarFormat(date,{dateStyle:"full"}));
         cell.innerHTML = '<span class="cfh-calendar-day-number">' + date.getDate() + '</span><span class="cfh-calendar-dots"></span>';
         cell.onclick = function () { cfhCalendarSelectDate(date); };
         grid.appendChild(cell);
@@ -3057,7 +3082,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
     const CFH_METROBANK_OVERRIDE_KEY = 'cfh_metrobank_due_overrides_v1';
     const CFH_METROBANK_STATUS_KEY = 'cfh_metrobank_status_v1';
     const CFH_CALENDAR_BELLS_KEY = 'cfh_calendar_bells_v1';
-    function cfhBellSettings(){try{return JSON.parse(localStorage.getItem(CFH_CALENDAR_BELLS_KEY)||'{}')||{};}catch(e){return {};}}
+    function cfhBellSettings(){try{return cfhCalendarReadJSON(CFH_CALENDAR_BELLS_KEY)||{};}catch(e){return {};}}
     function cfhBellEnabled(id){const saved=cfhBellSettings()[id];if(saved!==undefined)return saved!==false;const key=id.split('|')[0];return !key.startsWith('duplicate-')||(cfhCardPanelPreferences()[key]||{}).remindersEnabled!==false;}
     function cfhToggleBell(id){const settings=cfhBellSettings();settings[id]=!cfhBellEnabled(id);try{localStorage.setItem(CFH_CALENDAR_BELLS_KEY,JSON.stringify(settings));}catch(e){alert('Could not save reminder preference.');return;}cfhCalendarRender();}
     function cfhMetrobankStoppedAfter() { try { return localStorage.getItem(CFH_METROBANK_STATUS_KEY) || ''; } catch(e) { return ''; } }
@@ -3080,7 +3105,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       cfhCalendarRender();
     }
 
-    function cfhMetrobankOverrides() { try { return JSON.parse(localStorage.getItem(CFH_METROBANK_OVERRIDE_KEY)||'{}')||{}; } catch(e){return {};} }
+    function cfhMetrobankOverrides() { try { return cfhCalendarReadJSON(CFH_METROBANK_OVERRIDE_KEY)||{}; } catch(e){return {};} }
     function cfhMetrobankDueDate(statementKey) {
       const confirmed = CFH_METROBANK_CONFIRMED[statementKey];
       const override = cfhMetrobankOverrides()[statementKey];
@@ -3204,7 +3229,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       2027:['2027-02-06']
     };
     function cfhEastwestOverrides(){
-      try{const value=JSON.parse(localStorage.getItem(CFH_EASTWEST_OVERRIDES_KEY)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}
+      try{const value=cfhCalendarReadJSON(CFH_EASTWEST_OVERRIDES_KEY);return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}
     }
     function cfhEastwestValidDate(key){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key||''))return false;
@@ -3288,7 +3313,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       return entries;
     }
     const CFH_EVENT_DELETIONS_KEY='cfh_calendar_event_deletions_v1';
-    function cfhEventDeletions(){try{return JSON.parse(localStorage.getItem(CFH_EVENT_DELETIONS_KEY)||'{}');}catch(e){return {};}}
+    function cfhEventDeletions(){try{return cfhCalendarReadJSON(CFH_EVENT_DELETIONS_KEY);}catch(e){return {};}}
     function cfhEventSeries(entry){return (cfhCardKey(entry)||entry.id)+':'+entry.type;}
     function cfhEventVisible(entry,key){
       const deleted=cfhEventDeletions(),series=cfhEventSeries(entry);
@@ -3304,7 +3329,9 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       cfhCardPanelClose();cfhCalendarRender();
     }
     function cfhCalendarForDate(key) {
-      return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      if(cfhCalendarRenderCache?.dates.has(key))return cfhCalendarRenderCache.dates.get(key);
+      const entries=cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      cfhCalendarRenderCache?.dates.set(key,entries);return entries;
     }
     function cfhCalendarEdit(id) {
       const entry = cfhCalendarEntries.find(e => e.id === id);
@@ -3540,7 +3567,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
 
     const CFH_CARD_PANEL_KEY='cfh_card_panel_preferences_v1';
     let cfhCardPanelEntry=null,cfhCardPanelTrigger=null;
-    function cfhCardPanelPreferences(){try{return JSON.parse(localStorage.getItem(CFH_CARD_PANEL_KEY)||'{}')||{};}catch(e){return {};}}
+    function cfhCardPanelPreferences(){try{return cfhCalendarReadJSON(CFH_CARD_PANEL_KEY)||{};}catch(e){return {};}}
     
     let cfhEditSession=null;
     function cfhEntryCycle(entry){return entry.cfhDuplicateCycle||entry.cfhEastwestCycle||(entry.cfhStatement||entry.date||entry.cfhDisplayDate||'').slice(0,7);}
@@ -3950,7 +3977,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       const schedule=document.getElementById('cfhCalendarSchedule');
       if(!label||!schedule)return;
       const view=cfhCalendarState.month;
-      label.textContent=view.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
+      label.textContent=cfhCalendarFormat(view,{month:'long',year:'numeric'});
       let entries=[];
       const days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
       for(let day=1;day<=days;day++){
@@ -3992,7 +4019,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
           const [y,m,d]=entry.cfhDisplayDate.split('-').map(Number);
           const actual=new Date(y,m-1,d);
           if(entry.cfhDisplayDate===highlightedDate)date.classList.add('is-today');
-          const weekday=document.createElement('small');weekday.textContent=actual.toLocaleDateString('en-PH',{weekday:'short'});
+          const weekday=document.createElement('small');weekday.textContent=cfhCalendarFormat(actual,{weekday:'short'});
           const number=document.createElement('strong');number.textContent=String(d);
           date.append(weekday,number);
         }
@@ -4831,7 +4858,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
 
         currentAppPage = "calendar";
         track.classList.add("show-calendar");
-        cfhCalendarRender();
+        cfhCalendarRenderIfChanged();
 
       } else if (pageName === "expenses") {
 
@@ -10110,7 +10137,9 @@ function cfhPushMount(){
  const target=document.getElementById('cfhCalendarSchedule');if(!target||document.getElementById('cfhPushPanel'))return;
  const panel=document.createElement('div');panel.id='cfhPushPanel';panel.className='cfh-push-panel';
  panel.innerHTML='<strong>Notifications</strong><p id="cfhPushStatus" role="status">Enable notifications on this device to receive reminders.</p><div><button type="button" onclick="cfhEnablePush()">Enable notifications</button><button type="button" onclick="cfhTestPush()">Test</button><button type="button" onclick="cfhDisablePush()">Disable</button></div>';
- target.before(panel);
+ const toggle=document.createElement('button');toggle.id='cfhReminderSettingsButton';toggle.type='button';toggle.textContent='Reminders';toggle.className='cfh-reminder-settings-button';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','cfhPushPanel');
+ panel.hidden=true;toggle.onclick=()=>{panel.hidden=!panel.hidden;toggle.setAttribute('aria-expanded',String(!panel.hidden));};
+ target.before(toggle,panel);
  if(window.CFH_NATIVE)cfhPushStatus('Enable native reminders on this device.');else if(!cfhPushSupported())cfhPushStatus('Push notifications are unavailable in this browser.');
  else if(localStorage.getItem('cfh-push-enabled')==='true')cfhPushSync(true);
 }
