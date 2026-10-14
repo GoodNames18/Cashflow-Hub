@@ -5,6 +5,7 @@ import { CashflowReadApi } from './cfh-read-api.mjs?v=transaction-order4';
 import { CashflowWriteApi } from './cfh-write-api.mjs?v=gcash-fast1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=live2';
 import { startCalendarSync } from './cfh-calendar-sync.mjs?v=events1';
+import {startPortfolioSync} from './cfh-portfolio.mjs?v=portfolio1';
 const enabled=true;
 if(enabled) {
   let resolveReady,rejectReady;
@@ -23,6 +24,7 @@ if(enabled) {
   async function start() {
     await store.requireOwner();
     if(!window.cfhCalendarSyncStarted){window.cfhCalendarSyncStarted=true;await startCalendarSync(client,'161ecab1-d1d7-4fef-a089-a7300b9da774');}
+    startPortfolioSync(client,'161ecab1-d1d7-4fef-a089-a7300b9da774');
     const settings=await loadCashflowSettings(client);
     let cache=null;
     try {cache=await openHistoryCache();} catch(error){console.warn('History cache unavailable',error);}
