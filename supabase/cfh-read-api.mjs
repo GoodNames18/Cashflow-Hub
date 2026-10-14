@@ -1,4 +1,4 @@
-import * as rules from './legacy-rules.mjs?v=transaction-order4';
+import * as rules from './legacy-rules.mjs?v=rental-all1';
 import { sourceDate } from './manila-date.mjs?v=calendar3';
 import { withRecords } from './rules-environment.mjs?v=transaction-order4';
 const routes = {

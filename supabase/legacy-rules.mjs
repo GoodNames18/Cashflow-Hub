@@ -2027,34 +2027,35 @@ function normalizeDashboardAmount_(value) {
 function getRentalDashboardData(selectedYear, selectedMonth) {
   var rows = getRentalRows_();
   var now = new Date();
+  var allData=selectedYear==='all'&&selectedMonth==='all';
   var period = getAllowedDashboardPeriod_(selectedYear, selectedMonth, now);
   var monthOptions = getRentalAvailableMonthOptions_(rows, now);
   var requestedKey = String(period.year) + "-" + String(period.month).padStart(2, "0");
   var validKeys = monthOptions.map(function(option) { return option.value; });
-  if (validKeys.indexOf(requestedKey) === -1) {
+  if (!allData && validKeys.indexOf(requestedKey) === -1) {
     var fallback = monthOptions[0].value.split("-");
     period = getAllowedDashboardPeriod_(Number(fallback[0]), Number(fallback[1]), now);
   }
   var totalIncome = 0;
   function summary(category) {
     var all = filterRentalTransactionsFromRows_(rows, category, "transactions");
-    var monthly = filterRentalTransactionsByPeriod_(all, period.year, period.month, now);
+    var monthly = allData ? all : filterRentalTransactionsByPeriod_(all, period.year, period.month, now);
     var income = monthly.filter(function(item) { return !item.isExpense; }).reduce(function(sum,item){ return sum + item.amount; },0);
-    totalIncome += all.filter(function(item) { return !item.isExpense; }).reduce(function(sum,item){ return sum + item.amount; },0);
+    totalIncome += income;
     var expenses = monthly.filter(function(item) { return item.isExpense; }).reduce(function(sum,item){ return sum + item.amount; },0);
     var totalMoney = monthly.reduce(function(sum,item){ return sum + (item.isExpense ? -item.amount : item.amount); },0);
     return { income: income, expenses: expenses, totalMoney: totalMoney, transactions: monthly.length };
   }
   var allRecent = filterRentalTransactionsFromRows_(rows, "Insta360", "transactions")
     .concat(filterRentalTransactionsFromRows_(rows, "Chair & Table", "transactions"))
-    .filter(function(item){ return item.timestamp >= period.start.getTime() && item.timestamp < period.next.getTime(); })
+    .filter(function(item){ return allData || (item.timestamp >= period.start.getTime() && item.timestamp < period.next.getTime()); })
     .sort(function(a,b){ return b.timestamp - a.timestamp; }).slice(0, 10);
   var timeZone = Session.getScriptTimeZone();
   function display(item) { return { date: Utilities.formatDate(item.dateValue,timeZone,"MM/dd/yy"), time: item.timeValue instanceof Date ? Utilities.formatDate(item.timeValue,timeZone,"hh:mm a") : "", amount:item.amount, category:item.category, type:item.type, description:item.description, isExpense:item.isExpense, rowNumber:item.rowNumber, rowFingerprint:item.rowFingerprint }; }
   var categories = { insta360: summary("Insta360"), chairTable: summary("Chair & Table") };
   return {
-    monthLabel: Utilities.formatDate(period.start,timeZone,"MMMM yyyy"),
-    selectedMonthValue: String(period.year) + "-" + String(period.month).padStart(2, "0"),
+    monthLabel: allData ? "All data" : Utilities.formatDate(period.start,timeZone,"MMMM yyyy"),
+    selectedMonthValue: allData ? "all" : String(period.year) + "-" + String(period.month).padStart(2, "0"),
     monthOptions: monthOptions,
     totalIncome: totalIncome,
     categories: categories,
@@ -2104,6 +2105,7 @@ function normalizeRentalSheetRows_(rows) {
 }
 
 function filterRentalTransactionsByPeriod_(transactions, selectedYear, selectedMonth, asOfDate) {
+  if(selectedYear==='all'&&selectedMonth==='all')return transactions || [];
   var period = getAllowedDashboardPeriod_(selectedYear, selectedMonth, asOfDate || new Date());
   var start = period.start.getTime();
   var next = period.next.getTime();

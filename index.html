@@ -2861,7 +2861,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
 
   <script>
     if (true) {
-      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=portfolio1");
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=rental-all1");
       window.cashflowDatabaseReady.catch(function() {});
     }
   </script>
@@ -4265,7 +4265,8 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
     }
 
     function dashboardMonthParams(page) {
-      var value = dashboardSelectedMonths[page] || currentDashboardMonthValue();
+      var value = dashboardSelectedMonths[page] || (page === "rental" ? "all" : currentDashboardMonthValue());
+      if (page === "rental" && value === "all") return {year:"all",month:"all"};
       var parts = value.split("-");
       return { year: Number(parts[0]), month: Number(parts[1]) };
     }
@@ -4283,9 +4284,9 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
 
     function buildDashboardMonthOptions(page) {
       if (page === "rental" && rentalAvailableMonths.length) {
-        return rentalAvailableMonths.filter(function(option) {
-          return option && option.value && option.value <= currentDashboardMonthValue();
-        });
+        return [{value:"all",label:"All data"}].concat(rentalAvailableMonths.filter(function(option) {
+          return option && option.value && option.value !== "all" && option.value <= currentDashboardMonthValue();
+        }));
       }
 
       var firstMonths = {
@@ -4309,14 +4310,14 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
         options.push({ value: value, label: dashboardMonthLabel(value) });
         cursor.setMonth(cursor.getMonth() - 1);
       }
-      return options;
+      return page === 'rental' ? [{value:'all',label:'All data'}].concat(options) : options;
     }
 
     function openDashboardMonthSelector(page) {
       var modal = document.getElementById("dashboardMonthModal");
       var dashboardMonthOptions = document.getElementById("dashboardMonthOptions");
       var options = buildDashboardMonthOptions(page);
-      var selectedValue = dashboardSelectedMonths[page] || currentDashboardMonthValue();
+      var selectedValue = dashboardSelectedMonths[page] || (page === 'rental' ? 'all' : currentDashboardMonthValue());
 
       modal.dataset.page = page;
       dashboardMonthOptions.innerHTML = options.map(function(option) {
@@ -4344,7 +4345,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
     function applyDashboardMonthSelection(value, selectedPage) {
       var modal = document.getElementById("dashboardMonthModal");
       var page = selectedPage || modal.dataset.page;
-      if (!page || !value || value > currentDashboardMonthValue()) return;
+      if (!page || !value || (value === 'all' ? page !== 'rental' : value > currentDashboardMonthValue())) return;
       dashboardSelectedMonths[page] = value;
       closeDashboardMonthSelector();
       if (page === "rental") {
@@ -7570,17 +7571,21 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       );
     }
 
+    let cfhRentalLoadGeneration=0;
     function loadRentalDashboard(forceFresh) {
+      var generation=++cfhRentalLoadGeneration;
       if (!forceFresh) document.getElementById("rentalMonthLabel").innerText = "Loading...";
       return new Promise(function(resolve) {
         var period = dashboardMonthParams("rental");
         jsonpRequest(
           { action: "rentalDashboard", year: period.year, month: period.month },
           function(data) {
+            if(generation!==cfhRentalLoadGeneration){resolve(false);return;}
             renderRentalDashboard(data);
             resolve(true);
           },
           function(error) {
+            if(generation!==cfhRentalLoadGeneration){resolve(false);return;}
             if (forceFresh) { console.log(error); resolve(false); return; }
             document.getElementById("rentalMonthLabel").innerText = "Could not load dashboard";
             document.getElementById("rentalRecentTransactions").innerText = "Could not load recent transactions.";
