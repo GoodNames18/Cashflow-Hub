@@ -48,3 +48,29 @@ if(!manifest.includes('CfhReminderRestoreJob')){
  await writeFile(manifestPath,manifest);
 }
 console.log('Native alarm diagnostics and optional alarm-clock mode installed');
+
+await copyFile('mobile/android-patches/CfhReminderNotifications.kt',root+'CfhReminderNotifications.kt');
+const publisherPath=root+'TimedNotificationPublisher.kt';
+let publisher=await readFile(publisherPath,'utf8');
+if(!publisher.includes('CfhReminderNotifications.expand')){
+ const before=`        try {
+            val channel=if(Build.VERSION.SDK_INT>=26) notificationManager.getNotificationChannel(notification.channelId) else null
+            val allowed=notificationManager.areNotificationsEnabled() && (channel==null || channel.importance!=NotificationManager.IMPORTANCE_NONE)
+            notificationManager.notify(id, notification)
+            CfhAlarmJournal.record(context,if(allowed) "posted" else "blocked",id,cfhTarget)
+        } catch(e:Exception) { CfhAlarmJournal.record(context,"post-error",id,cfhTarget,detail=e.javaClass.simpleName) }`;
+ const after=`        for ((visibleId, visibleNotification) in CfhReminderNotifications.expand(context, notification, notificationJson, id)) {
+            try {
+                val channel=if(Build.VERSION.SDK_INT>=26) notificationManager.getNotificationChannel(visibleNotification.channelId) else null
+                val allowed=notificationManager.areNotificationsEnabled() && (channel==null || channel.importance!=NotificationManager.IMPORTANCE_NONE)
+                notificationManager.notify(visibleId, visibleNotification)
+                CfhAlarmJournal.record(context,if(allowed) "posted" else "blocked",visibleId,cfhTarget)
+            } catch(e:Exception) { CfhAlarmJournal.record(context,"post-error",visibleId,cfhTarget,detail=e.javaClass.simpleName) }
+        }`;
+ if(!publisher.includes(before))throw Error('Pinned publisher delivery block changed');
+ await writeFile(publisherPath,publisher.replace(before,after));
+}
+const dismissPath=root+'NotificationDismissReceiver.kt';
+let dismiss=await readFile(dismissPath,'utf8');
+dismiss=dismiss.replace('CfhAlarmJournal.record(context,"dismissed",intExtra)','CfhAlarmJournal.record(context,"dismissed",intent.getIntExtra("cfh_display_id",intExtra))');
+await writeFile(dismissPath,dismiss);

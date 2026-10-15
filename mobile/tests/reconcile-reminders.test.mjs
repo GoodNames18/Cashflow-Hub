@@ -12,3 +12,14 @@ test('deleted future reminders cancel; delayed past alarms and test reminders su
  const jobs=[job(1,500),job(2,3000),job(2147483647,4000)];const previous=reminderDelta(jobs,[],{},false,0).next;
  const delta=reminderDelta([],jobs,previous,false,1000);assert.deepEqual(delta.cancel.map(j=>j.id),[2]);
 });
+
+test('an existing combined alarm is refreshed for separate cards and later item edits',()=>{
+ const now=Date.now(),at=new Date(now+60000),old={id:1,title:'Cashflow Hub · 2 reminders',body:'A\nB',schedule:{at}};
+ const legacy={1:{at:at.getTime(),signature:JSON.stringify([old.title,old.body,at.toISOString(),'alarm-clock'])}};
+ const next={...old,extra:{page:'calendar',cfhItems:[{id:-1,title:'A',body:'A'},{id:-2,title:'B',body:'B'}]}};
+ const delta=reminderDelta([next],[{id:1}],legacy,'alarm-clock',now);
+ assert.equal(delta.schedule.length,1);
+ assert.equal(reminderDelta([next],[{id:1}],delta.next,'alarm-clock',now).schedule.length,0);
+ const edited={...next,extra:{...next.extra,cfhItems:next.extra.cfhItems.map(item=>({...item,title:item.title+' edited'}))}};
+ assert.equal(reminderDelta([edited],[{id:1}],delta.next,'alarm-clock',now).schedule.length,1);
+});
