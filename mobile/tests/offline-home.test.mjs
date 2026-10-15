@@ -52,6 +52,12 @@ test('two intentional identical entries have different request IDs',async()=>{
  const a=setup();await a.queue.init();for(let i=0;i<2;i++)await a.writes.request({action:'gcashQuickAdd',category:'gcash',amount:20});
  assert.equal(a.queue.items.length,2);assert.notEqual(a.queue.items[0].prepared[0].p_request_id,a.queue.items[1].prepared[0].p_request_id);
 });
+test('rapid entries preserve their input order even when the device clock does not advance',async()=>{
+ const a=setup();await a.queue.init();const now=Date.now;
+ try{Date.now=()=>1234567890000;for(let i=1;i<=3;i++)await a.writes.request({action:'gcashQuickAdd',category:'gcash',amount:i});}finally{Date.now=now;}
+ assert.deepEqual(a.queue.items.map(item=>item.plan.receipt.amount),[1,2,3]);
+ assert.ok(a.queue.items[0].createdAt<a.queue.items[1].createdAt&&a.queue.items[1].createdAt<a.queue.items[2].createdAt);
+});
 test('a Konek2Card retry detects an earlier commit before checking its now-lower balance',async()=>{
  const a=setup();await a.queue.init();const plan={tab:'konek2card',receipt:{amount:100},records:[]};
  const prepared=[a.store.prepare({tab_key:'konek2card',occurred_at:new Date(),amount:100})];

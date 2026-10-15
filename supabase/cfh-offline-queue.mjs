@@ -27,7 +27,8 @@ export class CashflowOfflineQueue{
  })));}
  async enqueue({plan,prepared,params,installment}){
   const id=installment?.p_id||prepared[0].p_request_id;
-  const item={key:CFH_OWNER_ID+':'+id,owner:CFH_OWNER_ID,createdAt:Date.now(),plan,prepared,params,installment};
+  const createdAt=this.items.reduce((next,item)=>Math.max(next,item.createdAt+1),Date.now());
+  const item={key:CFH_OWNER_ID+':'+id,owner:CFH_OWNER_ID,createdAt,plan,prepared,params,installment};
   // Do not acknowledge a save until the IndexedDB transaction commits.
   await this.persistence.put(item);this.items=await this.persistence.list();this.error='';this.publish();
   if(plan?.tab)this.reads.snapshot.emit(plan.tab);
