@@ -2889,6 +2889,12 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       return y + "-" + m + "-" + d;
     }
 
+    function cfhCalendarTodayKey(now=new Date()) {
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+      const part=type=>parts.find(item=>item.type===type).value;
+      return part('year')+'-'+part('month')+'-'+part('day');
+    }
+
     let cfhCalendarRenderCache=null,cfhCalendarRenderedSignature='';
     function cfhCalendarReadJSON(key,fallback={}){
       if(cfhCalendarRenderCache?.json.has(key))return cfhCalendarRenderCache.json.get(key);
@@ -4082,7 +4088,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
       document.getElementById('cfhEditorTitle').textContent = 'Add to Calendar';
       document.querySelector('.cfh-editor-save').textContent = 'Save';
       document.getElementById('cfhEditorDelete').hidden = true;
-      document.getElementById("cfhEditorDate").value = cfhCalendarDateKey(cfhCalendarState.selected);
+      document.getElementById("cfhEditorDate").value = cfhCalendarTodayKey();
       document.getElementById('cfhAddCardStart').value='';
       document.getElementById('cfhAddCardEnd').value='';
       document.getElementById('cfhAddStatementDay').value='';
