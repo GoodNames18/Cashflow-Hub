@@ -1,7 +1,32 @@
-const CACHE_NAME = "cashflow-hub-v13";
+const CACHE_NAME = "cashflow-hub-v14-offline-home";
 
-self.addEventListener("install", function() {
-  self.skipWaiting();
+const OFFLINE_ASSETS=[
+  "./",
+  "index.html",
+  "supabase/cfh-browser.mjs?v=offline-home1",
+  "supabase/vendor/supabase-js.mjs",
+  "supabase/cfh-store.mjs?v=offline-home1",
+  "supabase/cfh-store.mjs?v=live2",
+  "supabase/cfh-snapshot.mjs?v=offline-home1",
+  "supabase/cfh-read-api.mjs?v=offline-home1",
+  "supabase/cfh-write-api.mjs?v=offline-home1",
+  "supabase/cfh-settings.mjs?v=offline-home1",
+  "supabase/cfh-offline-queue.mjs?v=offline-home1",
+  "supabase/cfh-financial-checks.mjs?v=live2",
+  "supabase/cfh-entry-plan.mjs?v=moneyflow-digits1",
+  "supabase/legacy-rules.mjs?v=moneyflow-digits1",
+  "supabase/legacy-rules.mjs?v=rental-all1",
+  "supabase/manila-date.mjs?v=calendar3",
+  "supabase/rules-environment.mjs?v=transaction-order4",
+  "supabase/cfh-calendar-sync.mjs?v=events1",
+  "supabase/cfh-portfolio.mjs?v=portfolio1",
+  "supabase/cfh-portfolio-model.mjs",
+  "icon-192.png",
+  "icon-512.png",
+  "cashflow-hub-logo.png"
+];
+self.addEventListener("install", function(event) {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(OFFLINE_ASSETS)).then(()=>self.skipWaiting()));
 });
 
 self.addEventListener("activate", function(event) {
@@ -43,9 +68,9 @@ self.addEventListener("fetch", function(event) {
         if (response && response.ok) {
           var copy = response.clone();
 
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(request, copy);
-          });
+          event.waitUntil(caches.open(CACHE_NAME).then(function(cache) {
+            return Promise.all([cache.put(request, copy),...(request.mode==='navigate'?[cache.put('/Cashflow-Hub/index.html',response.clone())]:[])]);
+          }));
         }
 
         return response;
@@ -55,7 +80,7 @@ self.addEventListener("fetch", function(event) {
           if (cached) return cached;
 
           if (request.mode === "navigate") {
-            return fetch("/Cashflow-Hub/index.html?pwa=13");
+            return caches.match("/Cashflow-Hub/index.html").then(shell=>shell||caches.match("/Cashflow-Hub/")).then(shell=>shell||Response.error());
           }
 
           return Response.error();

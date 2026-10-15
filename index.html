@@ -1737,6 +1737,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
          APP TABS
          ==================================================== -->
 
+    <style>body.cfh-calendar-active #cfhHomeSyncStatus,body.cfh-crypto-active #cfhHomeSyncStatus{display:none}</style>
     <nav class="app-tabs" aria-label="Tracker pages">
 
       <button
@@ -2861,7 +2862,7 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
 
   <script>
     if (true) {
-      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=rental-all1");
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=offline-home1");
       window.cashflowDatabaseReady.catch(function() {});
     }
   </script>
@@ -5254,6 +5255,11 @@ body.cfh-crypto-active .app-tabs,body.cfh-crypto-active #pagesViewport{display:n
           if (savedKey && dashboardRequestGeneration[savedKey] !== generation) return;
           saveDashboardCache(savedKey, result);
           if (onSuccess && (savedData === null || JSON.stringify(savedData) !== JSON.stringify(result))) onSuccess(result);
+          if(result?.pendingSync){
+            const statusIds={lifeLogAdd:'lifeLogStatus',expense:'moneyFlowStatus',rentalAdd:'rentalStatus',twiceAdd:'twiceStatus',printingAdd:'printingStatus',gcashQuickAdd:'gcashQuickStatus',gcashTextAdd:'gcashQuickStatus',installmentCreate:'moneyFlowStatus'};
+            const status=document.getElementById(statusIds[params.action]||(String(params.action).startsWith('test')?'testStatus':''));
+            if(status){status.textContent=window.cfhHomeOfflineQueue?.items.length?'✓ Saved on this device · Pending sync':'✓ Saved and synced';status.dataset.cfhPendingSync='true';}
+          }
         }, function(error) {
           if (savedKey && dashboardRequestGeneration[savedKey] !== generation) return;
           if (savedData === null && onFailure) onFailure(error);

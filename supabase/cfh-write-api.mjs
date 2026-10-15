@@ -12,6 +12,8 @@ export class CashflowWriteApi {
   constructor(store,reads,{testOnly=false,allowFinancial=false}={}) {this.store=store;this.reads=reads;this.retries=new Map();this.testOnly=testOnly;this.allowFinancial=allowFinancial;this.queue=Promise.resolve();}
   handles(action) {return actions.has(action)||['transactionDelete','transactionRestore','transactionDeleteStatus'].includes(action);}
   async find(params) {
+    if(String(params.rowNumber||params.id||params.rowFingerprint||'').startsWith('pending:'))throw Error('This entry is pending sync. Connect and sync it before deleting or restoring.');
+    if(globalThis.navigator?.onLine===false)throw Error('Connect to delete or restore a synced transaction.');
     const tab=sheets[params.sheet];
     if(!tab)throw new Error('Unknown transaction sheet.');
     let id=String(params.rowNumber||params.id||'');
@@ -36,6 +38,12 @@ export class CashflowWriteApi {
       const key=JSON.stringify(params);
       let pending=this.retries.get(key);
       if(!pending){pending={id:crypto.randomUUID()};this.retries.set(key,pending);}
+      if(this.outbox){
+        const total=Number(params.total),months=Number(params.months),item=String(params.item||'').trim(),date=String(params.firstDate||'');
+        if(!item||item.length>120||!Number.isFinite(total)||total<=0||Math.abs(total*100-Math.round(total*100))>0.000001||!Number.isInteger(months)||months<1||months>120||Math.floor(total*100/months)<1||!/^\d{4}-\d{2}-\d{2}$/.test(date)||date<'2000-01-01'||date>'2100-01-01'||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date)throw Error('Enter a valid item, total, months and first payment date.');
+        const result=await this.outbox.enqueue({params,installment:{p_id:pending.id,p_item:item,p_total:total,p_months:months,p_first_date:date}});
+        this.retries.delete(key);return result;
+      }
       const {data,error}=await this.store.client.rpc('cfh_create_installment',{
         p_id:pending.id,p_item:params.item,p_total:Number(params.total),
         p_months:Number(params.months),p_first_date:params.firstDate
@@ -74,6 +82,11 @@ export class CashflowWriteApi {
       this.retries.set(key,pending);
     }
     const {plan,prepared}=pending;
+    if(this.outbox){
+      if(plan.tab==='konek2card')checkKonekEntry(plan,params,await this.reads.request({action:'testDashboard'}));
+      const result=await this.outbox.enqueue({plan,prepared,params});
+      this.retries.delete(key);return result;
+    }
     // Load before committing so acknowledged events immediately update totals.
     if(plan.tab!=='cash_in_out')await this.reads.snapshot.load(plan.tab);
     if(plan.tab==='konek2card' && !pending.checked) {

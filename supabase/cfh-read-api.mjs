@@ -25,12 +25,12 @@ export class CashflowReadApi {
     this.konekSeed = konekSeed;
   }
   handles(action) { return Object.hasOwn(routes,action); }
-  async request(params, force = false) {
+  async request(params, force = false, options = {}) {
     const route = routes[params.action];
     if (!route) throw new Error('Unsupported Cashflow read action: '+params.action);
     const [tab,fn,...fields] = route;
     if (tab === 'konek2card') rules.configureKonekSeed(this.konekSeed);
-    let records = await this.snapshot.load(tab,force);
+    let records = await this.snapshot.load(tab,force,options);
     if (params.action === 'gcashTransactions' && params.year && params.month) {
       records = records.filter(record => {
         const date = sourceDate(record.source_values[0]);

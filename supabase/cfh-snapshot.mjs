@@ -1,4 +1,4 @@
-import { CFH_OWNER_ID } from './cfh-store.mjs?v=live2';
+import { CFH_OWNER_ID } from './cfh-store.mjs?v=offline-home1';
 // IndexedDB keeps transaction history across app closes without sharing the
 // legacy dashboard cache namespace or clearing it during an update.
 export class CashflowSnapshot {
@@ -26,21 +26,32 @@ export class CashflowSnapshot {
     try { await this.cache?.put(tab, Array.from(this.records.get(tab)?.values() || [])); }
     catch (error) { console.warn('Cashflow history cache could not be saved', error); }
   }
-  async load(tab, force = false) {
+  view(tab,includePending=true){
+    const records=Array.from(this.records.get(tab)?.values()||[]);
+    if(!includePending)return records;
+    const confirmed=new Set(records.map(r=>r.client_request_id));
+    return [...records,...(this.pendingRecords?.(tab)||[]).filter(r=>!confirmed.has(r.client_request_id))];
+  }
+  async load(tab, force = false, {includePending=true,requireNetwork=false}={}) {
     this.store.validateTab(tab);
-    if (!force && this.records.has(tab)) return Array.from(this.records.get(tab).values());
-    if (!force && this.cache) {
+    const offline=globalThis.navigator?.onLine===false;
+    if(requireNetwork&&offline)throw Error('Connect to the internet to verify the current balance.');
+    if ((!force||offline) && this.records.has(tab)) return this.view(tab,includePending);
+    if ((!force||offline) && this.cache) {
       try {
         const cached = await this.cache.get(tab);
         if (Array.isArray(cached)) {
           this.records.set(tab, new Map(cached.map(r=>[r.id,r])));
-          this.refresh(tab).catch(error=>console.warn('Cashflow background refresh failed',error));
-          return cached;
+          if(!offline)this.refresh(tab).catch(error=>console.warn('Cashflow background refresh failed',error));
+          return this.view(tab,includePending);
         }
       } catch (error) { console.warn('Cashflow history cache unavailable',error); }
     }
-    await this.refresh(tab);
-    return Array.from(this.records.get(tab).values());
+    try {
+      if(offline)throw Error('Open this Home tab once online to download its history. Your new entries are still saved on this device.');
+      await this.refresh(tab);
+    }catch(error){if(requireNetwork||!this.records.has(tab))throw error;}
+    return this.view(tab,includePending);
   }
   async refreshChanges(tab) {
     if(this.loading.has(tab))return this.loading.get(tab);

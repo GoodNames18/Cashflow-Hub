@@ -12,10 +12,21 @@ export class CashflowStore {
     this.pending = new Map();
     this.listeners = new Set();
   }
-  async requireOwner() {
+  cachedOwner(){
+    try{
+      const verified=localStorage.getItem('cfh-home-verified-owner-v1');
+      const session=JSON.parse(localStorage.getItem('sb-mssrsogwxvxyyjnavdiu-auth-token')||'null');
+      return verified===CFH_OWNER_ID&&session?.user?.id===CFH_OWNER_ID?session.user:null;
+    }catch{return null;}
+  }
+  async requireOwner({allowOffline=false}={}) {
+    // This cache only unlocks local data entry. Every upload is verified online;
+    // database RLS still authorizes every remote write.
+    if(allowOffline&&this.cachedOwner())return this.cachedOwner();
     const { data, error } = await this.client.auth.getUser();
     if (error) throw error;
     if (data?.user?.id !== CFH_OWNER_ID) throw new Error('Sign in to your Cashflow Hub account.');
+    try{localStorage.setItem('cfh-home-verified-owner-v1',CFH_OWNER_ID);}catch{}
     return data.user;
   }
   async signIn(email, password) {
