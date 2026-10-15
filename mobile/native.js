@@ -18,8 +18,9 @@ async function runSchedule(force=false){
   const snapshot=Object.fromEntries(KEYS.map(k=>[k,localStorage.getItem(k)||'']));
   const signature=JSON.stringify(snapshot)+key(new Date())+Intl.DateTimeFormat().resolvedOptions().timeZone+report.exactAllowed+report.alarmClock;
   if(!force&&last===signature)return {enabled:true,registered:true};
-  const notifications=reminderJobs(snapshot);
-  const pending=await LocalNotifications.getPending();
+  const [pending,notifications]=await Promise.all([
+   LocalNotifications.getPending(),Promise.resolve().then(()=>reminderJobs(snapshot))
+  ]);
   let previous={};try{previous=JSON.parse(localStorage.getItem(PLAN)||'{}');}catch{}
   const delta=reminderDelta(notifications,pending.notifications,force?{}:previous,report.alarmClock);
   await registerReminderDelta(delta,LocalNotifications,Diagnostics);

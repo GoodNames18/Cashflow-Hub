@@ -1,6 +1,8 @@
-export function notificationEntries(snapshot:Record<string,string>,key:string){
+export function createNotificationReader(snapshot:Record<string,string>){
+ const parsed=new Map<string,any>(),scoped=new Map<string,any>(),duplicates=new Map<string,any>(),eastwest=new Map<string,any>();
+ function readJSON(key:string,fallback='{}'){if(!parsed.has(key))parsed.set(key,JSON.parse(snapshot[key]||fallback));return parsed.get(key);}
  const localStorage={getItem:(k:string)=>snapshot[k]||null};
- let cfhCalendarEntries=JSON.parse(snapshot.cfh_calendar_entries_v1||'[]');
+ let cfhCalendarEntries=readJSON('cfh_calendar_entries_v1','[]');
      const CFH_CARD_PANEL_KEY='cfh_card_panel_preferences_v1';
     const CFH_EASTWEST_EXTRA_HOLIDAYS={
       2026:['2026-02-17','2026-03-20','2026-05-27','2026-11-02','2026-12-24'],
@@ -24,7 +26,8 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
     }
     function cfhEntryPrefs(entry){return cfhScopedPrefs(cfhCardKey(entry),cfhEntryCycle(entry));}
     function cfhEntryCycle(entry){return entry.cfhDuplicateCycle||entry.cfhEastwestCycle||(entry.cfhStatement||entry.date||entry.cfhDisplayDate||'').slice(0,7);}
-    function cfhEastwestCycle(year,month){
+    function cfhEastwestCycle(year,month){const cacheKey=JSON.stringify([year,month]);if(!eastwest.has(cacheKey))eastwest.set(cacheKey,cfhEastwestCycleUncached(year,month));return eastwest.get(cacheKey);}
+    function cfhEastwestCycleUncached(year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,15)).slice(0,7);
       const override=cfhEastwestOverrides()[cycle]||{};
       const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(cfhCardStatementDate('eastwest',year,month)));
@@ -49,13 +52,14 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
       return {statementDay:use&&Number.isInteger(prefs.statementDay)?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21)};
     }
     function cfhScopedPrefs(bank,cycle){
+      const cacheKey=JSON.stringify([bank,cycle]);if(scoped.has(cacheKey))return scoped.get(cacheKey);
       const base=cfhCardPanelPreferences()[bank]||{},result={...base};
       for(const edit of base.scopedEdits||[]){
         if(edit.scope==='all'||edit.scope==='future'&&cycle>=edit.cycle||edit.scope==='current'&&cycle===edit.cycle)Object.assign(result,edit.patch);
       }
-      return result;
+      scoped.set(cacheKey,result);return result;
     }
-    function cfhCardPanelPreferences(){try{return JSON.parse(localStorage.getItem(CFH_CARD_PANEL_KEY)||'{}')||{};}catch(e){return {};}}
+    function cfhCardPanelPreferences(){try{return readJSON(CFH_CARD_PANEL_KEY)||{};}catch(e){return {};}}
     function cfhEastwestBankingDate(date){
       const result=new Date(date.getFullYear(),date.getMonth(),date.getDate());
       while(result.getDay()===0||result.getDay()===6||cfhEastwestHoliday(result))result.setDate(result.getDate()+1);
@@ -82,9 +86,10 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
       return new Date(year,month,Math.min(day,new Date(year,month+1,0).getDate()));
     }
     function cfhEastwestOverrides(){
-      try{const value=JSON.parse(localStorage.getItem(CFH_EASTWEST_OVERRIDES_KEY)||'{}');return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}
+      try{const value=readJSON(CFH_EASTWEST_OVERRIDES_KEY);return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}
     }
-    function cfhDuplicateCycle(bank,year,month){
+    function cfhDuplicateCycle(bank,year,month){const cacheKey=JSON.stringify([bank,year,month]);if(!duplicates.has(cacheKey))duplicates.set(cacheKey,cfhDuplicateCycleUncached(bank,year,month));return duplicates.get(cacheKey);}
+    function cfhDuplicateCycleUncached(bank,year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7),prefs=cfhScopedPrefs(bank,cycle);
       const override=(prefs.confirmedCycles||{})[cycle]||{};
       if(cfhIsAtomeCard(prefs))return {cycle,statement:cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhCardStatementDate(bank,year,month)),due:cfhEastwestValidDate(override.due)?override.due:cfhAtomeDueDate(year,month)};
@@ -107,7 +112,7 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
       return /^([01]\d|2[0-3]):[0-5]\d$/.test(value||'')?value:'';
     }
     function cfhBellEnabled(id){const saved=cfhBellSettings()[id];if(saved!==undefined)return saved!==false;const key=id.split('|')[0];return !key.startsWith('duplicate-')||(cfhCardPanelPreferences()[key]||{}).remindersEnabled!==false;}
-    function cfhBellSettings(){try{return JSON.parse(localStorage.getItem(CFH_CALENDAR_BELLS_KEY)||'{}')||{};}catch(e){return {};}}
+    function cfhBellSettings(){try{return readJSON(CFH_CALENDAR_BELLS_KEY)||{};}catch(e){return {};}}
     function cfhCalendarForDate(key) {
       return cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
     }
@@ -116,7 +121,7 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
       return !(deleted.all||[]).includes(series)&&!(deleted.occurrences||[]).includes(series+'|'+key)&&!(deleted.future&&deleted.future[series]&&key>=deleted.future[series]);
     }
     function cfhEventSeries(entry){return (cfhCardKey(entry)||entry.id)+':'+entry.type;}
-    function cfhEventDeletions(){try{return JSON.parse(localStorage.getItem(CFH_EVENT_DELETIONS_KEY)||'{}');}catch(e){return {};}}
+    function cfhEventDeletions(){try{return readJSON(CFH_EVENT_DELETIONS_KEY);}catch(e){return {};}}
     function cfhCardFutureVisible(entry,key){
       const bank=cfhCardKey(entry);
       const range=bank?cfhCardScheduleRange(bank,cfhEntryCycle(entry)):null;
@@ -192,7 +197,7 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
       while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
       return {key:cfhCalendarDateKey(due),confirmed:false};
     }
-    function cfhMetrobankOverrides() { try { return JSON.parse(localStorage.getItem(CFH_METROBANK_OVERRIDE_KEY)||'{}')||{}; } catch(e){return {};} }
+    function cfhMetrobankOverrides() { try { return readJSON(CFH_METROBANK_OVERRIDE_KEY)||{}; } catch(e){return {};} }
     function cfhMetrobankIsActiveForStatement(statement) {
       const stopped = cfhMetrobankStoppedAfter();
       return !stopped || statement <= stopped;
@@ -221,8 +226,11 @@ export function notificationEntries(snapshot:Record<string,string>,key:string){
       if(unit==='yearly')return (y-sy)%interval===0&&m===sm&&d===Math.min(sd,new Date(y,m,0).getDate());
       return false;
     }
+ return function(key:string){
  return cfhCalendarForDate(key).filter(e=>cfhBellEnabled(e.id)).map(e=>{
  const bank=cfhCardKey(e),prefs=bank?cfhEntryPrefs(e):e,names=bank?cfhCardDisplayNames(e):null;
  return {id:e.id,title:names?names.bank+' '+names.card+' — '+(e.type==='due'?'Due date':'Statement'):e.title,date:key,time:cfhCardNotificationTime(e),days:Array.isArray(prefs.reminderDays)?prefs.reminderDays:[7,5,3,2,1,0]};
  });
+};
 }
+export function notificationEntries(snapshot:Record<string,string>,key:string){return createNotificationReader(snapshot)(key);}

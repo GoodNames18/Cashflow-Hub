@@ -1,12 +1,12 @@
-import { notificationEntries } from '../supabase/functions/cfh-push/kernel.ts';
+import { createNotificationReader } from '../supabase/functions/cfh-push/kernel.ts';
 function key(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 function idFor(value){let n=2166136261;for(const char of value)n=Math.imul(n^char.charCodeAt(0),16777619);return (n>>>0)%2147483646+1;}
 export function reminderJobs(snapshot,now=new Date()){
-  const jobs=new Map(),used=new Set();
+  const jobs=new Map(),used=new Set(),entriesForDate=createNotificationReader(snapshot);
   // Refilled whenever the app opens or a synced schedule changes.
   for(let offset=0;offset<=400;offset++){
    const occurrence=new Date(now.getFullYear(),now.getMonth(),now.getDate()+offset);
-   for(const entry of notificationEntries(snapshot,key(occurrence))){
+   for(const entry of entriesForDate(key(occurrence))){
     if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(entry.time||''))continue;
     for(const before of entry.days){
      if(!Number.isInteger(before)||before<0||before>7)continue;
