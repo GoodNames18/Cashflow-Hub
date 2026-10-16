@@ -1718,7 +1718,23 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
 </style>
 <style>#cfhPushPanel[hidden]{display:none!important}.cfh-reminder-settings-button{font-family:inherit;font-size:12px;border:1px solid #dedbef;background:#E6E6FA;color:#1B1844;border-radius:10px;padding:8px 12px;margin:0 0 12px;cursor:pointer}</style>
-</head>
+<style>
+.cfh-portfolio-page-tabs,.cfh-portfolio-history-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#E6E6FA;border-radius:14px;padding:5px;margin:14px 0}
+#cfhPortfolioPage .cfh-portfolio-page-tabs button,#cfhPortfolioPage .cfh-portfolio-history-tabs button{border:0;background:none;font-size:14px}
+#cfhPortfolioPage .cfh-portfolio-page-tabs button[aria-pressed="true"],#cfhPortfolioPage .cfh-portfolio-history-tabs button[aria-pressed="true"]{background:#1B1844;color:#fff}
+#cfhPortfolioDashboard[hidden],#cfhPortfolioHistoryView[hidden],#cfhPortfolioDividendSection[hidden]{display:none!important}
+#cfhPortfolioTransactions,#cfhPortfolioDividendList{display:grid;gap:10px}
+#cfhPortfolioDividendList{padding-bottom:8px}
+.cfh-portfolio-history-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0}
+.cfh-portfolio-history-heading h2{font-size:18px;margin:0}
+.cfh-portfolio-history-heading button,.cfh-dividend-mark-paid{background:#00DDB2!important;border:0!important;font-weight:700!important}
+.cfh-dividend-card{grid-template-columns:40px minmax(0,1fr) auto;align-items:center}
+.cfh-dividend-total{grid-column:3;grid-row:1;font-size:15px;white-space:nowrap}
+.cfh-dividend-card .cfh-investment-meta{grid-column:2 / -1}
+.cfh-dividend-card .cfh-dividend-mark-paid{grid-column:2 / -1;justify-self:start}
+#cfhPortfolioDividendStatuses{margin-top:8px;margin-bottom:12px}
+#cfhPortfolioDividendStatuses[hidden]{display:none}
+</style></head>
 
 <body>
 
@@ -9997,16 +10013,27 @@ window.cfhRefreshTestTab = function(page) {
 </div>
 
 <section id="cfhPortfolioPage" hidden aria-label="Crypto portfolio">
- <div class="cfh-portfolio-heading"><h1>Portfolio</h1><span id="cfhPortfolioMarket"></span></div>
- <div class="cfh-portfolio-balance"><div class="cfh-portfolio-balance-top"><div><small>Total balance</small><strong id="cfhPortfolioBalance">₱0.00</strong></div><button id="cfhPortfolioBreakdown" type="button">View breakdown ›</button></div>
-  <div class="cfh-portfolio-summary"><div><small>Invested</small><strong id="cfhPortfolioInvested">₱0.00</strong></div><div><small>Cash available</small><button id="cfhPortfolioCashButton" type="button" aria-label="Record cash available at broker"><strong id="cfhPortfolioCash">₱0.00</strong> ✎</button></div></div>
-  <div class="cfh-portfolio-gain"><span>Unrealized gain / loss</span><strong><span id="cfhPortfolioGain">₱0.00</span><span id="cfhPortfolioGainPercent"></span></strong></div>
+ <div class="cfh-portfolio-heading"><h1 id="cfhPortfolioTitle">Portfolio</h1><span id="cfhPortfolioMarket"></span></div>
+ <div class="cfh-portfolio-page-tabs" role="group" aria-label="Portfolio pages"><button type="button" data-portfolio-page="portfolio" aria-pressed="true">Portfolio</button><button type="button" data-portfolio-page="history" aria-pressed="false">History</button></div>
+ <div id="cfhPortfolioDashboard">
+  <div class="cfh-portfolio-balance"><div class="cfh-portfolio-balance-top"><div><small>Total balance</small><strong id="cfhPortfolioBalance">₱0.00</strong></div><button id="cfhPortfolioBreakdown" type="button">History ›</button></div>
+   <div class="cfh-portfolio-summary"><div><small>Invested</small><strong id="cfhPortfolioInvested">₱0.00</strong></div><div><small>Cash available</small><button id="cfhPortfolioCashButton" type="button" aria-label="Record cash available at broker"><strong id="cfhPortfolioCash">₱0.00</strong> ✎</button></div></div>
+   <div class="cfh-portfolio-gain"><span>Unrealized gain / loss</span><strong><span id="cfhPortfolioGain">₱0.00</span><span id="cfhPortfolioGainPercent"></span></strong></div>
+  </div>
+  <div class="cfh-portfolio-assets" role="group" aria-label="Asset type"><button type="button" data-portfolio-asset="stock" aria-pressed="true">Stocks</button><button type="button" data-portfolio-asset="crypto" aria-pressed="false">Crypto</button></div>
+  <div class="cfh-portfolio-holdings-heading"><h2>My holdings</h2><span id="cfhPortfolioSync" role="status">Connecting portfolio sync…</span></div>
+  <div class="cfh-portfolio-columns"><span>Symbol</span><span>Price</span><span>Gain / Loss</span></div><div id="cfhPortfolioHoldings"></div>
+  <div class="cfh-portfolio-invest-row"><button id="cfhPortfolioInvestButton" type="button">＋ Invest</button></div>
  </div>
- <div class="cfh-portfolio-assets" role="group" aria-label="Asset type"><button type="button" data-portfolio-asset="stock" aria-pressed="true">Stocks</button><button type="button" data-portfolio-asset="crypto" aria-pressed="false">Crypto</button></div>
- <div class="cfh-portfolio-holdings-heading"><h2>My holdings</h2><span id="cfhPortfolioSync" role="status">Connecting portfolio sync…</span></div>
- <div class="cfh-portfolio-columns"><span>Symbol</span><span>Price</span><span>Gain / Loss</span></div><div id="cfhPortfolioHoldings"></div>
- <section class="cfh-portfolio-recent" aria-labelledby="cfhPortfolioRecentTitle"><h2 id="cfhPortfolioRecentTitle">History</h2><div id="cfhPortfolioRecent" tabindex="0" role="region" aria-label="Investment purchases"></div></section>
- <div class="cfh-portfolio-invest-row"><button id="cfhPortfolioInvestButton" type="button">＋ Invest</button></div>
+ <div id="cfhPortfolioHistoryView" hidden>
+  <div class="cfh-portfolio-history-tabs" role="group" aria-label="History type"><button type="button" data-portfolio-history-tab="transactions" aria-pressed="true">Transactions</button><button type="button" data-portfolio-history-tab="dividends" aria-pressed="false">Dividend History</button></div>
+  <div id="cfhPortfolioTransactions" tabindex="0" role="region" aria-label="Investment transactions"></div>
+  <section id="cfhPortfolioDividendSection" hidden>
+   <div class="cfh-portfolio-history-heading"><h2>Dividend History</h2><button type="button" id="cfhPortfolioDividendButton">＋ Record dividend</button></div>
+   <div id="cfhPortfolioDividendStatuses" class="cfh-portfolio-assets" role="group" aria-label="Dividend status"><button type="button" data-dividend-status="paid" aria-pressed="false">Paid</button><button type="button" data-dividend-status="upcoming" aria-pressed="true">Upcoming</button></div>
+   <div id="cfhPortfolioDividendList" role="region" aria-label="Dividend records"></div>
+  </section>
+ </div>
 </section>
 <div id="cfhPortfolioModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioModalTitle">
  <div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioModalTitle">Record investment</h2></div><p>Enter the purchase details from your broker.</p>
@@ -10022,7 +10049,18 @@ window.cfhRefreshTestTab = function(page) {
  <div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioModal">Cancel</button><button type="submit">Save</button></div><small>Records an existing purchase in your portfolio.</small>
 </form></div>
 <div id="cfhPortfolioValueModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioValueForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioValueTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioValueTitle">Record latest price</h2><button type="button" data-portfolio-close="cfhPortfolioValueModal" aria-label="Close">×</button></div><input name="kind" type="hidden"><label>Broker<input name="broker" maxlength="80" required></label><label id="cfhPortfolioValueSymbol">Stock / coin symbol<input name="symbol" maxlength="20"></label><label><span id="cfhPortfolioValuePriceLabel">Latest price (₱)</span><input name="price" type="number" min="0" step="any" inputmode="decimal" required></label><p id="cfhPortfolioValueStatus" role="status"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioValueModal">Cancel</button><button type="submit">Save</button></div><small>Use the value shown by your broker.</small></form></div>
-<div id="cfhPortfolioHistoryModal" class="cfh-portfolio-overlay" hidden><div class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioHistoryTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioHistoryTitle">Investment breakdown</h2></div><div id="cfhPortfolioHistory"></div><button type="button" data-portfolio-close="cfhPortfolioHistoryModal">Close</button></div></div>
+<div id="cfhPortfolioDividendModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioDividendForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioDividendTitle">
+ <div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioDividendTitle">Record dividend</h2></div><p>Enter the dividend details from your broker.</p>
+ <input type="hidden" name="asset" value="stock">
+ <label>Broker<select name="broker" id="cfhDividendBroker" required><option value="">Choose broker</option></select></label>
+ <label>Stock symbol<input id="cfhDividendSymbol" name="symbol" maxlength="20" placeholder="e.g. AREIT" pattern="[A-Za-z0-9][A-Za-z0-9.\-]{0,19}" required></label>
+ <div class="cfh-portfolio-form-row"><label>Eligible shares<input name="shares" type="number" min="0.00000001" step="any" inputmode="decimal" required></label><label>Dividend per share (₱)<input name="perShare" type="number" min="0.00000001" step="any" inputmode="decimal" required></label></div>
+ <div class="cfh-portfolio-form-row"><label>Payment date<input name="paymentDate" type="date" required></label><label>Status<select name="status" required><option value="upcoming">Upcoming</option><option value="paid">Paid</option></select></label></div>
+ <label>Tax withheld (optional, ₱)<input name="tax" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label>
+ <div class="cfh-portfolio-total"><span>Net dividend</span><strong id="cfhPortfolioDividendTotal">₱0.00</strong></div>
+ <label>Notes (optional)<textarea name="notes" maxlength="500" rows="2" placeholder="Add a note"></textarea></label><p id="cfhPortfolioDividendFormStatus" role="status"></p>
+ <div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioDividendModal">Cancel</button><button type="submit">Save dividend</button></div>
+</form></div>
 
 
 <button class="cfh-calendar-fab" hidden type="button" aria-label="Add schedule" onclick="cfhCalendarAddPlaceholder()">+</button>
