@@ -1,7 +1,7 @@
 create table public.cfh_portfolio_records (
  owner_id uuid not null references auth.users(id),
  id uuid not null,
- payload jsonb not null check(jsonb_typeof(payload)='object' and payload->>'kind' in ('purchase','quote','cash')),
+ payload jsonb not null check(jsonb_typeof(payload)='object' and payload->>'kind' in ('purchase','quote','cash','dividend')),
  created_at timestamptz not null default now(),
  primary key(owner_id,id)
 );
