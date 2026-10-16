@@ -76,25 +76,16 @@ export class CashflowOfflineQueue{
  }
 }
 
+// Keep offline retry and reconnect behavior without replacing transaction notes
+// or mounting a visible sync panel in the Home layout.
 export function mountHomeSyncStatus(queue){
- const panel=document.createElement('details');panel.id='cfhHomeSyncStatus';panel.hidden=true;
- panel.style.cssText='margin:8px 0 12px;padding:12px 16px;border:1px solid #1B1844;border-radius:14px;background:#E6E6FA;color:#1B1844;font-size:13px';
- const summary=document.createElement('summary'),note=document.createElement('p'),list=document.createElement('ul'),retry=document.createElement('button');
- summary.setAttribute('role','status');summary.setAttribute('aria-live','polite');
- retry.type='button';retry.textContent='Sync now';retry.style.cssText='background:#1B1844;color:white;border:0;border-radius:10px;padding:10px 16px';
- retry.onclick=()=>void queue.flush();panel.append(summary,note,list,retry);document.querySelector('.app-tabs')?.after(panel);
  let timer,delay=5000;
  const render=()=>{
   const count=queue.items.length,offline=navigator.onLine===false;
-  panel.hidden=!count&&!offline;
-  summary.textContent=count?(queue.busy?'Syncing':'Pending sync')+' · '+count+' '+(count===1?'entry':'entries'):'Offline · Showing saved data';
-  note.textContent=queue.error?'Saved on this device. Sync needs attention: '+queue.error:count?'Saved on this device. Totals include pending entries. Sync resumes when the app has internet.':'You can add entries offline. Cached totals may be out of date.';
-  list.replaceChildren();for(const item of queue.items){const li=document.createElement('li');li.textContent=item.installment?.p_item||item.plan?.records?.map(r=>r.description||r.category).join(' / ')||'Home entry';list.append(li);}
-  retry.disabled=offline||!!queue.busy;clearTimeout(timer);
-  if(!count)document.querySelectorAll('[data-cfh-pending-sync]').forEach(node=>{node.textContent='✓ Saved and synced';delete node.dataset.cfhPendingSync;});
+  clearTimeout(timer);
   if(count&&!offline&&!document.hidden&&!queue.busy){timer=setTimeout(()=>{delay=Math.min(delay*2,60000);void queue.flush();},delay);}else if(!count)delay=5000;
  };
  queue.onChange(render);window.addEventListener('online',()=>{delay=5000;render();void queue.flush();});window.addEventListener('offline',render);
  document.addEventListener('visibilitychange',()=>{render();if(!document.hidden)void queue.flush();});window.addEventListener('pageshow',()=>void queue.flush());
- render();void queue.flush();return panel;
+ render();void queue.flush();
 }

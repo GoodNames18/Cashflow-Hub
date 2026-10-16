@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v15-negative-gcash-cash";
+const CACHE_NAME = "cashflow-hub-v16-quiet-home-sync";
 
 const OFFLINE_ASSETS=[
   "./",

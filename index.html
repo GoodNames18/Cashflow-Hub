@@ -5256,11 +5256,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
           if (savedKey && dashboardRequestGeneration[savedKey] !== generation) return;
           saveDashboardCache(savedKey, result);
           if (onSuccess && (savedData === null || JSON.stringify(savedData) !== JSON.stringify(result))) onSuccess(result);
-          if(result?.pendingSync){
-            const statusIds={lifeLogAdd:'lifeLogStatus',expense:'moneyFlowStatus',rentalAdd:'rentalStatus',twiceAdd:'twiceStatus',printingAdd:'printingStatus',gcashQuickAdd:'gcashQuickStatus',gcashTextAdd:'gcashQuickStatus',installmentCreate:'moneyFlowStatus'};
-            const status=document.getElementById(statusIds[params.action]||(String(params.action).startsWith('test')?'testStatus':''));
-            if(status){status.textContent=window.cfhHomeOfflineQueue?.items.length?'✓ Saved on this device · Pending sync':'✓ Saved and synced';status.dataset.cfhPendingSync='true';}
-          }
+
         }, function(error) {
           if (savedKey && dashboardRequestGeneration[savedKey] !== generation) return;
           if (savedData === null && onFailure) onFailure(error);
