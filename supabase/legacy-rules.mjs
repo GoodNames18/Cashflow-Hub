@@ -1235,9 +1235,9 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
       continue;
     }
 
-    if (description === 'cash-out' && feeEarned > 0 && amount > 0) {
+    if ((description === 'cash-out' || description.startsWith('cash-out · modified: ')) && feeEarned > 0 && amount > 0) {
       card += amount + feeEarned;
-      cashOnHand -= amount;
+      if (row.excludeCashOnHand !== true) cashOnHand -= amount;
       continue;
     }
 

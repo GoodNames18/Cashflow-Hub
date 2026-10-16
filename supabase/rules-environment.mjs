@@ -11,6 +11,7 @@ export function withRecords(records, referenceCells, operation) {
     if (!name) throw new Error('Unknown record tab.');
     const row = record.source_values.map((v,i) => i < 2 ? sourceDate(v) : v);
     row.sourceRowNumber = record.id;
+    row.excludeCashOnHand = record.tab_key === 'konek2card' && record.payload?.exclude_cash_on_hand === true;
     row.sourceFingerprint = record.id + ':' + record.revision;
     // Money Flow history follows the transaction date and recorded time.
     const stamp = new ManilaDate(row[0].getTime());
@@ -45,6 +46,7 @@ export const SpreadsheetApp = {
           const copy = original.slice(column-2,column-2+width);
           copy.sourceRowNumber = original.sourceRowNumber;
           copy.sourceFingerprint = original.sourceFingerprint;
+          copy.excludeCashOnHand = original.excludeCashOnHand;
           return copy;
         });
       },
