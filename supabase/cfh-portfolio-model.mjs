@@ -1,9 +1,19 @@
 export const money=value=>Math.round((Number(value)+Number.EPSILON)*100)/100;
 export function validateRecord(row){
- if(!row||!['purchase','quote','cash'].includes(row.kind))throw Error('Invalid investment record.');
+ if(!row||!['purchase','quote','cash','dividend'].includes(row.kind))throw Error('Invalid investment record.');
  if(!['stock','crypto'].includes(row.asset))throw Error('Choose Stocks or Crypto.');
  if(typeof row.broker!=='string'||!row.broker.trim()||row.broker.length>80)throw Error('Enter your broker.');
  if(row.kind!=='cash'&&!/^[A-Z0-9][A-Z0-9.\-]{0,19}$/.test(row.symbol||''))throw Error('Enter a valid stock or coin symbol.');
+ if(row.kind==='dividend'){
+  if(row.asset!=='stock')throw Error('Dividends can only be recorded for stocks.');
+  if(!['paid','upcoming'].includes(row.status))throw Error('Choose Paid or Upcoming.');
+  if(!Number.isFinite(row.shares)||row.shares<=0||row.shares>1e12)throw Error('Enter valid eligible shares.');
+  if(!Number.isFinite(row.perShare)||row.perShare<=0||row.perShare>1e12)throw Error('Enter a valid dividend per share.');
+  if(!Number.isFinite(row.tax)||row.tax<0||row.tax>row.shares*row.perShare)throw Error('Enter valid tax withheld.');
+  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(row.paymentDate||'')||new Date(row.paymentDate+'T12:00:00Z').toISOString().slice(0,10)!==row.paymentDate)throw Error('Enter a valid payment date.');
+  if(row.notes&&row.notes.length>500)throw Error('Notes must be 500 characters or less.');
+  return row;
+ }
  if(!Number.isFinite(row.price)||row.price<0||row.price>1e12||(row.kind==='purchase'&&row.price===0))throw Error('Enter a valid price.');
  if(row.kind==='purchase'){
   if(!Number.isFinite(row.shares)||row.shares<=0||row.shares>1e12||(row.asset==='stock'&&!Number.isInteger(row.shares)))throw Error('Enter valid shares or units.');
@@ -18,6 +28,7 @@ export function portfolio(records,asset='stock'){
  const rows=records.filter(r=>{try{return validateRecord(r)&&r.asset===asset;}catch{return false;}}).slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||String(a.id||'').localeCompare(String(b.id||''))),groups=new Map(),quotes=new Map(),cash=new Map();
  for(const row of rows){
   try{validateRecord(row);}catch{continue;}
+  if(row.kind==='dividend')continue;
   const key=row.broker+'|'+row.symbol;
   if(row.kind==='cash'){cash.set(row.broker,row.price);continue;}
   if(row.kind==='quote'){quotes.set(key,row);continue;}
