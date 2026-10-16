@@ -1,3 +1,4 @@
+import {stockLogos} from './cfh-stock-logos.mjs';
 import {stockCompanies,DRAFT_TTL,recentPurchases,symbolMatches,activeDraft} from './cfh-portfolio-catalog.mjs';
 import {portfolio,validateRecord,money,marketPhase} from './cfh-portfolio-model.mjs';
 const OWNER='161ecab1-d1d7-4fef-a089-a7300b9da774',KEY='cfh-portfolio-v1:'+OWNER;
@@ -6,6 +7,7 @@ const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers';
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
 let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null;
 const $=id=>document.getElementById(id),peso=v=>v===null?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(v);
+function stockLogo(symbol){const img=document.createElement('img');img.className='cfh-stock-logo';img.alt=symbol+' logo';img.loading='lazy';img.width=40;img.height=40;const fallback='images/stocks/unknown.svg';img.src=stockLogos[symbol]||fallback;img.onerror=()=>{img.onerror=null;img.src=fallback;};return img;}
 function persist(){localStorage.setItem(KEY,JSON.stringify(state));}
 function status(value){if($('cfhPortfolioSync'))$('cfhPortfolioSync').textContent=value;}
 function render(){
@@ -15,15 +17,13 @@ function render(){
  for(const [id,value]of [['cfhPortfolioBalance',p.balance],['cfhPortfolioInvested',p.invested],['cfhPortfolioCash',p.cashAvailable],['cfhPortfolioGain',p.gain]])$(id).textContent=peso(value);
  $('cfhPortfolioGain').className=p.gain<0?'is-loss':p.gain>0?'is-gain':'';
  $('cfhPortfolioGainPercent').textContent=p.percent===null?'':` (${p.percent.toFixed(2)}%)`;
- $('cfhPortfolioValuationNote').textContent=p.value===null?'Enter the latest price for each holding to calculate balance and gain / loss.':'Valuation uses your recorded prices, not a live market feed.';
  document.querySelectorAll('[data-portfolio-asset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.portfolioAsset===asset)));
  const table=$('cfhPortfolioHoldings');table.replaceChildren();
  if(!p.holdings.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent='No '+(asset==='stock'?'stocks':'crypto')+' recorded yet. Tap Invest to add your broker purchase.';table.append(empty);}
  for(const h of p.holdings){const row=document.createElement('button');row.type='button';row.className='cfh-portfolio-holding';row.setAttribute('aria-label','Record latest price for '+h.symbol);
- const name=document.createElement('span'),symbol=document.createElement('strong'),broker=document.createElement('small');symbol.textContent=h.symbol;broker.textContent=h.broker;name.append(symbol,broker);
+ const name=document.createElement('span'),symbol=document.createElement('strong'),broker=document.createElement('small');symbol.textContent=h.symbol;broker.textContent=h.broker;const labels=document.createElement('span');labels.append(symbol,broker);name.className='cfh-holding-name';name.append(stockLogo(h.symbol),labels);
  const price=document.createElement('span'),value=document.createElement('strong'),qty=document.createElement('small');value.textContent=peso(h.price);qty.textContent=h.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');price.append(value,qty);
  const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Add latest price':h.percent.toFixed(2)+'%';gain.append(amount,percent);row.append(name,price,gain);row.onclick=()=>openValue('quote',h);table.append(row);}
- $('cfhPortfolioPriceNote').textContent=asset==='stock'?'Market indicator follows regular PSE hours in Manila. Holidays, suspensions and special sessions may differ.':'Crypto trades around the clock; availability depends on your broker.';
  renderPurchases($('cfhPortfolioRecent'));
  window.syncActivePageHeight?.();
 }
@@ -44,7 +44,7 @@ function openValue(kind,h){editingId=crypto.randomUUID();const f=$('cfhPortfolio
 function renderPurchases(box){
  box.replaceChildren();
  const rows=recentPurchases(state.rows,asset);
- for(const r of rows){const item=document.createElement('article');item.className='cfh-investment-card';const monogram=document.createElement('span');monogram.className='cfh-investment-monogram';monogram.setAttribute('aria-hidden','true');monogram.textContent=r.symbol.slice(0,3);const details=document.createElement('div');details.className='cfh-investment-details';const title=document.createElement('strong');title.textContent=r.symbol;const buy=document.createElement('p');buy.className='cfh-investment-buy';buy.textContent='BUY @ '+peso(r.price)+' · '+r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');details.append(title,buy);const badge=document.createElement('span');badge.className='cfh-investment-completed';badge.textContent='Completed';const meta=document.createElement('div');meta.className='cfh-investment-meta';const info=document.createElement('small');info.textContent=r.date+' · '+r.broker;const total=document.createElement('span');total.textContent='Fees '+peso(r.fees)+' · Total '+peso(money(r.shares*r.price+r.fees));meta.append(info,total);if(r.notes){const note=document.createElement('small');note.textContent=r.notes;meta.append(note);}item.append(monogram,details,badge,meta);box.append(item);}
+ for(const r of rows){const item=document.createElement('article');item.className='cfh-investment-card';const monogram=stockLogo(r.symbol);const details=document.createElement('div');details.className='cfh-investment-details';const title=document.createElement('strong');title.textContent=r.symbol;const buy=document.createElement('p');buy.className='cfh-investment-buy';buy.textContent='BUY @ '+peso(r.price)+' · '+r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');details.append(title,buy);const badge=document.createElement('span');badge.className='cfh-investment-completed';badge.textContent='Completed';const meta=document.createElement('div');meta.className='cfh-investment-meta';const info=document.createElement('small');info.textContent=r.date+' · '+r.broker;const total=document.createElement('span');total.textContent='Fees '+peso(r.fees)+' · Total '+peso(money(r.shares*r.price+r.fees));meta.append(info,total);if(r.notes){const note=document.createElement('small');note.textContent=r.notes;meta.append(note);}item.append(monogram,details,badge,meta);box.append(item);}
  if(!rows.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent='No purchases recorded.';box.append(empty);}
 }
 function breakdown(){renderPurchases($('cfhPortfolioHistory'));$('cfhPortfolioHistoryModal').hidden=false;}
