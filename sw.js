@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v15-cash-exception";
+const CACHE_NAME = "cashflow-hub-v14-offline-home";
 
 const OFFLINE_ASSETS=[
   "./",
