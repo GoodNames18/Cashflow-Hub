@@ -1,5 +1,5 @@
-// Match the existing app's source-balance rules. GCash-to-Card intentionally
-// allows a negative GCash balance, representing Card debt to GCash.
+// GCash transfers to Card or Cash may intentionally create a negative GCash
+// balance. Other sources retain their existing sufficient-balance checks.
 export function checkKonekEntry(plan,params,balance) {
   const receipt=plan.receipt,amount=Number(receipt.amount??plan.records[0].amount);
   const enough=(field,value,message)=>{if(Number(balance[field]||0)+0.000001<value)throw new Error(message);};
@@ -21,7 +21,6 @@ export function checkKonekEntry(plan,params,balance) {
       switch(params.direction) {
         case 'cashToGcash': enough('cashOnHand',amount,'Not enough Cash on Hand.');break;
         case 'cardToGcash': enough('card',amount,'Not enough Card balance.');break;
-        case 'gcashToCash': enough('gcash',amount,'Not enough GCash balance.');break;
         case 'cashToNanay':
           enough('utangKayNanay',amount,'Amount is greater than Nanay loan.');
           enough('cashOnHand',amount,'Not enough Cash on Hand.');break;

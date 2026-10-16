@@ -91,3 +91,21 @@ test('a stale Konek2Card balance blocks upload without discarding the offline en
  a.reads.request=async(params,force,options)=>{assert.equal(force,true);assert.equal(options.requireNetwork,true);assert.equal(options.includePending,false);return {cashOnHand:0};};
  a.queue.online=()=>true;await a.queue.flush();assert.equal(a.requests(),0);assert.equal(a.queue.items.length,1);assert.match(a.queue.error,/Not enough/);
 });
+
+test('GCash to Cash can cross zero and keep syncing while GCash is negative',async()=>{
+ let online=false;const a=setup({online:()=>online});await a.queue.init();
+ a.reads.konekSeed={reset_at:'2026-01-01T00:00:00Z',gcash:0,bank_card:0,cash_on_hand:3250,loan_remaining:0,others_loan:0,held_money:0,savings_included_in_total:0};
+ await a.writes.request({action:'testTransfer',direction:'gcashToCash',amount:3000});
+ let balance=await a.reads.request({action:'testDashboard'});
+ assert.equal(balance.gcash,-3000);assert.equal(balance.cashOnHand,6250);assert.equal(balance.totalMoney,3250);
+ await a.writes.request({action:'testTransfer',direction:'gcashToCash',amount:100});
+ balance=await a.reads.request({action:'testDashboard'});
+ assert.equal(balance.gcash,-3100);assert.equal(balance.cashOnHand,6350);assert.equal(balance.totalMoney,3250);
+ a.store.client.from=()=>({select(){return this;},eq(){return this;},in:async(field,ids)=>({data:[...a.remote.values()].filter(row=>ids.includes(row.client_request_id))})});
+ a.snapshot.refresh=async()=>{};
+ online=true;await a.queue.flush();assert.equal(a.queue.items.length,0);assert.equal(a.remote.size,2);
+ const {checkKonekEntry}=await import('../../supabase/cfh-financial-checks.mjs?v=live2');
+ const plan={receipt:{amount:3000},records:[{amount:3000}]};
+ assert.throws(()=>checkKonekEntry(plan,{action:'testTransfer',direction:'cashToGcash'},{cashOnHand:0}),/Not enough Cash on Hand/);
+ assert.throws(()=>checkKonekEntry(plan,{action:'testTransfer',direction:'cardToGcash'},{card:0}),/Not enough Card balance/);
+});
