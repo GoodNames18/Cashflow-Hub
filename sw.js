@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v16-quiet-home-sync";
+const CACHE_NAME = "cashflow-hub-v17-calendar-outside-slider";
 
 const OFFLINE_ASSETS=[
   "./",
