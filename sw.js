@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v17-calendar-outside-slider";
+const CACHE_NAME = "cashflow-hub-v18-dividend-history";
 
 const OFFLINE_ASSETS=[
   "./",
@@ -19,7 +19,7 @@ const OFFLINE_ASSETS=[
   "supabase/manila-date.mjs?v=calendar3",
   "supabase/rules-environment.mjs?v=transaction-order4",
   "supabase/cfh-calendar-sync.mjs?v=events1",
-  "supabase/cfh-portfolio.mjs?v=portfolio1",
+  "supabase/cfh-portfolio.mjs?v=portfolio2",
   "supabase/cfh-portfolio-model.mjs",
   "icon-192.png",
   "icon-512.png",
