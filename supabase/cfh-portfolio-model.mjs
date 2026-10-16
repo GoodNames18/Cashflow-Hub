@@ -10,7 +10,7 @@ export function validateRecord(row){
   if(!Number.isFinite(row.shares)||row.shares<=0||row.shares>1e12)throw Error('Enter valid eligible shares.');
   if(!Number.isFinite(row.perShare)||row.perShare<=0||row.perShare>1e12)throw Error('Enter a valid dividend per share.');
   if(!Number.isFinite(row.tax)||row.tax<0||row.tax>row.shares*row.perShare)throw Error('Enter valid tax withheld.');
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(row.paymentDate||'')||new Date(row.paymentDate+'T12:00:00Z').toISOString().slice(0,10)!==row.paymentDate)throw Error('Enter a valid payment date.');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(row.paymentDate||'')||new Date(row.paymentDate+'T12:00:00Z').toISOString().slice(0,10)!==row.paymentDate)throw Error('Enter a valid payment date.');
   if(row.notes&&row.notes.length>500)throw Error('Notes must be 500 characters or less.');
   return row;
  }
