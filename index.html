@@ -1136,6 +1136,14 @@
       font-weight: 800;
     }
     .test-add-money-adjust-row { align-items: stretch; flex-direction: column; }
+    .test-add-money-total-row {
+      align-items: center;
+      flex-direction: row;
+      min-height: 54px;
+      width: 100%;
+      padding: 14px 16px;
+    }
+    .test-add-money-total-row .test-add-money-adjust-label { width: 100%; }
     .test-add-money-adjust-label { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; }
     .test-add-money-adjust-label strong { white-space: nowrap; }
     .test-add-money-adjust-row input {
@@ -2937,10 +2945,13 @@ body.cfh-crypto-active .app-shell{display:none!important}
             </div>
           </div>
 
-          <div id="testAddMoneyModal" class="test-modal" hidden>
+          <div id="testAddMoneyModal" class="test-modal" hidden onclick="if (event.target === this) closeTestAddMoneyModal()">
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testAddMoneyTitle">
               <div id="testAddMoneyTitle" class="test-modal-title">ADJUST BALANCES</div>
               <div class="test-add-money-scroll">
+                <div class="test-add-money-adjust-row test-add-money-total-row">
+                  <span class="test-add-money-adjust-label"><span>Total Money</span><strong id="testAddMoneyTotalMoney">—</strong></span>
+                </div>
                 <div class="test-add-money-adjustments">
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on Card</span><strong id="testAddMoneyCardCurrent">—</strong></span>
@@ -2955,11 +2966,8 @@ body.cfh-crypto-active .app-shell{display:none!important}
                     <input id="testAddMoneyGcashInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
                   </label>
                 </div>
-                <div class="test-add-money-section-title">Total Money &amp; Earnings</div>
+                <div class="test-add-money-section-title">Total Earned</div>
                 <div class="test-add-money-adjustments">
-                  <div class="test-add-money-adjust-row">
-                    <span class="test-add-money-adjust-label"><span>Total Money</span><strong id="testAddMoneyTotalMoney">—</strong></span>
-                  </div>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></span>
                     <input id="testAddMoneyEarnedInput" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
