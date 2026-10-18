@@ -111,6 +111,13 @@ export function planEntry(params, now = new ManilaDate()) {
       receipt={adjustments:adjustments.map(item=>({balance:String(item.balance).toLowerCase(),amount:signedCents(item.amount)}))};
       break;
     }
+    case 'testEarnedAdjustment': {
+      const amount=cents(params.amount);
+      tab='konek2card';
+      rows=[[date,date,'Adjustment',amount,amount,'Income','Earned adjustment']];
+      receipt={amount,category:'Income',description:'Earned adjustment'};
+      break;
+    }
     case 'testOthersLoan': {
       const entry=rules.parseTestOthersLoanInput_(params.text,params.loanAction);
       tab='konek2card';rows=[rules.buildTestOthersLoanRow_(date,entry)];receipt=entry;break;

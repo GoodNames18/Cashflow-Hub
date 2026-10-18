@@ -1083,6 +1083,8 @@
       display: grid;
       place-items: center;
       padding: 14px;
+      touch-action: none;
+      overscroll-behavior: none;
     }
     #testAddMoneyModal[hidden] { display: none; }
     #testAddMoneyModal .test-modal-card {
@@ -1091,6 +1093,7 @@
       width: min(440px, 100%);
       max-height: min(86dvh, 760px);
       overflow: hidden;
+      touch-action: pan-y;
       padding: 20px 16px 16px;
       border: 1px solid var(--secondary);
       border-radius: 18px;
@@ -1106,6 +1109,7 @@
       min-height: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
+      touch-action: pan-y;
       padding: 1px 2px 10px;
     }
     .test-add-money-summary,
@@ -2951,18 +2955,18 @@ body.cfh-crypto-active .app-shell{display:none!important}
                     <input id="testAddMoneyGcashInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
                   </label>
                 </div>
-                <div class="test-add-money-section-title">Others Loan</div>
-                <div class="test-add-money-adjust-row">
-                  <span class="test-add-money-adjust-label"><span>Loan amount</span></span>
-                  <input id="testAddMoneyOthersLoanInput" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter amount" aria-label="Others Loan amount">
-                  <div class="test-add-money-loan-actions">
-                    <button id="testAddMoneyOthersLoanAdd" type="button">ADD LOAN</button>
-                    <button id="testAddMoneyOthersLoanMinus" type="button">MINUS LOAN</button>
+                <div class="test-add-money-section-title">Total Money &amp; Earnings</div>
+                <div class="test-add-money-adjustments">
+                  <div class="test-add-money-adjust-row">
+                    <span class="test-add-money-adjust-label"><span>Total Money</span><strong id="testAddMoneyTotalMoney">—</strong></span>
                   </div>
+                  <label class="test-add-money-adjust-row">
+                    <span class="test-add-money-adjust-label"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></span>
+                    <input id="testAddMoneyEarnedInput" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
+                  </label>
                 </div>
               </div>
-              <button id="testAddMoneySaveButton" type="button">SAVE ADJUSTMENT</button>
-              <button id="testAddMoneyCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
+              <button id="testAddMoneyCancelButton" class="test-modal-cancel" type="button">DONE</button>
             </div>
           </div>
 
@@ -4826,6 +4830,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
     let touchStartX = 0;
     let touchStartY = 0;
+    let addMoneyGestureBlocked = false;
 
 
     // ========================================================
@@ -5195,6 +5200,10 @@ body.cfh-crypto-active .app-shell{display:none!important}
           return;
         }
 
+        var addMoneyModal = document.getElementById("testAddMoneyModal");
+        addMoneyGestureBlocked = !!(addMoneyModal && !addMoneyModal.hidden);
+        if (addMoneyGestureBlocked) return;
+
         touchStartX =
           event.touches[0].clientX;
 
@@ -5211,6 +5220,12 @@ body.cfh-crypto-active .app-shell{display:none!important}
     document.addEventListener(
       "touchend",
       function(event) {
+
+        var addMoneyModal = document.getElementById("testAddMoneyModal");
+        if (addMoneyGestureBlocked || (addMoneyModal && !addMoneyModal.hidden)) {
+          addMoneyGestureBlocked = false;
+          return;
+        }
 
         if (!event.changedTouches.length) {
           return;
@@ -5624,7 +5639,8 @@ body.cfh-crypto-active .app-shell{display:none!important}
           testCashOut: "testTransactions", testLoan: "testTransactions",
           testOthersLoan: "testTransactions", testTransfer: "testTransactions",
           testHoldMoney: "testTransactions", testMonthlyInterest: "testTransactions",
-          testBalanceAdjustment: "testTransactions"
+          testBalanceAdjustment: "testTransactions",
+          testEarnedAdjustment: "testTransactions"
         };
         if (invalidations[saveAction] || saveAction === "transactionDelete") {
           try {
@@ -5693,7 +5709,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
           }
 
         },
-        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testMonthlyInterest|testOthersLoan|testLoan|testAtmWithdraw|testHoldMoney|testBalanceAdjustment|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
+        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testMonthlyInterest|testOthersLoan|testLoan|testAtmWithdraw|testHoldMoney|testBalanceAdjustment|testEarnedAdjustment|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
       );
 
     }
@@ -6447,13 +6463,12 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (collectionCancelButton) collectionCancelButton.addEventListener("click", closeTestCollectionModal);
       if (transferCancelButton) transferCancelButton.addEventListener("click", closeTestTransferModal);
       var addMoneyCancelButton = document.getElementById("testAddMoneyCancelButton");
-      var addMoneySaveButton = document.getElementById("testAddMoneySaveButton");
       if (addMoneyCancelButton) addMoneyCancelButton.addEventListener("click", closeTestAddMoneyModal);
-      if (addMoneySaveButton) addMoneySaveButton.addEventListener("click", saveTestBalanceAdjustments);
-      var othersLoanAddButton = document.getElementById("testAddMoneyOthersLoanAdd");
-      var othersLoanMinusButton = document.getElementById("testAddMoneyOthersLoanMinus");
-      if (othersLoanAddButton) othersLoanAddButton.addEventListener("click", function() { saveTestOthersLoanFromAddMoney("add"); });
-      if (othersLoanMinusButton) othersLoanMinusButton.addEventListener("click", function() { saveTestOthersLoanFromAddMoney("minus"); });
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
+        .forEach(function(id) {
+          var field = document.getElementById(id);
+          if (field) field.addEventListener("blur", function() { saveTestAddMoneyField(field); });
+        });
 
       [
         { modal: atmModal, close: closeTestAtmModal },
@@ -6463,6 +6478,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
       ].forEach(function(entry) {
         if (!entry.modal) return;
         entry.modal.addEventListener("click", function(event) {
+          if (entry.modal.id === "testAddMoneyModal") return;
           if (event.target === entry.modal) entry.close();
         });
       });
@@ -6752,6 +6768,8 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
     function updateTestAddMoneyModalValues() {
       var ids = {
+        testAddMoneyTotalMoney: "testTotalMoney",
+        testAddMoneyTotalEarned: "testTotalEarned",
         testAddMoneyCardCurrent: "testCard",
         testAddMoneyCashCurrent: "testCashOnHand",
         testAddMoneyGcashCurrent: "testGcash"
@@ -6766,7 +6784,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     function openTestAddMoneyModal() {
       var modal = document.getElementById("testAddMoneyModal");
       if (!modal) return;
-      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyOthersLoanInput"]
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
         .forEach(function(id) { var input = document.getElementById(id); if (input) input.value = ""; });
       updateTestAddMoneyModalValues();
       if (modal.parentNode !== document.body) document.body.appendChild(modal);
@@ -6789,66 +6807,50 @@ body.cfh-crypto-active .app-shell{display:none!important}
       return Math.round(value * 100) / 100;
     }
 
-    function saveTestBalanceAdjustments() {
-      var fields = [
-        { key: "card", label: "Money on Card", id: "testAddMoneyCardInput" },
-        { key: "cash", label: "Money on Hand", id: "testAddMoneyCashInput" },
-        { key: "gcash", label: "Money on GCash", id: "testAddMoneyGcashInput" }
-      ];
-      var adjustments = [];
+    function saveTestAddMoneyField(input) {
+      if (!input || input.disabled || input.dataset.saving === "true") return;
+      var field = {
+        testAddMoneyCardInput: { balance: "card", label: "Money on Card" },
+        testAddMoneyCashInput: { balance: "cash", label: "Money on Hand" },
+        testAddMoneyGcashInput: { balance: "gcash", label: "Money on GCash" }
+      }[input.id];
+      var raw = String(input.value || "").trim();
+      if (!raw) return;
+      var amount;
       try {
-        fields.forEach(function(field) {
-          var amount = parseSignedBalanceAdjustment(document.getElementById(field.id), field.label);
-          if (amount !== null) adjustments.push({ balance: field.key, amount: amount });
-        });
+        if (input.id === "testAddMoneyEarnedInput") {
+          amount = Number(raw.replace(/[₱,\\s]/g, ""));
+          if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
+            throw new Error("Total Earned needs a positive amount with at most two decimal places.");
+          }
+          amount = Math.round(amount * 100) / 100;
+        } else if (field) {
+          amount = parseSignedBalanceAdjustment(input, field.label);
+        } else {
+          return;
+        }
       } catch (error) {
         setTestStatus("❌ " + error.message, "error");
         return;
       }
-      if (!adjustments.length) {
-        setTestStatus("❌ Enter an adjustment for Money on Card, Money on Hand, or Money on GCash.", "error");
-        return;
-      }
 
-      setTestStatus("Saving balance adjustment...", "preview");
-      setTestActionButtonsDisabled(true);
-      jsonpRequest({ action: "testBalanceAdjustment", adjustments: adjustments }, function(result) {
-        setTestActionButtonsDisabled(false);
-        closeTestAddMoneyModal();
-        var summary = (result.adjustments || adjustments).map(function(item) {
-          var label = fields.find(function(field) { return field.key === item.balance; }).label;
-          return (Number(item.amount) > 0 ? "+" : "") + formatPeso(item.amount) + " " + label;
-        }).join(" · ");
-        setTestStatus("✓ Saved " + summary, "success");
+      var params = input.id === "testAddMoneyEarnedInput"
+        ? { action: "testEarnedAdjustment", amount: amount }
+        : { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount }] };
+      var label = input.id === "testAddMoneyEarnedInput" ? "Total Earned" : field.label;
+      input.dataset.saving = "true";
+      input.disabled = true;
+      setTestStatus("Saving " + label + "...", "preview");
+      jsonpRequest(params, function(result) {
+        input.value = "";
+        input.disabled = false;
+        delete input.dataset.saving;
         markTestDashboardLoaded_(result.dashboard);
+        updateTestAddMoneyModalValues();
+        setTestStatus("✓ Recorded " + formatPeso(amount) + " " + label, "success");
       }, function(error) {
-        setTestActionButtonsDisabled(false);
-        setTestStatus("❌ " + error.message, "error");
-      });
-    }
-
-    function saveTestOthersLoanFromAddMoney(action) {
-      var input = document.getElementById("testAddMoneyOthersLoanInput");
-      var text = input ? input.value.trim() : "";
-      try { parseTestOthersLoanInputClient(text, action); }
-      catch (error) { setTestStatus("❌ " + error.message, "error"); if (input) input.focus(); return; }
-
-      setTestStatus(action === "add" ? "Adding Others Loan..." : "Recording loan payment...", "preview");
-      setTestActionButtonsDisabled(true);
-      jsonpRequest({ action: "testOthersLoan", text: text, loanAction: action }, function(result) {
-        setTestActionButtonsDisabled(false);
-        if (input) input.value = "";
-        closeTestAddMoneyModal();
-        var lender = result.lender ? " " + result.lender : "";
-        if (result.action === "add") {
-          setTestStatus("✓ Others Loan" + lender + " added — Card received " + formatPeso(result.netToCard) +
-            (result.fee ? " after " + formatPeso(result.fee) + " fee" : ""), "success");
-        } else {
-          setTestStatus("✓ Others Loan" + lender + " minus " + formatPeso(result.principal), "success");
-        }
-        markTestDashboardLoaded_(result.dashboard);
-      }, function(error) {
-        setTestActionButtonsDisabled(false);
+        input.disabled = false;
+        delete input.dataset.saving;
         setTestStatus("❌ " + error.message, "error");
       });
     }
