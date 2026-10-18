@@ -44,12 +44,15 @@ export function editableTransactionFields(record) {
   const map=fieldsByTab[record?.tab_key];
   if(!map) throw new Error('This transaction type cannot be edited.');
   const source=Array.isArray(record.source_values)?record.source_values:[];
-  const parts=manilaParts(record.occurred_at);
+  const parts={
+    date:manilaParts(source[map.date]||record.occurred_at).date,
+    time:manilaParts(source[map.time]||record.occurred_at).time
+  };
   const values={
     date:parts.date,time:parts.time,
     amount:record.amount??'',
-    category:record.category??'',
-    description:record.description??''
+    category:source[map.category]??record.category??'',
+    description:source[map.description]??record.description??''
   };
   if(record.tab_key==='life_log') values.notes=record.payload?.notes??source[4]??'';
   if(record.tab_key==='money_flow') {
@@ -72,14 +75,17 @@ export function buildTransactionEdit(record,values={}) {
   if(!map) throw new Error('This transaction type cannot be edited.');
   const source=Array.isArray(record.source_values)?structuredClone(record.source_values):[];
   const payload=structuredClone(record.payload||{});
-  const date=String(values.date??manilaParts(record.occurred_at).date);
-  const time=String(values.time??manilaParts(record.occurred_at).time);
+  const originalDate=manilaParts(source[map.date]||record.occurred_at).date;
+  const originalTime=manilaParts(source[map.time]||record.occurred_at).time;
+  const date=String(values.date??originalDate);
+  const time=String(values.time??originalTime);
   const occurred_at=parseManilaDate(date,time);
-  source[map.date]=occurred_at;
-  source[map.time]=occurred_at;
+  if(date!==originalDate) source[map.date]=new Date(date+'T00:00:00+08:00').toISOString();
+  if(time!==originalTime) source[map.time]=new Date(date+'T'+time+':00+08:00').toISOString();
   const updated={...record,occurred_at,source_values:source,payload};
   for(const [key,index] of Object.entries(map)) {
     if(key==='date'||key==='time'||!(key in values)) continue;
+    if(String(values[key]??'')===String(source[index]??'')) continue;
     const value=['amount','feeEarned'].includes(key)
       ? moneyValue(values[key],key,{allowZero:key==='feeEarned'})
       : textValue(values[key],key);
