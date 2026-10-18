@@ -8846,16 +8846,61 @@ body.cfh-crypto-active .app-shell{display:none!important}
           var originalValues = {};
           var loaded = false;
           var saving = false;
+          function to24Hour(value) {
+            var text = String(value == null ? "" : value).trim();
+            var match = text.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+            if (match) {
+              var hour12 = Number(match[1]), minute12 = Number(match[2]);
+              if (hour12 < 1 || hour12 > 12 || minute12 > 59) return "";
+              var hour24 = hour12 % 12 + (match[3].toUpperCase() === "PM" ? 12 : 0);
+              return String(hour24).padStart(2, "0") + ":" + String(minute12).padStart(2, "0");
+            }
+            match = text.match(/^(\d{1,2}):(\d{2})$/);
+            if (!match) return "";
+            var hour = Number(match[1]), minute = Number(match[2]);
+            if (hour > 23 || minute > 59) return "";
+            return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+          }
+          function to12Hour(value) {
+            var time = to24Hour(value);
+            if (!time) return String(value == null ? "" : value);
+            var parts = time.split(":");
+            var hour = Number(parts[0]);
+            return String(hour % 12 || 12) + ":" + parts[1] + (hour >= 12 ? " PM" : " AM");
+          }
+          function cleanAmount(value) {
+            return String(value == null ? "" : value).replace(/[₱,\s]/g, "").trim();
+          }
+          function formatAmount(value) {
+            var raw = cleanAmount(value);
+            if (!raw) return "";
+            var number = Number(raw);
+            return Number.isFinite(number)
+              ? new Intl.NumberFormat("en-PH", {useGrouping:true,minimumFractionDigits:0,maximumFractionDigits:2}).format(number)
+              : String(value);
+          }
+          function comparableValue(key, value) {
+            var text = String(value == null ? "" : value).trim();
+            if (key === "time") return to24Hour(text) || text;
+            if (key === "amount" || key === "feeEarned") {
+              var number = Number(cleanAmount(text));
+              return Number.isFinite(number) ? number.toFixed(2) : cleanAmount(text);
+            }
+            return text;
+          }
           function readValues() {
             var values = {};
             fields.querySelectorAll("[data-edit-key]").forEach(function(control) {
-              values[control.dataset.editKey] = control.value;
+              var key = control.dataset.editKey, value = control.value;
+              if (key === "time") value = to24Hour(value) || value.trim();
+              else if (key === "amount" || key === "feeEarned") value = cleanAmount(value);
+              values[key] = value;
             });
             return values;
           }
           function hasChanges(values) {
             return Object.keys(originalValues).some(function(key) {
-              return String(values[key] == null ? "" : values[key]) !== String(originalValues[key] == null ? "" : originalValues[key]);
+              return comparableValue(key, values[key]) !== comparableValue(key, originalValues[key]);
             });
           }
           function closeModal() {
@@ -8948,11 +8993,37 @@ body.cfh-crypto-active .app-shell{display:none!important}
                 var control = field.type === "textarea"
                   ? document.createElement("textarea")
                   : document.createElement("input");
-                if (field.type !== "textarea") control.type = field.type;
+                if (field.key === "time") {
+                  control.type = "text";
+                  control.inputMode = "text";
+                  control.placeholder = "e.g. 1:30 PM";
+                } else if (field.key === "amount" || field.key === "feeEarned") {
+                  control.type = "text";
+                  control.inputMode = "decimal";
+                  control.autocomplete = "off";
+                } else if (field.type !== "textarea") {
+                  control.type = field.type;
+                }
                 if (field.type === "number") control.step = field.step || "0.01";
                 control.dataset.editKey = field.key;
-                control.value = field.value == null ? "" : String(field.value);
-                originalValues[field.key] = control.value;
+                var rawValue = field.value == null ? "" : String(field.value);
+                originalValues[field.key] = rawValue;
+                control.value = field.key === "time" ? to12Hour(rawValue)
+                  : (field.key === "amount" || field.key === "feeEarned") ? formatAmount(rawValue)
+                  : rawValue;
+                if (field.key === "time") {
+                  control.addEventListener("blur", function() {
+                    var normalizedTime = to24Hour(control.value);
+                    if (normalizedTime) control.value = to12Hour(normalizedTime);
+                  });
+                } else if (field.key === "amount" || field.key === "feeEarned") {
+                  control.addEventListener("focus", function() {
+                    control.value = cleanAmount(control.value);
+                  });
+                  control.addEventListener("blur", function() {
+                    control.value = formatAmount(control.value);
+                  });
+                }
                 labelNode.appendChild(control);
                 var target = fields;
                 var groupName = fieldGroupNames[field.key];
