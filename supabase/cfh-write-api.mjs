@@ -13,8 +13,8 @@ export class CashflowWriteApi {
   constructor(store,reads,{testOnly=false,allowFinancial=false}={}) {this.store=store;this.reads=reads;this.retries=new Map();this.testOnly=testOnly;this.allowFinancial=allowFinancial;this.queue=Promise.resolve();}
   handles(action) {return actions.has(action)||['transactionDelete','transactionRestore','transactionDeleteStatus','transactionEditLoad','transactionEdit'].includes(action);}
   async find(params) {
-    if(String(params.rowNumber||params.id||params.rowFingerprint||'').startsWith('pending:'))throw Error('This entry is pending sync. Connect and sync it before deleting or restoring.');
-    if(globalThis.navigator?.onLine===false)throw Error('Connect to delete or restore a synced transaction.');
+    if(String(params.rowNumber||params.id||params.rowFingerprint||'').startsWith('pending:'))throw Error('This entry is pending sync. Connect and sync it before changing it.');
+    if(globalThis.navigator?.onLine===false)throw Error('Connect to change a synced transaction.');
     const tab=sheets[params.sheet];
     if(!tab)throw new Error('Unknown transaction sheet.');
     let id=String(params.rowNumber||params.id||'');
