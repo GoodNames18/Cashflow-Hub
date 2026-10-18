@@ -1,15 +1,16 @@
-const CACHE_NAME = "cashflow-hub-v18-dividend-history";
+const CACHE_NAME = "cashflow-hub-v19-ios-module-cache";
 
 const OFFLINE_ASSETS=[
   "./",
   "index.html",
-  "supabase/cfh-browser.mjs?v=offline-home1",
+  "supabase/cfh-browser.mjs?v=transaction-edit1",
   "supabase/vendor/supabase-js.mjs",
   "supabase/cfh-store.mjs?v=offline-home1",
+  "supabase/cfh-store.mjs?v=transaction-edit1",
   "supabase/cfh-store.mjs?v=live2",
   "supabase/cfh-snapshot.mjs?v=offline-home1",
   "supabase/cfh-read-api.mjs?v=offline-home1",
-  "supabase/cfh-write-api.mjs?v=offline-home1",
+  "supabase/cfh-write-api.mjs?v=transaction-edit1",
   "supabase/cfh-settings.mjs?v=offline-home1",
   "supabase/cfh-offline-queue.mjs?v=offline-home1",
   "supabase/cfh-financial-checks.mjs?v=live2",
@@ -19,8 +20,12 @@ const OFFLINE_ASSETS=[
   "supabase/manila-date.mjs?v=calendar3",
   "supabase/rules-environment.mjs?v=transaction-order4",
   "supabase/cfh-calendar-sync.mjs?v=events1",
+  "supabase/cfh-portfolio.mjs?v=portfolio1",
   "supabase/cfh-portfolio.mjs?v=portfolio2",
   "supabase/cfh-portfolio-model.mjs",
+  "supabase/cfh-portfolio-catalog.mjs",
+  "supabase/cfh-stock-logos.mjs",
+  "supabase/cfh-transaction-edit.mjs?v=transaction-edit1",
   "icon-192.png",
   "icon-512.png",
   "cashflow-hub-logo.png"
