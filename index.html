@@ -2935,17 +2935,8 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
           <div id="testAddMoneyModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testAddMoneyTitle">
-              <div id="testAddMoneyTitle" class="test-modal-title">ADD MONEY TO CARD</div>
-              <div class="test-modal-note">Enter a positive or negative adjustment. Only the balances you change will be updated.</div>
+              <div id="testAddMoneyTitle" class="test-modal-title">ADJUST BALANCES</div>
               <div class="test-add-money-scroll">
-                <div class="test-add-money-summary" aria-label="Current Konek2Card balances">
-                  <div class="test-add-money-summary-row"><span>Total Money</span><strong id="testAddMoneyTotalMoney">—</strong></div>
-                  <div class="test-add-money-summary-row"><span>Loan Remaining</span><strong id="testAddMoneyLoanRemaining">—</strong></div>
-                  <div class="test-add-money-summary-row"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></div>
-                  <div class="test-add-money-summary-row"><span>This Week Earned</span><strong id="testAddMoneyWeekEarned">—</strong></div>
-                  <div class="test-add-money-summary-row"><span>Others Loan</span><strong id="testAddMoneyOthersLoan">—</strong></div>
-                </div>
-                <div class="test-add-money-section-title">Balance Adjustments</div>
                 <div class="test-add-money-adjustments">
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on Card</span><strong id="testAddMoneyCardCurrent">—</strong></span>
@@ -6761,11 +6752,6 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
     function updateTestAddMoneyModalValues() {
       var ids = {
-        testAddMoneyTotalMoney: "testTotalMoney",
-        testAddMoneyLoanRemaining: "testLoanRemaining",
-        testAddMoneyTotalEarned: "testTotalEarned",
-        testAddMoneyWeekEarned: "testThisWeekEarned",
-        testAddMoneyOthersLoan: "testOthersLoan",
         testAddMoneyCardCurrent: "testCard",
         testAddMoneyCashCurrent: "testCashOnHand",
         testAddMoneyGcashCurrent: "testGcash"
