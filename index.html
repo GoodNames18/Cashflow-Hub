@@ -295,6 +295,11 @@
       box-shadow: 0 14px 38px rgba(0, 0, 0, .20);
     }
 
+    #transactionDeleteModal .month-modal-panel {
+      width: min(520px, 100%);
+      max-height: min(88dvh, 780px);
+    }
+
     .month-modal-title {
       flex: 0 0 auto;
       margin: 0 0 18px;
@@ -342,18 +347,15 @@
 
     .transaction-modal-actions {
       display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
+      flex: 0 0 auto;
     }
 
-    .transaction-modal-actions button,
-    #transactionEditForm button {
+    .transaction-modal-actions button {
       margin-top: 0;
-    }
-
-    .transaction-edit-open,
-    .transaction-edit-save {
-      background: var(--primary);
-      color: var(--secondary);
+      min-width: 0;
+      padding-inline: 8px;
     }
 
     .transaction-delete-button {
@@ -361,12 +363,24 @@
       color: #ffffff;
     }
 
+    #transactionEditForm {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    #transactionEditForm[hidden] {
+      display: none;
+    }
+
     .transaction-edit-fields {
       display: grid;
+      align-content: start;
       gap: 10px;
-      max-height: min(44dvh, 360px);
+      width: 100%;
+      max-height: min(68dvh, 600px);
       overflow-y: auto;
-      padding: 0 2px 10px;
+      padding: 0 2px 12px;
       overscroll-behavior: contain;
     }
 
@@ -2928,17 +2942,14 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
   <div id="transactionDeleteModal" class="month-modal" hidden>
     <div class="month-modal-panel" role="dialog" aria-modal="true" aria-labelledby="transactionDeleteTitle">
-      <h2 id="transactionDeleteTitle" class="month-modal-title">Transaction options</h2>
+      <h2 id="transactionDeleteTitle" class="month-modal-title">Edit transaction</h2>
       <p id="transactionDeleteMessage" style="text-align:center;margin:0 0 16px;color:var(--secondary)"></p>
-      <div id="transactionDeleteActions" class="transaction-modal-actions">
-        <button type="button" id="transactionEditOpen" class="month-modal-cancel transaction-edit-open">Edit info</button>
-        <button type="button" id="transactionDeleteConfirm" class="month-modal-cancel transaction-delete-button">Delete</button>
-        <button type="button" id="transactionDeleteCancel" class="month-modal-option transaction-modal-cancel">Cancel</button>
-      </div>
       <div id="transactionEditForm" hidden>
         <div id="transactionEditFields" class="transaction-edit-fields"></div>
-        <button type="button" id="transactionEditSave" class="month-modal-cancel transaction-edit-save">Save changes</button>
-        <button type="button" id="transactionEditBack" class="month-modal-option transaction-modal-cancel">Back</button>
+      </div>
+      <div id="transactionDeleteActions" class="transaction-modal-actions">
+        <button type="button" id="transactionDeleteConfirm" class="month-modal-cancel transaction-delete-button">Delete</button>
+        <button type="button" id="transactionDeleteCancel" class="month-modal-option transaction-modal-cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -8815,42 +8826,80 @@ body.cfh-crypto-active .app-shell{display:none!important}
           var title = document.getElementById("transactionDeleteTitle");
           var message = document.getElementById("transactionDeleteMessage");
           var actions = document.getElementById("transactionDeleteActions");
-          var editOpen = document.getElementById("transactionEditOpen");
           var confirm = document.getElementById("transactionDeleteConfirm");
           var cancel = document.getElementById("transactionDeleteCancel");
           var editor = document.getElementById("transactionEditForm");
           var fields = document.getElementById("transactionEditFields");
-          var save = document.getElementById("transactionEditSave");
-          var back = document.getElementById("transactionEditBack");
           var label = item.description || item.merchant || item.customer || item.category || "transaction";
-          function showMenu() {
-            title.textContent = "Transaction options";
-            message.textContent = label + " · " + sheet;
-            actions.hidden = false;
-            editOpen.hidden = false;
-            confirm.hidden = false;
-            confirm.disabled = false;
-            confirm.textContent = "Delete";
-            cancel.textContent = "Cancel";
-            editor.hidden = true;
-            fields.replaceChildren();
+          var originalValues = {};
+          var loaded = false;
+          var saving = false;
+          function readValues() {
+            var values = {};
+            fields.querySelectorAll("[data-edit-key]").forEach(function(control) {
+              values[control.dataset.editKey] = control.value;
+            });
+            return values;
           }
-          modal.hidden = false;
-          showMenu();
-          cancel.onclick = function() { modal.hidden = true; };
-          back.onclick = showMenu;
-          editOpen.onclick = function() {
+          function hasChanges(values) {
+            return Object.keys(originalValues).some(function(key) {
+              return String(values[key] == null ? "" : values[key]) !== String(originalValues[key] == null ? "" : originalValues[key]);
+            });
+          }
+          function closeModal() {
+            modal.hidden = true;
+            modal.onclick = null;
+          }
+          function saveAndClose() {
+            if (saving || busy) return;
+            if (!loaded || !hasChanges(readValues())) {
+              closeModal();
+              return;
+            }
+            saving = true;
+            confirm.disabled = true;
+            cancel.disabled = true;
+            message.textContent = "Saving changes…";
+            var row = itemRow(item);
+            if (row) row.style.opacity = "0.45";
+            jsonpRequest({
+              action: "transactionEdit", sheet: sheet,
+              rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint,
+              values: readValues()
+            }, function() {
+              saving = false;
+              if (row) row.style.opacity = "";
+              closeModal();
+              window.location.reload();
+            }, function(error) {
+              saving = false;
+              if (row) row.style.opacity = "";
+              confirm.disabled = false;
+              cancel.disabled = false;
+              title.textContent = "Edit transaction";
+              editor.hidden = false;
+              actions.hidden = false;
+              message.textContent = (error.message || "Could not save this transaction.") + " Your changes are still here; close again to retry.";
+            }, { skipCache: true });
+          }
+          function showEditor() {
             title.textContent = "Edit transaction";
             message.textContent = "Loading transaction details…";
-            actions.hidden = true;
+            actions.hidden = false;
             editor.hidden = false;
+            confirm.hidden = false;
+            confirm.disabled = true;
+            cancel.disabled = true;
+            confirm.textContent = "Delete";
+            cancel.textContent = "Cancel";
             fields.replaceChildren();
-            save.disabled = true;
+            loaded = false;
             jsonpRequest({
               action: "transactionEditLoad", sheet: sheet,
               rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
             }, function(result) {
               fields.replaceChildren();
+              originalValues = {};
               (result.fields || []).forEach(function(field) {
                 var labelNode = document.createElement("label");
                 labelNode.textContent = field.label;
@@ -8861,56 +8910,54 @@ body.cfh-crypto-active .app-shell{display:none!important}
                 if (field.type === "number") control.step = field.step || "0.01";
                 control.dataset.editKey = field.key;
                 control.value = field.value == null ? "" : String(field.value);
+                originalValues[field.key] = control.value;
                 labelNode.appendChild(control);
                 fields.appendChild(labelNode);
               });
-              save.disabled = false;
-              message.textContent = "Update the details, then save.";
+              loaded = true;
+              confirm.disabled = false;
+              cancel.disabled = false;
+              message.textContent = "Changes save when you close this box.";
             }, function(error) {
               message.textContent = error.message || "Could not load this transaction.";
+              confirm.disabled = false;
+              cancel.disabled = false;
             }, { skipCache: true });
+          }
+          modal.hidden = false;
+          showEditor();
+          modal.onclick = function(event) {
+            if (event.target !== modal) return;
+            if (title.textContent === "Delete transaction?") {
+              showEditor();
+              confirm.onclick = askDelete;
+              return;
+            }
+            saveAndClose();
           };
-          save.onclick = function() {
-            if (busy || save.disabled) return;
-            var values = {};
-            fields.querySelectorAll("[data-edit-key]").forEach(function(control) {
-              values[control.dataset.editKey] = control.value;
-            });
-            busy = true;
-            save.disabled = true;
-            var row = itemRow(item);
-            if (row) row.style.opacity = "0.45";
-            message.textContent = "Saving changes…";
-            jsonpRequest({
-              action: "transactionEdit", sheet: sheet,
-              rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint,
-              values: values
-            }, function() {
-              modal.hidden = true;
-              busy = false;
-              if (row) row.style.opacity = "";
-              window.location.reload();
-            }, function(error) {
-              busy = false;
-              save.disabled = false;
-              if (row) row.style.opacity = "";
-              message.textContent = error.message || "Could not save this transaction.";
-            }, { skipCache: true });
+          var askDelete;
+          cancel.onclick = function() {
+            if (title.textContent === "Delete transaction?") {
+              showEditor();
+              confirm.onclick = askDelete;
+              return;
+            }
+            saveAndClose();
           };
-          confirm.onclick = function() {
-            if (busy) return;
+          askDelete = function() {
+            if (busy || saving || confirm.disabled) return;
             title.textContent = "Delete transaction?";
             message.textContent = "Remove " + label + " from " + sheet + " and Google Sheets?";
-            actions.hidden = false;
             editor.hidden = true;
-            editOpen.hidden = true;
             confirm.disabled = false;
+            cancel.disabled = false;
             confirm.textContent = "Delete";
             cancel.textContent = "Cancel";
-            confirm.onclick = function() {
+            confirm.onclick = function performDelete() {
               if (busy) return;
               busy = true;
               modal.hidden = true;
+              modal.onclick = null;
               var row = itemRow(item);
               if (row) row.style.opacity = "0.45";
               var settled = false;
@@ -8986,19 +9033,20 @@ body.cfh-crypto-active .app-shell{display:none!important}
                 window.clearTimeout(statusTimer);
                 busy = false;
                 if (row) row.style.opacity = "";
+                title.textContent = "Edit transaction";
                 message.textContent = error.message || "Could not delete transaction. Check the sheet before trying again.";
                 modal.hidden = false;
+                editor.hidden = false;
                 actions.hidden = false;
-                editor.hidden = true;
-                editOpen.hidden = true;
-                confirm.hidden = true;
+                confirm.hidden = false;
+                confirm.disabled = false;
                 cancel.hidden = false;
-                cancel.textContent = "Close";
-                cancel.onclick = function() {
-                  modal.hidden = true;
-                  editOpen.hidden = false;
-                  confirm.hidden = false;
-                  cancel.textContent = "Cancel";
+                cancel.disabled = false;
+                confirm.textContent = "Delete";
+                cancel.textContent = "Cancel";
+                confirm.onclick = askDelete;
+                modal.onclick = function(event) {
+                  if (event.target === modal) saveAndClose();
                 };
               }
               var checks = 0;
@@ -9025,6 +9073,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
               }, { skipCache: true });
             };
           };
+          confirm.onclick = askDelete;
         }
         box.addEventListener("touchstart", function(event) {
           var item = selectedItem(event.target);
