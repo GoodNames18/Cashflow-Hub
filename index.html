@@ -8915,8 +8915,34 @@ body.cfh-crypto-active .app-shell{display:none!important}
               fields.replaceChildren();
               originalValues = {};
               var fieldRows = {};
-              (result.fields || []).forEach(function(field) {
-                if (isKonek2Card && (field.key === "category" || field.key === "description")) return;
+              var sheetKey = String(sheet || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+              var editorLayouts = {
+                konek2card: {hide:["category","description"],order:["date","time","customer","amount","feeEarned"],groups:{dateTime:["date","time"],amountFee:["amount","feeEarned"]}},
+                rental: {order:["date","time","amount","type","category","description"],groups:{dateTime:["date","time"],typeCategory:["type","category"]}},
+                moneyflow: {order:["date","time","merchant","category","amount","payment","description"],groups:{dateTime:["date","time"],merchantCategory:["merchant","category"],amountPayment:["amount","payment"]}},
+                cashinout: {hide:["description"],order:["date","time","amount","category"],groups:{dateTime:["date","time"],amountCategory:["amount","category"]}},
+                printingbusiness: {order:["date","time","amount","category","description"],groups:{dateTime:["date","time"],amountCategory:["amount","category"]}},
+                twiceasnyce: {order:["date","time","amount","category","description"],groups:{dateTime:["date","time"],amountCategory:["amount","category"]}},
+                lifelog: {order:["date","time","category","description","notes"],groups:{dateTime:["date","time"]}}
+              };
+              var editorLayout = editorLayouts[sheetKey];
+              var fieldsToRender = (result.fields || []).filter(function(field) {
+                return !(editorLayout && editorLayout.hide && editorLayout.hide.includes(field.key));
+              });
+              if (editorLayout && editorLayout.order) {
+                fieldsToRender.sort(function(a, b) {
+                  return editorLayout.order.indexOf(a.key) - editorLayout.order.indexOf(b.key);
+                });
+              }
+              var fieldGroupNames = {};
+              if (editorLayout && editorLayout.groups) {
+                Object.keys(editorLayout.groups).forEach(function(groupName) {
+                  editorLayout.groups[groupName].forEach(function(key) {
+                    fieldGroupNames[key] = groupName;
+                  });
+                });
+              }
+              fieldsToRender.forEach(function(field) {
                 var labelNode = document.createElement("label");
                 labelNode.textContent = field.label;
                 var control = field.type === "textarea"
@@ -8929,16 +8955,12 @@ body.cfh-crypto-active .app-shell{display:none!important}
                 originalValues[field.key] = control.value;
                 labelNode.appendChild(control);
                 var target = fields;
-                if (isKonek2Card && ["date", "time"].includes(field.key)) {
-                  fieldRows.dateTime = fieldRows.dateTime || document.createElement("div");
-                  fieldRows.dateTime.className = "transaction-edit-row";
-                  target = fieldRows.dateTime;
-                  if (!fieldRows.dateTime.parentNode) fields.appendChild(fieldRows.dateTime);
-                } else if (isKonek2Card && ["amount", "feeEarned"].includes(field.key)) {
-                  fieldRows.amountFee = fieldRows.amountFee || document.createElement("div");
-                  fieldRows.amountFee.className = "transaction-edit-row";
-                  target = fieldRows.amountFee;
-                  if (!fieldRows.amountFee.parentNode) fields.appendChild(fieldRows.amountFee);
+                var groupName = fieldGroupNames[field.key];
+                if (editorLayout && groupName) {
+                  fieldRows[groupName] = fieldRows[groupName] || document.createElement("div");
+                  fieldRows[groupName].className = "transaction-edit-row";
+                  target = fieldRows[groupName];
+                  if (!fieldRows[groupName].parentNode) fields.appendChild(fieldRows[groupName]);
                 }
                 target.appendChild(labelNode);
               });
