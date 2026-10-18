@@ -24,14 +24,14 @@ function textValue(value,key) {
   return text;
 }
 function moneyValue(value,key,{allowZero=false}={}) {
-  const number=Number(String(value??'').replace(/[₱,\\s]/g,''));
+  const number=Number(String(value??'').replace(/[₱,\s]/g,''));
   if(!Number.isFinite(number)||(!allowZero&&number<=0)||(allowZero&&number<0)||
      Math.abs(number*100-Math.round(number*100))>0.000001)
     throw new Error('Enter a valid '+labels[key].toLowerCase()+' with at most two decimal places.');
   return Math.round(number*100)/100;
 }
 function parseManilaDate(date,time) {
-  if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!/^\\d{2}:\\d{2}$/.test(time))
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^\d{2}:\d{2}$/.test(time))
     throw new Error('Enter a valid date and time.');
   const [year,month,day]=date.split('-').map(Number),[hour,minute]=time.split(':').map(Number);
   const check=new Date(Date.UTC(year,month-1,day,hour,minute));
