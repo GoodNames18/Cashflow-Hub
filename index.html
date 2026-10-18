@@ -384,6 +384,17 @@
       overscroll-behavior: contain;
     }
 
+    .transaction-edit-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .transaction-edit-row > label {
+      min-width: 0;
+    }
+
     .transaction-edit-fields label {
       display: grid;
       gap: 5px;
@@ -8831,6 +8842,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
           var editor = document.getElementById("transactionEditForm");
           var fields = document.getElementById("transactionEditFields");
           var label = item.description || item.merchant || item.customer || item.category || "transaction";
+          var isKonek2Card = /konek2card/i.test(String(sheet || ""));
           var originalValues = {};
           var loaded = false;
           var saving = false;
@@ -8879,11 +8891,13 @@ body.cfh-crypto-active .app-shell{display:none!important}
               title.textContent = "Edit transaction";
               editor.hidden = false;
               actions.hidden = false;
+              message.hidden = false;
               message.textContent = (error.message || "Could not save this transaction.") + " Your changes are still here; close again to retry.";
             }, { skipCache: true });
           }
           function showEditor() {
             title.textContent = "Edit transaction";
+            message.hidden = false;
             message.textContent = "Loading transaction details…";
             actions.hidden = false;
             editor.hidden = false;
@@ -8900,7 +8914,9 @@ body.cfh-crypto-active .app-shell{display:none!important}
             }, function(result) {
               fields.replaceChildren();
               originalValues = {};
+              var fieldRows = {};
               (result.fields || []).forEach(function(field) {
+                if (isKonek2Card && (field.key === "category" || field.key === "description")) return;
                 var labelNode = document.createElement("label");
                 labelNode.textContent = field.label;
                 var control = field.type === "textarea"
@@ -8912,12 +8928,25 @@ body.cfh-crypto-active .app-shell{display:none!important}
                 control.value = field.value == null ? "" : String(field.value);
                 originalValues[field.key] = control.value;
                 labelNode.appendChild(control);
-                fields.appendChild(labelNode);
+                var target = fields;
+                if (isKonek2Card && ["date", "time"].includes(field.key)) {
+                  fieldRows.dateTime = fieldRows.dateTime || document.createElement("div");
+                  fieldRows.dateTime.className = "transaction-edit-row";
+                  target = fieldRows.dateTime;
+                  if (!fieldRows.dateTime.parentNode) fields.appendChild(fieldRows.dateTime);
+                } else if (isKonek2Card && ["amount", "feeEarned"].includes(field.key)) {
+                  fieldRows.amountFee = fieldRows.amountFee || document.createElement("div");
+                  fieldRows.amountFee.className = "transaction-edit-row";
+                  target = fieldRows.amountFee;
+                  if (!fieldRows.amountFee.parentNode) fields.appendChild(fieldRows.amountFee);
+                }
+                target.appendChild(labelNode);
               });
               loaded = true;
               confirm.disabled = false;
               cancel.disabled = false;
-              message.textContent = "Changes save when you close this box.";
+              message.textContent = isKonek2Card ? "" : "Changes save when you close this box.";
+              message.hidden = isKonek2Card;
             }, function(error) {
               message.textContent = error.message || "Could not load this transaction.";
               confirm.disabled = false;
@@ -8947,6 +8976,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
           askDelete = function() {
             if (busy || saving || confirm.disabled) return;
             title.textContent = "Delete transaction?";
+            message.hidden = false;
             message.textContent = "Remove " + label + " from " + sheet + " and Google Sheets?";
             editor.hidden = true;
             confirm.disabled = false;
