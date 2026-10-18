@@ -244,6 +244,9 @@
       margin: 0;
     }
 
+    .dashboard-header-actions { display: flex; align-items: center; gap: 8px; }
+    .balance-check-button { border-color: var(--secondary); background: var(--lavender); color: var(--secondary); font-weight: 700; }
+
     .refresh-button {
       width: auto;
       margin: 0;
@@ -1180,7 +1183,32 @@
       cursor: pointer;
     }
     #testAddMoneyCancelButton { flex: 0 0 auto; margin-top: 8px; }
-
+    #testBalanceCheckModal {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      background: rgba(7, 17, 14, .52);
+      overscroll-behavior: contain;
+    }
+    #testBalanceCheckModal[hidden] { display: none; }
+    #testBalanceCheckModal .test-modal-card { width: min(560px, calc(100vw - 32px)); max-height: min(88dvh, 760px); overflow-y: auto; }
+    .balance-check-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 11px 12px; margin: 8px 0; border-radius: 10px; background: var(--lavender); color: var(--secondary); }
+    .balance-check-row label { grid-column: 1 / -1; font-weight: 800; }
+    .balance-check-system { color: var(--muted); font-size: 12px; }
+    .balance-check-row input { grid-column: 1 / -1; width: 100%; min-height: 42px; padding: 8px 10px; border: 1px solid var(--secondary); border-radius: 9px; font: inherit; }
+    .balance-check-difference { grid-column: 1 / -1; font-weight: 800; }
+    .balance-check-difference.match { color: #087443; }
+    .balance-check-difference.mismatch { color: #b42318; }
+    .balance-check-review { grid-column: 1 / -1; min-height: 38px; border: 1px solid var(--secondary); border-radius: 9px; background: #fff; color: var(--secondary); font-weight: 700; }
+    #testBalanceCheckResult { margin: 12px 0 0; padding: 12px; border-radius: 10px; background: var(--lavender); color: var(--secondary); font-weight: 700; }
+    #testBalanceCheckResult.match { background: #e8f7ef; color: #087443; }
+    #testBalanceCheckResult.mismatch { background: #fff0ef; color: #b42318; }
+    #testBalanceCheckRun { width: 100%; min-height: 48px; margin-top: 10px; border: 0; border-radius: 11px; background: var(--primary); color: var(--secondary); font-weight: 800; }
+    #testBalanceCheckClose { width: 100%; min-height: 46px; margin-top: 8px; border: 1px solid var(--secondary); border-radius: 11px; background: #fff; color: var(--secondary); font-weight: 800; }
+    @media (max-width: 420px) { .dashboard-header-actions { gap: 5px; } .dashboard-header-actions .refresh-button { padding: 8px; font-size: 12px; } .dashboard-header h1 { font-size: 21px; } }
     /* ATM uses the same fixed panel and scrolling amount choices. */
     #testAtmModal {
       position: fixed;
@@ -2815,9 +2843,10 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
           <div class="dashboard-header">
             <h1>&#x1F4CA; Dashboard</h1>
-            <button class="refresh-button" type="button" onclick="loadTestDashboard()">
-              &#x21BB; Refresh
-            </button>
+            <div class="dashboard-header-actions">
+              <button class="refresh-button balance-check-button" type="button" onclick="openTestBalanceCheckModal()">Check Balances</button>
+              <button class="refresh-button" type="button" onclick="loadTestDashboard()">&#x21BB; Refresh</button>
+            </div>
           </div>
 
           <div class="cash-month-summary">
@@ -2973,6 +3002,37 @@ body.cfh-crypto-active .app-shell{display:none!important}
                 </div>
               </div>
               <button id="testAddMoneySaveButton" type="button">SAVE ADJUSTMENT</button>
+            </div>
+          </div>
+
+          <div id="testBalanceCheckModal" hidden onclick="if (event.target === this) closeTestBalanceCheckModal()">
+            <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testBalanceCheckTitle">
+              <div id="testBalanceCheckTitle" class="test-modal-title">CHECK KONEK2CARD BALANCES</div>
+              <p class="test-modal-note">Enter the actual available amounts shown in your Card, Hand, and GCash. This check will not change saved balances.</p>
+              <div class="balance-check-row" data-balance-check-row="card">
+                <label for="testBalanceCheckCard">Money on Card</label>
+                <span class="balance-check-system">In app: <strong id="testBalanceCheckCardSystem">—</strong></span>
+                <input id="testBalanceCheckCard" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
+                <span class="balance-check-difference" id="testBalanceCheckCardDifference"></span>
+                <button class="balance-check-review" data-balance-check-review="card" type="button" hidden onclick="reviewTestBalanceCheckTransactions('card')">Review Card transactions</button>
+              </div>
+              <div class="balance-check-row" data-balance-check-row="cashOnHand">
+                <label for="testBalanceCheckCash">Money on Hand</label>
+                <span class="balance-check-system">In app: <strong id="testBalanceCheckCashSystem">—</strong></span>
+                <input id="testBalanceCheckCash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
+                <span class="balance-check-difference" id="testBalanceCheckCashDifference"></span>
+                <button class="balance-check-review" data-balance-check-review="cash" type="button" hidden onclick="reviewTestBalanceCheckTransactions('cash')">Review Hand transactions</button>
+              </div>
+              <div class="balance-check-row" data-balance-check-row="gcash">
+                <label for="testBalanceCheckGcash">Money on GCash</label>
+                <span class="balance-check-system">In app: <strong id="testBalanceCheckGcashSystem">—</strong></span>
+                <input id="testBalanceCheckGcash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
+                <span class="balance-check-difference" id="testBalanceCheckGcashDifference"></span>
+                <button class="balance-check-review" data-balance-check-review="gcash" type="button" hidden onclick="reviewTestBalanceCheckTransactions('gcash')">Review GCash transactions</button>
+              </div>
+              <div id="testBalanceCheckResult" hidden aria-live="polite"></div>
+              <button id="testBalanceCheckRun" type="button" onclick="runTestBalanceCheck()">CHECK FOR MISMATCH</button>
+              <button id="testBalanceCheckClose" type="button" onclick="closeTestBalanceCheckModal()">CLOSE</button>
             </div>
           </div>
 
@@ -4489,6 +4549,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     let moneyFlowTransactionHistoryCache = {};
     let activeTestTransactionFilter = "";
     let testRecentTransactionsCache = [];
+    let latestTestDashboardData = null;
     let testTransactionHistoryCache = {};
     let activeRentalTransactionFilter = "";
     let rentalRecentTransactionsCache = [];
@@ -7214,8 +7275,119 @@ body.cfh-crypto-active .app-shell{display:none!important}
       });
     }
 
+    function openTestBalanceCheckModal() {
+      var modal = document.getElementById("testBalanceCheckModal");
+      if (!modal) return;
+      if (modal.parentNode !== document.body) document.body.appendChild(modal);
+      modal.querySelectorAll("input").forEach(function(input) { input.value = ""; });
+      var result = document.getElementById("testBalanceCheckResult");
+      if (result) { result.hidden = true; result.className = ""; result.textContent = ""; }
+      document.querySelectorAll(".balance-check-difference").forEach(function(node) { node.textContent = ""; node.className = "balance-check-difference"; });
+      document.querySelectorAll(".balance-check-review").forEach(function(button) { button.hidden = true; });
+      modal.hidden = false;
+      var run = document.getElementById("testBalanceCheckRun");
+      if (run) { run.disabled = true; run.textContent = "LOADING CURRENT BALANCES…"; }
+      loadTestDashboard(true).then(function(loaded) {
+        if (run) { run.disabled = false; run.textContent = "CHECK FOR MISMATCH"; }
+        if (!loaded) {
+          if (result) { result.hidden = false; result.className = "mismatch"; result.textContent = "Could not refresh Konek2Card. Check your connection and try again."; }
+          if (run) run.disabled = true;
+          return;
+        }
+        updateTestBalanceCheckSystemValues();
+      });
+    }
+
+    function closeTestBalanceCheckModal() {
+      var modal = document.getElementById("testBalanceCheckModal");
+      if (modal) modal.hidden = true;
+    }
+
+    function updateTestBalanceCheckSystemValues() {
+      var data = latestTestDashboardData;
+      if (!data) return;
+      var values = {
+        testBalanceCheckCardSystem: data.card,
+        testBalanceCheckCashSystem: data.cashOnHand,
+        testBalanceCheckGcashSystem: data.gcash
+      };
+      Object.keys(values).forEach(function(id) {
+        var node = document.getElementById(id);
+        if (node) node.textContent = formatPeso(values[id]);
+      });
+    }
+
+    function runTestBalanceCheck() {
+      var data = latestTestDashboardData;
+      var fields = [
+        { key: "card", name: "Money on Card", input: "testBalanceCheckCard", system: "testBalanceCheckCardSystem", difference: "testBalanceCheckCardDifference", review: "card", path: "balance" },
+        { key: "cashOnHand", name: "Money on Hand", input: "testBalanceCheckCash", system: "testBalanceCheckCashSystem", difference: "testBalanceCheckCashDifference", review: "cash", path: "cashOnHand" },
+        { key: "gcash", name: "Money on GCash", input: "testBalanceCheckGcash", system: "testBalanceCheckGcashSystem", difference: "testBalanceCheckGcashDifference", review: "gcash", path: "balance" }
+      ];
+      var result = document.getElementById("testBalanceCheckResult");
+      function showResult(message, kind) {
+        if (!result) return;
+        result.hidden = false;
+        result.className = kind;
+        result.textContent = message;
+      }
+      if (!data) { showResult("Current app balances are not loaded. Refresh and try again.", "mismatch"); return; }
+
+      var systemTotal = 0;
+      var actualTotal = 0;
+      var mismatchCount = 0;
+      for (var i = 0; i < fields.length; i++) {
+        var item = fields[i];
+        var input = document.getElementById(item.input);
+        var raw = String(input && input.value || "").trim();
+        var amount = raw === "" ? NaN : Number(raw);
+        if (!Number.isFinite(amount) || amount < 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
+          showResult("Enter a valid actual amount, with up to two decimal places, for each account.", "mismatch");
+          if (input) input.focus();
+          return;
+        }
+        var systemAmount = Number(data[item.key]);
+        if (!Number.isFinite(systemAmount)) { showResult("Could not read the current " + item.name + " balance. Refresh and try again.", "mismatch"); return; }
+        var difference = Math.round((amount - systemAmount + Number.EPSILON) * 100) / 100;
+        systemTotal += systemAmount;
+        actualTotal += amount;
+        var differenceNode = document.getElementById(item.difference);
+        var reviewButton = document.querySelector('[data-balance-check-review="' + item.review + '"]');
+        if (differenceNode) differenceNode.classList.remove("match", "mismatch");
+        if (Math.abs(difference) < 0.01) {
+          if (differenceNode) { differenceNode.textContent = "Matches the app"; differenceNode.classList.add("match"); }
+          if (reviewButton) reviewButton.hidden = true;
+        } else {
+          mismatchCount++;
+          if (differenceNode) {
+            differenceNode.textContent = item.name + " is " + formatPeso(Math.abs(difference)) + (difference > 0 ? " higher than the app" : " lower than the app");
+            differenceNode.classList.add("mismatch");
+          }
+          if (reviewButton) reviewButton.hidden = false;
+        }
+      }
+      var totalDifference = Math.round((actualTotal - systemTotal + Number.EPSILON) * 100) / 100;
+      var totalMessage = "Card + Hand + GCash: app " + formatPeso(systemTotal) + ", actual " + formatPeso(actualTotal) + ". Difference: " + (totalDifference > 0 ? "+" : totalDifference < 0 ? "−" : "") + formatPeso(Math.abs(totalDifference)) + ".";
+      if (mismatchCount) {
+        showResult(mismatchCount + " account " + (mismatchCount === 1 ? "does" : "accounts do") + " not match. " + totalMessage + " Review the flagged account's recent transactions to find the likely cause. No balances were changed.", "mismatch");
+      } else {
+        showResult("All three account balances match. No mismatch was found. No balances were changed.", "match");
+      }
+    }
+
+    function reviewTestBalanceCheckTransactions(filter) {
+      closeTestBalanceCheckModal();
+      toggleTestTransactionFilter(filter);
+      window.setTimeout(function() {
+        var box = document.getElementById("testRecentTransactions");
+        if (box) box.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 80);
+    }
+
 
     function renderTestDashboard(data) {
+      latestTestDashboardData = data;
+      updateTestBalanceCheckSystemValues();
       var monthLabel = document.getElementById("testMonthLabel");
       if (monthLabel) monthLabel.innerText = data.monthLabel || "";
       var lifetimeIncome = document.getElementById("testLifetimeIncome");
