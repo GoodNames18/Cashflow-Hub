@@ -112,6 +112,14 @@ export class CashflowStore {
     this.pending.set(key,promise);
     return promise;
   }
+  async updateRecord(record, p_record) {
+    const { data, error } = await this.client.rpc('cfh_apply_sheet_edit', {
+      p_id: record.id, p_expected_revision: record.revision, p_record
+    });
+    if (error) throw error;
+    this.emit(data);
+    return data;
+  }
   async setDeleted(record, deleted) {
     const { data, error } = await this.client.rpc('cfh_set_deleted', {
       p_id: record.id, p_expected_revision: record.revision, p_deleted: deleted
