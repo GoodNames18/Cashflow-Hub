@@ -1,6 +1,7 @@
 import { checkKonekEntry } from './cfh-financial-checks.mjs?v=live2';
 import { planEntry } from './cfh-entry-plan.mjs?v=moneyflow-digits1';
 import { CFH_OWNER_ID } from './cfh-store.mjs?v=live2';
+import { buildTransactionEdit, editableTransactionFields } from './cfh-transaction-edit.mjs?v=transaction-edit1';
 const dashboards={life_log:'lifeLogDashboard',money_flow:'dashboard',rental:'rentalDashboard',
   twice_as_nyce:'twiceDashboard',printing:'printingDashboard',cash_in_out:'gcashDashboard',konek2card:'testDashboard'};
 const actions=new Set(['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd',
@@ -10,10 +11,10 @@ const sheets={'Life Log':'life_log','Money Flow':'money_flow','Rental':'rental',
   'Printing Business':'printing','Cash In/Out':'cash_in_out','Konek2Card':'konek2card'};
 export class CashflowWriteApi {
   constructor(store,reads,{testOnly=false,allowFinancial=false}={}) {this.store=store;this.reads=reads;this.retries=new Map();this.testOnly=testOnly;this.allowFinancial=allowFinancial;this.queue=Promise.resolve();}
-  handles(action) {return actions.has(action)||['transactionDelete','transactionRestore','transactionDeleteStatus'].includes(action);}
+  handles(action) {return actions.has(action)||['transactionDelete','transactionRestore','transactionDeleteStatus','transactionEditLoad','transactionEdit'].includes(action);}
   async find(params) {
-    if(String(params.rowNumber||params.id||params.rowFingerprint||'').startsWith('pending:'))throw Error('This entry is pending sync. Connect and sync it before deleting or restoring.');
-    if(globalThis.navigator?.onLine===false)throw Error('Connect to delete or restore a synced transaction.');
+    if(String(params.rowNumber||params.id||params.rowFingerprint||'').startsWith('pending:'))throw Error('This entry is pending sync. Connect and sync it before changing it.');
+    if(globalThis.navigator?.onLine===false)throw Error('Connect to change a synced transaction.');
     const tab=sheets[params.sheet];
     if(!tab)throw new Error('Unknown transaction sheet.');
     let id=String(params.rowNumber||params.id||'');
@@ -26,6 +27,11 @@ export class CashflowWriteApi {
       .eq('owner_id',CFH_OWNER_ID).eq('id',id).eq('tab_key',tab).single();
     if(error)throw error;
     return data;
+  }
+  assertCurrentRevision(record,fingerprint) {
+    const match=String(fingerprint||'').match(/^([0-9a-f-]{36}):(\d+)$/i);
+    if(!match||match[1].toLowerCase()!==record.id.toLowerCase()||Number(match[2])!==Number(record.revision))
+      throw Error('This transaction changed. Refresh it before editing.');
   }
   request(params) {
     const task=this.queue.then(()=>this.perform(params));
@@ -52,6 +58,24 @@ export class CashflowWriteApi {
       this.retries.delete(key);
       try {await this.reads.snapshot.load('money_flow',true);}catch(error){console.warn('Installment saved; display will refresh',error);}
       return data;
+    }
+    if(params.action==='transactionEditLoad') {
+      const record=await this.find(params);
+      this.assertCurrentRevision(record,params.rowFingerprint);
+      if(record.deleted_at)throw Error('Restore the transaction before editing it.');
+      if(this.testOnly && record.payload?.cfh_preview_test!==true)
+        throw new Error('In this preview, edit only the test transactions added here.');
+      return {success:true,fields:editableTransactionFields(record)};
+    }
+    if(params.action==='transactionEdit') {
+      const record=await this.find(params);
+      this.assertCurrentRevision(record,params.rowFingerprint);
+      if(record.deleted_at)throw Error('Restore the transaction before editing it.');
+      if(this.testOnly && record.payload?.cfh_preview_test!==true)
+        throw Error('In this preview, edit only the test transactions added here.');
+      const p_record=buildTransactionEdit(record,params.values||{});
+      const updated=await this.store.updateRecord(record,p_record);
+      return {success:true,record:updated};
     }
     if(params.action==='transactionDeleteStatus') {
       const record=await this.find(params);return {success:true,deleted:!!record.deleted_at};

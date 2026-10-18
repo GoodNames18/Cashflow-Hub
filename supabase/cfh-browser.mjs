@@ -1,8 +1,8 @@
 import { createClient } from './vendor/supabase-js.mjs';
-import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=offline-home1';
+import { CashflowStore, CFH_PROJECT_URL, CFH_PUBLISHABLE_KEY } from './cfh-store.mjs?v=transaction-edit1';
 import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=offline-home1';
 import { CashflowReadApi } from './cfh-read-api.mjs?v=offline-home1';
-import { CashflowWriteApi } from './cfh-write-api.mjs?v=offline-home1';
+import { CashflowWriteApi } from './cfh-write-api.mjs?v=transaction-edit1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=offline-home1';
 import { startCalendarSync } from './cfh-calendar-sync.mjs?v=events1';
 import {startPortfolioSync} from './cfh-portfolio.mjs?v=portfolio1';
