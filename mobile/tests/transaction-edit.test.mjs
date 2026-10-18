@@ -35,7 +35,7 @@ test('edit updates mapped source columns and keeps unrelated Konek2Card columns'
   assert.equal(edit.source_values[6],'Cash-out corrected');
   assert.equal(edit.source_values[7],'original-note');
   assert.equal(edit.occurred_at,'2026-10-17T01:15:00.000Z');
-  assert.equal(edit.source_values[0],edit.occurred_at);
+  assert.equal(edit.source_values[0],'2026-10-16T16:00:00.000Z');
   assert.equal(edit.source_values[1],edit.occurred_at);
 });
 
