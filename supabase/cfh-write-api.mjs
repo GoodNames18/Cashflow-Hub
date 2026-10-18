@@ -29,7 +29,7 @@ export class CashflowWriteApi {
     return data;
   }
   assertCurrentRevision(record,fingerprint) {
-    const match=String(fingerprint||'').match(/^([0-9a-f-]{36}):(\\d+)$/i);
+    const match=String(fingerprint||'').match(/^([0-9a-f-]{36}):(\d+)$/i);
     if(!match||match[1].toLowerCase()!==record.id.toLowerCase()||Number(match[2])!==Number(record.revision))
       throw Error('This transaction changed. Refresh it before editing.');
   }
