@@ -66,3 +66,19 @@ test('edit rejects invalid values and unrecognized transaction tabs',()=>{
   assert.throws(()=>buildTransactionEdit(record,{date:'2026-02-30'}),/valid date/);
   assert.throws(()=>editableTransactionFields({tab_key:'unknown'}),/cannot be edited/);
 });
+
+test('editing another field preserves original source date, time, and formatted category',()=>{
+  const record={
+    tab_key:'cash_in_out',occurred_at:'2026-10-16T04:00:00.000Z',amount:80,
+    category:'Maya',description:'Income',payload:{sheet:'Cash In/Out'},
+    source_values:['2026-10-15T16:00:00.000Z','2026-10-16T04:00:00.000Z',80,'     Maya','Income']
+  };
+  const fields=editableTransactionFields(record);
+  const values=Object.fromEntries(fields.map(field=>[field.key,String(field.value)]));
+  values.description='Corrected note';
+  const edit=buildTransactionEdit(record,values);
+  assert.equal(edit.source_values[0],record.source_values[0]);
+  assert.equal(edit.source_values[1],record.source_values[1]);
+  assert.equal(edit.source_values[3],'     Maya');
+  assert.equal(edit.description,'Corrected note');
+});
