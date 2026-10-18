@@ -18,7 +18,7 @@ test('edit updates mapped source columns and keeps unrelated Konek2Card columns'
   const record={
     tab_key:'konek2card',occurred_at:'2026-10-16T10:30:00.000Z',amount:100,
     category:'Income',description:'Cash-out',payload:{sheet:'Konek2Card',customer:'Annie',fee_earned:5},
-    source_values:['old-date','old-time','Annie',100,5,'Income','Cash-out','original-note']
+    source_values:['2026-10-16T10:30:00.000Z','2026-10-16T10:30:00.000Z','Annie',100,5,'Income','Cash-out','original-note']
   };
   const edit=buildTransactionEdit(record,{
     date:'2026-10-17',time:'09:15',customer:'Annie D',amount:'160',feeEarned:'6',
@@ -43,7 +43,7 @@ test('Money Flow edit keeps merchant, description, category, amount, and payment
   const record={
     tab_key:'money_flow',occurred_at:'2026-10-16T10:30:00.000Z',amount:40,category:'Expense',
     description:'Lunch',payload:{sheet:'Money Flow',merchant:'Cafe',payment_method:'Cash',entry:'original'},
-    source_values:['date','time','Cafe','Lunch','Expense',40,'Cash','original']
+    source_values:['2026-10-16T10:30:00.000Z','2026-10-16T10:30:00.000Z','Cafe','Lunch','Expense',40,'Cash','original']
   };
   const edit=buildTransactionEdit(record,{
     date:'2026-10-16',time:'18:30',merchant:'New Cafe',description:'Dinner',
