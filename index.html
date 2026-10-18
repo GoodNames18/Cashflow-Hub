@@ -6143,7 +6143,6 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (!isFinite(value)) throw new Error("Invalid cash-out amount.");
       if (value < 100) throw new Error("Minimum cash-out is \u20B1100.");
       if (value > 10000) throw new Error("Maximum cash-out is \u20B110,000.");
-      if (value % 100 !== 0) throw new Error("Amount must be in \u20B1100 increments.");
       return value;
     }
 

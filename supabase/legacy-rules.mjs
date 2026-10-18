@@ -2945,7 +2945,6 @@ function validateTestCashOutAmount_(amount) {
   if (!isFinite(value)) throw new Error('Invalid cash-out amount.');
   if (value < 100) throw new Error('Minimum cash-out is ₱100.');
   if (value > 10000) throw new Error('Maximum cash-out is ₱10,000.');
-  if (value % 100 !== 0) throw new Error('Amount must be in ₱100 increments.');
   return value;
 }
 
