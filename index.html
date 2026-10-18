@@ -2974,6 +2974,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
                   </label>
                 </div>
               </div>
+              <button id="testAddMoneySaveButton" type="button">SAVE ADJUSTMENT</button>
               <button id="testAddMoneyCancelButton" class="test-modal-cancel" type="button">DONE</button>
             </div>
           </div>
@@ -6472,10 +6473,17 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (transferCancelButton) transferCancelButton.addEventListener("click", closeTestTransferModal);
       var addMoneyCancelButton = document.getElementById("testAddMoneyCancelButton");
       if (addMoneyCancelButton) addMoneyCancelButton.addEventListener("click", closeTestAddMoneyModal);
+      var addMoneySaveButton = document.getElementById("testAddMoneySaveButton");
+      if (addMoneySaveButton) addMoneySaveButton.addEventListener("click", saveTestAddMoneyFields);
       ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
         .forEach(function(id) {
           var field = document.getElementById(id);
-          if (field) field.addEventListener("blur", function() { saveTestAddMoneyField(field); });
+          if (!field) return;
+          field.addEventListener("input", updateTestAddMoneyModalValues);
+          field.addEventListener("blur", function(event) {
+            if (event.relatedTarget && event.relatedTarget.id === "testAddMoneySaveButton") return;
+            saveTestAddMoneyField(field);
+          });
         });
 
       [
@@ -6787,6 +6795,15 @@ body.cfh-crypto-active .app-shell{display:none!important}
         var source = document.getElementById(ids[targetId]);
         if (target && source) target.textContent = source.textContent || "—";
       });
+      var total = Number(String((document.getElementById("testTotalMoney") || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"].forEach(function(id) {
+        var input = document.getElementById(id);
+        if (!input || !String(input.value || "").trim()) return;
+        var amount = Number(String(input.value).replace(/[₱,\\s]/g, ""));
+        if (Number.isFinite(amount)) total += amount;
+      });
+      var totalTarget = document.getElementById("testAddMoneyTotalMoney");
+      if (totalTarget) totalTarget.textContent = formatPeso(total);
     }
 
     function openTestAddMoneyModal() {
@@ -6815,15 +6832,27 @@ body.cfh-crypto-active .app-shell{display:none!important}
       return Math.round(value * 100) / 100;
     }
 
-    function saveTestAddMoneyField(input) {
-      if (!input || input.disabled || input.dataset.saving === "true") return;
+    function saveTestAddMoneyFields() {
+      var fields = ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
+        .map(function(id) { return document.getElementById(id); })
+        .filter(function(input) { return input && String(input.value || "").trim() && !input.disabled; });
+      if (!fields.length) { setTestStatus("No adjustments to save.", "preview"); return; }
+      function saveNext(index) {
+        if (index >= fields.length) { setTestStatus("✓ Adjustments saved.", "success"); return; }
+        saveTestAddMoneyField(fields[index], function(saved) { if (saved) saveNext(index + 1); });
+      }
+      saveNext(0);
+    }
+
+    function saveTestAddMoneyField(input, onComplete) {
+      if (!input || input.disabled || input.dataset.saving === "true") { if (onComplete) onComplete(true); return; }
       var field = {
         testAddMoneyCardInput: { balance: "card", label: "Money on Card" },
         testAddMoneyCashInput: { balance: "cash", label: "Money on Hand" },
         testAddMoneyGcashInput: { balance: "gcash", label: "Money on GCash" }
       }[input.id];
       var raw = String(input.value || "").trim();
-      if (!raw) return;
+      if (!raw) { if (onComplete) onComplete(true); return; }
       var amount;
       try {
         if (input.id === "testAddMoneyEarnedInput") {
@@ -6839,6 +6868,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
         }
       } catch (error) {
         setTestStatus("❌ " + error.message, "error");
+        if (onComplete) onComplete(false);
         return;
       }
 
@@ -6856,10 +6886,12 @@ body.cfh-crypto-active .app-shell{display:none!important}
         markTestDashboardLoaded_(result.dashboard);
         updateTestAddMoneyModalValues();
         setTestStatus("✓ Recorded " + formatPeso(amount) + " " + label, "success");
+        if (onComplete) onComplete(true);
       }, function(error) {
         input.disabled = false;
         delete input.dataset.saving;
         setTestStatus("❌ " + error.message, "error");
+        if (onComplete) onComplete(false);
       });
     }
 
