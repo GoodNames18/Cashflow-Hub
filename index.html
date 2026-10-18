@@ -1090,7 +1090,7 @@
     #testAddMoneyModal .test-modal-card {
       display: flex;
       flex-direction: column;
-      width: min(520px, 100%);
+      width: min(650px, calc(100vw - 40px));
       max-height: min(86dvh, 760px);
       overflow: hidden;
       touch-action: pan-y;
@@ -2965,6 +2965,10 @@ body.cfh-crypto-active .app-shell{display:none!important}
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on GCash</span><strong id="testAddMoneyGcashCurrent">—</strong></span>
                     <input id="testAddMoneyGcashInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
+                  </label>
+                  <label class="test-add-money-adjust-row">
+                    <span class="test-add-money-adjust-label"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></span>
+                    <input id="testAddMoneyEarnedInput" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
                   </label>
                 </div>
               </div>
@@ -6466,7 +6470,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (transferCancelButton) transferCancelButton.addEventListener("click", closeTestTransferModal);
       var addMoneySaveButton = document.getElementById("testAddMoneySaveButton");
       if (addMoneySaveButton) addMoneySaveButton.addEventListener("click", saveTestAddMoneyFields);
-      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput"]
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
         .forEach(function(id) {
           var field = document.getElementById(id);
           if (!field) return;
@@ -6776,6 +6780,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     function updateTestAddMoneyModalValues() {
       var ids = {
         testAddMoneyTotalMoney: "testTotalMoney",
+        testAddMoneyTotalEarned: "testTotalEarned",
         testAddMoneyCardCurrent: "testCard",
         testAddMoneyCashCurrent: "testCashOnHand",
         testAddMoneyGcashCurrent: "testGcash"
@@ -6801,6 +6806,20 @@ body.cfh-crypto-active .app-shell{display:none!important}
         if (current) current.textContent = formatPeso(base + amount);
         total += amount;
       });
+      var earnedInput = document.getElementById("testAddMoneyEarnedInput");
+      var earnedRaw = String(earnedInput && earnedInput.value || "").trim();
+      var earnedAmount = earnedRaw ? Number(earnedRaw.replace(/[₱,\\s]/g, "")) : 0;
+      if (!Number.isFinite(earnedAmount)) earnedAmount = 0;
+      total += earnedAmount;
+      var earnedTarget = document.getElementById("testAddMoneyTotalEarned");
+      var earnedSource = document.getElementById("testTotalEarned");
+      var earnedBase = Number(String((earnedSource || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+      if (earnedTarget) earnedTarget.textContent = formatPeso(earnedBase + earnedAmount);
+      var cardTarget = document.getElementById("testAddMoneyCardCurrent");
+      if (cardTarget && earnedAmount) {
+        var cardPreview = Number(String(cardTarget.textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+        cardTarget.textContent = formatPeso(cardPreview + earnedAmount);
+      }
       var totalTarget = document.getElementById("testAddMoneyTotalMoney");
       if (totalTarget) totalTarget.textContent = formatPeso(total);
     }
@@ -6808,7 +6827,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     function openTestAddMoneyModal() {
       var modal = document.getElementById("testAddMoneyModal");
       if (!modal) return;
-      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput"]
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
         .forEach(function(id) { var input = document.getElementById(id); if (input) input.value = ""; });
       updateTestAddMoneyModalValues();
       if (modal.parentNode !== document.body) document.body.appendChild(modal);
@@ -6832,7 +6851,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     }
 
     function saveTestAddMoneyFields() {
-      var fields = ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput"]
+      var fields = ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
         .map(function(id) { return document.getElementById(id); })
         .filter(function(input) { return input && String(input.value || "").trim() && !input.disabled; });
       if (!fields.length) { setTestStatus("No adjustments to save.", "preview"); return; }
@@ -6854,16 +6873,27 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (!raw) { if (onComplete) onComplete(true); return; }
       var amount;
       try {
-        if (!field) return;
-        amount = parseSignedBalanceAdjustment(input, field.label);
+        if (input.id === "testAddMoneyEarnedInput") {
+          amount = Number(raw.replace(/[₱,\\s]/g, ""));
+          if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
+            throw new Error("Total Earned needs a positive amount with at most two decimal places.");
+          }
+          amount = Math.round(amount * 100) / 100;
+        } else if (field) {
+          amount = parseSignedBalanceAdjustment(input, field.label);
+        } else {
+          return;
+        }
       } catch (error) {
         setTestStatus("❌ " + error.message, "error");
         if (onComplete) onComplete(false);
         return;
       }
 
-      var params = { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount }] };
-      var label = field.label;
+      var params = input.id === "testAddMoneyEarnedInput"
+        ? { action: "testEarnedAdjustment", amount: amount }
+        : { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount }] };
+      var label = input.id === "testAddMoneyEarnedInput" ? "Total Earned" : field.label;
       input.dataset.saving = "true";
       input.disabled = true;
       setTestStatus("Saving " + label + "...", "preview");
