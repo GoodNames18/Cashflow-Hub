@@ -1090,7 +1090,7 @@
     #testAddMoneyModal .test-modal-card {
       display: flex;
       flex-direction: column;
-      width: min(440px, 100%);
+      width: min(520px, 100%);
       max-height: min(86dvh, 760px);
       overflow: hidden;
       touch-action: pan-y;
@@ -1140,7 +1140,8 @@
       align-items: center;
       flex-direction: row;
       min-height: 54px;
-      width: 100%;
+      width: calc(100% + 16px);
+      margin: 0 0 12px -8px;
       padding: 14px 16px;
     }
     .test-add-money-total-row .test-add-money-adjust-label { width: 100%; }
@@ -2966,16 +2967,8 @@ body.cfh-crypto-active .app-shell{display:none!important}
                     <input id="testAddMoneyGcashInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
                   </label>
                 </div>
-                <div class="test-add-money-section-title">Total Earned</div>
-                <div class="test-add-money-adjustments">
-                  <label class="test-add-money-adjust-row">
-                    <span class="test-add-money-adjust-label"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></span>
-                    <input id="testAddMoneyEarnedInput" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
-                  </label>
-                </div>
               </div>
               <button id="testAddMoneySaveButton" type="button">SAVE ADJUSTMENT</button>
-              <button id="testAddMoneyCancelButton" class="test-modal-cancel" type="button">DONE</button>
             </div>
           </div>
 
@@ -6471,11 +6464,9 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (atmCancelButton) atmCancelButton.addEventListener("click", closeTestAtmModal);
       if (collectionCancelButton) collectionCancelButton.addEventListener("click", closeTestCollectionModal);
       if (transferCancelButton) transferCancelButton.addEventListener("click", closeTestTransferModal);
-      var addMoneyCancelButton = document.getElementById("testAddMoneyCancelButton");
-      if (addMoneyCancelButton) addMoneyCancelButton.addEventListener("click", closeTestAddMoneyModal);
       var addMoneySaveButton = document.getElementById("testAddMoneySaveButton");
       if (addMoneySaveButton) addMoneySaveButton.addEventListener("click", saveTestAddMoneyFields);
-      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput"]
         .forEach(function(id) {
           var field = document.getElementById(id);
           if (!field) return;
@@ -6785,7 +6776,6 @@ body.cfh-crypto-active .app-shell{display:none!important}
     function updateTestAddMoneyModalValues() {
       var ids = {
         testAddMoneyTotalMoney: "testTotalMoney",
-        testAddMoneyTotalEarned: "testTotalEarned",
         testAddMoneyCardCurrent: "testCard",
         testAddMoneyCashCurrent: "testCashOnHand",
         testAddMoneyGcashCurrent: "testGcash"
@@ -6796,11 +6786,20 @@ body.cfh-crypto-active .app-shell{display:none!important}
         if (target && source) target.textContent = source.textContent || "—";
       });
       var total = Number(String((document.getElementById("testTotalMoney") || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
-      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"].forEach(function(id) {
-        var input = document.getElementById(id);
-        if (!input || !String(input.value || "").trim()) return;
-        var amount = Number(String(input.value).replace(/[₱,\\s]/g, ""));
-        if (Number.isFinite(amount)) total += amount;
+      [
+        { input: "testAddMoneyCardInput", current: "testAddMoneyCardCurrent" },
+        { input: "testAddMoneyCashInput", current: "testAddMoneyCashCurrent" },
+        { input: "testAddMoneyGcashInput", current: "testAddMoneyGcashCurrent" }
+      ].forEach(function(item) {
+        var input = document.getElementById(item.input);
+        var current = document.getElementById(item.current);
+        var source = document.getElementById(ids[item.current]);
+        var raw = String(input && input.value || "").trim();
+        var amount = raw ? Number(raw.replace(/[₱,\\s]/g, "")) : 0;
+        if (!Number.isFinite(amount)) amount = 0;
+        var base = Number(String((source || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+        if (current) current.textContent = formatPeso(base + amount);
+        total += amount;
       });
       var totalTarget = document.getElementById("testAddMoneyTotalMoney");
       if (totalTarget) totalTarget.textContent = formatPeso(total);
@@ -6809,7 +6808,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     function openTestAddMoneyModal() {
       var modal = document.getElementById("testAddMoneyModal");
       if (!modal) return;
-      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
+      ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput"]
         .forEach(function(id) { var input = document.getElementById(id); if (input) input.value = ""; });
       updateTestAddMoneyModalValues();
       if (modal.parentNode !== document.body) document.body.appendChild(modal);
@@ -6833,7 +6832,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     }
 
     function saveTestAddMoneyFields() {
-      var fields = ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
+      var fields = ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput"]
         .map(function(id) { return document.getElementById(id); })
         .filter(function(input) { return input && String(input.value || "").trim() && !input.disabled; });
       if (!fields.length) { setTestStatus("No adjustments to save.", "preview"); return; }
@@ -6855,27 +6854,16 @@ body.cfh-crypto-active .app-shell{display:none!important}
       if (!raw) { if (onComplete) onComplete(true); return; }
       var amount;
       try {
-        if (input.id === "testAddMoneyEarnedInput") {
-          amount = Number(raw.replace(/[₱,\\s]/g, ""));
-          if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
-            throw new Error("Total Earned needs a positive amount with at most two decimal places.");
-          }
-          amount = Math.round(amount * 100) / 100;
-        } else if (field) {
-          amount = parseSignedBalanceAdjustment(input, field.label);
-        } else {
-          return;
-        }
+        if (!field) return;
+        amount = parseSignedBalanceAdjustment(input, field.label);
       } catch (error) {
         setTestStatus("❌ " + error.message, "error");
         if (onComplete) onComplete(false);
         return;
       }
 
-      var params = input.id === "testAddMoneyEarnedInput"
-        ? { action: "testEarnedAdjustment", amount: amount }
-        : { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount }] };
-      var label = input.id === "testAddMoneyEarnedInput" ? "Total Earned" : field.label;
+      var params = { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount }] };
+      var label = field.label;
       input.dataset.saving = "true";
       input.disabled = true;
       setTestStatus("Saving " + label + "...", "preview");
