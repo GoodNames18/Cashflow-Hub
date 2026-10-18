@@ -1184,6 +1184,13 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     var category = String(row[5] || '').trim().toLowerCase();
     var description = String(row[6] || '').trim().toLowerCase();
 
+    if (category === 'balance adjustment') {
+      if (description === 'money on card adjustment') card += amount;
+      else if (description === 'money on hand adjustment') cashOnHand += amount;
+      else if (description === 'money on gcash adjustment') gcash += amount;
+      continue;
+    }
+
     if (category === 'income' && /^(?:monthly interest \| gross [0-9.]+ \| tax [0-9.]+|monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/.test(description)) {
       card += amount;
       continue;

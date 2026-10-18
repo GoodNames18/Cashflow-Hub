@@ -8,6 +8,12 @@ function cents(value) {
     throw new Error('Enter a positive amount with at most two decimal places.');
   return amount;
 }
+function signedCents(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount*100-Math.round(amount*100))>0.000001)
+    throw new Error('Enter a non-zero adjustment with at most two decimal places.');
+  return Math.round(amount*100)/100;
+}
 export function rowRecord(tab, row) {
   let amount = null, category = '', description = '', payload = {sheet:sheets[tab]};
   if (tab==='life_log') {
@@ -87,6 +93,23 @@ export function planEntry(params, now = new ManilaDate()) {
       const entry=rules.parseTestTransferInput_(params.text||params.amount);
       tab='konek2card';rows=[rules.buildTestTransferInputRow_(date,entry,params.direction)];
       receipt={amount:rows[0][3],description:rows[0][6]};break;
+    }
+    case 'testBalanceAdjustment': {
+      const labels={card:'Money on Card',cash:'Money on Hand',gcash:'Money on GCash'};
+      const adjustments=Array.isArray(params.adjustments)?params.adjustments:[];
+      if(!adjustments.length)throw new Error('Enter at least one balance adjustment.');
+      const seen=new Set();
+      rows=adjustments.map(item=>{
+        const balance=String(item?.balance||'').trim().toLowerCase();
+        if(!Object.hasOwn(labels,balance)||seen.has(balance))throw new Error('Choose each valid balance only once.');
+        seen.add(balance);
+        const amount=signedCents(item.amount);
+        const label=labels[balance];
+        return [date,date,'Adjustment',amount,'','Balance Adjustment',label+' adjustment'];
+      });
+      tab='konek2card';
+      receipt={adjustments:adjustments.map(item=>({balance:String(item.balance).toLowerCase(),amount:signedCents(item.amount)}))};
+      break;
     }
     case 'testOthersLoan': {
       const entry=rules.parseTestOthersLoanInput_(params.text,params.loanAction);

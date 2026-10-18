@@ -6,7 +6,7 @@ const dashboards={life_log:'lifeLogDashboard',money_flow:'dashboard',rental:'ren
   twice_as_nyce:'twiceDashboard',printing:'printingDashboard',cash_in_out:'gcashDashboard',konek2card:'testDashboard'};
 const actions=new Set(['lifeLogAdd','expense','rentalAdd','twiceAdd','printingAdd','gcashQuickAdd',
   'gcashTextAdd','testCashOut','testAapCollection','testTransfer','testOthersLoan','testLoan',
-  'testAtmWithdraw','testHoldMoney','testMonthlyInterest','installmentCreate']);
+  'testAtmWithdraw','testHoldMoney','testMonthlyInterest','testBalanceAdjustment','installmentCreate']);
 const sheets={'Life Log':'life_log','Money Flow':'money_flow','Rental':'rental','TwiceAsNyce':'twice_as_nyce',
   'Printing Business':'printing','Cash In/Out':'cash_in_out','Konek2Card':'konek2card'};
 export class CashflowWriteApi {
