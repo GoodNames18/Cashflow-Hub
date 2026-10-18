@@ -17,6 +17,10 @@ function manilaParts(value) {
   const time=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value));
   return {date,time};
 }
+function sourceParts(source,index,fallback) {
+  try { return manilaParts(source[index]||fallback); }
+  catch { return manilaParts(fallback); }
+}
 function textValue(value,key) {
   const text=String(value??'').trim();
   if(text.length>500) throw new Error(labels[key]+' must be 500 characters or less.');
@@ -45,8 +49,8 @@ export function editableTransactionFields(record) {
   if(!map) throw new Error('This transaction type cannot be edited.');
   const source=Array.isArray(record.source_values)?record.source_values:[];
   const parts={
-    date:manilaParts(source[map.date]||record.occurred_at).date,
-    time:manilaParts(source[map.time]||record.occurred_at).time
+    date:sourceParts(source,map.date,record.occurred_at).date,
+    time:sourceParts(source,map.time,record.occurred_at).time
   };
   const values={
     date:parts.date,time:parts.time,
@@ -75,8 +79,8 @@ export function buildTransactionEdit(record,values={}) {
   if(!map) throw new Error('This transaction type cannot be edited.');
   const source=Array.isArray(record.source_values)?structuredClone(record.source_values):[];
   const payload=structuredClone(record.payload||{});
-  const originalDate=manilaParts(source[map.date]||record.occurred_at).date;
-  const originalTime=manilaParts(source[map.time]||record.occurred_at).time;
+  const originalDate=sourceParts(source,map.date,record.occurred_at).date;
+  const originalTime=sourceParts(source,map.time,record.occurred_at).time;
   const date=String(values.date??originalDate);
   const time=String(values.time??originalTime);
   const occurred_at=parseManilaDate(date,time);
