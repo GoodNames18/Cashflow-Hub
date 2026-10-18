@@ -8794,144 +8794,237 @@ body.cfh-crypto-active .app-shell{display:none!important}
         if (!box) return;
         var sheet = locations[boxId][0];
         var page = locations[boxId][1];
-        var timer, startX, startY, lastLongPress = 0, deleting = false;
+        var timer, startX, startY, lastLongPress = 0, busy = false;
         function selectedItem(target) {
           var row = target.closest(".transaction-row");
           if (!row || !box.contains(row)) return null;
           var index = Array.prototype.indexOf.call(box.children, row);
           return (box._displayedTransactions || [])[index] || null;
         }
-        function deleteItem(item) {
-          if (!item || deleting) return;
+        function itemRow(item) {
+          return Array.prototype.find.call(box.children, function(child, index) {
+            return (box._displayedTransactions || [])[index] === item;
+          });
+        }
+        function openItemMenu(item) {
+          if (!item || busy) return;
           if (!item.rowNumber || !item.rowFingerprint) {
-            window.alert("Update and redeploy Code.gs to enable transaction deletion.");
+            window.alert("Refresh this transaction before changing it.");
             return;
           }
           var modal = document.getElementById("transactionDeleteModal");
+          var title = document.getElementById("transactionDeleteTitle");
           var message = document.getElementById("transactionDeleteMessage");
+          var actions = document.getElementById("transactionDeleteActions");
+          var editOpen = document.getElementById("transactionEditOpen");
           var confirm = document.getElementById("transactionDeleteConfirm");
           var cancel = document.getElementById("transactionDeleteCancel");
-          var label = item.description || item.merchant || item.category || "transaction";
-          message.textContent = "Remove " + label + " from " + sheet + " and Google Sheets?";
+          var editor = document.getElementById("transactionEditForm");
+          var fields = document.getElementById("transactionEditFields");
+          var save = document.getElementById("transactionEditSave");
+          var back = document.getElementById("transactionEditBack");
+          var label = item.description || item.merchant || item.customer || item.category || "transaction";
+          function showMenu() {
+            title.textContent = "Transaction options";
+            message.textContent = label + " · " + sheet;
+            actions.hidden = false;
+            editOpen.hidden = false;
+            confirm.hidden = false;
+            confirm.disabled = false;
+            confirm.textContent = "Delete";
+            cancel.textContent = "Cancel";
+            editor.hidden = true;
+            fields.replaceChildren();
+          }
           modal.hidden = false;
-          cancel.hidden = false;
-          confirm.hidden = false;
-          confirm.disabled = false;
-          confirm.textContent = "Delete";
+          showMenu();
           cancel.onclick = function() { modal.hidden = true; };
-          confirm.onclick = function() {
-            if (deleting) return;
-            deleting = true;
-            modal.hidden = true;
-            var row = Array.prototype.find.call(box.children, function(child, index) {
-              return (box._displayedTransactions || [])[index] === item;
-            });
-            if (row) row.style.opacity = "0.45";
-            var settled = false;
-            var statusTimer;
-            var params = {
-              action: "transactionDelete", sheet: sheet,
+          back.onclick = showMenu;
+          editOpen.onclick = function() {
+            title.textContent = "Edit transaction";
+            message.textContent = "Loading transaction details…";
+            actions.hidden = true;
+            editor.hidden = false;
+            fields.replaceChildren();
+            save.disabled = true;
+            jsonpRequest({
+              action: "transactionEditLoad", sheet: sheet,
               rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
-            };
-            function completed() {
-              if (settled) return;
-              settled = true;
-              window.clearTimeout(statusTimer);
-              deleting = false;
-              if (row && row.parentNode === box) {
-                var index = Array.prototype.indexOf.call(box.children, row);
-                if (index !== -1) {
-                  box._displayedTransactions.splice(index, 1);
-                  row.remove();
-                }
-              }
-              var seen = new Set();
-              function adjust(items) {
-                if (!Array.isArray(items)) return;
-                for (var i = items.length - 1; i >= 0; i--) {
-                  var entry = items[i];
-                  if (!entry || seen.has(entry)) continue;
-                  seen.add(entry);
-                  if (entry === item) {
-                    items.splice(i, 1);
-                  } else if (Number(entry.rowNumber) > Number(item.rowNumber)) {
-                    entry.rowNumber--;
-                  }
-                }
-              }
-              adjust(box._displayedTransactions);
-              var recent = {
-                lifeLog: lifeLogRecentEntriesCache,
-                twice: businessRecentTransactionsCache.twice,
-                printing: businessRecentTransactionsCache.printing,
-                gcash: gcashRecentTransactionsCache,
-                expenses: moneyFlowRecentTransactionsCache,
-                test: testRecentTransactionsCache,
-                rental: rentalRecentTransactionsCache
-              };
-              adjust(recent[page]);
-              gcashTransactionHistoryCache = {};
-              businessTransactionHistoryCache = { printing: {}, twice: {} };
-              moneyFlowTransactionHistoryCache = {};
-              testTransactionHistoryCache = {};
-              rentalTransactionHistoryCache = {};
-              lifeLogTransactionHistoryCache = {};
-              try {
-                Object.keys(localStorage).forEach(function(key) {
-                  if (key.indexOf("cashflow-hub:history:") === 0 ||
-                      key.indexOf("cashflow-hub:dashboard:") === 0) {
-                    localStorage.removeItem(key);
-                  }
-                });
-              } catch (error) {}
-              Object.keys(dashboardRequestGeneration).forEach(function(key) {
-                dashboardRequestGeneration[key]++;
+            }, function(result) {
+              fields.replaceChildren();
+              (result.fields || []).forEach(function(field) {
+                var labelNode = document.createElement("label");
+                labelNode.textContent = field.label;
+                var control = field.type === "textarea"
+                  ? document.createElement("textarea")
+                  : document.createElement("input");
+                if (field.type !== "textarea") control.type = field.type;
+                if (field.type === "number") control.step = field.step || "0.01";
+                control.dataset.editKey = field.key;
+                control.value = field.value == null ? "" : String(field.value);
+                labelNode.appendChild(control);
+                fields.appendChild(labelNode);
               });
-              if (!box.children.length) {
-                box.className = "dashboard-message";
-                box.textContent = "No transactions yet.";
-              }
-              syncActivePageHeight();
-              refreshDashboardTotalsAfterDelete(page);
-            }
-            function failed(error) {
-              if (settled) return;
-              settled = true;
-              window.clearTimeout(statusTimer);
-              deleting = false;
-              if (row) row.style.opacity = "";
-              message.textContent = error.message || "Could not delete transaction. Check the sheet before trying again.";
-              modal.hidden = false;
-              confirm.hidden = true;
-              cancel.hidden = false;
-              cancel.textContent = "Close";
-              cancel.onclick = function() { modal.hidden = true; cancel.textContent = "Cancel"; };
-            }
-            var checks = 0;
-            function checkDeletion() {
-              if (settled) return;
-              jsonpRequest({
-                action: "transactionDeleteStatus", sheet: sheet,
-                rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
-              }, function(result) {
-                if (result.deleted) completed();
-                else if (++checks < 5 && !settled)
-                  statusTimer = window.setTimeout(checkDeletion, 1500);
-              }, function() {
-                // The original delete request can still confirm the result.
-              }, { skipCache: true });
-            }
-            statusTimer = window.setTimeout(checkDeletion, 1800);
-            jsonpRequest(params, completed, function(error) {
-              if (error.message === "Request timed out.") {
-                // Give the status check time to confirm a completed Sheets write.
-                if (!settled) statusTimer = window.setTimeout(function() {
-                  if (!settled) failed(new Error("Could not confirm deletion. Check the sheet before trying again."));
-                }, 7000);
-              } else {
-                failed(error);
-              }
+              save.disabled = false;
+              message.textContent = "Update the details, then save.";
+            }, function(error) {
+              message.textContent = error.message || "Could not load this transaction.";
             }, { skipCache: true });
+          };
+          save.onclick = function() {
+            if (busy || save.disabled) return;
+            var values = {};
+            fields.querySelectorAll("[data-edit-key]").forEach(function(control) {
+              values[control.dataset.editKey] = control.value;
+            });
+            busy = true;
+            save.disabled = true;
+            var row = itemRow(item);
+            if (row) row.style.opacity = "0.45";
+            message.textContent = "Saving changes…";
+            jsonpRequest({
+              action: "transactionEdit", sheet: sheet,
+              rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint,
+              values: values
+            }, function() {
+              modal.hidden = true;
+              busy = false;
+              if (row) row.style.opacity = "";
+              window.location.reload();
+            }, function(error) {
+              busy = false;
+              save.disabled = false;
+              if (row) row.style.opacity = "";
+              message.textContent = error.message || "Could not save this transaction.";
+            }, { skipCache: true });
+          };
+          confirm.onclick = function() {
+            if (busy) return;
+            title.textContent = "Delete transaction?";
+            message.textContent = "Remove " + label + " from " + sheet + " and Google Sheets?";
+            actions.hidden = false;
+            editor.hidden = true;
+            editOpen.hidden = true;
+            confirm.disabled = false;
+            confirm.textContent = "Delete";
+            cancel.textContent = "Cancel";
+            confirm.onclick = function() {
+              if (busy) return;
+              busy = true;
+              modal.hidden = true;
+              var row = itemRow(item);
+              if (row) row.style.opacity = "0.45";
+              var settled = false;
+              var statusTimer;
+              var params = {
+                action: "transactionDelete", sheet: sheet,
+                rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
+              };
+              function completed() {
+                if (settled) return;
+                settled = true;
+                window.clearTimeout(statusTimer);
+                busy = false;
+                if (row && row.parentNode === box) {
+                  var index = Array.prototype.indexOf.call(box.children, row);
+                  if (index !== -1) {
+                    box._displayedTransactions.splice(index, 1);
+                    row.remove();
+                  }
+                }
+                var seen = new Set();
+                function adjust(items) {
+                  if (!Array.isArray(items)) return;
+                  for (var i = items.length - 1; i >= 0; i--) {
+                    var entry = items[i];
+                    if (!entry || seen.has(entry)) continue;
+                    seen.add(entry);
+                    if (entry === item) {
+                      items.splice(i, 1);
+                    } else if (Number(entry.rowNumber) > Number(item.rowNumber)) {
+                      entry.rowNumber--;
+                    }
+                  }
+                }
+                adjust(box._displayedTransactions);
+                var recent = {
+                  lifeLog: lifeLogRecentEntriesCache,
+                  twice: businessRecentTransactionsCache.twice,
+                  printing: businessRecentTransactionsCache.printing,
+                  gcash: gcashRecentTransactionsCache,
+                  expenses: moneyFlowRecentTransactionsCache,
+                  test: testRecentTransactionsCache,
+                  rental: rentalRecentTransactionsCache
+                };
+                adjust(recent[page]);
+                gcashTransactionHistoryCache = {};
+                businessTransactionHistoryCache = { printing: {}, twice: {} };
+                moneyFlowTransactionHistoryCache = {};
+                testTransactionHistoryCache = {};
+                rentalTransactionHistoryCache = {};
+                lifeLogTransactionHistoryCache = {};
+                try {
+                  Object.keys(localStorage).forEach(function(key) {
+                    if (key.indexOf("cashflow-hub:history:") === 0 ||
+                        key.indexOf("cashflow-hub:dashboard:") === 0) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                } catch (error) {}
+                Object.keys(dashboardRequestGeneration).forEach(function(key) {
+                  dashboardRequestGeneration[key]++;
+                });
+                if (!box.children.length) {
+                  box.className = "dashboard-message";
+                  box.textContent = "No transactions yet.";
+                }
+                syncActivePageHeight();
+                refreshDashboardTotalsAfterDelete(page);
+              }
+              function failed(error) {
+                if (settled) return;
+                settled = true;
+                window.clearTimeout(statusTimer);
+                busy = false;
+                if (row) row.style.opacity = "";
+                message.textContent = error.message || "Could not delete transaction. Check the sheet before trying again.";
+                modal.hidden = false;
+                actions.hidden = false;
+                editor.hidden = true;
+                editOpen.hidden = true;
+                confirm.hidden = true;
+                cancel.hidden = false;
+                cancel.textContent = "Close";
+                cancel.onclick = function() {
+                  modal.hidden = true;
+                  editOpen.hidden = false;
+                  confirm.hidden = false;
+                  cancel.textContent = "Cancel";
+                };
+              }
+              var checks = 0;
+              function checkDeletion() {
+                if (settled) return;
+                jsonpRequest({
+                  action: "transactionDeleteStatus", sheet: sheet,
+                  rowNumber: item.rowNumber, rowFingerprint: item.rowFingerprint
+                }, function(result) {
+                  if (result.deleted) completed();
+                  else if (++checks < 5 && !settled)
+                    statusTimer = window.setTimeout(checkDeletion, 1500);
+                }, function() {}, { skipCache: true });
+              }
+              statusTimer = window.setTimeout(checkDeletion, 1800);
+              jsonpRequest(params, completed, function(error) {
+                if (error.message === "Request timed out.") {
+                  if (!settled) statusTimer = window.setTimeout(function() {
+                    if (!settled) failed(new Error("Could not confirm deletion. Check the sheet before trying again."));
+                  }, 7000);
+                } else {
+                  failed(error);
+                }
+              }, { skipCache: true });
+            };
           };
         }
         box.addEventListener("touchstart", function(event) {
@@ -8943,7 +9036,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
           timer = window.setTimeout(function() {
             timer = null;
             lastLongPress = Date.now();
-            deleteItem(item);
+            openItemMenu(item);
           }, 650);
         }, { passive: true });
         box.addEventListener("touchmove", function(event) {
@@ -8964,7 +9057,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
           window.clearTimeout(timer);
           timer = null;
           if (Date.now() - lastLongPress < 1500) return;
-          deleteItem(item);
+          openItemMenu(item);
         });
       });
     }
