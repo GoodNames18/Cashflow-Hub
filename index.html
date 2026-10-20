@@ -3162,7 +3162,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
 
   <script>
     if (true) {
-      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=transaction-edit1");
+      window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=stock-live1");
       window.cashflowDatabaseReady.catch(function() {});
     }
   </script>
@@ -10815,7 +10815,7 @@ window.cfhRefreshTestTab = function(page) {
 </div>
 
 <section id="cfhPortfolioPage" hidden aria-label="Crypto portfolio">
- <div class="cfh-portfolio-heading"><h1 id="cfhPortfolioTitle">Portfolio</h1><span id="cfhPortfolioMarket"></span></div>
+ <div class="cfh-portfolio-heading"><h1 id="cfhPortfolioTitle">Portfolio</h1><span id="cfhPortfolioMarket"></span><small id="cfhMarketPriceStatus" role="status">Live PSE prices load during market hours.</small></div>
  <div class="cfh-portfolio-page-tabs" role="group" aria-label="Portfolio pages"><button type="button" data-portfolio-page="portfolio" aria-pressed="true">Portfolio</button><button type="button" data-portfolio-page="history" aria-pressed="false">History</button></div>
  <div id="cfhPortfolioDashboard">
   <div class="cfh-portfolio-balance"><div class="cfh-portfolio-balance-top"><div><small>Total balance</small><strong id="cfhPortfolioBalance">₱0.00</strong></div><button id="cfhPortfolioBreakdown" type="button">History ›</button></div>
@@ -11032,7 +11032,7 @@ setInterval(()=>cfhPushSync(),60000);
  update();
 })();
 </script>
-<script type="module" src="./supabase/cfh-portfolio.mjs?v=portfolio2"></script>
+<script type="module" src="./supabase/cfh-portfolio.mjs?v=portfolio3"></script>
 </body>
 </html>
 
