@@ -35,7 +35,7 @@ export function liveStockQuoteRows(holdings, prices, at = new Date().toISOString
       broker: holding.broker,
       symbol: holding.symbol,
       price: quote.price,
-      at: quote.at || at
+      at
     });
   }
   return rows;
