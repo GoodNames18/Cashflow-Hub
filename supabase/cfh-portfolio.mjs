@@ -24,18 +24,32 @@ function render(){
  document.querySelectorAll('[data-portfolio-asset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.portfolioAsset===asset)));
  const table=$('cfhPortfolioHoldings');table.replaceChildren();
  if(!p.holdings.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent='No '+(asset==='stock'?'stocks':'crypto')+' recorded yet. Tap Invest to add your broker purchase.';table.append(empty);}
- for(const h of p.holdings){const row=document.createElement('button');row.type='button';row.className='cfh-portfolio-holding';row.setAttribute('aria-label','Record latest price for '+h.symbol);
+ for(const h of p.holdings){
+ const item=document.createElement('div');item.className='cfh-holding-item';
+ const row=document.createElement('div');row.className='cfh-portfolio-holding';row.setAttribute('role','button');row.tabIndex=0;row.setAttribute('aria-label','Record latest price for '+h.symbol);
+ const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-holding-toggle';toggle.textContent='›';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Show details for '+h.symbol);
  const name=document.createElement('span'),symbol=document.createElement('strong'),broker=document.createElement('small');symbol.textContent=h.symbol;broker.textContent=h.broker;const labels=document.createElement('span');labels.append(symbol,broker);name.className='cfh-holding-name';name.append(stockLogo(h.symbol),labels);
  const price=document.createElement('span'),value=document.createElement('strong'),qty=document.createElement('small');value.textContent=peso(h.price);qty.textContent=h.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');price.append(value,qty);
- const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Add latest price':h.percent.toFixed(2)+'%';gain.append(amount,percent);row.append(name,price,gain);row.onclick=()=>openValue('quote',h);
- const details=document.createElement('div');details.className='cfh-holding-details';
- const marketLabel=document.createElement('span');marketLabel.className='cfh-holding-detail-label';marketLabel.append(document.createTextNode('Market Value '));
- const marketInfo=document.createElement('span');marketInfo.className='cfh-holding-info';marketInfo.textContent='i';marketInfo.title='Current quote multiplied by the number of shares or units.';marketInfo.setAttribute('aria-label','Info: current quote multiplied by shares or units');marketLabel.append(marketInfo);
- const marketValue=document.createElement('strong');marketValue.className='cfh-holding-detail-value';marketValue.textContent=h.value===null?'—':peso(h.value);
- const costLabel=document.createElement('span');costLabel.className='cfh-holding-detail-label';costLabel.append(document.createTextNode('Avg Cost '));
- const costInfo=document.createElement('span');costInfo.className='cfh-holding-info';costInfo.textContent='i';costInfo.title='Total purchase cost, including fees, divided by shares or units.';costInfo.setAttribute('aria-label','Info: total purchase cost including fees divided by shares or units');costLabel.append(costInfo);
- const averageCost=document.createElement('strong');averageCost.className='cfh-holding-detail-value';averageCost.textContent=h.shares?peso(h.cost/h.shares):'—';
- details.append(marketLabel,marketValue,costLabel,averageCost);table.append(row,details);}
+ const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Add latest price':h.percent.toFixed(2)+'%';gain.append(amount,percent);
+ row.append(toggle,name,price,gain);
+ const details=document.createElement('div');details.className='cfh-holding-details';details.hidden=true;
+ function detailLine(labelText,valueText,helpText){
+  const line=document.createElement('div');line.className='cfh-holding-detail-row';
+  const label=document.createElement('span');label.className='cfh-holding-detail-label';label.append(document.createTextNode(labelText+' '));
+  const info=document.createElement('button');info.type='button';info.className='cfh-holding-info';info.textContent='i';info.setAttribute('aria-label','Show information about '+labelText);info.setAttribute('aria-expanded','false');
+  const tip=document.createElement('span');tip.className='cfh-holding-info-tip';tip.hidden=true;tip.textContent=helpText;
+  info.addEventListener('click',event=>{event.stopPropagation();const show=tip.hidden;table.querySelectorAll('.cfh-holding-info-tip').forEach(el=>el.hidden=true);table.querySelectorAll('.cfh-holding-info').forEach(el=>el.setAttribute('aria-expanded','false'));tip.hidden=!show;info.setAttribute('aria-expanded',String(show));});
+  label.append(info,tip);
+  const val=document.createElement('strong');val.className='cfh-holding-detail-value';val.textContent=valueText;
+  line.append(label,val);details.append(line);
+ }
+ detailLine('Market Value',h.value===null?'—':peso(h.value),'Current value of your stock position (price × quantity).');
+ detailLine('Avg Cost',h.shares?peso(h.cost/h.shares):'—','Volume weighted average execution price. Purchase fees are included.');
+ toggle.addEventListener('click',event=>{event.stopPropagation();details.hidden=!details.hidden;toggle.textContent=details.hidden?'›':'⌄';toggle.setAttribute('aria-expanded',String(!details.hidden));toggle.setAttribute('aria-label',(details.hidden?'Show':'Hide')+' details for '+h.symbol);window.syncActivePageHeight?.();});
+ row.addEventListener('click',event=>{if(event.target.closest('button'))return;openValue('quote',h);});
+ row.addEventListener('keydown',event=>{if(event.target===row&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openValue('quote',h);}});
+ item.append(row,details);table.append(item);
+}
  renderHistoryView();
  window.syncActivePageHeight?.();
 }
