@@ -36,7 +36,7 @@ function render(){
  const details=document.createElement('div');details.className='cfh-holding-details';details.hidden=true;
  function detailLine(labelText,valueText,helpText){
   const line=document.createElement('div');line.className='cfh-holding-detail-row';
-  const label=document.createElement('span');label.className='cfh-holding-detail-label';label.append(document.createTextNode(labelText+' '));
+  const label=document.createElement('span');label.className='cfh-holding-detail-label';label.append(document.createTextNode(labelText));
   const info=document.createElement('button');info.type='button';info.className='cfh-holding-info';info.textContent='i';info.setAttribute('aria-label','Show information about '+labelText);info.setAttribute('aria-expanded','false');
   const tip=document.createElement('span');tip.className='cfh-holding-info-tip';tip.hidden=true;tip.textContent=helpText;
   info.addEventListener('click',event=>{event.stopPropagation();const show=tip.hidden;table.querySelectorAll('.cfh-holding-info-tip').forEach(el=>el.hidden=true);table.querySelectorAll('.cfh-holding-info').forEach(el=>el.setAttribute('aria-expanded','false'));tip.hidden=!show;info.setAttribute('aria-expanded',String(show));});
