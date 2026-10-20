@@ -1,18 +1,22 @@
 import {stockLogos} from './cfh-stock-logos.mjs';
 import {stockCompanies,DRAFT_TTL,recentPurchases,symbolMatches,activeDraft} from './cfh-portfolio-catalog.mjs';
 import {portfolio,validateRecord,money,marketPhase} from './cfh-portfolio-model.mjs';
+import {parsePseStocksResponse,liveStockQuoteRows} from './cfh-stock-prices.mjs';
 const OWNER='161ecab1-d1d7-4fef-a089-a7300b9da774',KEY='cfh-portfolio-v1:'+OWNER;
 let state;try{state=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}state||={rows:[],pending:[]};state.rows||=[];state.pending||=[];
 const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers';
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
 let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',historyType='transactions',dividendStatus='upcoming';
+let liveStockPrices=new Map(),livePriceTimer=null,livePriceBusy=false;
 const $=id=>document.getElementById(id),peso=v=>v===null?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(v);
 function stockLogo(symbol){const img=document.createElement('img');img.className='cfh-stock-logo';img.alt=symbol+' logo';img.loading='lazy';img.width=40;img.height=40;const fallback='images/stocks/unknown.svg';img.src=stockLogos[symbol]||fallback;img.onerror=()=>{img.onerror=null;img.src=fallback;};return img;}
 function persist(){localStorage.setItem(KEY,JSON.stringify(state));}
 function status(value){if($('cfhPortfolioSync'))$('cfhPortfolioSync').textContent=value;}
 function render(){
  if(!$('cfhPortfolioPage'))return;
- const p=portfolio(state.rows,asset),phase=marketPhase(new Date(),asset);
+ const base=portfolio(state.rows,asset),phase=marketPhase(new Date(),asset);
+ const liveRows=asset==='stock'?liveStockQuoteRows(base.holdings,liveStockPrices):[];
+ const p=portfolio(liveRows.length?[...state.rows,...liveRows]:state.rows,asset);
  $('cfhPortfolioMarket').textContent=phase.label;$('cfhPortfolioMarket').classList.toggle('is-open',phase.open);
  for(const [id,value]of [['cfhPortfolioBalance',p.balance],['cfhPortfolioInvested',p.invested],['cfhPortfolioCash',p.cashAvailable],['cfhPortfolioGain',p.gain]])$(id).textContent=peso(value);
  $('cfhPortfolioGain').className=p.gain<0?'is-loss':p.gain>0?'is-gain':'';
@@ -121,7 +125,7 @@ export function mountPortfolio(){
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.onclick=()=>{dividendStatus=b.dataset.dividendStatus;renderHistoryView();});
  $('cfhPortfolioDividendButton').onclick=openDividendModal;$('cfhPortfolioDividendForm').onsubmit=saveDividend;
  $('cfhPortfolioDividendForm').oninput=updateDividendTotal;
- for(const b of document.querySelectorAll('[data-portfolio-asset]'))b.onclick=()=>{asset=b.dataset.portfolioAsset;render();};
+ for(const b of document.querySelectorAll('[data-portfolio-asset]'))b.onclick=()=>{asset=b.dataset.portfolioAsset;render();if(asset==='stock')void refreshStockPrices();};
  for(const b of document.querySelectorAll('[data-portfolio-close]'))b.onclick=()=>close(b.dataset.portfolioClose);
  for(const id of ['cfhPortfolioModal','cfhPortfolioValueModal','cfhPortfolioDividendModal']){$(id).onclick=e=>{if(e.target===$(id))close(id);};$(id).onkeydown=e=>{if(e.key==='Escape')close(id);if(e.key==='Tab'){const nodes=[...$(id).querySelectorAll('button,input,select,textarea')].filter(n=>n.getClientRects().length);if(e.shiftKey&&document.activeElement===nodes[0]){e.preventDefault();nodes.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===nodes.at(-1)){e.preventDefault();nodes[0].focus();}}};}
  $('cfhPortfolioForm').oninput=()=>{updateTotal();saveDraft();};
@@ -135,7 +139,31 @@ export function mountPortfolio(){
  $('cfhPortfolioForm').onsubmit=e=>{e.preventDefault();const f=e.target;try{if(!f.elements.broker.value||f.elements.broker.value==='__add__')throw Error('Choose or add a broker.');localSave({kind:'purchase',asset:f.elements.asset.value,broker:f.elements.broker.value.trim(),symbol:f.elements.symbol.value.trim().toUpperCase(),date:f.elements.date.value,shares:Number(f.elements.shares.value),price:Number(f.elements.price.value),fees:Number(f.elements.fees.value||0),notes:f.elements.notes.value.trim()});close('cfhPortfolioModal');clearDraft();f.reset();}catch(error){$('cfhPortfolioFormStatus').textContent=error.message;}};
  $('cfhPortfolioValueForm').onsubmit=e=>{e.preventDefault();const f=e.target;try{localSave({kind:f.elements.kind.value,asset,broker:f.elements.broker.value.trim(),symbol:f.elements.symbol.value.trim().toUpperCase(),price:Number(f.elements.price.value)});close('cfhPortfolioValueModal');}catch(error){$('cfhPortfolioValueStatus').textContent=error.message;}};
  window.cfhPortfolioRender=()=>{render();if(client)void sync();};render();status(state.pending.length?'Saved on device · Sync pending':'Connecting portfolio sync…');
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('cfh-crypto-active'))render();});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('cfh-crypto-active')){render();if(asset==='stock')void refreshStockPrices();}});
+}
+async function refreshStockPrices(){
+ if(!client||livePriceBusy||document.hidden||!navigator.onLine||asset!=='stock'||!document.body.classList.contains('cfh-crypto-active'))return;
+ if(!marketPhase(new Date(),'stock').open)return;
+ const symbols=[...new Set(portfolio(state.rows,'stock').holdings.map(h=>h.symbol))];
+ const node=$('cfhMarketPriceStatus');
+ if(!symbols.length){if(node)node.textContent='Add a stock holding to see live PSE prices.';return;}
+ livePriceBusy=true;
+ if(node&&!liveStockPrices.size)node.textContent='Loading live PSE prices…';
+ try{
+  const {data,error}=await client.functions.invoke('cfh-stock-prices',{body:{symbols}});
+  if(error)throw error;
+  liveStockPrices=parsePseStocksResponse(data);
+  render();
+  const updated=new Intl.DateTimeFormat('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}).format(new Date());
+  if(node)node.textContent='Live PSE prices · updated '+updated;
+ }catch(error){
+  if(node)node.textContent=liveStockPrices.size?'Could not refresh prices · showing last update':'Live prices unavailable · '+(error.message||'try again later');
+  console.warn('PSE price refresh:',error.message);
+ }finally{livePriceBusy=false;}
+}
+function scheduleStockPriceRefresh(){
+ clearInterval(livePriceTimer);
+ livePriceTimer=setInterval(()=>{if(asset==='stock')void refreshStockPrices();},180000);
 }
 async function sync(){
  if(!client||busy||!navigator.onLine){if(state.pending.length)status('Saved on device · Sync pending');return;}busy=true;
@@ -146,7 +174,7 @@ async function sync(){
   state.rows=[...map.values()];persist();render();status(state.pending.length?'Saved on device · Sync pending':'Portfolio synced');
  }catch(error){status('Saved on device · Sync pending. Reconnect to retry.');console.warn('Portfolio sync:',error.message);}finally{busy=false;if(refreshRequested){refreshRequested=false;void sync();}}
 }
-export function startPortfolioSync(c,owner){if(owner!==OWNER)throw Error('Portfolio account mismatch');if(client)return;client=c;mountPortfolio();void sync();
+export function startPortfolioSync(c,owner){if(owner!==OWNER)throw Error('Portfolio account mismatch');if(client)return;client=c;mountPortfolio();void sync();scheduleStockPriceRefresh();void refreshStockPrices();
  const connect=()=>{if(document.hidden||!navigator.onLine||channel)return;channel=client.channel('cfh-portfolio:'+OWNER).on('postgres_changes',{event:'INSERT',schema:'public',table:'cfh_portfolio_records',filter:'owner_id=eq.'+OWNER},()=>{if(busy)refreshRequested=true;else void sync();}).subscribe(s=>{if(s==='SUBSCRIBED')void sync();});};
  const disconnect=()=>{if(channel){void client.removeChannel(channel);channel=null;}};
  document.addEventListener('visibilitychange',()=>{if(document.hidden)disconnect();else{connect();void sync();}});window.addEventListener('online',()=>{connect();void sync();});window.addEventListener('offline',disconnect);window.addEventListener('pagehide',disconnect);window.addEventListener('pageshow',()=>{connect();void sync();});connect();
