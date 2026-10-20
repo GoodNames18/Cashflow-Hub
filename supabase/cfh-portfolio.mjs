@@ -7,11 +7,11 @@ let state;try{state=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}state|
 const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers';
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
 let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',historyType='transactions',dividendStatus='upcoming',snapshotTrigger=null;
-let liveStockPrices=new Map(),livePriceTimer=null,livePriceBusy=false;
+let liveStockPrices=new Map(),livePriceTimer=null,livePriceBusy=false,snapshotScrollY=0;
 const $=id=>document.getElementById(id),peso=v=>v===null?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(v);
 function stockLogo(symbol){const img=document.createElement('img');img.className='cfh-stock-logo';img.alt=symbol+' logo';img.loading='lazy';img.width=40;img.height=40;const fallback='images/stocks/unknown.svg';img.src=stockLogos[symbol]||fallback;img.onerror=()=>{img.onerror=null;img.src=fallback;};return img;}
 function openHoldingSnapshot(h,trigger){
- const modal=$('cfhHoldingSnapshotModal');snapshotTrigger=trigger;
+ const modal=$('cfhHoldingSnapshotModal');snapshotTrigger=trigger;modal.hidden=true;
  $('cfhStockSnapshotBroker').textContent=h.broker||'Broker';
  $('cfhStockSnapshotSymbol').textContent=h.symbol;
  $('cfhStockSnapshotLogo').replaceWith(stockLogo(h.symbol));
@@ -22,7 +22,14 @@ function openHoldingSnapshot(h,trigger){
  $('cfhStockSnapshotMarketPrice').textContent=h.price===null?'—':peso(h.price);
  $('cfhStockSnapshotAverageCost').textContent=h.shares?peso(h.cost/h.shares):'—';
  modal.setAttribute('aria-label','Stock snapshot for '+h.symbol);
- modal.hidden=false;document.body.classList.add('cfh-stock-snapshot-open');
+ if(!document.body.classList.contains('cfh-stock-snapshot-open')){
+  snapshotScrollY=window.scrollY||window.pageYOffset||0;
+  document.body.dataset.cfhSnapshotScrollY=String(snapshotScrollY);
+  document.body.style.position='fixed';document.body.style.top=(-snapshotScrollY)+'px';
+  document.body.style.left='0';document.body.style.right='0';document.body.style.width='100%';
+ }
+ document.body.classList.add('cfh-stock-snapshot-open');
+ modal.hidden=false;
  modal.querySelector('[data-portfolio-close="cfhHoldingSnapshotModal"]')?.focus({preventScroll:true});
 }
 function persist(){localStorage.setItem(KEY,JSON.stringify(state));}
@@ -46,7 +53,7 @@ function render(){
  const name=document.createElement('span'),symbol=document.createElement('strong'),broker=document.createElement('small');symbol.textContent=h.symbol;broker.textContent=h.broker;const labels=document.createElement('span');labels.append(symbol,broker);name.className='cfh-holding-name';name.append(stockLogo(h.symbol),labels);
  const price=document.createElement('span'),value=document.createElement('strong'),qty=document.createElement('small');value.textContent=peso(h.price);qty.textContent=h.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');price.append(value,qty);
  const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Quote unavailable':h.percent.toFixed(2)+'%';gain.append(amount,percent);
- const external=document.createElement('button');external.type='button';external.className='cfh-holding-external';external.setAttribute('aria-label',(asset==='stock'?'View':'Search')+' '+h.symbol+(asset==='stock'?' stock snapshot':' price'));external.title=asset==='stock'?'View stock snapshot':'Search quote on the web';external.innerHTML='<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path d="M10 3h5v5M15 3 8 10M13 10v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4"/></svg>';external.addEventListener('click',()=>{if(asset==='stock'){openHoldingSnapshot(h,external);return;}window.open('https://www.google.com/search?q='+encodeURIComponent(h.symbol+' crypto price'),'_blank','noopener,noreferrer');});
+ const external=document.createElement('button');external.type='button';external.className='cfh-holding-external';external.setAttribute('aria-label',(asset==='stock'?'View':'Search')+' '+h.symbol+(asset==='stock'?' stock snapshot':' price'));external.title=asset==='stock'?'View stock snapshot':'Search quote on the web';external.dataset.holdingSymbol=h.symbol;external.innerHTML='<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path d="M10 3h5v5M15 3 8 10M13 10v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4"/></svg>';external.addEventListener('click',()=>{if(asset==='stock'){openHoldingSnapshot(h,external);return;}window.open('https://www.google.com/search?q='+encodeURIComponent(h.symbol+' crypto price'),'_blank','noopener,noreferrer');});
  row.append(toggle,name,price,gain,external);
  const details=document.createElement('div');details.className='cfh-holding-details';details.hidden=true;
  function detailLine(labelText,valueText,helpText){
@@ -67,7 +74,7 @@ function render(){
  renderHistoryView();
  window.syncActivePageHeight?.();
 }
-function close(id){if(id==='cfhHoldingSnapshotModal'){$(id).hidden=true;document.body.classList.remove('cfh-stock-snapshot-open');const trigger=snapshotTrigger;snapshotTrigger=null;trigger?.focus({preventScroll:true});return;}if(id==='cfhPortfolioModal')saveDraft();$(id).hidden=true;document.querySelector('[data-cfh-dest="crypto"]')?.focus({preventScroll:true});}
+function close(id){if(id==='cfhHoldingSnapshotModal'){const modal=$(id);if(modal.hidden)return;modal.hidden=true;document.body.classList.remove('cfh-stock-snapshot-open');const y=Number(document.body.dataset.cfhSnapshotScrollY||snapshotScrollY||0);document.body.style.position='';document.body.style.top='';document.body.style.left='';document.body.style.right='';document.body.style.width='';delete document.body.dataset.cfhSnapshotScrollY;snapshotScrollY=0;const trigger=snapshotTrigger;snapshotTrigger=null;window.scrollTo(0,y);const symbol=modal.getAttribute('aria-label')?.replace(/^Stock snapshot for /,'');const current=[...document.querySelectorAll('.cfh-holding-external')].find(button=>button.dataset.holdingSymbol===symbol)||trigger;if(current?.isConnected)current.focus({preventScroll:true});return;}if(id==='cfhPortfolioModal')saveDraft();$(id).hidden=true;document.querySelector('[data-cfh-dest="crypto"]')?.focus({preventScroll:true});}
 function localSave(row){validateRecord(row);row.id=editingId||crypto.randomUUID();if(row.kind==='dividend'&&!row.recordId)row.recordId=row.id;row.at=new Date().toISOString();const previous={rows:state.rows.slice(),pending:state.pending.slice()};
  if(!state.rows.some(r=>r.id===row.id)){state.rows.push(row);state.pending.push(row.id);}
  try{persist();}catch(e){state=previous;throw Error('Could not save on this device. Free some storage and try again.');}
