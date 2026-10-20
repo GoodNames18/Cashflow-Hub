@@ -27,7 +27,15 @@ function render(){
  for(const h of p.holdings){const row=document.createElement('button');row.type='button';row.className='cfh-portfolio-holding';row.setAttribute('aria-label','Record latest price for '+h.symbol);
  const name=document.createElement('span'),symbol=document.createElement('strong'),broker=document.createElement('small');symbol.textContent=h.symbol;broker.textContent=h.broker;const labels=document.createElement('span');labels.append(symbol,broker);name.className='cfh-holding-name';name.append(stockLogo(h.symbol),labels);
  const price=document.createElement('span'),value=document.createElement('strong'),qty=document.createElement('small');value.textContent=peso(h.price);qty.textContent=h.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');price.append(value,qty);
- const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Add latest price':h.percent.toFixed(2)+'%';gain.append(amount,percent);row.append(name,price,gain);row.onclick=()=>openValue('quote',h);table.append(row);}
+ const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Add latest price':h.percent.toFixed(2)+'%';gain.append(amount,percent);row.append(name,price,gain);row.onclick=()=>openValue('quote',h);
+ const details=document.createElement('div');details.className='cfh-holding-details';
+ const marketLabel=document.createElement('span');marketLabel.className='cfh-holding-detail-label';marketLabel.append(document.createTextNode('Market Value '));
+ const marketInfo=document.createElement('span');marketInfo.className='cfh-holding-info';marketInfo.textContent='i';marketInfo.title='Current quote multiplied by the number of shares or units.';marketInfo.setAttribute('aria-label','Info: current quote multiplied by shares or units');marketLabel.append(marketInfo);
+ const marketValue=document.createElement('strong');marketValue.className='cfh-holding-detail-value';marketValue.textContent=h.value===null?'—':peso(h.value);
+ const costLabel=document.createElement('span');costLabel.className='cfh-holding-detail-label';costLabel.append(document.createTextNode('Avg Cost '));
+ const costInfo=document.createElement('span');costInfo.className='cfh-holding-info';costInfo.textContent='i';costInfo.title='Total purchase cost, including fees, divided by shares or units.';costInfo.setAttribute('aria-label','Info: total purchase cost including fees divided by shares or units');costLabel.append(costInfo);
+ const averageCost=document.createElement('strong');averageCost.className='cfh-holding-detail-value';averageCost.textContent=h.shares?peso(h.cost/h.shares):'—';
+ details.append(marketLabel,marketValue,costLabel,averageCost);table.append(row,details);}
  renderHistoryView();
  window.syncActivePageHeight?.();
 }
