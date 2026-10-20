@@ -72,7 +72,13 @@ function render(){
  }
  detailLine('Market Value',h.value===null?'—':peso(h.value),'Current value of your stock position (price × quantity).');
  detailLine('Avg Cost',h.shares?peso(h.cost/h.shares):'—','Volume weighted average execution price. Purchase fees are included.');
- toggle.addEventListener('click',event=>{event.stopPropagation();details.hidden=!details.hidden;item.classList.toggle('is-expanded',!details.hidden);toggle.textContent=details.hidden?'›':'⌄';toggle.setAttribute('aria-expanded',String(!details.hidden));toggle.setAttribute('aria-label',(details.hidden?'Show':'Hide')+' details for '+h.symbol);window.syncActivePageHeight?.();});
+ function toggleDetails(){
+  details.hidden=!details.hidden;item.classList.toggle('is-expanded',!details.hidden);toggle.textContent=details.hidden?'›':'⌄';toggle.setAttribute('aria-expanded',String(!details.hidden));toggle.setAttribute('aria-label',(details.hidden?'Show':'Hide')+' details for '+h.symbol);window.syncActivePageHeight?.();
+ }
+ item.tabIndex=0;item.setAttribute('aria-label','Toggle details for '+h.symbol);
+ item.addEventListener('click',event=>{if(event.target.closest('.cfh-holding-name, .cfh-holding-external'))return;toggleDetails();});
+ item.addEventListener('keydown',event=>{if(event.target!==item)return;if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDetails();}});
+ toggle.addEventListener('click',event=>{event.stopPropagation();toggleDetails();});
  item.append(row,details);table.append(item);
 }
  renderHistoryView();
