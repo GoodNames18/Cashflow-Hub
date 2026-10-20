@@ -31,7 +31,8 @@ function render(){
  const name=document.createElement('span'),symbol=document.createElement('strong'),broker=document.createElement('small');symbol.textContent=h.symbol;broker.textContent=h.broker;const labels=document.createElement('span');labels.append(symbol,broker);name.className='cfh-holding-name';name.append(stockLogo(h.symbol),labels);
  const price=document.createElement('span'),value=document.createElement('strong'),qty=document.createElement('small');value.textContent=peso(h.price);qty.textContent=h.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units');price.append(value,qty);
  const gain=document.createElement('span'),amount=document.createElement('strong'),percent=document.createElement('small');amount.textContent=peso(h.gain);amount.className=h.gain<0?'is-loss':h.gain>0?'is-gain':'';percent.textContent=h.percent===null?'Quote unavailable':h.percent.toFixed(2)+'%';gain.append(amount,percent);
- row.append(toggle,name,price,gain);
+ const external=document.createElement('a');external.className='cfh-holding-external';external.href='https://www.google.com/search?q='+encodeURIComponent(h.symbol+(asset==='stock'?' PSE stock price':' crypto price'));external.target='_blank';external.rel='noopener noreferrer';external.setAttribute('aria-label','Search the web for '+h.symbol+(asset==='stock'?' PSE stock price':' crypto price'));external.title='Search quote on the web';external.innerHTML='<svg viewBox="0 0 18 18" aria-hidden="true" focusable="false"><path d="M10 3h5v5M15 3 8 10M13 10v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4"/></svg>';
+ row.append(toggle,name,price,gain,external);
  const details=document.createElement('div');details.className='cfh-holding-details';details.hidden=true;
  function detailLine(labelText,valueText,helpText){
   const line=document.createElement('div');line.className='cfh-holding-detail-row';
