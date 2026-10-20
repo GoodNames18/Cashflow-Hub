@@ -12,9 +12,13 @@ const $=id=>document.getElementById(id),peso=v=>v===null?'—':new Intl.NumberFo
 function stockLogo(symbol){const img=document.createElement('img');img.className='cfh-stock-logo';img.alt=symbol+' logo';img.loading='lazy';img.width=40;img.height=40;const fallback='images/stocks/unknown.svg';img.src=stockLogos[symbol]||fallback;img.onerror=()=>{img.onerror=null;img.src=fallback;};return img;}
 function openHoldingSnapshot(h,trigger){
  const modal=$('cfhHoldingSnapshotModal');snapshotTrigger=trigger;modal.hidden=true;
- $('cfhStockSnapshotBroker').textContent=h.broker||'Broker';
+ const brokerName=h.broker||'Broker',isDragonFi=brokerName.trim().toLowerCase()==='dragonfi';
+ const brokerLabel=$('cfhStockSnapshotBroker'),brokerLogo=$('cfhStockSnapshotBrokerLogo');
+ brokerLabel.textContent=brokerName;brokerLabel.hidden=isDragonFi;
+ if(brokerLogo)brokerLogo.hidden=!isDragonFi;
  $('cfhStockSnapshotSymbol').textContent=h.symbol;
- $('cfhStockSnapshotLogo').replaceWith(stockLogo(h.symbol));
+ const oldStockLogo=$('cfhStockSnapshotLogo'),nextStockLogo=stockLogo(h.symbol);
+ nextStockLogo.id='cfhStockSnapshotLogo';oldStockLogo.replaceWith(nextStockLogo);
  $('cfhStockSnapshotGain').textContent=peso(h.gain);
  $('cfhStockSnapshotPercent').textContent=h.percent===null?'—':h.percent.toFixed(2)+'%';
  $('cfhStockSnapshotMarketValue').textContent=h.value===null?'—':peso(h.value);
