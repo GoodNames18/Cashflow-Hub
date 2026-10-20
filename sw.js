@@ -1,9 +1,9 @@
-const CACHE_NAME = "cashflow-hub-v19-ios-module-cache";
+const CACHE_NAME = "cashflow-hub-v20-live-stock-prices";
 
 const OFFLINE_ASSETS=[
   "./",
   "index.html",
-  "supabase/cfh-browser.mjs?v=transaction-edit1",
+  "supabase/cfh-browser.mjs?v=stock-live1",
   "supabase/vendor/supabase-js.mjs",
   "supabase/cfh-store.mjs?v=offline-home1",
   "supabase/cfh-store.mjs?v=transaction-edit1",
@@ -20,8 +20,8 @@ const OFFLINE_ASSETS=[
   "supabase/manila-date.mjs?v=calendar3",
   "supabase/rules-environment.mjs?v=transaction-order4",
   "supabase/cfh-calendar-sync.mjs?v=events1",
-  "supabase/cfh-portfolio.mjs?v=portfolio1",
-  "supabase/cfh-portfolio.mjs?v=portfolio2",
+  "supabase/cfh-portfolio.mjs?v=portfolio3",
+  "supabase/cfh-stock-prices.mjs",
   "supabase/cfh-portfolio-model.mjs",
   "supabase/cfh-portfolio-catalog.mjs",
   "supabase/cfh-stock-logos.mjs",
