@@ -4497,7 +4497,7 @@ body.cfh-crypto-active .app-shell{display:none!important}
     let currentAppPage = "gcash";
 
     const CFH_NAV_KEY = 'cashflow-hub:navigation-v2';
-    const CFH_VALID_PAGES = ['gcash','lifeLog','rental','printing','twice','test','expenses','calendar','crypto','notes'];
+    const CFH_VALID_PAGES = ['gcash','lifeLog','rental','printing','twice','test','expenses','calendar','crypto'];
     function cfhSaveNavigationState() {
       try {
         const state = {page:currentAppPage,home:window.cfhLastHomePage || 'gcash',scrollY:window.scrollY,month:cfhCalendarDateKey(cfhCalendarState.month),selected:cfhCalendarDateKey(cfhCalendarState.selected),savedAt:Date.now()};
