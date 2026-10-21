@@ -109,7 +109,7 @@ function render(){
  toggle.addEventListener('click',event=>{event.stopPropagation();toggleDetails();});
  item.append(row,details);table.append(item);
 }
- renderHistoryView();
+ renderHistoryView();requestAnimationFrame(updateInvestVisibility);
  window.syncActivePageHeight?.();
 }
 let investmentScrollLock=null;
@@ -201,8 +201,15 @@ function saveDividend(e){
   close('cfhPortfolioDividendModal');f.reset();renderHistoryView();
  }catch(error){$('cfhPortfolioDividendFormStatus').textContent=error.message;}
 }
+function updateInvestVisibility(){
+ const button=$('cfhPortfolioInvestButton'),row=button?.parentElement;if(!row)return;
+ const root=document.scrollingElement||document.documentElement;
+ const remaining=root.scrollHeight-window.innerHeight;
+ row.hidden=remaining>4&&remaining-window.scrollY<=4;
+}
 export function mountPortfolio(){
  if(!$('cfhPortfolioPage')||window.cfhPortfolioMounted)return;window.cfhPortfolioMounted=true;
+ window.addEventListener('scroll',updateInvestVisibility,{passive:true});window.addEventListener('resize',updateInvestVisibility);
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>selectPortfolioView(b.dataset.portfolioPage));
  document.querySelectorAll('[data-portfolio-history-tab]').forEach(b=>b.onclick=()=>{historyType=b.dataset.portfolioHistoryTab;renderHistoryView();});
