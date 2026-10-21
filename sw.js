@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v33-dragonfi-lite-net-values";
+const CACHE_NAME = "cashflow-hub-v34-invest-fade-and-spacing";
 
 const OFFLINE_ASSETS=[
   "./",

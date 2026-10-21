@@ -205,7 +205,8 @@ function updateInvestVisibility(){
  const button=$('cfhPortfolioInvestButton'),row=button?.parentElement;if(!row)return;
  const root=document.scrollingElement||document.documentElement;
  const remaining=root.scrollHeight-window.innerHeight;
- row.hidden=remaining>4&&remaining-window.scrollY<=4;
+ const hide=remaining>4&&remaining-window.scrollY<=4;
+ row.classList.toggle('is-bottom-hidden',hide);row.inert=hide;
 }
 export function mountPortfolio(){
  if(!$('cfhPortfolioPage')||window.cfhPortfolioMounted)return;window.cfhPortfolioMounted=true;
