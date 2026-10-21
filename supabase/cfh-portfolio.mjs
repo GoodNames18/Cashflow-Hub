@@ -98,7 +98,7 @@ function render(){
   const val=document.createElement('strong');val.className='cfh-holding-detail-value';val.textContent=valueText;
   line.append(label,val);details.append(line);
  }
- detailLine('Market Value',h.value===null?'—':peso(h.value),h.sellingFees>0?'Price × quantity, less estimated COL selling charges of '+peso(h.sellingFees)+'. Other brokers keep their existing valuation.':'Current value of your stock position (price × quantity).');
+ detailLine('Market Value',h.value===null?'—':peso(h.value),h.sellingFees>0?'Price × quantity, less estimated selling charges of '+peso(h.sellingFees)+'. Applies to COL Financial, DragonFi and DragonFi Lite.':'Current value of your stock position (price × quantity).');
  detailLine('Avg Cost',h.shares?peso(h.cost/h.shares):'—','Volume weighted average execution price. Purchase fees are included.');
  function toggleDetails(){
   details.hidden=!details.hidden;item.classList.toggle('is-expanded',!details.hidden);toggle.textContent=details.hidden?'›':'⌄';toggle.setAttribute('aria-expanded',String(!details.hidden));toggle.setAttribute('aria-label',(details.hidden?'Show':'Hide')+' details for '+h.symbol);window.syncActivePageHeight?.();

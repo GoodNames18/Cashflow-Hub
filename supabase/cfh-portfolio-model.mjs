@@ -24,9 +24,9 @@ export function validateRecord(row){
  }
  return row;
 }
-// COL portfolio display estimates future selling charges at 0.395%.
+// COL, DragonFi and Lite portfolio displays estimate future selling charges at 0.395%.
 // Aggregate rounding matches its displayed net values; execution invoice rounding may differ.
-export function portfolioSellingFees(gross,asset,broker){return asset==='stock'&&/^col(?: financial)?$/i.test(broker.trim())?money(gross*(.0025+.0025*.12+.00005+.0001+.001)):0;}
+export function portfolioSellingFees(gross,asset,broker){return asset==='stock'&&/^(?:col(?: financial)?|dragonfi(?: lite(?: \(maya\))?)?)$/i.test(broker.trim())?money(gross*(.0025+.0025*.12+.00005+.0001+.001)):0;}
 export function portfolio(records,asset='stock'){
  const rows=records.filter(r=>{try{return validateRecord(r)&&r.asset===asset;}catch{return false;}}).slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||String(a.id||'').localeCompare(String(b.id||''))),groups=new Map(),quotes=new Map(),cash=new Map();
  for(const row of rows){
