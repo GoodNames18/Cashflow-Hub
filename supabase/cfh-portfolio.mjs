@@ -73,10 +73,12 @@ function render(){
  $('cfhPortfolioGain').className=p.gain<0?'is-loss':p.gain>0?'is-gain':'';
  $('cfhPortfolioGainPercent').textContent=p.percent===null?'':` (${p.percent.toFixed(2)}%)`;
  document.querySelectorAll('[data-portfolio-asset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.portfolioAsset===asset)));
- $('cfhHoldingSortLabel').hidden=asset!=='stock';
+ $('cfhHoldingSortLabel').hidden=asset!=='stock';if(asset!=='stock'){$('cfhHoldingSortMenu').hidden=true;$('cfhHoldingSort').setAttribute('aria-expanded','false');}
  const table=$('cfhPortfolioHoldings');table.replaceChildren();
  if(!p.holdings.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent='No '+(asset==='stock'?'stocks':'crypto')+' recorded yet. Tap Invest to add your broker purchase.';table.append(empty);}
+ let previousBroker=null;
  for(const h of asset==='stock'?sortHoldings(p.holdings,holdingSort,state.rows):p.holdings){
+ if(asset==='stock'&&holdingSort==='broker'&&h.broker!==previousBroker){const heading=document.createElement('h3');heading.className='cfh-broker-partition';heading.textContent=h.broker;table.append(heading);previousBroker=h.broker;}
  const item=document.createElement('div');item.className='cfh-holding-item';
  const row=document.createElement('div');row.className='cfh-portfolio-holding';row.setAttribute('role','group');row.setAttribute('aria-label','Stock holding: '+h.symbol);
  const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-holding-toggle';toggle.textContent='›';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Show details for '+h.symbol);
@@ -211,7 +213,15 @@ export function mountPortfolio(){
  for(const b of document.querySelectorAll('[data-portfolio-close]'))b.onclick=()=>close(b.dataset.portfolioClose);
  for(const id of ['cfhPortfolioModal','cfhPortfolioValueModal','cfhPortfolioDividendModal','cfhHoldingSnapshotModal']){$(id).onclick=e=>{if(e.target===$(id))close(id);};$(id).onkeydown=e=>{if(e.key==='Escape')close(id);if(e.key==='Tab'){const nodes=[...$(id).querySelectorAll('button,input,select,textarea')].filter(n=>n.getClientRects().length);if(e.shiftKey&&document.activeElement===nodes[0]){e.preventDefault();nodes.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===nodes.at(-1)){e.preventDefault();nodes[0].focus();}}};}
  for(const type of ['touchstart','touchmove','touchend','pointerdown','pointermove','pointerup'])$('cfhPortfolioModal').addEventListener(type,e=>e.stopPropagation(),{passive:true});
- const sortSelect=$('cfhHoldingSort');sortSelect.replaceChildren(...holdingSortChoices.map(([value,label])=>new Option(label,value)));sortSelect.value=holdingSort;sortSelect.onchange=()=>{holdingSort=validHoldingSort(sortSelect.value);try{localStorage.setItem(HOLDING_SORT_KEY,holdingSort);}catch{}render();};
+ const sortTrigger=$('cfhHoldingSort'),sortMenu=$('cfhHoldingSortMenu'),sortWrap=$('cfhHoldingSortLabel');
+ function closeSortMenu(focus=false){sortMenu.hidden=true;sortTrigger.setAttribute('aria-expanded','false');if(focus)sortTrigger.focus({preventScroll:true});}
+ function openSortMenu(last=false){sortMenu.hidden=false;sortTrigger.setAttribute('aria-expanded','true');const buttons=[...sortMenu.children];(last?buttons.at(-1):buttons.find(b=>b.getAttribute('aria-checked')==='true')||buttons[0])?.focus({preventScroll:true});}
+ for(const [value,label]of holdingSortChoices){const button=document.createElement('button');button.type='button';button.setAttribute('role','menuitemradio');button.setAttribute('aria-checked',String(value===holdingSort));button.textContent=label;button.onclick=()=>{holdingSort=validHoldingSort(value);try{localStorage.setItem(HOLDING_SORT_KEY,holdingSort);}catch{}for(const child of sortMenu.children)child.setAttribute('aria-checked',String(child===button));closeSortMenu(true);render();};sortMenu.append(button);}
+ sortTrigger.onclick=()=>{if(sortMenu.hidden)openSortMenu();else closeSortMenu();};
+ sortTrigger.onkeydown=e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();openSortMenu(e.key==='ArrowUp');}if(e.key==='Escape')closeSortMenu(true);};
+ sortMenu.onkeydown=e=>{const buttons=[...sortMenu.children],index=buttons.indexOf(document.activeElement);if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSortMenu(true);}else if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();buttons[e.key==='Home'?0:e.key==='End'?buttons.length-1:(index+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}else if(e.key==='Tab')closeSortMenu();};
+ document.addEventListener('click',e=>{if(!sortWrap.contains(e.target))closeSortMenu();});
+ sortWrap.addEventListener('focusout',e=>{if(!sortWrap.contains(e.relatedTarget))closeSortMenu();});
  $('cfhPortfolioForm').elements.date.onchange=()=>{updateTotal();saveDraft();};
  $('cfhPortfolioForm').oninput=e=>{if(e.target.name==='fees')feeMode='manual';updateTotal();saveDraft();};
  $('cfhUseFeeEstimate').onclick=()=>{feeMode='auto';updateTotal();saveDraft();};
