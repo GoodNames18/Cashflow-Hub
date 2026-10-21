@@ -167,6 +167,7 @@ function renderDividends(){
 }
 function renderHistoryView(){
  const page=$('cfhPortfolioHistoryView');if(!page)return;
+ for(const id of ['cfhPortfolioMarket','cfhMarketPriceStatus']){const node=$(id);if(node)node.hidden=portfolioView!=='portfolio';}
  page.hidden=portfolioView==='portfolio';
  const dashboard=$('cfhPortfolioDashboard');if(dashboard)dashboard.hidden=portfolioView!=='portfolio';
  const title=$('cfhPortfolioTitle');if(title)title.textContent=portfolioView==='dividends'?'Dividend History':portfolioView==='history'?'History':'Portfolio';

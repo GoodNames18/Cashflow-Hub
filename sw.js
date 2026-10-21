@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v41-crypto-hold-refresh-dividend-cleanup";
+const CACHE_NAME = "cashflow-hub-v42-market-status-home-only";
 
 const OFFLINE_ASSETS=[
   "./",
