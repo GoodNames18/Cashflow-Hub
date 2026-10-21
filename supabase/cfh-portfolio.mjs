@@ -21,6 +21,9 @@ function openHoldingSnapshot(h,trigger){
  nextStockLogo.id='cfhStockSnapshotLogo';oldStockLogo.replaceWith(nextStockLogo);
  $('cfhStockSnapshotGain').textContent=peso(h.gain);
  $('cfhStockSnapshotPercent').textContent=h.percent===null?'—':h.percent.toFixed(2)+'%';
+ const changeClass=h.gain<0?'is-loss':h.gain>0?'is-gain':'';
+ $('cfhStockSnapshotGain').className=changeClass;
+ $('cfhStockSnapshotPercent').className=changeClass;
  $('cfhStockSnapshotMarketValue').textContent=h.value===null?'—':peso(h.value);
  $('cfhStockSnapshotShares').textContent=h.shares.toLocaleString('en-PH',{maximumFractionDigits:8});
  $('cfhStockSnapshotMarketPrice').textContent=h.price===null?'—':peso(h.price);

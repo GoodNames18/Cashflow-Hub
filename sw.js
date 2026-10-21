@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v20-live-stock-prices";
+const CACHE_NAME = "cashflow-hub-v21-stock-popup-colors";
 
 const OFFLINE_ASSETS=[
   "./",
