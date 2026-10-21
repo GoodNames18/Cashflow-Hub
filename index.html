@@ -10888,11 +10888,33 @@ body.cfh-notes-active .app-shell,body.cfh-notes-active #cfhPortfolioPage{display
 .cfh-notes-editor-box input,.cfh-notes-editor-box textarea{box-sizing:border-box;display:block;width:100%;border:0;outline:none;background:transparent;color:#1B1844;font-family:Arial,sans-serif}.cfh-notes-editor-box input{font-size:20px;font-weight:700;padding:4px 2px 12px}.cfh-notes-editor-box textarea{min-height:220px;resize:vertical;font-size:15px;line-height:1.5;padding:4px 2px}.cfh-notes-editor-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid #e8e6f2;padding-top:12px;margin-top:10px}
 .cfh-notes-editor-tools button{border:1px solid #dedbef;border-radius:10px;background:#fff;color:#1B1844;padding:8px 10px;font:600 12px Arial,sans-serif}.cfh-note-color{width:24px;height:24px;padding:0!important;border-radius:50%!important}.cfh-note-color[aria-pressed=true]{outline:2px solid #1B1844;outline-offset:2px}.cfh-notes-editor-status{margin:10px 1px 0;color:#78738c;font:11px Arial,sans-serif}.cfh-notes-editor-actions{display:flex;justify-content:space-between;gap:10px;margin-top:14px}.cfh-notes-editor-actions button{border:0;border-radius:11px;padding:11px 16px;font:700 13px Arial,sans-serif}.cfh-notes-done{background:#00F8B9;color:#1B1844}.cfh-notes-delete{background:#f1f0fb;color:#1B1844}
 @media(max-width:360px){#cfhNotesPage{padding-left:10px;padding-right:10px}.cfh-note-card{padding:10px}.cfh-notes-grid{column-gap:7px}}
+
+.cfh-notes-head{position:relative;display:flex;gap:6px;align-items:center;margin:0 0 20px;padding:7px 9px;background:#eeedf5;border-radius:28px;min-height:48px}
+.cfh-notes-head .cfh-notes-search{flex:1;min-width:0;width:auto;border:0;background:transparent;margin:0;padding:8px 2px;border-radius:0;font-size:16px}
+.cfh-notes-control{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;padding:7px!important;border:0!important;border-radius:50%;background:transparent!important;color:#78738c!important;cursor:pointer}
+.cfh-notes-control svg,.cfh-notes-new svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.cfh-notes-menu{position:absolute;z-index:8;top:calc(100% + 6px);left:0;min-width:180px;padding:8px;border:1px solid #dedbef;border-radius:14px;background:#fff;box-shadow:0 8px 20px #1b18441a}
+.cfh-notes-menu[hidden]{display:none!important}.cfh-notes-menu button{display:block;width:100%;padding:11px 12px;border:0;background:transparent;color:#1B1844;text-align:left;border-radius:8px;font:14px Arial,sans-serif}.cfh-notes-menu button[aria-pressed=true]{background:#e9e6fa}
+.cfh-notes-sort{left:auto;right:0;padding:14px}.cfh-notes-sort label{display:block;font:700 13px Arial,sans-serif;margin-bottom:8px}.cfh-notes-sort select{box-sizing:border-box;width:100%;padding:9px;border:1px solid #dedbef;border-radius:8px;background:#fff;color:#1B1844}
+.cfh-notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;columns:auto}.cfh-notes-grid.is-list{grid-template-columns:1fr}
+.cfh-note-card{display:flex;flex-direction:column;height:280px;min-height:0;margin:0;padding:14px;border-radius:17px;overflow:hidden;white-space:normal}
+.cfh-note-card-top{flex:0 0 auto;min-height:20px}.cfh-note-card h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:16px}
+.cfh-note-card p{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:10;-webkit-box-orient:vertical;max-height:none;overflow:hidden;min-height:0;font:14px/1.45 Arial,sans-serif;margin-top:4px}
+.cfh-note-card small{margin-top:auto;padding-top:12px;flex:0 0 auto}.cfh-notes-section-title{text-transform:none;letter-spacing:0;font-size:13px;margin:18px 2px 10px}
+.cfh-notes-new{position:fixed;z-index:1000;right:max(18px,calc((100vw - 420px)/2 + 18px));bottom:calc(104px + env(safe-area-inset-bottom));width:60px;height:60px;display:grid;place-items:center;border:0!important;border-radius:21px;padding:16px!important;background:#00F8B9!important;color:#1B1844!important;box-shadow:0 5px 14px #1b18441a}.cfh-notes-new svg{width:28px;height:28px}
+@media(max-width:360px){.cfh-note-card{padding:11px}.cfh-note-card h3{font-size:14px}.cfh-note-card p{font-size:13px}.cfh-notes-head{gap:2px;padding:6px}.cfh-notes-control{flex-basis:32px;width:32px}}
 </style>
 <main id="cfhNotesPage" hidden aria-label="Notes">
- <header class="cfh-notes-head"><h1>Notes</h1><button type="button" class="cfh-notes-new" onclick="cfhNotesOpen()">＋ New note</button></header>
- <input id="cfhNotesSearch" class="cfh-notes-search" type="search" placeholder="Search your notes" aria-label="Search notes" oninput="cfhNotesRender()">
+ <header class="cfh-notes-head">
+  <button type="button" id="cfhNotesMenuButton" class="cfh-notes-control" aria-label="Notes menu" aria-expanded="false" aria-controls="cfhNotesMenu" onclick="cfhNotesMenu('menu')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <input id="cfhNotesSearch" class="cfh-notes-search" type="search" placeholder="Search notes" aria-label="Search notes" oninput="cfhNotesRender()">
+  <button type="button" id="cfhNotesLayout" class="cfh-notes-control" aria-label="Switch to list view" onclick="cfhNotesToggleLayout()"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg></button>
+  <button type="button" id="cfhNotesSortButton" class="cfh-notes-control" aria-label="Sort by" aria-expanded="false" aria-controls="cfhNotesSortMenu" onclick="cfhNotesMenu('sort')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/></svg></button>
+  <nav id="cfhNotesMenu" class="cfh-notes-menu" aria-label="Notes filters" hidden><button type="button" data-notes-filter="all" aria-pressed="true" onclick="cfhNotesFilter('all')">All notes</button><button type="button" data-notes-filter="pinned" aria-pressed="false" onclick="cfhNotesFilter('pinned')">Pinned notes</button></nav>
+  <div id="cfhNotesSortMenu" class="cfh-notes-menu cfh-notes-sort" hidden><label for="cfhNotesSort">Sort by</label><select id="cfhNotesSort" onchange="cfhNotesSetSort(this.value)"><option value="updated">Recently edited</option><option value="created">Recently created</option><option value="title">Title A–Z</option></select></div>
+ </header>
  <div id="cfhNotesList"></div>
+ <button type="button" class="cfh-notes-new" onclick="cfhNotesOpen()" aria-label="Create a note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></svg></button>
 </main>
 <div id="cfhNotesEditor" hidden onclick="if(event.target===this)cfhNotesClose()">
  <section class="cfh-notes-editor-box" role="dialog" aria-modal="true" aria-labelledby="cfhNotesTitle" id="cfhNotesEditorBox">
@@ -10932,7 +10954,14 @@ body.cfh-notes-active .app-shell,body.cfh-notes-active #cfhPortfolioPage{display
  bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'||dest==='crypto'||dest==='notes'){if(typeof showAppPage==='function')showAppPage(dest==='home'?(window.cfhLastHomePage||'gcash'):dest);sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
  document.addEventListener('click',function(e){if(e.target.closest('.app-tab'))setTimeout(sync,0)});
 (function(){
- const KEY='cfh_notes_v1';let activeId=null,selectedColor='yellow',saveTimer=null;
+ const KEY='cfh_notes_v1';let activeId=null,selectedColor='yellow',saveTimer=null,noteFilter='all',view='grid',sort='updated';
+ try{const prefs=JSON.parse(localStorage.getItem(KEY+':view')||'{}');view=prefs.view==='list'?'list':'grid';sort=['updated','created','title'].includes(prefs.sort)?prefs.sort:'updated';}catch{}
+ function saveView(){try{localStorage.setItem(KEY+':view',JSON.stringify({view,sort}));}catch{}}
+ function menus(which){for(const name of ['menu','sort']){const node=document.getElementById(name==='menu'?'cfhNotesMenu':'cfhNotesSortMenu'),button=document.getElementById(name==='menu'?'cfhNotesMenuButton':'cfhNotesSortButton');node.hidden=name!==which||!node.hidden;button.setAttribute('aria-expanded',String(!node.hidden));}}
+ function filter(value){noteFilter=value==='pinned'?'pinned':'all';document.querySelectorAll('[data-notes-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.notesFilter===noteFilter)));menus();render()}
+ function layout(){view=view==='grid'?'list':'grid';saveView();render()}
+ function setSort(value){if(!['updated','created','title'].includes(value))return;sort=value;saveView();menus();render()}
+ function compare(a,b){if(sort==='title')return String(a.title||a.body||'').localeCompare(String(b.title||b.body||''));return (Number(b[sort==='created'?'createdAt':'updatedAt'])||0)-(Number(a[sort==='created'?'createdAt':'updatedAt'])||0)}
  const colors={white:'#ffffff',yellow:'#fff5c2',mint:'#d8f6e9',lavender:'#e9e6fa',rose:'#ffe1e4',blue:'#dcedff'};
  function read(){try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v.filter(n=>n&&typeof n==='object'&&typeof n.id==='string'):[]}catch(e){return[]}}
  function write(items){try{localStorage.setItem(KEY,JSON.stringify(items));const s=document.getElementById('cfhNotesEditorStatus');if(s)s.textContent='Saved on this device'}catch(e){const s=document.getElementById('cfhNotesEditorStatus');if(s)s.textContent='Could not save this note'}}
@@ -10940,10 +10969,11 @@ body.cfh-notes-active .app-shell,body.cfh-notes-active #cfhPortfolioPage{display
  function render(){
   const host=document.getElementById('cfhNotesList');if(!host)return;host.replaceChildren();
   const q=(document.getElementById('cfhNotesSearch')?.value||'').trim().toLocaleLowerCase();
-  const matches=read().filter(n=>(String(n.title||'')+' '+String(n.body||'')).toLocaleLowerCase().includes(q)).sort((a,b)=>(Number(b.pinned)-Number(a.pinned))||(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0));
-  if(!matches.length){host.appendChild(el('div','cfh-notes-empty',q?'No matching notes.':'Your notes will appear here. Tap “＋ New note” to start.'));return}
+  const matches=read().filter(n=>(noteFilter!=='pinned'||n.pinned)&&(String(n.title||'')+' '+String(n.body||'')).toLocaleLowerCase().includes(q)).sort((a,b)=>(Number(b.pinned)-Number(a.pinned))||compare(a,b));
+  const layoutButton=document.getElementById('cfhNotesLayout');layoutButton.setAttribute('aria-label',view==='grid'?'Switch to list view':'Switch to grid view');layoutButton.setAttribute('aria-pressed',String(view==='list'));document.getElementById('cfhNotesSort').value=sort;
+  if(!matches.length){host.appendChild(el('div','cfh-notes-empty',q?'No matching notes.':'Your notes will appear here. Tap the note button to start.'));return}
   const pinned=matches.filter(n=>n.pinned),others=matches.filter(n=>!n.pinned);
-  function section(label,items){if(!items.length)return;host.appendChild(el('div','cfh-notes-section-title',label));const grid=el('div','cfh-notes-grid');items.forEach(n=>{const card=el('article','cfh-note-card');card.dataset.noteId=n.id;card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Open note '+(n.title||'Untitled'));card.style.background=colors[n.color]||colors.white;const top=el('div','cfh-note-card-top');if(n.title)top.appendChild(el('h3','',n.title));if(n.pinned){const pin=el('button','cfh-note-pin','📌');pin.type='button';pin.dataset.notePin=n.id;pin.setAttribute('aria-label','Unpin note');top.appendChild(pin)}card.appendChild(top);if(n.body)card.appendChild(el('p','',n.body));const d=new Date(Number(n.updatedAt)||Date.now());card.appendChild(el('small','',isNaN(d.getTime())?'':d.toLocaleDateString()));grid.appendChild(card)});host.appendChild(grid)}
+  function section(label,items){if(!items.length)return;host.appendChild(el('div','cfh-notes-section-title',label));const grid=el('div','cfh-notes-grid'+(view==='list'?' is-list':''));items.forEach(n=>{const card=el('article','cfh-note-card');card.dataset.noteId=n.id;card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Open note '+(n.title||'Untitled'));card.style.background=colors[n.color]||colors.white;const top=el('div','cfh-note-card-top');if(n.title)top.appendChild(el('h3','',n.title));if(n.pinned){const pin=el('button','cfh-note-pin','📌');pin.type='button';pin.dataset.notePin=n.id;pin.setAttribute('aria-label','Unpin note');top.appendChild(pin)}card.appendChild(top);if(n.body)card.appendChild(el('p','',n.body));const d=new Date(Number(n.updatedAt)||Date.now());card.appendChild(el('small','',isNaN(d.getTime())?'':d.toLocaleDateString()));grid.appendChild(card)});host.appendChild(grid)}
   section('Pinned',pinned);section('Notes',others);
  }
  function saveDraft(){
@@ -10974,6 +11004,8 @@ body.cfh-notes-active .app-shell,body.cfh-notes-active #cfhPortfolioPage{display
  document.getElementById('cfhNotesList').addEventListener('click',function(e){const pin=e.target.closest('[data-note-pin]');if(pin){e.stopPropagation();const items=read(),n=items.find(x=>x.id===pin.dataset.notePin);if(n){n.pinned=!n.pinned;n.updatedAt=Date.now();write(items);render()}return}const card=e.target.closest('[data-note-id]');if(card)open(card.dataset.noteId)});
  document.getElementById('cfhNotesList').addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-note-id]')){e.preventDefault();open(e.target.dataset.noteId)}});
  document.getElementById('cfhNotesEditor').addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+ document.addEventListener('click',e=>{if(!e.target.closest('.cfh-notes-head'))menus()});
+ window.cfhNotesMenu=menus;window.cfhNotesFilter=filter;window.cfhNotesToggleLayout=layout;window.cfhNotesSetSort=setSort;
  window.cfhNotesRender=render;window.cfhNotesOpen=open;window.cfhNotesClose=close;window.cfhNotesTogglePin=pin;window.cfhNotesSetColor=color;window.cfhNotesDelete=del;
  render();
 })();

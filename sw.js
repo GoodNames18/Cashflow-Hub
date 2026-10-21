@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v23-portfolio-removal-sync";
+const CACHE_NAME = "cashflow-hub-v24-notes-and-reminder-content";
 
 const OFFLINE_ASSETS=[
   "./",

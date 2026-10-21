@@ -2,7 +2,7 @@ import { createNotificationReader } from '../supabase/functions/cfh-push/kernel.
 function key(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 function idFor(value){let n=2166136261;for(const char of value)n=Math.imul(n^char.charCodeAt(0),16777619);return (n>>>0)%2147483646+1;}
 export function reminderJobs(snapshot,now=new Date()){
-  const jobs=new Map(),used=new Set(),visibleIds=new Set(),entriesForDate=createNotificationReader(snapshot);
+  const jobs=new Map(),used=new Set(),visibleIds=new Set(),seen=new Set(),entriesForDate=createNotificationReader(snapshot);
   // Refilled whenever the app opens or a synced schedule changes.
   for(let offset=0;offset<=400;offset++){
    const occurrence=new Date(now.getFullYear(),now.getMonth(),now.getDate()+offset);
@@ -12,7 +12,8 @@ export function reminderJobs(snapshot,now=new Date()){
      if(!Number.isInteger(before)||before<0||before>7)continue;
      const [h,m]=entry.time.split(':').map(Number),at=new Date(occurrence.getFullYear(),occurrence.getMonth(),occurrence.getDate()-before,h,m);
      if(at<=now)continue;
-     const stamp=at.getTime();if(!jobs.has(stamp))jobs.set(stamp,{at,entries:[]});
+     const stamp=at.getTime(),identity=JSON.stringify([entry.id,entry.date,before,stamp]);if(seen.has(identity))continue;seen.add(identity);
+     if(!jobs.has(stamp))jobs.set(stamp,{at,entries:[]});
      jobs.get(stamp).entries.push({entry,before});
     }
    }
