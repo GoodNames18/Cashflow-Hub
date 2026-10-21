@@ -1,3 +1,4 @@
+import {mountCryptoNav} from './cfh-crypto-nav.mjs';
 import {holdingSortChoices,validHoldingSort,sortHoldings} from './cfh-portfolio-sort.mjs';
 import {resolvePurchaseFees} from './cfh-portfolio-fees.mjs';
 import {stockLogos} from './cfh-stock-logos.mjs';
@@ -207,6 +208,7 @@ export function mountPortfolio(){
  const syncCryptoNavHeight=()=>{if(mainNav)$('cfhPortfolioPage').style.setProperty('--crypto-main-nav-height',`${mainNav.getBoundingClientRect().height}px`);};
  if(mainNav&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncCryptoNavHeight).observe(mainNav);
  window.addEventListener('resize',syncCryptoNavHeight);syncCryptoNavHeight();
+ mountCryptoNav(document,window);
  $('cfhCryptoHome').onclick=()=>{selectPortfolioView('portfolio');window.scrollTo({top:0,behavior:'auto'});};
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>selectPortfolioView(b.dataset.portfolioPage));

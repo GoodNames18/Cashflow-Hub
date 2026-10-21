@@ -1961,7 +1961,14 @@ body.cfh-crypto-active .app-shell{display:none!important}
 #cfhCryptoNav svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #cfhCryptoNav .crypto-invest-icon{width:31px;height:31px;color:#1b1844;margin-top:-6px}
 #cfhCryptoNav button:focus-visible{outline:2px solid #00cda7;outline-offset:2px}
-#cfhPortfolioPage .cfh-portfolio-invest-row{bottom:calc(var(--crypto-main-nav-height) + 86px)}
+/* Main navigation slides away only within Crypto. */
+.cfh-bottom-nav{transition:transform .25s ease,opacity .25s ease}
+body.cfh-crypto-active:not(.cfh-main-nav-revealed) .cfh-bottom-nav{transform:translate(-50%,calc(100% + 8px));opacity:0;pointer-events:none}
+#cfhCryptoNav{transition:bottom .25s ease}
+body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhCryptoNav{bottom:0;padding-bottom:calc(7px + env(safe-area-inset-bottom))}
+body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+@media(prefers-reduced-motion:reduce){.cfh-bottom-nav,#cfhCryptoNav{transition:none}}
+
 </style>
 </head>
 

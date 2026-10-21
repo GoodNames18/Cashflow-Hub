@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v37-compact-sort-menu";
+const CACHE_NAME = "cashflow-hub-v38-crypto-swipe-navigation";
 
 const OFFLINE_ASSETS=[
   "./",
@@ -25,6 +25,7 @@ const OFFLINE_ASSETS=[
   "supabase/cfh-portfolio-model.mjs",
   "supabase/cfh-portfolio-fees.mjs",
   "supabase/cfh-portfolio-sort.mjs",
+  "supabase/cfh-crypto-nav.mjs",
   "supabase/cfh-portfolio-catalog.mjs",
   "supabase/cfh-stock-logos.mjs",
   "supabase/cfh-transaction-edit.mjs?v=transaction-edit1",
