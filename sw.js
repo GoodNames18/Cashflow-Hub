@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v27-holding-sort-footer";
+const CACHE_NAME = "cashflow-hub-v28-combined-symbols";
 
 const OFFLINE_ASSETS=[
   "./",
