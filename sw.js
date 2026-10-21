@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v39-crypto-animation-all-default";
+const CACHE_NAME = "cashflow-hub-v40-separate-dividend-navigation";
 
 const OFFLINE_ASSETS=[
   "./",

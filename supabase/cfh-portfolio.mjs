@@ -11,7 +11,7 @@ const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers',STOCK_PRICES_KEY=KEY+':s
 let feeMode='auto';
 let holdingSort='symbol';
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
-let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',historyType='transactions',dividendStatus='upcoming',snapshotTrigger=null;
+let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',dividendStatus='upcoming',snapshotTrigger=null;
 let liveStockPrices=new Map(),lastStockPriceAt=null,livePriceTimer=null,livePriceBusy=false,snapshotScrollY=0;
 try{const saved=JSON.parse(localStorage.getItem(STOCK_PRICES_KEY)||'null');if(saved&&Number.isFinite(Date.parse(saved.fetched_at))){liveStockPrices=parsePseStocksResponse(saved);lastStockPriceAt=saved.fetched_at;}}catch{}
 function stockPriceStatus(now=new Date()){
@@ -167,21 +167,20 @@ function renderDividends(){
 }
 function renderHistoryView(){
  const page=$('cfhPortfolioHistoryView');if(!page)return;
- page.hidden=portfolioView!=='history';
+ page.hidden=portfolioView==='portfolio';
  const dashboard=$('cfhPortfolioDashboard');if(dashboard)dashboard.hidden=portfolioView!=='portfolio';
- const title=$('cfhPortfolioTitle');if(title)title.textContent=portfolioView==='history'?'Orders':'Portfolio';
+ const title=$('cfhPortfolioTitle');if(title)title.textContent=portfolioView==='dividends'?'Dividend History':portfolioView==='history'?'History':'Portfolio';
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>{const selected=b.dataset.portfolioPage===portfolioView;b.setAttribute('aria-pressed',String(selected));if(selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
- document.querySelectorAll('[data-portfolio-history-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.portfolioHistoryTab===historyType)));
  const tx=$('cfhPortfolioTransactions'),divs=$('cfhPortfolioDividendSection');
- if(tx)tx.hidden=historyType!=='transactions';
- if(divs)divs.hidden=historyType!=='dividends';
+ if(tx)tx.hidden=portfolioView!=='history';
+ if(divs)divs.hidden=portfolioView!=='dividends';
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.dividendStatus===dividendStatus)));
- const statusTabs=$('cfhPortfolioDividendStatuses');if(statusTabs)statusTabs.hidden=historyType!=='dividends';
+ const statusTabs=$('cfhPortfolioDividendStatuses');if(statusTabs)statusTabs.hidden=portfolioView!=='dividends';
  renderPurchases($('cfhPortfolioTransactions'));
  renderDividends();
 }
 function selectPortfolioView(view){portfolioView=view;renderHistoryView();window.syncActivePageHeight?.();}
-function breakdown(){selectPortfolioView('history');historyType='transactions';renderHistoryView();}
+function breakdown(){selectPortfolioView('history');}
 function openDividendModal(){
  const f=$('cfhPortfolioDividendForm');f.reset();f.elements.asset.value='stock';f.elements.status.value='upcoming';f.elements.paymentDate.value='';
  const names=[...new Set(['COL Financial','DragonFi','DragonFi Lite (Maya)',...state.rows.map(r=>r.broker)].filter(Boolean))];
@@ -210,7 +209,6 @@ export function mountPortfolio(){
  mountCryptoNav(document,window);
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>{selectPortfolioView(b.dataset.portfolioPage);window.scrollTo({top:0,behavior:'auto'});});
- document.querySelectorAll('[data-portfolio-history-tab]').forEach(b=>b.onclick=()=>{historyType=b.dataset.portfolioHistoryTab;renderHistoryView();});
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.onclick=()=>{dividendStatus=b.dataset.dividendStatus;renderHistoryView();});
  $('cfhPortfolioDividendButton').onclick=openDividendModal;$('cfhPortfolioDividendForm').onsubmit=saveDividend;
  $('cfhPortfolioDividendForm').oninput=updateDividendTotal;
