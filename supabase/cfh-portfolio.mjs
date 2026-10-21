@@ -210,7 +210,7 @@ export function mountPortfolio(){
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>{selectPortfolioView(b.dataset.portfolioPage);window.scrollTo({top:0,behavior:'auto'});});
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.onclick=()=>{dividendStatus=b.dataset.dividendStatus;renderHistoryView();});
- $('cfhPortfolioDividendButton').onclick=openDividendModal;$('cfhPortfolioDividendForm').onsubmit=saveDividend;
+ $('cfhPortfolioDividendForm').onsubmit=saveDividend;
  $('cfhPortfolioDividendForm').oninput=updateDividendTotal;
  for(const b of document.querySelectorAll('[data-portfolio-asset]'))b.onclick=()=>{asset=b.dataset.portfolioAsset;render();if(asset==='stock')void refreshStockPrices();};
  for(const b of document.querySelectorAll('[data-portfolio-close]'))b.onclick=()=>close(b.dataset.portfolioClose);
