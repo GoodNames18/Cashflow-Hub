@@ -1,7 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {portfolio} from '../../supabase/cfh-portfolio-model.mjs';
-import {DRAFT_TTL,activeDraft,recentPurchases,symbolMatches} from '../../supabase/cfh-portfolio-catalog.mjs';
+import {DRAFT_TTL,activeDraft,recentPurchases,symbolMatches,purchaseDateLabel} from '../../supabase/cfh-portfolio-catalog.mjs';
 test('purchase history follows trade date, excludes valuations and separates assets',()=>{const rows=[{id:'1',kind:'purchase',asset:'stock',date:'2025-06-19',at:'2026-10-16'},{id:'2',kind:'purchase',asset:'stock',date:'2025-06-25',at:'2026-10-15'},{kind:'quote',asset:'stock'},{kind:'purchase',asset:'crypto'}];assert.deepEqual(recentPurchases(rows,'stock').map(r=>r.id),['2','1']);});
 test('temporary drafts expire and stay within the selected asset',()=>{const d={asset:'stock',expiresAt:100+DRAFT_TTL};assert.equal(activeDraft(d,'stock',101),d);assert.equal(activeDraft(d,'stock',d.expiresAt),null);assert.equal(activeDraft(d,'crypto',101),null);});
 test('symbol suggestions match prefixes, include recorded custom symbols and remove duplicates',()=>{const a=symbolMatches('a',[{asset:'stock',symbol:'AC'},{asset:'stock',symbol:'AZZZ'}],'stock');assert(a.length>3);assert(a.includes('AREIT'));assert(a.includes('AZZZ'));assert.equal(a.filter(s=>s==='AC').length,1);assert(a.every(s=>s.startsWith('A')));assert.deepEqual(symbolMatches('',[],'stock'),[]);});
 test('DragonFi app and Maya keep separate holdings, quotes and cash',()=>{const buy={kind:'purchase',asset:'stock',symbol:'RCR',date:'2025-06-19',at:'2026-10-16',price:7.18,fees:2.13,shares:100};const p=portfolio([{...buy,id:'1',broker:'DragonFi'},{...buy,id:'2',broker:'DragonFi Lite (Maya)'},{kind:'quote',id:'3',asset:'stock',broker:'DragonFi',symbol:'RCR',price:8,at:'2026-10-17'}]);assert.equal(p.holdings.length,2);assert.equal(p.holdings.find(h=>h.broker==='DragonFi Lite (Maya)').price,null);});
+
+test('purchase popup uses long date and five-minute draft lifetime',()=>{assert.equal(DRAFT_TTL,300000);assert.equal(purchaseDateLabel('2026-12-24'),'December 24, 2026');assert.equal(purchaseDateLabel(''),'Choose date');});
