@@ -211,6 +211,11 @@ function updateInvestVisibility(){
 export function mountPortfolio(){
  if(!$('cfhPortfolioPage')||window.cfhPortfolioMounted)return;window.cfhPortfolioMounted=true;
  window.addEventListener('scroll',updateInvestVisibility,{passive:true});window.addEventListener('resize',updateInvestVisibility);
+ const mainNav=document.querySelector('.cfh-bottom-nav');
+ const syncCryptoNavHeight=()=>{if(mainNav)$('cfhPortfolioPage').style.setProperty('--crypto-main-nav-height',`${mainNav.getBoundingClientRect().height}px`);};
+ if(mainNav&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncCryptoNavHeight).observe(mainNav);
+ window.addEventListener('resize',syncCryptoNavHeight);syncCryptoNavHeight();
+ $('cfhCryptoHome').onclick=()=>{selectPortfolioView('portfolio');window.scrollTo({top:0,behavior:'auto'});};
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>selectPortfolioView(b.dataset.portfolioPage));
  document.querySelectorAll('[data-portfolio-history-tab]').forEach(b=>b.onclick=()=>{historyType=b.dataset.portfolioHistoryTab;renderHistoryView();});

@@ -1952,7 +1952,18 @@ body.cfh-crypto-active .app-shell{display:none!important}
 .cfh-dividend-card .cfh-dividend-mark-paid{grid-column:2 / -1;justify-self:start}
 #cfhPortfolioDividendStatuses{margin-top:8px;margin-bottom:12px}
 #cfhPortfolioDividendStatuses[hidden]{display:none}
-</style></head>
+</style><style>
+#cfhPortfolioPage{--crypto-main-nav-height:98px;padding-bottom:calc(var(--crypto-main-nav-height) + 78px)}
+#cfhCryptoNav{position:fixed;bottom:var(--crypto-main-nav-height);left:50%;transform:translateX(-50%);width:min(100%,420px);box-sizing:border-box;display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border-top:1px solid #e5e2ed;z-index:60;padding:9px 8px 7px;box-shadow:0 -3px 15px #1b184408}
+#cfhCryptoNav button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;border:0;background:none;padding:2px 0;font-size:11px;line-height:16px;border-radius:8px;color:#78738c}
+#cfhCryptoNav button[aria-current]{color:#009e81}
+#cfhCryptoNav button:disabled{cursor:default;opacity:1}
+#cfhCryptoNav svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#cfhCryptoNav .crypto-invest-icon{width:31px;height:31px;color:#1b1844;margin-top:-6px}
+#cfhCryptoNav button:focus-visible{outline:2px solid #00cda7;outline-offset:2px}
+#cfhPortfolioPage .cfh-portfolio-invest-row{bottom:calc(var(--crypto-main-nav-height) + 86px)}
+</style>
+</head>
 
 <body>
 
@@ -10844,6 +10855,7 @@ window.cfhRefreshTestTab = function(page) {
    <div id="cfhPortfolioDividendList" role="region" aria-label="Dividend records"></div>
   </section>
  </div>
+<nav id="cfhCryptoNav" aria-label="Crypto navigation"><button type="button" id="cfhCryptoHome" aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v10h-6v-7H9v7H3Z"/></svg><span>Home</span></button><button type="button" disabled aria-label="Market — coming soon"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="m7 16 4-5 3 2 3-5"/></svg><span>Market</span></button><button type="button" disabled aria-label="Invest — coming soon"><svg aria-hidden="true" viewBox="0 0 32 32" class="crypto-invest-icon"><path fill="#00DDB2" stroke="none" d="m16 1 15 15-15 15L1 16Z"/><path d="M9 12h14l-4-4m4 12H9l4 4"/></svg><span>Invest</span></button><button type="button" disabled aria-label="Orders — coming soon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v19l-3-2-4 2-4-2-3 2Z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg><span>Orders</span></button><button type="button" disabled aria-label="Menu — coming soon"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button></nav>
 </section>
 <div id="cfhHoldingSnapshotModal" class="cfh-portfolio-overlay cfh-stock-snapshot-overlay" hidden><div class="cfh-stock-snapshot-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhStockSnapshotBroker" aria-describedby="cfhStockSnapshotRows"><button class="cfh-stock-snapshot-close" type="button" data-portfolio-close="cfhHoldingSnapshotModal" aria-label="Close stock snapshot">×</button><div class="cfh-stock-snapshot-broker"><img id="cfhStockSnapshotBrokerLogo" src="images/dragonfi-logo-black.svg" alt="DragonFi" hidden><strong id="cfhStockSnapshotBroker">Broker</strong></div><div class="cfh-stock-snapshot-position"><div class="cfh-stock-snapshot-identity"><span><img id="cfhStockSnapshotLogo" alt=""></span><strong id="cfhStockSnapshotSymbol"></strong></div><div class="cfh-stock-snapshot-change"><strong id="cfhStockSnapshotGain">—</strong><small id="cfhStockSnapshotPercent">—</small></div></div><div class="cfh-stock-snapshot-rows" id="cfhStockSnapshotRows"><div><span>Market Value</span><strong id="cfhStockSnapshotMarketValue">—</strong></div><div><span>Number of Shares</span><strong id="cfhStockSnapshotShares">—</strong></div><div><span>Market Price</span><strong id="cfhStockSnapshotMarketPrice">—</strong></div><div><span>Average Cost</span><strong id="cfhStockSnapshotAverageCost">—</strong></div></div></div></div>
 <div id="cfhPortfolioModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioModalTitle">
