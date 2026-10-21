@@ -242,7 +242,7 @@ async function refreshStockPrices(){
  if(document.hidden||asset!=='stock'||!document.body.classList.contains('cfh-crypto-active'))return;
  render();
  if(!client||livePriceBusy||!navigator.onLine)return;
- if(!marketPhase(new Date(),'stock').open)return;
+ // The provider can return the latest closing quote outside trading hours too.
  const symbols=[...new Set(portfolio(state.rows,'stock').holdings.map(h=>h.symbol))];
  const node=$('cfhMarketPriceStatus');
  if(!symbols.length){if(node)node.textContent='Add a stock holding to see live PSE prices.';return;}
