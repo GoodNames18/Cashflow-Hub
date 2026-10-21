@@ -4,10 +4,26 @@ import {portfolio,validateRecord,money,marketPhase} from './cfh-portfolio-model.
 import {parsePseStocksResponse,liveStockQuoteRows} from './cfh-stock-prices.mjs';
 const OWNER='161ecab1-d1d7-4fef-a089-a7300b9da774',KEY='cfh-portfolio-v1:'+OWNER;
 let state;try{state=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}state||={rows:[],pending:[]};state.rows||=[];state.pending||=[];
-const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers';
+const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers',STOCK_PRICES_KEY=KEY+':stock-prices';
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
 let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',historyType='transactions',dividendStatus='upcoming',snapshotTrigger=null;
-let liveStockPrices=new Map(),livePriceTimer=null,livePriceBusy=false,snapshotScrollY=0;
+let liveStockPrices=new Map(),lastStockPriceAt=null,livePriceTimer=null,livePriceBusy=false,snapshotScrollY=0;
+try{const saved=JSON.parse(localStorage.getItem(STOCK_PRICES_KEY)||'null');if(saved&&Number.isFinite(Date.parse(saved.fetched_at))){liveStockPrices=parsePseStocksResponse(saved);lastStockPriceAt=saved.fetched_at;}}catch{}
+function stockPriceStatus(now=new Date()){
+ const phase=marketPhase(now,'stock');
+ const label=phase.open?'Last prices':phase.label.startsWith('Market recess')?'Market recess':'Market closed';
+ if(!liveStockPrices.size||!lastStockPriceAt)return phase.open?'Waiting for live PSE prices…':label+' · No saved prices yet';
+ const updated=new Intl.DateTimeFormat('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}).format(new Date(lastStockPriceAt));
+ return label+' · Last updated '+updated;
+}
+function saveStockPrices(data){
+ const prices=parsePseStocksResponse(data);
+ if(!prices.size)throw Error('No stock prices returned; keeping last update.');
+ const at=Number.isFinite(Date.parse(data?.fetched_at))?data.fetched_at:new Date().toISOString();
+ for(const [symbol,quote]of prices)liveStockPrices.set(symbol,{...quote,at:quote.at||at});
+ lastStockPriceAt=at;
+ try{localStorage.setItem(STOCK_PRICES_KEY,JSON.stringify({fetched_at:at,stocks:[...liveStockPrices.values()].map(q=>({symbol:q.symbol,price:q.price,as_of:q.at}))}));}catch(error){console.warn('Could not save stock prices on this device:',error.message);}
+}
 const $=id=>document.getElementById(id),peso=v=>v===null?'—':new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP'}).format(v);
 function stockLogo(symbol){const img=document.createElement('img');img.className='cfh-stock-logo';img.alt=symbol+' logo';img.loading='lazy';img.width=40;img.height=40;const fallback='images/stocks/unknown.svg';img.src=stockLogos[symbol]||fallback;img.onerror=()=>{img.onerror=null;img.src=fallback;};return img;}
 function openHoldingSnapshot(h,trigger){
@@ -44,8 +60,9 @@ function status(value){if($('cfhPortfolioSync'))$('cfhPortfolioSync').textConten
 function render(){
  if(!$('cfhPortfolioPage'))return;
  const base=portfolio(state.rows,asset),phase=marketPhase(new Date(),asset);
- const liveRows=asset==='stock'?liveStockQuoteRows(base.holdings,liveStockPrices):[];
+ const liveRows=asset==='stock'?liveStockQuoteRows(base.holdings,liveStockPrices,lastStockPriceAt||new Date().toISOString()):[];
  const p=portfolio(liveRows.length?[...state.rows,...liveRows]:state.rows,asset);
+ if(asset==='stock'&&$('cfhMarketPriceStatus'))$('cfhMarketPriceStatus').textContent=stockPriceStatus();
  $('cfhPortfolioMarket').textContent=phase.label;$('cfhPortfolioMarket').classList.toggle('is-open',phase.open);
  for(const [id,value]of [['cfhPortfolioBalance',p.balance],['cfhPortfolioInvested',p.invested],['cfhPortfolioCash',p.cashAvailable],['cfhPortfolioGain',p.gain]])$(id).textContent=peso(value);
  $('cfhPortfolioGain').className=p.gain<0?'is-loss':p.gain>0?'is-gain':'';
@@ -198,7 +215,9 @@ export function mountPortfolio(){
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('cfh-crypto-active')){render();if(asset==='stock')void refreshStockPrices();}});
 }
 async function refreshStockPrices(){
- if(!client||livePriceBusy||document.hidden||!navigator.onLine||asset!=='stock'||!document.body.classList.contains('cfh-crypto-active'))return;
+ if(document.hidden||asset!=='stock'||!document.body.classList.contains('cfh-crypto-active'))return;
+ render();
+ if(!client||livePriceBusy||!navigator.onLine)return;
  if(!marketPhase(new Date(),'stock').open)return;
  const symbols=[...new Set(portfolio(state.rows,'stock').holdings.map(h=>h.symbol))];
  const node=$('cfhMarketPriceStatus');
@@ -208,12 +227,10 @@ async function refreshStockPrices(){
  try{
   const {data,error}=await client.functions.invoke('cfh-stock-prices',{body:{symbols}});
   if(error)throw error;
-  liveStockPrices=parsePseStocksResponse(data);
+  saveStockPrices(data);
   render();
-  const updated=new Intl.DateTimeFormat('en-PH',{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}).format(new Date());
-  if(node)node.textContent='Live PSE prices · updated '+updated;
  }catch(error){
-  if(node)node.textContent=liveStockPrices.size?'Could not refresh prices · showing last update':'Live prices unavailable · '+(error.message||'try again later');
+  if(node)node.textContent=liveStockPrices.size?'Could not refresh · '+stockPriceStatus():'Live prices unavailable · '+(error.message||'try again later');
   console.warn('PSE price refresh:',error.message);
  }finally{livePriceBusy=false;}
 }
