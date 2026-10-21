@@ -10854,7 +10854,9 @@ window.cfhRefreshTestTab = function(page) {
  <div id="cfhPortfolioSuggestions" role="listbox" aria-label="Stock symbols" hidden></div>
  <label>Purchase date<input name="date" type="date" required></label>
  <div class="cfh-portfolio-form-row"><label>Shares / units<input name="shares" type="number" min="0.00000001" step="1" inputmode="decimal" required></label><label>Price per share / unit (₱)<input name="price" type="number" min="0.00000001" step="any" inputmode="decimal" required></label></div>
- <label>Broker fees (optional, ₱)<input name="fees" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label>
+ <label id="cfhPurchaseTypeLabel">Purchase type<select name="purchaseType"><option value="market">Market purchase</option><option value="ipo">IPO allocation</option></select></label>
+ <label><span id="cfhFeeLabel">Estimated fees (₱)</span><input name="fees" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Enter invoice fee" aria-describedby="cfhFeeHelp" required></label>
+ <small id="cfhFeeHelp" role="status"></small><button id="cfhUseFeeEstimate" type="button">Use estimate</button>
  <div class="cfh-portfolio-total"><span>Total invested</span><strong id="cfhPortfolioTotal">₱0.00</strong></div><label>Notes (optional)<textarea name="notes" maxlength="500" rows="2" placeholder="Add a note"></textarea></label><p id="cfhPortfolioFormStatus" role="status"></p>
  <div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioModal">Cancel</button><button type="submit">Save</button></div><small>Records an existing purchase in your portfolio.</small>
 </form></div>
