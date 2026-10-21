@@ -19,8 +19,10 @@ export function combineSymbolHoldings(holdings){
  if(parts.length===1)return {...parts[0]};
  const shares=parts.reduce((n,h)=>n+h.shares,0),cost=money(parts.reduce((n,h)=>n+h.cost,0));
  const complete=parts.every(h=>Number.isFinite(h.value));const value=complete?money(parts.reduce((n,h)=>n+h.value,0)):null;
+ const grossValue=complete?money(parts.reduce((n,h)=>n+(h.grossValue??h.value),0)):null;
+ const sellingFees=complete?money(parts.reduce((n,h)=>n+(h.sellingFees||0),0)):null;
  const brokers=[...new Set(parts.map(h=>h.broker))].sort((a,b)=>a.localeCompare(b));
  const gain=value===null?null:money(value-cost);
- return {key:'symbol|'+parts[0].symbol,symbol:parts[0].symbol,broker:'All brokers',brokers,shares,cost,value,price:value===null||!shares?null:value/shares,gain,percent:gain===null||!cost?null:gain/cost*100,quoteAt:parts.map(h=>h.quoteAt).filter(Boolean).sort().at(-1)||null};
+ return {key:'symbol|'+parts[0].symbol,symbol:parts[0].symbol,broker:'All brokers',brokers,shares,cost,grossValue,sellingFees,value,price:grossValue===null||!shares?null:grossValue/shares,gain,percent:gain===null||!cost?null:gain/cost*100,quoteAt:parts.map(h=>h.quoteAt).filter(Boolean).sort().at(-1)||null};
  });
 }

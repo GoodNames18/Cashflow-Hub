@@ -24,6 +24,9 @@ export function validateRecord(row){
  }
  return row;
 }
+// COL portfolio display estimates future selling charges at 0.395%.
+// Aggregate rounding matches its displayed net values; execution invoice rounding may differ.
+export function portfolioSellingFees(gross,asset,broker){return asset==='stock'&&/^col(?: financial)?$/i.test(broker.trim())?money(gross*(.0025+.0025*.12+.00005+.0001+.001)):0;}
 export function portfolio(records,asset='stock'){
  const rows=records.filter(r=>{try{return validateRecord(r)&&r.asset===asset;}catch{return false;}}).slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||String(a.id||'').localeCompare(String(b.id||''))),groups=new Map(),quotes=new Map(),cash=new Map();
  for(const row of rows){
@@ -35,7 +38,7 @@ export function portfolio(records,asset='stock'){
   const h=groups.get(key)||{key,broker:row.broker,symbol:row.symbol,shares:0,cost:0};
   h.shares+=row.shares;h.cost=money(h.cost+money(row.shares*row.price+row.fees));groups.set(key,h);
  }
- const holdings=[...groups.values()].map(h=>{const q=quotes.get(h.key);const value=q?money(h.shares*q.price):null;return {...h,price:q?.price??null,quoteAt:q?.at??null,value,gain:value===null?null:money(value-h.cost),percent:value===null?null:(value-h.cost)/h.cost*100};}).sort((a,b)=>a.symbol.localeCompare(b.symbol)||a.broker.localeCompare(b.broker));
+ const holdings=[...groups.values()].map(h=>{const q=quotes.get(h.key);const grossValue=q?money(h.shares*q.price):null;const sellingFees=grossValue===null?null:portfolioSellingFees(grossValue,asset,h.broker);const value=grossValue===null?null:money(grossValue-sellingFees);return {...h,price:q?.price??null,quoteAt:q?.at??null,grossValue,sellingFees,value,gain:value===null?null:money(value-h.cost),percent:value===null?null:(value-h.cost)/h.cost*100};}).sort((a,b)=>a.symbol.localeCompare(b.symbol)||a.broker.localeCompare(b.broker));
  const invested=money(holdings.reduce((n,h)=>n+h.cost,0)),cashAvailable=money([...cash.values()].reduce((n,v)=>n+v,0));
  const complete=holdings.every(h=>h.value!==null),value=complete?money(holdings.reduce((n,h)=>n+h.value,0)):null;
  return {holdings,invested,cashAvailable,value,balance:value===null?null:money(value+cashAvailable),gain:value===null?null:money(value-invested),percent:value===null||!invested?null:(value-invested)/invested*100};
