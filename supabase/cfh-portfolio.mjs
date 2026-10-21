@@ -1,3 +1,4 @@
+import {holdingSortChoices,validHoldingSort,sortHoldings} from './cfh-portfolio-sort.mjs';
 import {resolvePurchaseFees} from './cfh-portfolio-fees.mjs';
 import {stockLogos} from './cfh-stock-logos.mjs';
 import {stockCompanies,DRAFT_TTL,recentPurchases,symbolMatches,activeDraft,purchaseDateLabel} from './cfh-portfolio-catalog.mjs';
@@ -7,6 +8,8 @@ const OWNER='161ecab1-d1d7-4fef-a089-a7300b9da774',KEY='cfh-portfolio-v1:'+OWNER
 let state;try{state=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}state||={rows:[],pending:[]};state.rows||=[];state.pending||=[];
 const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers',STOCK_PRICES_KEY=KEY+':stock-prices';
 let feeMode='auto';
+const HOLDING_SORT_KEY=KEY+':holding-sort';
+let holdingSort='symbol';try{holdingSort=validHoldingSort(localStorage.getItem(HOLDING_SORT_KEY));}catch{}
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
 let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',historyType='transactions',dividendStatus='upcoming',snapshotTrigger=null;
 let liveStockPrices=new Map(),lastStockPriceAt=null,livePriceTimer=null,livePriceBusy=false,snapshotScrollY=0;
@@ -70,9 +73,10 @@ function render(){
  $('cfhPortfolioGain').className=p.gain<0?'is-loss':p.gain>0?'is-gain':'';
  $('cfhPortfolioGainPercent').textContent=p.percent===null?'':` (${p.percent.toFixed(2)}%)`;
  document.querySelectorAll('[data-portfolio-asset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.portfolioAsset===asset)));
+ $('cfhHoldingSortLabel').hidden=asset!=='stock';
  const table=$('cfhPortfolioHoldings');table.replaceChildren();
  if(!p.holdings.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent='No '+(asset==='stock'?'stocks':'crypto')+' recorded yet. Tap Invest to add your broker purchase.';table.append(empty);}
- for(const h of p.holdings){
+ for(const h of asset==='stock'?sortHoldings(p.holdings,holdingSort,state.rows):p.holdings){
  const item=document.createElement('div');item.className='cfh-holding-item';
  const row=document.createElement('div');row.className='cfh-portfolio-holding';row.setAttribute('role','group');row.setAttribute('aria-label','Stock holding: '+h.symbol);
  const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-holding-toggle';toggle.textContent='›';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Show details for '+h.symbol);
@@ -207,6 +211,7 @@ export function mountPortfolio(){
  for(const b of document.querySelectorAll('[data-portfolio-close]'))b.onclick=()=>close(b.dataset.portfolioClose);
  for(const id of ['cfhPortfolioModal','cfhPortfolioValueModal','cfhPortfolioDividendModal','cfhHoldingSnapshotModal']){$(id).onclick=e=>{if(e.target===$(id))close(id);};$(id).onkeydown=e=>{if(e.key==='Escape')close(id);if(e.key==='Tab'){const nodes=[...$(id).querySelectorAll('button,input,select,textarea')].filter(n=>n.getClientRects().length);if(e.shiftKey&&document.activeElement===nodes[0]){e.preventDefault();nodes.at(-1).focus();}else if(!e.shiftKey&&document.activeElement===nodes.at(-1)){e.preventDefault();nodes[0].focus();}}};}
  for(const type of ['touchstart','touchmove','touchend','pointerdown','pointermove','pointerup'])$('cfhPortfolioModal').addEventListener(type,e=>e.stopPropagation(),{passive:true});
+ const sortSelect=$('cfhHoldingSort');sortSelect.replaceChildren(...holdingSortChoices.map(([value,label])=>new Option(label,value)));sortSelect.value=holdingSort;sortSelect.onchange=()=>{holdingSort=validHoldingSort(sortSelect.value);try{localStorage.setItem(HOLDING_SORT_KEY,holdingSort);}catch{}render();};
  $('cfhPortfolioForm').elements.date.onchange=()=>{updateTotal();saveDraft();};
  $('cfhPortfolioForm').oninput=e=>{if(e.target.name==='fees')feeMode='manual';updateTotal();saveDraft();};
  $('cfhUseFeeEstimate').onclick=()=>{feeMode='auto';updateTotal();saveDraft();};

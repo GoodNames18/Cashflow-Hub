@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v26-investment-popup";
+const CACHE_NAME = "cashflow-hub-v27-holding-sort-footer";
 
 const OFFLINE_ASSETS=[
   "./",
@@ -24,6 +24,7 @@ const OFFLINE_ASSETS=[
   "supabase/cfh-stock-prices.mjs",
   "supabase/cfh-portfolio-model.mjs",
   "supabase/cfh-portfolio-fees.mjs",
+  "supabase/cfh-portfolio-sort.mjs",
   "supabase/cfh-portfolio-catalog.mjs",
   "supabase/cfh-stock-logos.mjs",
   "supabase/cfh-transaction-edit.mjs?v=transaction-edit1",
