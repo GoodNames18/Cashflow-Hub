@@ -1,5 +1,5 @@
 import {money} from './cfh-portfolio-model.mjs';
-export const holdingSortChoices=[['symbol','Symbol A–Z'],['broker','Broker'],['value-desc','Market Value: Highest first'],['value-asc','Market Value: Lowest first'],['gain-desc','Gain / Loss: Highest first'],['gain-asc','Gain / Loss: Lowest first'],['recent','Purchase date: Newest first']];
+export const holdingSortChoices=[['symbol','All'],['broker','Broker'],['value-desc','Market Value: Highest first'],['value-asc','Market Value: Lowest first'],['gain-desc','Gain / Loss: Highest first'],['gain-asc','Gain / Loss: Lowest first'],['recent','Purchase date: Newest first']];
 export function validHoldingSort(value){return holdingSortChoices.some(([key])=>key===value)?value:'symbol';}
 export function sortHoldings(holdings,choice='symbol',records=[]){
  const mode=validHoldingSort(choice),latest=new Map();

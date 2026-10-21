@@ -109,7 +109,7 @@ function render(){
  toggle.addEventListener('click',event=>{event.stopPropagation();toggleDetails();});
  item.append(row,details);table.append(item);
 }
- renderHistoryView();requestAnimationFrame(updateInvestVisibility);
+ renderHistoryView();
  window.syncActivePageHeight?.();
 }
 let investmentScrollLock=null;
@@ -201,16 +201,8 @@ function saveDividend(e){
   close('cfhPortfolioDividendModal');f.reset();renderHistoryView();
  }catch(error){$('cfhPortfolioDividendFormStatus').textContent=error.message;}
 }
-function updateInvestVisibility(){
- const button=$('cfhPortfolioInvestButton'),row=button?.parentElement;if(!row)return;
- const root=document.scrollingElement||document.documentElement;
- const remaining=root.scrollHeight-window.innerHeight;
- const hide=remaining>4&&remaining-window.scrollY<=4;
- row.classList.toggle('is-bottom-hidden',hide);row.inert=hide;
-}
 export function mountPortfolio(){
  if(!$('cfhPortfolioPage')||window.cfhPortfolioMounted)return;window.cfhPortfolioMounted=true;
- window.addEventListener('scroll',updateInvestVisibility,{passive:true});window.addEventListener('resize',updateInvestVisibility);
  const mainNav=document.querySelector('.cfh-bottom-nav');
  const syncCryptoNavHeight=()=>{if(mainNav)$('cfhPortfolioPage').style.setProperty('--crypto-main-nav-height',`${mainNav.getBoundingClientRect().height}px`);};
  if(mainNav&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncCryptoNavHeight).observe(mainNav);
