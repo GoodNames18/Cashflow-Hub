@@ -1954,10 +1954,26 @@ body.cfh-crypto-active .app-shell{display:none!important}
 .cfh-portfolio-history-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0}
 .cfh-portfolio-history-heading h2{font-size:18px;margin:0}
 .cfh-portfolio-history-heading button,.cfh-dividend-mark-paid{background:#00DDB2!important;border:0!important;font-weight:700!important}
-.cfh-dividend-card{grid-template-columns:40px minmax(0,1fr) auto;align-items:center}
-.cfh-dividend-total{grid-column:3;grid-row:1;font-size:15px;white-space:nowrap}
-.cfh-dividend-card .cfh-investment-meta{grid-column:2 / -1}
-.cfh-dividend-card .cfh-dividend-mark-paid{grid-column:2 / -1;justify-self:start}
+#cfhPortfolioDividendList{gap:10px}
+.cfh-dividend-card{border:1px solid #dedbeb;border-radius:14px;background:#fff;overflow:hidden;color:#1B1844}
+.cfh-dividend-header{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px;cursor:pointer;list-style:none;-webkit-tap-highlight-color:transparent}
+.cfh-dividend-header::-webkit-details-marker{display:none}
+.cfh-dividend-header:focus-visible{outline:2px solid #009e81;outline-offset:-3px}
+.cfh-dividend-chevron{font-size:26px;line-height:1;text-align:center;color:#78738c;transition:transform .2s}
+.cfh-dividend-card[open] .cfh-dividend-chevron{transform:rotate(90deg)}
+.cfh-dividend-heading{display:grid;gap:5px;min-width:0}
+.cfh-dividend-identity{display:flex;align-items:center;gap:7px;font-size:15px;line-height:20px}
+.cfh-dividend-identity .cfh-stock-logo{width:22px;height:22px}
+.cfh-dividend-broker{font-size:11px;color:#78738c;line-height:14px}
+.cfh-dividend-chips{display:flex;flex-wrap:wrap;gap:5px;font-size:11px;line-height:16px}
+.cfh-dividend-chips span{background:#E6E6FA;border-radius:4px;padding:4px 6px}
+.cfh-dividend-total{font-size:14px;font-weight:600;white-space:nowrap}
+.cfh-dividend-body{border-top:1px solid #dedbeb;padding:12px 14px;display:grid;gap:12px}
+.cfh-dividend-card:not([open])>.cfh-dividend-body{display:none}
+.cfh-dividend-detail-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;line-height:18px}
+.cfh-dividend-detail-row>span:first-child{color:#78738c}
+.cfh-dividend-detail-row>span:last-child{text-align:right}
+.cfh-dividend-mark-paid{justify-self:start}
 #cfhPortfolioDividendStatuses{margin-top:8px;margin-bottom:12px}
 #cfhPortfolioDividendStatuses[hidden]{display:none}
 </style><style>
