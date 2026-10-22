@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v75-watchlist-editor";
+const CACHE_NAME = "cashflow-hub-v76-auto-news-dividends";
 
 const OFFLINE_ASSETS=[
   "./",
@@ -23,6 +23,7 @@ const OFFLINE_ASSETS=[
   "supabase/cfh-portfolio.mjs?v=portfolio9",
   "supabase/cfh-stock-prices.mjs",
   "supabase/cfh-portfolio-model.mjs",
+  "supabase/cfh-market-announcements.mjs",
   "supabase/cfh-dividend-receipts.mjs",
   "supabase/cfh-portfolio-fees.mjs",
   "supabase/cfh-portfolio-sort.mjs",
