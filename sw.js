@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v58-compact-breakdown";
+const CACHE_NAME = "cashflow-hub-v59-shared-portfolio-state";
 
 const OFFLINE_ASSETS=[
   "./",
@@ -20,7 +20,7 @@ const OFFLINE_ASSETS=[
   "supabase/manila-date.mjs?v=calendar3",
   "supabase/rules-environment.mjs?v=transaction-order4",
   "supabase/cfh-calendar-sync.mjs?v=events1",
-  "supabase/cfh-portfolio.mjs?v=portfolio3",
+  "supabase/cfh-portfolio.mjs?v=portfolio9",
   "supabase/cfh-stock-prices.mjs",
   "supabase/cfh-portfolio-model.mjs",
   "supabase/cfh-portfolio-fees.mjs",
