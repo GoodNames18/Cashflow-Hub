@@ -1953,6 +1953,10 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 
 #cfhBalanceModal.is-breakdown .cfh-sheet-handle{margin:0 auto;padding:6px 8px}#cfhBalanceModal.is-breakdown .cfh-portfolio-modal-heading h2{line-height:1.25}
+
+#cfhPortfolioPage .cfh-balance-actions #cfhPortfolioBreakdown,#cfhPortfolioPage .cfh-balance-actions #cfhBalanceManage{box-sizing:border-box;height:46px;min-height:46px;padding:10px 8px!important;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px!important;line-height:1.2;text-align:center}
+#cfhPortfolioPage .cfh-balance-actions .cfh-balance-action-label{font-size:inherit;line-height:1.2;display:block;white-space:nowrap}#cfhPortfolioPage .cfh-balance-actions svg{display:block;flex:0 0 18px;width:18px;height:18px}
+
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 <style>
@@ -10931,7 +10935,7 @@ window.cfhRefreshTestTab = function(page) {
    <div class="cfh-balance-profile"><span class="cfh-balance-logo" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><circle cx="25" cy="12" r="9" fill="#00b979"/><text x="25" y="17" text-anchor="middle" fill="white" font-size="15">₱</text><rect x="6" y="19" width="34" height="24" rx="5" fill="currentColor"/><rect x="29" y="26" width="15" height="10" rx="3" fill="#aa91ed"/><circle cx="34" cy="31" r="2" fill="currentColor"/></svg></span><div><strong id="cfhBalanceBroker">All Brokers</strong><small>Total invested <b id="cfhPortfolioInvested">₱0.00</b></small></div><button id="cfhBalanceSwitch" type="button" aria-label="Switch broker">⇄</button></div>
    <div class="cfh-balance-total"><small>Total balance</small><div><strong id="cfhPortfolioBalance">₱0.00</strong><button id="cfhBalanceVisibility" type="button" aria-label="Hide balances" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path d="m3 3 18 18"/></svg></button></div></div>
    <div class="cfh-balance-return"><strong><span id="cfhPortfolioGain">₱0.00</span><span id="cfhPortfolioGainPercent"></span></strong><span>Unrealized gain / loss</span></div>
-   <div class="cfh-balance-actions"><button id="cfhPortfolioBreakdown" type="button">Breakdown <span aria-hidden="true">⌄</span></button><button id="cfhBalanceManage" type="button">Manage Money <span aria-hidden="true">→</span></button></div>
+   <div class="cfh-balance-actions"><button id="cfhPortfolioBreakdown" type="button"><span class="cfh-balance-action-label">Breakdown</span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button><button id="cfhBalanceManage" type="button"><span class="cfh-balance-action-label">Manage Money</span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></div>
   </div>
   <div class="cfh-portfolio-assets" role="group" aria-label="Asset type"><button type="button" data-portfolio-asset="stock" aria-pressed="true">Stocks</button><button type="button" data-portfolio-asset="crypto" aria-pressed="false">Crypto</button></div>
   <div class="cfh-portfolio-holdings-heading"><h2>My holdings</h2><div id="cfhHoldingSortLabel" class="cfh-holding-sort"><button id="cfhHoldingSort" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="cfhHoldingSortMenu">Sort by <span aria-hidden="true">▾</span></button><div id="cfhHoldingSortMenu" role="menu" aria-label="Sort stock holdings" hidden></div></div><span id="cfhPortfolioSync" role="status">Connecting portfolio sync…</span></div>
