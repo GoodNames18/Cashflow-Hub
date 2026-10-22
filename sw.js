@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v44-compact-dividend-history";
+const CACHE_NAME = "cashflow-hub-v45-purchase-history-redesign";
 
 const OFFLINE_ASSETS=[
   "./",
