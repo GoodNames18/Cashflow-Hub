@@ -1927,6 +1927,15 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 #cfhBalanceModal .cfh-portfolio-modal-heading[hidden]{display:none}#cfhBalanceModal .cfh-broker-choice-logo svg{width:36px;height:36px}#cfhBalanceModal .cfh-broker-choice-logo img{max-width:38px;max-height:36px}
 
 #cfhBalanceModal .cfh-broker-choice-logo{overflow:hidden}#cfhBalanceModal .cfh-broker-choice-logo img{display:block;width:32px;height:32px;max-width:32px;max-height:32px;object-fit:contain;border-radius:50%}#cfhBalanceModal .cfh-broker-choice-logo img[src$="dragonfi-symbol.svg"]{border-radius:0}
+
+/* Broker colors apply only to the balance card and selected broker tile. */
+[data-broker-theme="col"]{--broker-bg:#e2edf9;--broker-border:#a8c2e2;--broker-soft:#ccddf1;--broker-button:#9cbfe5;--broker-accent:#174e88}
+[data-broker-theme="dragonfi"]{--broker-bg:#cffff0;--broker-border:#91eacf;--broker-soft:#b8f5df;--broker-button:#00e5a0;--broker-accent:#008457}
+[data-broker-theme="lite"]{--broker-bg:#dcf6df;--broker-border:#a6dcb1;--broker-soft:#c4edc9;--broker-button:#8cda9b;--broker-accent:#217a42}
+.cfh-portfolio-balance.cfh-balance-card{background:var(--broker-bg,#e8e5f7);border-color:var(--broker-border,#cbc1f6)}.cfh-balance-card .cfh-balance-profile{border-color:var(--broker-border,#cbc1f6)}.cfh-balance-card .cfh-balance-logo{background:var(--broker-soft,#d6ccf5)}
+.cfh-balance-card .cfh-balance-actions button{background:var(--broker-soft,#d9d0f4)!important}.cfh-balance-card #cfhBalanceManage{background:var(--broker-button,#b39af1)!important}
+#cfhBalanceModalContent .cfh-broker-choice[aria-pressed=true]{background:var(--broker-bg,#e4dcf7);border-color:var(--broker-border,#b7a5e5)}#cfhBalanceModalContent .cfh-broker-choice[aria-pressed=true] .cfh-broker-choice-logo{background:var(--broker-soft,#f0ebfb)}#cfhBalanceModalContent .cfh-broker-choice[aria-pressed=true] .cfh-broker-choice-check{color:var(--broker-accent,#63508f)}
+
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 <style>
