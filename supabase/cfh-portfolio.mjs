@@ -449,7 +449,7 @@ function renderMarketNews(){
  const list=$('cfhMarketNewsList'),node=$('cfhMarketNewsStatus');if(!list||!node)return;list.replaceChildren();
  const date=marketFeed.fetched_at&&Number.isFinite(Date.parse(marketFeed.fetched_at))?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Manila'}).format(new Date(marketFeed.fetched_at)):null;
  const text=marketFeedBusy?'Checking PSE announcements…':marketFeedError||(date?'Last checked '+date:'Announcements load when connected.');node.textContent=text;
- const dividendStatus=$('cfhDividendAnnouncementStatus');if(dividendStatus)dividendStatus.textContent=text+(marketFeed.warnings?.length?' · Some sources could not refresh.':'');
+ const dividendStatus=$('cfhDividendAnnouncementStatus');if(dividendStatus)dividendStatus.textContent=text+(marketFeed.warnings?.length?' · '+marketFeed.warnings.join(' '):'');
  $('cfhMarketNewsRefresh').disabled=marketFeedBusy;
  for(const row of marketFeed.news){if(!/^https:\/\/edge\.pse\.com\.ph\/openDiscViewer\.do\?edge_no=[a-f0-9]{32}$/.test(row.url||''))continue;const link=document.createElement('a');link.className='cfh-news-source';link.href=row.url;link.target='_blank';link.rel='noopener noreferrer';const company=document.createElement('small'),title=document.createElement('strong'),date=document.createElement('span');company.textContent=row.company;title.textContent=row.title;date.textContent=row.published+' · PSE EDGE';link.append(company,title,date);list.append(link);}
  if(!list.childElementCount){const empty=document.createElement('p');empty.textContent=marketFeedBusy?'Loading announcements…':'No announcements loaded yet. Use Refresh to check.';list.append(empty);}

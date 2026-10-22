@@ -13,6 +13,7 @@ export function parseDividendSchedule(html,symbol,companyId){
  result.push({symbol,companyId,security,perShare,exDate,recordDate,paymentDate,url,circular:cleanText(c[6]),source:'PSE EDGE',key:[symbol,security,exDate,paymentDate,perShare].join('|')});
  }return result;
 }
+export function dividendScheduleIssues(html,symbol,today){let count=0;for(const c of rows(html)){if(c.length!==7||!['COMMON',symbol].includes(cleanText(c[0]).toUpperCase())||cleanText(c[1]).toLowerCase()!=='cash')continue;const pay=pseDate(c[5]);if(pay&&pay<today)continue;if(cashRate(c[2])===null||!pseDate(c[3])||!pseDate(c[4])||!pay)count++;}return count?[symbol+': A cash dividend has an unsupported rate or incomplete dates. Review the official PSE EDGE announcement.']:[];}
 export function parseCompanyNews(html){
  if(!/Announce Date and Time/.test(html)||!/Circular Number/.test(html))throw Error('PSE news format changed');
  const result=[];for(const c of rows(html)){if(c.length!==5)continue;const url=viewer(c[1]),companyId=/cmpy_id=(\d+)/.exec(c[0])?.[1];if(!url||!companyId)continue;const title=cleanText(c[1]);if(!title)continue;result.push({id:url.split('=').at(-1),title,company:cleanText(c[0]),companyId,published:cleanText(c[3]),circular:cleanText(c[4]),url,source:'PSE EDGE'});}return result;
