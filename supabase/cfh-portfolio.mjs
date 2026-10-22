@@ -151,7 +151,7 @@ function openMoney(){
  const modal=$('cfhMoneyModal');lockInvestmentBackground();modal.hidden=false;renderMoney();$('cfhMoneyBack').focus({preventScroll:true});
 }
 function renderMoney(){
- $('cfhMoneyBroker').value=moneyBroker;$('cfhMoneyFilter').value=moneyFilter;
+ $('cfhMoneyBroker').value=moneyBroker;$('cfhMoneyBrokerName').textContent=moneyBroker||'All Brokers';$('cfhMoneyFilter').value=moneyFilter;
  $('cfhMoneyLogo').replaceChildren(brokerLogoNode(moneyBroker));
  $('cfhMoneyCard').dataset.brokerTheme=brokerTheme(moneyBroker);
  $('cfhMoneyBalance').textContent=balancesHidden?'••••':peso(portfolio(state.rows,asset,moneyBroker).cashAvailable);
@@ -179,6 +179,7 @@ function openMoneyAction(action){
 }
 function updateMoneyChoices(){for(const option of $('cfhMoneyTo').options)option.disabled=!!option.value&&option.value===$('cfhMoneyFrom').value;if($('cfhMoneyTo').value===$('cfhMoneyFrom').value)$('cfhMoneyTo').value='';$('cfhMoneyAvailable').textContent=$('cfhMoneyFrom').value?'Cash balance: '+(balancesHidden?'••••':peso(portfolio(state.rows,asset,$('cfhMoneyFrom').value).cashAvailable)):'';}
 function mountMoney(){
+ window.cfhHandleManageMoneyBack=()=>{if($('cfhMoneyModal').hidden)return false;close('cfhMoneyModal');return true;};
  $('cfhMoneyBack').onclick=()=>close('cfhMoneyModal');
  $('cfhMoneyBroker').onchange=e=>{moneyBroker=e.target.value;renderMoney();};
  $('cfhMoneyFilter').onchange=e=>{moneyFilter=e.target.value;renderMoney();};

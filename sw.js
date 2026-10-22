@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v63-manage-money";
+const CACHE_NAME = "cashflow-hub-v64-money-profile-switch";
 
 const OFFLINE_ASSETS=[
   "./",
