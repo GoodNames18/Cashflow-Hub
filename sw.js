@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v69-mint-nav-invest-size";
+const CACHE_NAME = "cashflow-hub-v70-mint-icon-navy-label";
 
 const OFFLINE_ASSETS=[
   "./",
