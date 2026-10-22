@@ -132,24 +132,7 @@ function openValue(kind,h){editingId=crypto.randomUUID();const f=$('cfhPortfolio
 function renderPurchases(box){
  box.replaceChildren();
  const rows=recentPurchases(state.rows,asset);
- for(const r of rows){
-  const item=document.createElement('article');item.className='cfh-investment-card cfh-purchase-card';
-  const details=document.createElement('div');details.className='cfh-investment-details';
-  const title=document.createElement('strong');title.className='cfh-investment-title';title.textContent=r.symbol;
-  const broker=document.createElement('span');broker.className='cfh-investment-broker';broker.textContent=r.broker;details.append(title,broker);
-  const buy=document.createElement('div');buy.className='cfh-investment-buy';
-  const side=document.createElement('span');side.className='cfh-investment-side';side.textContent='BUY';
-  const price=document.createElement('strong');price.textContent=peso(r.price);
-  const qty=document.createElement('span');qty.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?(r.shares===1?'share':'shares'):(r.shares===1?'unit':'units'));buy.append(side,price,qty);
-  const badge=document.createElement('span');badge.className='cfh-investment-completed';badge.textContent='Completed';
-  const meta=document.createElement('div');meta.className='cfh-investment-meta';
-  const summary=document.createElement('div');summary.className='cfh-investment-summary';
-  const info=document.createElement('time');info.dateTime=r.date;info.textContent=new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(r.date+'T12:00:00Z'));
-  const fees=document.createElement('span');fees.textContent='Fees '+peso(r.fees);
-  const total=document.createElement('span');total.className='cfh-purchase-total';total.append(document.createTextNode('Total '));const value=document.createElement('strong');value.textContent=peso(money(r.shares*r.price+r.fees));total.append(value);summary.append(info,fees,total);meta.append(summary);
-  if(r.notes){const note=document.createElement('small');note.textContent=r.notes;meta.append(note);}
-  item.append(stockLogo(r.symbol),details,badge,buy,meta);box.append(item);
- }
+ for(const r of rows){const item=document.createElement('article');item.className='cfh-investment-card';const monogram=stockLogo(r.symbol);const details=document.createElement('div');details.className='cfh-investment-details';const title=document.createElement('strong');title.className='cfh-investment-title';title.textContent=r.symbol;const broker=document.createElement('span');broker.className='cfh-investment-broker';broker.textContent=' · '+r.broker;title.append(broker);const buy=document.createElement('p');buy.className='cfh-investment-buy';const side=document.createElement('span');side.className='cfh-investment-side';side.textContent='BUY';buy.append(side,document.createTextNode(' @ '+peso(r.price)+' · '+r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' '+(asset==='stock'?'shares':'units')));details.append(title,buy);const badge=document.createElement('span');badge.className='cfh-investment-completed';badge.textContent='Completed';const meta=document.createElement('div');meta.className='cfh-investment-meta';const info=document.createElement('time');info.dateTime=r.date;info.textContent=new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(r.date+'T12:00:00Z'));const total=document.createElement('span');total.textContent='Fees '+peso(r.fees)+' · Total '+peso(money(r.shares*r.price+r.fees));const summary=document.createElement('div');summary.className='cfh-investment-summary';summary.append(info,document.createTextNode(' · '),total);meta.append(summary);if(r.notes){const note=document.createElement('small');note.textContent=r.notes;meta.append(note);}item.append(monogram,details,badge,meta);box.append(item);}
  if(!rows.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent='No purchases recorded.';box.append(empty);}
 }
 function manilaToday(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
