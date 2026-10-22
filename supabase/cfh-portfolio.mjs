@@ -174,7 +174,7 @@ function renderDividends(){
   const broker=document.createElement('span');broker.className='cfh-dividend-broker';broker.textContent=r.broker;
   const chips=document.createElement('div');chips.className='cfh-dividend-chips';
   const qty=document.createElement('span');qty.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' Qty';
-  const rate=document.createElement('span');rate.textContent=peso(r.displayedRate??r.perShare)+' Dividend';chips.append(qty,rate);details.append(identity,broker,chips);
+  const rate=document.createElement('span');rate.textContent=peso(r.displayedRate??r.perShare)+' Dividend';chips.append(qty,rate);identity.append(broker);details.append(identity,chips);
   const amount=document.createElement('strong');amount.className='cfh-dividend-total';amount.textContent=peso(money(r.shares*r.perShare-r.tax));header.append(arrow,details,amount);
   const body=document.createElement('div');body.className='cfh-dividend-body';
   const formatDate=value=>value?new Intl.DateTimeFormat('en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):'—';
