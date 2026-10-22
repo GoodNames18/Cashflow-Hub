@@ -11,6 +11,13 @@ export function validateRecord(row){
   if(!Number.isFinite(row.perShare)||row.perShare<=0||row.perShare>1e12)throw Error('Enter a valid dividend per share.');
   if(!Number.isFinite(row.tax)||row.tax<0||row.tax>row.shares*row.perShare)throw Error('Enter valid tax withheld.');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(row.paymentDate||'')||new Date(row.paymentDate+'T12:00:00Z').toISOString().slice(0,10)!==row.paymentDate)throw Error('Enter a valid payment date.');
+  for(const field of ['expectedNetAmount','receivedNetAmount'])if(row[field]!==undefined&&(!Number.isFinite(row[field])||row[field]<0||row[field]>1e12||Math.abs(row[field]-money(row[field]))>1e-7))throw Error('Invalid dividend receipt amount.');
+  if(row.receivedNetAmount!==undefined){
+   if(row.status!=='paid'||row.receivedNetAmount<=0||row.expectedNetAmount===undefined)throw Error('Received dividends must be confirmed as paid.');
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(row.paidDate||'')||!Number.isFinite(Date.parse(row.paidDate+'T12:00:00Z'))||new Date(row.paidDate+'T12:00:00Z').toISOString().slice(0,10)!==row.paidDate)throw Error('Enter a valid receipt date.');
+   if(row.varianceAmount!==money(row.receivedNetAmount-row.expectedNetAmount))throw Error('Dividend difference does not match the receipt.');
+  }
+  if(row.reference!==undefined&&(typeof row.reference!=='string'||row.reference.length>120))throw Error('Invalid dividend reference.');
   if(row.notes&&row.notes.length>500)throw Error('Notes must be 500 characters or less.');
   return row;
  }
