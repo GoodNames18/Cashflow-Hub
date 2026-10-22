@@ -170,26 +170,34 @@ function renderDividends(){
  const due=rows.filter(r=>['overdue','due'].includes(dividendReceiptState(r,manilaToday()))).length;
  if(dividendStatus==='upcoming'&&due){const reminder=document.createElement('p');reminder.className='cfh-dividend-receipt-reminder';reminder.setAttribute('role','status');reminder.textContent=due+' dividend payment'+(due===1?' needs':'s need')+' confirmation. Check your broker before confirming receipt.';box.append(reminder);}
  for(const r of rows){
-  const item=document.createElement('details');item.className='cfh-dividend-card';
-  const header=document.createElement('summary');header.className='cfh-dividend-header';
-  const arrow=document.createElement('span');arrow.className='cfh-dividend-chevron';arrow.setAttribute('aria-hidden','true');arrow.textContent='›';
-  const details=document.createElement('div');details.className='cfh-dividend-heading';
-  const identity=document.createElement('div');identity.className='cfh-dividend-identity';
-  const title=document.createElement('strong');title.textContent=r.symbol;identity.append(stockLogo(r.symbol),title);
-  const broker=document.createElement('span');broker.className='cfh-dividend-broker';broker.textContent=r.broker;
-  const chips=document.createElement('div');chips.className='cfh-dividend-chips';
-  const qty=document.createElement('span');qty.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' Qty';
-  const rate=document.createElement('span');rate.textContent=peso(r.displayedRate??r.perShare)+' Dividend';chips.append(qty,rate);identity.append(broker);details.append(identity,chips);
-  const amount=document.createElement('strong');amount.className='cfh-dividend-total';amount.textContent=peso(dividendNet(r));header.append(arrow,details,amount);
-  const body=document.createElement('div');body.className='cfh-dividend-body';
+  const item=document.createElement('article');item.className='cfh-dividend-card cfh-dividend-calendar-card';
+  const header=document.createElement('div');header.className='cfh-dividend-calendar-header';
+  const identity=document.createElement('div');identity.className='cfh-dividend-company';
+  const title=document.createElement('strong');title.textContent=r.symbol;
+  const company=document.createElement('span');company.textContent=stockCompanies[r.symbol]||r.symbol;
+  const broker=document.createElement('small');broker.textContent=r.broker;
+  identity.append(title,company,broker);
+  const cash=document.createElement('span');cash.className='cfh-dividend-cash-badge';cash.textContent='Cash';
+  header.append(stockLogo(r.symbol),identity,cash);
+  const body=document.createElement('div');body.className='cfh-dividend-calendar-body';
+  const date=document.createElement('div');date.className='cfh-dividend-date-tile';
+  const label=document.createElement('span');label.textContent='Payment Date';
+  const day=document.createElement('strong'),month=document.createElement('span');
+  const scheduled=r.paymentDate?new Date(r.paymentDate+'T12:00:00Z'):null;
+  day.textContent=scheduled?String(scheduled.getUTCDate()):'—';month.textContent=scheduled?new Intl.DateTimeFormat('en-US',{month:'short',year:'numeric',timeZone:'UTC'}).format(scheduled):'—';date.append(label,day,month);
+  const info=document.createElement('div');info.className='cfh-dividend-calendar-info';
   const formatDate=value=>value?new Intl.DateTimeFormat('en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):'—';
-  for(const [label,value] of [['Gross Amount',peso(r.grossAmount??r.shares*r.perShare)],['Quantity',r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})],['Dividend Rate',peso(r.displayedRate??r.perShare)],['Ex-Date',formatDate(r.exDate)],[r.receivedNetAmount!==undefined?'Receipt Date':'Payment Date',formatDate(r.status==='paid'?(r.paidDate||r.paymentDate):r.paymentDate)]]){
-   const row=document.createElement('div');row.className='cfh-dividend-detail-row';const key=document.createElement('span');key.textContent=label;const val=document.createElement('span');val.textContent=value;row.append(key,val);body.append(row);
-  }
-  if(r.receivedNetAmount!==undefined){for(const [label,value] of [['Scheduled Payment Date',formatDate(r.paymentDate)],['Expected Amount',peso(expectedDividendNet(r))],['Actually Received',peso(r.receivedNetAmount)],['Difference',(r.varianceAmount>0?'+':'')+peso(r.varianceAmount)],['Reference',r.reference||'—']]){const line=document.createElement('div');line.className='cfh-dividend-detail-row';const key=document.createElement('span'),val=document.createElement('span');key.textContent=label;val.textContent=value;line.append(key,val);body.append(line);}}
-  if(dividendStatus==='upcoming'){const badge=document.createElement('small');badge.className='cfh-dividend-receipt-state';const receiptState=dividendReceiptState(r,manilaToday());badge.textContent=receiptState==='overdue'?'Payment date passed · Confirm receipt':receiptState==='due'?'Payment due today · Confirm receipt':'Expected · Not yet confirmed';details.append(badge);}
-  item.append(header,body);
-  if(dividendStatus==='upcoming'){const paid=document.createElement('button');paid.type='button';paid.className='cfh-dividend-mark-paid';paid.textContent='Confirm Received';paid.onclick=()=>openDividendReceipt(r);body.append(paid);}
+  const addRow=(label,value)=>{const row=document.createElement('div');row.className='cfh-dividend-detail-row';const key=document.createElement('span'),val=document.createElement('strong');key.textContent=label;val.textContent=value;row.append(key,val);info.append(row);};
+  const rate=new Intl.NumberFormat('en-PH',{style:'currency',currency:'PHP',minimumFractionDigits:2,maximumFractionDigits:8}).format(r.displayedRate??r.perShare);
+  addRow('Dividend Rate',rate+' per share');addRow('Ex-Dividend Date',formatDate(r.exDate));addRow('Record Date',formatDate(r.recordDate));
+  body.append(date,info);
+  const footer=document.createElement('div');footer.className='cfh-dividend-calendar-footer';
+  const qty=document.createElement('span');qty.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' shares';
+  const amount=document.createElement('strong');amount.textContent=(r.status==='paid'?'Received ':'Expected ')+peso(dividendNet(r));footer.append(qty,amount);
+  item.append(header,body,footer);
+  if(r.receivedNetAmount!==undefined){const receipt=document.createElement('details');receipt.className='cfh-dividend-receipt-details';const summary=document.createElement('summary');summary.textContent='Receipt details';receipt.append(summary);const content=document.createElement('div');content.className='cfh-dividend-calendar-info';for(const [label,value] of [['Receipt Date',formatDate(r.paidDate)],['Expected Amount',peso(expectedDividendNet(r))],['Actually Received',peso(r.receivedNetAmount)],['Difference',(r.varianceAmount>0?'+':'')+peso(r.varianceAmount)],['Reference',r.reference||'—']]){const line=document.createElement('div');line.className='cfh-dividend-detail-row';const key=document.createElement('span'),val=document.createElement('strong');key.textContent=label;val.textContent=value;line.append(key,val);content.append(line);}receipt.append(content);item.append(receipt);}
+  if(dividendStatus==='upcoming'){const badge=document.createElement('small');badge.className='cfh-dividend-receipt-state';const state=dividendReceiptState(r,manilaToday());badge.textContent=state==='overdue'?'Payment date passed · Awaiting confirmation':state==='due'?'Payment due today · Awaiting confirmation':'Expected · Not yet confirmed';const paid=document.createElement('button');paid.type='button';paid.className='cfh-dividend-mark-paid';paid.textContent='Confirm Received';paid.onclick=()=>openDividendReceipt(r);item.append(badge,paid);}
+
   box.append(item);
  }
  if(!rows.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent=dividendStatus==='paid'?'No paid dividends recorded yet.':'No upcoming dividends recorded yet.';box.append(empty);}
@@ -209,7 +217,7 @@ function renderHistoryView(){
  renderPurchases($('cfhPortfolioTransactions'));
  renderDividends();
 }
-function selectPortfolioView(view){portfolioView=view;renderHistoryView();window.syncActivePageHeight?.();}
+function selectPortfolioView(view){portfolioView=view;if(view==='dividends')dividendStatus='upcoming';renderHistoryView();window.syncActivePageHeight?.();}
 function openBalancePanel(title){clearTimeout(balanceCloseTimer);balanceCloseTimer=null;$('cfhBalanceModal').classList.remove('is-closing');const panel=$('cfhBalanceModal');panel.classList.toggle('is-breakdown',title==='Investment Breakdown');if(title==='Investment Breakdown')panel.dataset.brokerTheme=brokerTheme(balanceBroker);else delete panel.dataset.brokerTheme;$('cfhBalanceModalTitle').textContent=title;const heading=$('cfhBalanceModalTitle').parentElement;heading.hidden=!title;const dialog=$('cfhBalanceModal').querySelector('[role=dialog]');if(title){dialog.setAttribute('aria-labelledby','cfhBalanceModalTitle');dialog.removeAttribute('aria-label');}else{dialog.removeAttribute('aria-labelledby');dialog.setAttribute('aria-label','Choose broker');}$('cfhBalanceModalContent').replaceChildren();lockInvestmentBackground();$('cfhBalanceModal').hidden=false;$('cfhBalanceModal').querySelector('button').focus({preventScroll:true});return $('cfhBalanceModalContent');}
 function breakdown(){
  const box=openBalancePanel('Investment Breakdown'),p=balancePortfolio;

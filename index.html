@@ -1960,6 +1960,34 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 .cfh-dividend-list-total{margin:3px 0 12px;font-size:13px;font-weight:700;color:#1b1844}.cfh-dividend-receipt-reminder{margin:0 0 12px;padding:11px 13px;border-radius:10px;background:#fff1d9;color:#765018;font-size:12px;line-height:1.4}.cfh-dividend-receipt-state{font-size:10px;color:#765018;line-height:1.35}.cfh-dividend-receipt-dialog{gap:10px!important;padding:18px!important;max-height:80dvh!important}.cfh-dividend-receipt-dialog h2{font-size:20px}.cfh-dividend-receipt-dialog p{margin:0;font-size:12px;line-height:1.4}.cfh-dividend-receipt-dialog .cfh-portfolio-actions button{min-height:44px}.cfh-dividend-receipt-dialog button[type=submit]{background:#00ddad;color:#1b1844;font-weight:700}.cfh-dividend-receipt-date{display:block;position:relative;background:#e6e6fa;border:1px solid #d8d5ef;border-radius:11px;padding:12px}.cfh-dividend-receipt-date input{position:absolute;inset:0;width:100%;height:100%;opacity:0}.cfh-dividend-receipt-date:focus-within{outline:2px solid #1b1844;outline-offset:1px}#cfhDividendReceiptStatus:empty{display:none}
 
+
+/* Dividend calendar layout, matching the company/date hierarchy. */
+.cfh-dividend-calendar-card{padding:14px;margin:12px 0;border-radius:16px}
+.cfh-dividend-calendar-header{display:flex;align-items:flex-start;gap:10px;padding-bottom:12px;border-bottom:1px solid #e4e0ef}
+.cfh-dividend-calendar-header>.cfh-stock-logo{flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:white;object-fit:contain}
+.cfh-dividend-company{display:grid;gap:3px;min-width:0;flex:1}
+.cfh-dividend-company>strong{font-size:18px;line-height:1.2}
+.cfh-dividend-company>span{font-size:12px;line-height:1.35;color:#77738b;overflow-wrap:anywhere}
+.cfh-dividend-company>small{font-size:11px;color:#77738b}
+.cfh-dividend-cash-badge{border-radius:7px;padding:5px 9px;background:#e3f5ef;color:#008d69;font-size:12px;font-weight:600}
+.cfh-dividend-calendar-body{display:grid;grid-template-columns:94px minmax(0,1fr);gap:12px;padding:12px 0}
+.cfh-dividend-date-tile{display:flex;flex-direction:column;align-items:center;overflow:hidden;border-radius:10px;background:#f0edf8;align-self:start;padding-bottom:10px;gap:5px}
+.cfh-dividend-date-tile>span:first-child{width:100%;background:#dcefe8;color:#177353;text-align:center;font-size:11px;font-weight:600;padding:7px 2px;box-sizing:border-box}
+.cfh-dividend-date-tile>strong{font-size:29px;line-height:1.2;color:#008d69;margin-top:3px}
+.cfh-dividend-date-tile>span:last-child{font-size:12px;font-weight:600}
+.cfh-dividend-calendar-info{display:grid;gap:10px;align-content:start}
+.cfh-dividend-calendar-info .cfh-dividend-detail-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;line-height:1.4}
+.cfh-dividend-calendar-info .cfh-dividend-detail-row>span{color:#77738b;flex:1;min-width:0}
+.cfh-dividend-calendar-info .cfh-dividend-detail-row>strong{text-align:right;font-size:12px;max-width:58%;overflow-wrap:anywhere;font-weight:600}
+.cfh-dividend-calendar-footer{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #e4e0ef;padding-top:10px;font-size:12px}
+.cfh-dividend-calendar-footer>span{color:#77738b}
+.cfh-dividend-calendar-card>.cfh-dividend-receipt-state{display:block;margin-top:10px}
+.cfh-dividend-calendar-card>.cfh-dividend-mark-paid{width:100%;margin-top:10px;min-height:42px}
+.cfh-dividend-receipt-details{margin-top:10px;font-size:12px}
+.cfh-dividend-receipt-details>summary{cursor:pointer;padding:5px 0;color:#77738b}
+.cfh-dividend-receipt-details>.cfh-dividend-calendar-info{padding-top:8px}
+@media(max-width:360px){.cfh-dividend-calendar-card{padding:11px}.cfh-dividend-calendar-body{grid-template-columns:82px minmax(0,1fr);gap:9px}.cfh-dividend-calendar-info .cfh-dividend-detail-row{font-size:11px}.cfh-dividend-calendar-info .cfh-dividend-detail-row>strong{font-size:11px}}
+
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 <style>
