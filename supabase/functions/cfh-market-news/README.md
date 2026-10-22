@@ -8,6 +8,5 @@ The app checks on entry/resume and approximately every ten minutes while the por
 
 Eligible shares are recorded purchases dated before ex-date, separated by broker. Purchases on ex-date and future-dated purchases are excluded. Pre-ex-date quantities are provisional. Amounts are gross estimates before tax, never automatically marked received or credited to cash. Actual net receipts require explicit confirmation and use the existing synced dividend ledger. Automatically discovered future payouts are matched against existing records to avoid duplicates. Past unseen payments are not backfilled.
 
-The Upcoming-only sample card is a UI preview, with fictional dates, excluded from calculations and persistence, and cannot be confirmed.
 
 Deployment packages index.ts and ../../cfh-market-announcements.mjs together with their directory structure preserved. JWT verification must remain enabled.
