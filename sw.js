@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v74-watchlist-grid-fix";
+const CACHE_NAME = "cashflow-hub-v75-watchlist-editor";
 
 const OFFLINE_ASSETS=[
   "./",
