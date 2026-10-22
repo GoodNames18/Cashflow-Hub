@@ -281,7 +281,7 @@ function renderDividends(){
 function renderWatchlist(){
  const section=$('cfhMarketWatchlist');if(!section)return;section.hidden=portfolioView!=='market';
  const list=$('cfhWatchlistRows');list.replaceChildren();$('cfhWatchlistCount').textContent=watchlist.length+' symbols';
- $('cfhWatchlistEdit').textContent=watchEditing?'Done':'Edit';
+ $('cfhWatchlistEdit').setAttribute('aria-pressed',String(watchEditing));$('cfhWatchlistEdit').setAttribute('aria-label',watchEditing?'Finish editing watchlist':'Edit watchlist');
  const symbols=[...watchlist].sort((a,b)=>{let diff=watchSort==='price'?(liveStockPrices.get(a)?.price??-1)-(liveStockPrices.get(b)?.price??-1):a.localeCompare(b);return watchDescending?-diff:diff;});
  for(const symbol of symbols){const row=document.createElement('div');row.className='cfh-watch-row';const name=document.createElement('div');name.className='cfh-watch-name';name.append(stockLogo(symbol));const labels=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=symbol;small.textContent=stockCompanies[symbol];labels.append(strong,small);name.append(labels);const price=document.createElement('strong');price.textContent=peso(liveStockPrices.get(symbol)?.price??null);const action=document.createElement('span');action.textContent='—';action.title='Daily change is unavailable from the current price feed';if(watchEditing){const remove=document.createElement('button');remove.type='button';remove.textContent='−';remove.setAttribute('aria-label','Remove '+symbol);remove.onclick=()=>{watchlist=watchlist.filter(s=>s!==symbol);localStorage.setItem(KEY+':watchlist',JSON.stringify(watchlist));renderWatchlist();};action.replaceChildren(remove);}row.append(name,price,action);list.append(row);}
  if(!symbols.length){const empty=document.createElement('p');empty.textContent='Add stocks to follow their prices here.';list.append(empty);}
@@ -292,7 +292,7 @@ function renderHistoryView(){
  for(const id of ['cfhPortfolioMarket','cfhMarketPriceStatus']){const node=$(id);if(node)node.hidden=portfolioView!=='portfolio';}
  page.hidden=portfolioView==='portfolio';
  const dashboard=$('cfhPortfolioDashboard');if(dashboard)dashboard.hidden=portfolioView!=='portfolio';
- const title=$('cfhPortfolioTitle');if(title)title.textContent=portfolioView==='dividends'?'Dividend History':portfolioView==='history'?'History':portfolioView==='market'?'Market':portfolioView==='news'?'News':'Portfolio';
+ const title=$('cfhPortfolioTitle');if(title)title.parentElement.hidden=portfolioView==='market';if(title)title.textContent=portfolioView==='dividends'?'Dividend History':portfolioView==='history'?'History':portfolioView==='market'?'Market':portfolioView==='news'?'News':'Portfolio';
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>{const selected=b.dataset.portfolioPage===portfolioView;b.setAttribute('aria-pressed',String(selected));if(selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  const tx=$('cfhPortfolioTransactions'),divs=$('cfhPortfolioDividendSection');
  if(tx)tx.hidden=portfolioView!=='history';
@@ -357,10 +357,16 @@ export function mountPortfolio(){
  window.addEventListener('resize',syncCryptoNavHeight);syncCryptoNavHeight();
  mountCryptoNav(document,window);
  const sheetHandle=$('cfhBalanceModal').querySelector('.cfh-sheet-handle');let sheetStartY=null;sheetHandle.addEventListener('pointerdown',e=>{sheetStartY=e.clientY;sheetHandle.setPointerCapture(e.pointerId);});sheetHandle.addEventListener('pointerup',e=>{if(sheetStartY!==null&&e.clientY-sheetStartY>40)close('cfhBalanceModal');sheetStartY=null;});sheetHandle.addEventListener('pointercancel',()=>{sheetStartY=null;});for(const type of ['touchstart','touchmove','touchend','pointerdown','pointermove','pointerup'])$('cfhBalanceModal').addEventListener(type,e=>e.stopPropagation(),{passive:true});
+ const watchDialog=$('cfhWatchlistDialog');
+ $('cfhWatchlistAdd').onclick=()=>{lockInvestmentBackground();watchDialog.showModal();$('cfhWatchSymbol').focus();};
+ $('cfhWatchlistClose').onclick=()=>watchDialog.close();
+ watchDialog.addEventListener('close',()=>{unlockInvestmentBackground();$('cfhWatchlistAdd').focus({preventScroll:true});});
+ watchDialog.addEventListener('click',e=>{if(e.target!==watchDialog)return;const r=watchDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)watchDialog.close();});
+ for(const button of document.querySelectorAll('[data-watch-view]'))button.onclick=()=>{const grid=button.dataset.watchView==='grid';$('cfhMarketWatchlist').classList.toggle('is-grid',grid);document.querySelectorAll('[data-watch-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));window.syncActivePageHeight?.();};
  $('cfhWatchlistEdit').onclick=()=>{watchEditing=!watchEditing;renderWatchlist();};
  for(const button of document.querySelectorAll('[data-watch-sort]'))button.onclick=()=>{const next=button.dataset.watchSort;watchDescending=watchSort===next?!watchDescending:false;watchSort=next;renderWatchlist();};
  const suggestions=$('cfhWatchSymbols');for(const symbol of Object.keys(stockCompanies)){const option=document.createElement('option');option.value=symbol;option.label=stockCompanies[symbol];suggestions.append(option);}
- $('cfhWatchlistForm').onsubmit=e=>{e.preventDefault();const input=$('cfhWatchSymbol'),symbol=input.value.trim().toUpperCase();if(!Object.hasOwn(stockCompanies,symbol)){input.setCustomValidity('Choose a valid PSE stock symbol.');input.reportValidity();return;}if(!watchlist.includes(symbol))watchlist.push(symbol);localStorage.setItem(KEY+':watchlist',JSON.stringify(watchlist));input.value='';renderWatchlist();void refreshStockPrices();};
+ $('cfhWatchlistForm').onsubmit=e=>{e.preventDefault();const input=$('cfhWatchSymbol'),symbol=input.value.trim().toUpperCase();if(!Object.hasOwn(stockCompanies,symbol)){input.setCustomValidity('Choose a valid PSE stock symbol.');input.reportValidity();return;}if(!watchlist.includes(symbol))watchlist.push(symbol);localStorage.setItem(KEY+':watchlist',JSON.stringify(watchlist));input.value='';watchDialog.close();renderWatchlist();void refreshStockPrices();};
  $('cfhWatchSymbol').oninput=e=>e.target.setCustomValidity('');
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhBalanceManage').onclick=openMoney;$('cfhBalanceSwitch').onclick=switchBalanceBroker;$('cfhBalanceVisibility').onclick=()=>{balancesHidden=!balancesHidden;$('cfhBalanceVisibility').setAttribute('aria-pressed',String(balancesHidden));$('cfhBalanceVisibility').setAttribute('aria-label',balancesHidden?'Show balances':'Hide balances');render();};
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>{selectPortfolioView(b.dataset.portfolioPage);window.scrollTo({top:0,behavior:'auto'});});
