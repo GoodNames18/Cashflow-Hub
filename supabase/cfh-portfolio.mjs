@@ -217,27 +217,30 @@ export function mountPortfolio(){
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>{selectPortfolioView(b.dataset.portfolioPage);window.scrollTo({top:0,behavior:'auto'});});
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.onclick=()=>{dividendStatus=b.dataset.dividendStatus;renderHistoryView();});
  let dividendTouch=null,dividendSwipeUntil=0;
- const swipeSurface=$('cfhPortfolioHistoryView');
+ const swipeSurface=$('cfhPortfolioPage');
  swipeSurface.addEventListener('touchstart',e=>{
-  if(portfolioView!=='dividends'||e.touches.length!==1||e.target.closest('button,input,select,textarea,a')){dividendTouch=null;return;}
+  const control=e.target.closest('button,input,select,textarea,a');
+  if(portfolioView!=='dividends'||e.touches.length!==1||e.target.closest('.cfh-portfolio-overlay,#cfhCryptoNav')||(control&&!control.matches('[data-dividend-status]'))){dividendTouch=null;return;}
   const t=e.touches[0];dividendTouch={x:t.clientX,y:t.clientY,horizontal:false};e.stopPropagation();
- },{passive:true});
+ },{passive:true,capture:true});
  swipeSurface.addEventListener('touchmove',e=>{
   if(!dividendTouch)return;
+  if(e.touches.length!==1){dividendTouch=null;return;}
   const t=e.touches[0],dx=t.clientX-dividendTouch.x,dy=t.clientY-dividendTouch.y;
-  if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){dividendTouch=null;return;}
-  if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.5){dividendTouch.horizontal=true;if(e.cancelable)e.preventDefault();e.stopPropagation();}
- },{passive:false});
+  if(!dividendTouch.horizontal&&Math.abs(dy)>18&&Math.abs(dy)>Math.abs(dx)*1.4){dividendTouch=null;return;}
+  if(Math.abs(dx)>=8&&Math.abs(dx)>Math.abs(dy)*1.15)dividendTouch.horizontal=true;
+  if(dividendTouch.horizontal){if(e.cancelable)e.preventDefault();e.stopPropagation();}
+ },{passive:false,capture:true});
  swipeSurface.addEventListener('touchend',e=>{
   if(!dividendTouch)return;
   const start=dividendTouch;dividendTouch=null;const t=e.changedTouches[0];
   const dx=t.clientX-start.x,dy=t.clientY-start.y;
-  if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;
-  e.stopPropagation();dividendSwipeUntil=Date.now()+400;
+  if(Math.abs(dx)<24||(!start.horizontal&&Math.abs(dx)<Math.abs(dy)*1.15))return;
+  if(e.cancelable)e.preventDefault();e.stopPropagation();dividendSwipeUntil=Date.now()+400;
   const next=dx<0?'upcoming':'paid';
   if(dividendStatus!==next){dividendStatus=next;renderHistoryView();}
- },{passive:true});
- swipeSurface.addEventListener('touchcancel',()=>{dividendTouch=null;},{passive:true});
+ },{passive:false,capture:true});
+ swipeSurface.addEventListener('touchcancel',()=>{dividendTouch=null;},{passive:true,capture:true});
  swipeSurface.addEventListener('click',e=>{if(Date.now()<dividendSwipeUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
 
  $('cfhPortfolioDividendForm').onsubmit=saveDividend;
