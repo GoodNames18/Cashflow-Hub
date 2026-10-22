@@ -209,7 +209,6 @@ function breakdown(){
  top.append(chart);
  const legend=document.createElement('div');legend.className='cfh-breakdown-legend';
  for(const [label,value,kind] of [[asset==='stock'?'Stocks':'Crypto',p.value,'assets'],['Cash',p.cashAvailable,'cash'],['Funds',null,'funds']]){const row=document.createElement('div');row.className='cfh-breakdown-row';const name=document.createElement('span'),dot=document.createElement('i'),amount=document.createElement('strong');dot.className='cfh-breakdown-dot '+kind;name.append(dot,document.createTextNode(label));amount.textContent=balancesHidden?'••••':peso(value);row.append(name,amount);legend.append(row);}top.append(legend);box.append(top);
- const availability=document.createElement('div');availability.className='cfh-breakdown-availability';for(const label of ['Available to Trade','Available to Withdraw']){const cell=document.createElement('div'),name=document.createElement('span'),value=document.createElement('strong');name.textContent=label;value.textContent=balancesHidden?'••••':'—';cell.append(name,value);availability.append(cell);}box.append(availability);
 }
 
 function switchBalanceBroker(){
