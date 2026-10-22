@@ -170,6 +170,29 @@ function renderDividends(){
  const due=rows.filter(r=>['overdue','due'].includes(dividendReceiptState(r,manilaToday()))).length;
  if(dividendStatus==='upcoming'&&due){const reminder=document.createElement('p');reminder.className='cfh-dividend-receipt-reminder';reminder.setAttribute('role','status');reminder.textContent=due+' dividend payment'+(due===1?' needs':'s need')+' confirmation. Check your broker before confirming receipt.';box.append(reminder);}
  for(const r of rows){
+ if(dividendStatus==='paid'){
+  const item=document.createElement('details');item.className='cfh-dividend-card';
+  const header=document.createElement('summary');header.className='cfh-dividend-header';
+  const arrow=document.createElement('span');arrow.className='cfh-dividend-chevron';arrow.setAttribute('aria-hidden','true');arrow.textContent='›';
+  const details=document.createElement('div');details.className='cfh-dividend-heading';
+  const identity=document.createElement('div');identity.className='cfh-dividend-identity';
+  const title=document.createElement('strong');title.textContent=r.symbol;identity.append(stockLogo(r.symbol),title);
+  const broker=document.createElement('span');broker.className='cfh-dividend-broker';broker.textContent=r.broker;
+  const chips=document.createElement('div');chips.className='cfh-dividend-chips';
+  const qty=document.createElement('span');qty.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' Qty';
+  const rate=document.createElement('span');rate.textContent=peso(r.displayedRate??r.perShare)+' Dividend';chips.append(qty,rate);identity.append(broker);details.append(identity,chips);
+  const amount=document.createElement('strong');amount.className='cfh-dividend-total';amount.textContent=peso(dividendNet(r));header.append(arrow,details,amount);
+  const body=document.createElement('div');body.className='cfh-dividend-body';
+  const formatDate=value=>value?new Intl.DateTimeFormat('en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):'—';
+  for(const [label,value] of [['Gross Amount',peso(r.grossAmount??r.shares*r.perShare)],['Quantity',r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})],['Dividend Rate',peso(r.displayedRate??r.perShare)],['Ex-Date',formatDate(r.exDate)],[r.receivedNetAmount!==undefined?'Receipt Date':'Payment Date',formatDate(r.status==='paid'?(r.paidDate||r.paymentDate):r.paymentDate)]]){
+   const row=document.createElement('div');row.className='cfh-dividend-detail-row';const key=document.createElement('span');key.textContent=label;const val=document.createElement('span');val.textContent=value;row.append(key,val);body.append(row);
+  }
+  if(r.receivedNetAmount!==undefined){for(const [label,value] of [['Scheduled Payment Date',formatDate(r.paymentDate)],['Expected Amount',peso(expectedDividendNet(r))],['Actually Received',peso(r.receivedNetAmount)],['Difference',(r.varianceAmount>0?'+':'')+peso(r.varianceAmount)],['Reference',r.reference||'—']]){const line=document.createElement('div');line.className='cfh-dividend-detail-row';const key=document.createElement('span'),val=document.createElement('span');key.textContent=label;val.textContent=value;line.append(key,val);body.append(line);}}
+  if(dividendStatus==='upcoming'){const badge=document.createElement('small');badge.className='cfh-dividend-receipt-state';const receiptState=dividendReceiptState(r,manilaToday());badge.textContent=receiptState==='overdue'?'Payment date passed · Confirm receipt':receiptState==='due'?'Payment due today · Confirm receipt':'Expected · Not yet confirmed';details.append(badge);}
+  item.append(header,body);
+  if(dividendStatus==='upcoming'){const paid=document.createElement('button');paid.type='button';paid.className='cfh-dividend-mark-paid';paid.textContent='Confirm Received';paid.onclick=()=>openDividendReceipt(r);body.append(paid);}
+  box.append(item);continue;
+ }
   const item=document.createElement('article');item.className='cfh-dividend-card cfh-dividend-calendar-card';
   const header=document.createElement('div');header.className='cfh-dividend-calendar-header';
   const identity=document.createElement('div');identity.className='cfh-dividend-company';
