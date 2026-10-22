@@ -298,7 +298,7 @@ function breakdown(){
  const top=document.createElement('div');top.className='cfh-breakdown-assets';
  const chart=document.createElement('div');chart.className='cfh-breakdown-donut';chart.setAttribute('role','img');chart.setAttribute('aria-label',balancesHidden?'Balances hidden':'Recorded '+(asset==='stock'?'stocks':'crypto')+' and cash allocation');
  const total=p.value===null?null:p.value+p.cashAvailable;
- if(!balancesHidden&&total>0&&p.value>=0&&p.cashAvailable>=0){const share=p.value/total*100;chart.style.background=`conic-gradient(#dfce00 0% ${share}%,#00a779 ${share}% 100%)`;}
+ if(!balancesHidden&&total>0&&p.value>=0&&p.cashAvailable>=0){const share=p.value/total*100;chart.style.background=`conic-gradient(#00F8B9 0% ${share}%,#1B1844 ${share}% 100%)`;}
  top.append(chart);
  const legend=document.createElement('div');legend.className='cfh-breakdown-legend';
  for(const [label,value,kind] of [[asset==='stock'?'Stocks':'Crypto',p.value,'assets'],['Cash',p.cashAvailable,'cash'],['Funds',null,'funds']]){const row=document.createElement('div');row.className='cfh-breakdown-row';const name=document.createElement('span'),dot=document.createElement('i'),amount=document.createElement('strong');dot.className='cfh-breakdown-dot '+kind;name.append(dot,document.createTextNode(label));amount.textContent=balancesHidden?'••••':peso(value);row.append(name,amount);legend.append(row);}top.append(legend);box.append(top);
