@@ -233,6 +233,30 @@ export function mountPortfolio(){
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>{selectPortfolioView(b.dataset.portfolioPage);window.scrollTo({top:0,behavior:'auto'});});
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.onclick=()=>{dividendStatus=b.dataset.dividendStatus;renderHistoryView();});
+ let dividendTouch=null,dividendSwipeUntil=0;
+ const swipeSurface=$('cfhPortfolioHistoryView');
+ swipeSurface.addEventListener('touchstart',e=>{
+  if(portfolioView!=='dividends'||e.touches.length!==1||e.target.closest('button,input,select,textarea,a')){dividendTouch=null;return;}
+  const t=e.touches[0];dividendTouch={x:t.clientX,y:t.clientY,horizontal:false};e.stopPropagation();
+ },{passive:true});
+ swipeSurface.addEventListener('touchmove',e=>{
+  if(!dividendTouch)return;
+  const t=e.touches[0],dx=t.clientX-dividendTouch.x,dy=t.clientY-dividendTouch.y;
+  if(Math.abs(dy)>12&&Math.abs(dy)>Math.abs(dx)){dividendTouch=null;return;}
+  if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.5){dividendTouch.horizontal=true;if(e.cancelable)e.preventDefault();e.stopPropagation();}
+ },{passive:false});
+ swipeSurface.addEventListener('touchend',e=>{
+  if(!dividendTouch)return;
+  const start=dividendTouch;dividendTouch=null;const t=e.changedTouches[0];
+  const dx=t.clientX-start.x,dy=t.clientY-start.y;
+  if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;
+  e.stopPropagation();dividendSwipeUntil=Date.now()+400;
+  const next=dx<0?'upcoming':'paid';
+  if(dividendStatus!==next){dividendStatus=next;renderHistoryView();}
+ },{passive:true});
+ swipeSurface.addEventListener('touchcancel',()=>{dividendTouch=null;},{passive:true});
+ swipeSurface.addEventListener('click',e=>{if(Date.now()<dividendSwipeUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
+
  $('cfhPortfolioDividendForm').onsubmit=saveDividend;
  $('cfhPortfolioDividendForm').oninput=updateDividendTotal;
  for(const b of document.querySelectorAll('[data-portfolio-asset]'))b.onclick=()=>{asset=b.dataset.portfolioAsset;render();if(asset==='stock')void refreshStockPrices();};
