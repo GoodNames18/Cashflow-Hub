@@ -22,6 +22,10 @@ export function validateRecord(row){
   return row;
  }
  if(!Number.isFinite(row.price)||row.price<0||row.price>1e12||(row.kind==='purchase'&&row.price===0))throw Error('Enter a valid price.');
+ if(row.kind==='cash'&&row.action!==undefined){
+  if(!['deposit','withdraw','transfer'].includes(row.action)||row.price<=0||money(row.price)!==row.price)throw Error('Enter a positive amount with at most two decimal places.');
+  if(row.action==='transfer'&&(typeof row.toBroker!=='string'||!row.toBroker.trim()||row.toBroker.length>80||row.toBroker===row.broker))throw Error('Choose two different brokers.');
+ }
  if(row.kind==='purchase'){
   if(!Number.isFinite(row.shares)||row.shares<=0||row.shares>1e12||(row.asset==='stock'&&!Number.isInteger(row.shares)))throw Error('Enter valid shares or units.');
   if(!Number.isFinite(row.fees)||row.fees<0||row.fees>1e12)throw Error('Enter valid broker fees.');
@@ -34,19 +38,24 @@ export function validateRecord(row){
 // COL, DragonFi and Lite portfolio displays estimate future selling charges at 0.395%.
 // Aggregate rounding matches its displayed net values; execution invoice rounding may differ.
 export function portfolioSellingFees(gross,asset,broker){return asset==='stock'&&/^(?:col(?: financial)?|dragonfi(?: lite(?: \(maya\))?)?)$/i.test(broker.trim())?money(gross*(.0025+.0025*.12+.00005+.0001+.001)):0;}
-export function portfolio(records,asset='stock'){
+export function portfolio(records,asset='stock',brokerFilter=''){
  const rows=records.filter(r=>{try{return validateRecord(r)&&r.asset===asset;}catch{return false;}}).slice().sort((a,b)=>String(a.at||'').localeCompare(String(b.at||''))||String(a.id||'').localeCompare(String(b.id||''))),groups=new Map(),quotes=new Map(),cash=new Map();
  for(const row of rows){
   try{validateRecord(row);}catch{continue;}
   if(row.kind==='dividend')continue;
   const key=row.broker+'|'+row.symbol;
-  if(row.kind==='cash'){cash.set(row.broker,row.price);continue;}
+  if(row.kind==='cash'){
+   if(!row.action)cash.set(row.broker,row.price);
+   else {cash.set(row.broker,money((cash.get(row.broker)||0)+(row.action==='deposit'?row.price:-row.price)));if(row.action==='transfer')cash.set(row.toBroker,money((cash.get(row.toBroker)||0)+row.price));}
+   continue;
+  }
+  if(brokerFilter&&row.broker!==brokerFilter)continue;
   if(row.kind==='quote'){quotes.set(key,row);continue;}
   const h=groups.get(key)||{key,broker:row.broker,symbol:row.symbol,shares:0,cost:0};
   h.shares+=row.shares;h.cost=money(h.cost+money(row.shares*row.price+row.fees));groups.set(key,h);
  }
  const holdings=[...groups.values()].map(h=>{const q=quotes.get(h.key);const grossValue=q?money(h.shares*q.price):null;const sellingFees=grossValue===null?null:portfolioSellingFees(grossValue,asset,h.broker);const value=grossValue===null?null:money(grossValue-sellingFees);return {...h,price:q?.price??null,quoteAt:q?.at??null,grossValue,sellingFees,value,gain:value===null?null:money(value-h.cost),percent:value===null?null:(value-h.cost)/h.cost*100};}).sort((a,b)=>a.symbol.localeCompare(b.symbol)||a.broker.localeCompare(b.broker));
- const invested=money(holdings.reduce((n,h)=>n+h.cost,0)),cashAvailable=money([...cash.values()].reduce((n,v)=>n+v,0));
+ const invested=money(holdings.reduce((n,h)=>n+h.cost,0)),cashAvailable=money([...cash.entries()].filter(([name])=>!brokerFilter||name===brokerFilter).reduce((n,[,v])=>n+v,0));
  const complete=holdings.every(h=>h.value!==null),value=complete?money(holdings.reduce((n,h)=>n+h.value,0)):null;
  return {holdings,invested,cashAvailable,value,balance:value===null?null:money(value+cashAvailable),gain:value===null?null:money(value-invested),percent:value===null||!invested?null:(value-invested)/invested*100};
 }
@@ -59,4 +68,13 @@ export function marketPhase(now=new Date(),asset='stock'){
  if(t>=720&&t<780)return {label:'Market recess · schedule',open:false};
  if(t>=885)return {label:'Closing session · schedule',open:true};
  return {label:'Stock market open · schedule',open:true};
+}
+
+export function cashMovement(records,{asset='stock',action,broker,toBroker,amount},id,at=new Date().toISOString()){
+ if(!['deposit','withdraw','transfer'].includes(action))throw Error('Choose a cash action.');
+ const raw=String(amount).trim();if(!/^\d+(?:\.\d{1,2})?$/.test(raw))throw Error('Enter an amount with at most two decimal places.');
+ const row={id,at,kind:'cash',asset,action,broker,toBroker:action==='transfer'?toBroker:undefined,price:Number(raw)};validateRecord(row);
+ if(action!=='deposit'&&row.price>portfolio(records,asset,broker).cashAvailable)throw Error('Not enough cash at the source broker.');
+ if(portfolio(records,asset,action==='transfer'?toBroker:broker).cashAvailable+(action==='withdraw'?-row.price:row.price)>1e12)throw Error('Cash balance is too large.');
+ return row;
 }
