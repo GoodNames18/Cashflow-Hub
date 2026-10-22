@@ -148,19 +148,24 @@ function renderDividends(){
  const box=$('cfhPortfolioDividendList');if(!box)return;box.replaceChildren();
  const rows=currentDividends().filter(r=>r.status===dividendStatus).sort((a,b)=>dividendStatus==='upcoming'?a.paymentDate.localeCompare(b.paymentDate):b.paymentDate.localeCompare(a.paymentDate));
  for(const r of rows){
-  const item=document.createElement('article');item.className='cfh-investment-card cfh-dividend-card';
-  item.append(stockLogo(r.symbol));
-  const details=document.createElement('div');details.className='cfh-investment-details';
-  const title=document.createElement('strong');title.className='cfh-investment-title';title.textContent=r.symbol;
-  const broker=document.createElement('span');broker.className='cfh-investment-broker';broker.textContent=' · '+r.broker;title.append(broker);
-  const line=document.createElement('p');line.className='cfh-investment-buy';line.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' Qty · '+peso(r.perShare)+' Dividend';details.append(title,line);
-  const amount=document.createElement('strong');amount.className='cfh-dividend-total';amount.textContent=peso(money(r.shares*r.perShare-r.tax));
-  const meta=document.createElement('div');meta.className='cfh-investment-meta';
-  const date=document.createElement('time');date.dateTime=r.status==='paid'?(r.paidDate||r.paymentDate):r.paymentDate;date.textContent=new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(date.dateTime+'T12:00:00Z'));
-  const info=document.createElement('span');info.textContent=(dividendStatus==='paid'?'Paid':'Expected')+' · Net amount';
-  meta.append(date,document.createTextNode(' · '),info);if(r.notes){const note=document.createElement('small');note.textContent=r.notes;meta.append(note);}
-  item.append(amount,meta);
-  if(dividendStatus==='upcoming'){const paid=document.createElement('button');paid.type='button';paid.className='cfh-dividend-mark-paid';paid.textContent='Mark as paid';paid.onclick=()=>{editingId=crypto.randomUUID();localSave({...r,id:editingId,recordId:r.recordId||r.id,status:'paid',paidDate:manilaToday()});renderHistoryView();};item.append(paid);}
+  const item=document.createElement('details');item.className='cfh-dividend-card';
+  const header=document.createElement('summary');header.className='cfh-dividend-header';
+  const arrow=document.createElement('span');arrow.className='cfh-dividend-chevron';arrow.setAttribute('aria-hidden','true');arrow.textContent='›';
+  const details=document.createElement('div');details.className='cfh-dividend-heading';
+  const identity=document.createElement('div');identity.className='cfh-dividend-identity';
+  const title=document.createElement('strong');title.textContent=r.symbol;identity.append(stockLogo(r.symbol),title);
+  const broker=document.createElement('span');broker.className='cfh-dividend-broker';broker.textContent=r.broker;
+  const chips=document.createElement('div');chips.className='cfh-dividend-chips';
+  const qty=document.createElement('span');qty.textContent=r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})+' Qty';
+  const rate=document.createElement('span');rate.textContent=peso(r.displayedRate??r.perShare)+' Dividend';chips.append(qty,rate);identity.append(broker);details.append(identity,chips);
+  const amount=document.createElement('strong');amount.className='cfh-dividend-total';amount.textContent=peso(money(r.shares*r.perShare-r.tax));header.append(arrow,details,amount);
+  const body=document.createElement('div');body.className='cfh-dividend-body';
+  const formatDate=value=>value?new Intl.DateTimeFormat('en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z')):'—';
+  for(const [label,value] of [['Gross Amount',peso(r.grossAmount??r.shares*r.perShare)],['Quantity',r.shares.toLocaleString('en-PH',{maximumFractionDigits:8})],['Dividend Rate',peso(r.displayedRate??r.perShare)],['Ex-Date',formatDate(r.exDate)],['Payment Date',formatDate(r.status==='paid'?(r.paidDate||r.paymentDate):r.paymentDate)]]){
+   const row=document.createElement('div');row.className='cfh-dividend-detail-row';const key=document.createElement('span');key.textContent=label;const val=document.createElement('span');val.textContent=value;row.append(key,val);body.append(row);
+  }
+  item.append(header,body);
+  if(dividendStatus==='upcoming'){const paid=document.createElement('button');paid.type='button';paid.className='cfh-dividend-mark-paid';paid.textContent='Mark as paid';paid.onclick=()=>{editingId=crypto.randomUUID();localSave({...r,id:editingId,recordId:r.recordId||r.id,status:'paid',paidDate:manilaToday()});renderHistoryView();};body.append(paid);}
   box.append(item);
  }
  if(!rows.length){const empty=document.createElement('p');empty.className='cfh-portfolio-empty';empty.textContent=dividendStatus==='paid'?'No paid dividends recorded yet.':'No upcoming dividends recorded yet.';box.append(empty);}
@@ -211,6 +216,33 @@ export function mountPortfolio(){
  $('cfhPortfolioInvestButton').onclick=openInvest;$('cfhPortfolioBreakdown').onclick=breakdown;$('cfhPortfolioCashButton').onclick=()=>openValue('cash');
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>b.onclick=()=>{selectPortfolioView(b.dataset.portfolioPage);window.scrollTo({top:0,behavior:'auto'});});
  document.querySelectorAll('[data-dividend-status]').forEach(b=>b.onclick=()=>{dividendStatus=b.dataset.dividendStatus;renderHistoryView();});
+ let dividendTouch=null,dividendSwipeUntil=0;
+ const swipeSurface=document;
+ swipeSurface.addEventListener('touchstart',e=>{
+  const control=e.target.closest('button,input,select,textarea,a');
+  if($('cfhPortfolioPage').hidden||portfolioView!=='dividends'||e.touches.length!==1||e.target.closest('.cfh-portfolio-overlay,#cfhCryptoNav,.cfh-bottom-nav')||(control&&!control.matches('[data-dividend-status]'))){dividendTouch=null;return;}
+  const t=e.touches[0];dividendTouch={x:t.clientX,y:t.clientY,horizontal:false};e.stopPropagation();
+ },{passive:true,capture:true});
+ swipeSurface.addEventListener('touchmove',e=>{
+  if(!dividendTouch)return;
+  if(e.touches.length!==1){dividendTouch=null;return;}
+  const t=e.touches[0],dx=t.clientX-dividendTouch.x,dy=t.clientY-dividendTouch.y;
+  if(!dividendTouch.horizontal&&Math.abs(dy)>18&&Math.abs(dy)>Math.abs(dx)*1.4){dividendTouch=null;return;}
+  if(Math.abs(dx)>=8&&Math.abs(dx)>Math.abs(dy)*1.15)dividendTouch.horizontal=true;
+  if(dividendTouch.horizontal){if(e.cancelable)e.preventDefault();e.stopPropagation();}
+ },{passive:false,capture:true});
+ swipeSurface.addEventListener('touchend',e=>{
+  if(!dividendTouch)return;
+  const start=dividendTouch;dividendTouch=null;const t=e.changedTouches[0];
+  const dx=t.clientX-start.x,dy=t.clientY-start.y;
+  if(Math.abs(dx)<24||(!start.horizontal&&Math.abs(dx)<Math.abs(dy)*1.15))return;
+  if(e.cancelable)e.preventDefault();e.stopPropagation();dividendSwipeUntil=Date.now()+400;
+  const next=dx<0?'upcoming':'paid';
+  if(dividendStatus!==next){dividendStatus=next;renderHistoryView();}
+ },{passive:false,capture:true});
+ swipeSurface.addEventListener('touchcancel',()=>{dividendTouch=null;},{passive:true,capture:true});
+ swipeSurface.addEventListener('click',e=>{if(Date.now()<dividendSwipeUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
+
  $('cfhPortfolioDividendForm').onsubmit=saveDividend;
  $('cfhPortfolioDividendForm').oninput=updateDividendTotal;
  for(const b of document.querySelectorAll('[data-portfolio-asset]'))b.onclick=()=>{asset=b.dataset.portfolioAsset;render();if(asset==='stock')void refreshStockPrices();};
