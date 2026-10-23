@@ -318,5 +318,8 @@
   "supabase/legacy-rules.mjs",
   "supabase/manila-date.mjs",
   "supabase/rules-environment.mjs",
-  "supabase/vendor/supabase-js.mjs"
+  "supabase/vendor/supabase-js.mjs",
+  "supabase/cfh-notes-content.mjs",
+  "supabase/cfh-notes-editor.mjs",
+  "supabase/cfh-notes-wave.mjs"
 ]
