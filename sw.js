@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v81-notes-compact-actions";
+const CACHE_NAME = "cashflow-hub-v82-watchlist-back-navigation";
 
 const OFFLINE_ASSETS=[
   "./",
