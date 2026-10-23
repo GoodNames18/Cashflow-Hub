@@ -11104,9 +11104,6 @@ body.cfh-notes-create-open #cfhNotesCreateButton{visibility:hidden;pointer-event
 #cfhNotesPage .cfh-note-pin{box-sizing:border-box;display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;min-width:24px;min-height:24px;margin:0 0 0 auto;padding:0;font-size:15px}
 
 #cfhNotesEditorBox #cfhNotesTitle:focus,#cfhNotesEditorBox #cfhNotesBody:focus{outline:none;box-shadow:none;border:0}
-#cfhNotesEditorBox .cfh-note-editor-footer,#cfhNotesEditorBox .cfh-note-editor-panel{background:var(--cfh-note-background,#fff)}
-#cfhNotesEditorBox .cfh-note-editor-panel button:not(.cfh-note-color),#cfhNotesEditorBox .cfh-note-icon-button[aria-pressed=true],#cfhNotesEditorBox .cfh-note-icon-button[aria-expanded=true]{background:color-mix(in srgb,var(--cfh-note-background,#fff) 92%,#1B1844 8%);color:#1B1844}
-#cfhNotesMorePanel input,#cfhNotesMorePanel select{background:var(--cfh-note-background,#fff)}
 /* Full-screen Notes editor: only its canvas scrolls; tools remain above the keyboard. */
 body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none}
 #cfhNotesEditor{box-sizing:border-box;inset:auto 0 auto;top:var(--cfh-note-viewport-top,0px);height:var(--cfh-note-viewport-height,100dvh);padding:0;background:#fff;display:block;overflow:hidden}
@@ -11128,6 +11125,9 @@ body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none
 #cfhNotesEditorBox [hidden]{display:none!important}
 #cfhNotesEditorBox .cfh-note-check-row input[type=text]{font-weight:400;padding:8px 0}
 @media(min-width:700px){.cfh-note-editor-content{padding-left:max(24px,calc((100vw - 760px)/2));padding-right:max(24px,calc((100vw - 760px)/2))}}
+#cfhNotesEditorBox .cfh-note-editor-footer,#cfhNotesEditorBox .cfh-note-editor-panel{background:var(--cfh-note-background,#fff)}
+#cfhNotesEditorBox .cfh-note-editor-panel button:not(.cfh-note-color),#cfhNotesEditorBox .cfh-note-icon-button[aria-pressed=true],#cfhNotesEditorBox .cfh-note-icon-button[aria-expanded=true]{background:color-mix(in srgb,var(--cfh-note-background,#fff) 92%,#1B1844 8%);color:#1B1844}
+#cfhNotesMorePanel input,#cfhNotesMorePanel select{background:var(--cfh-note-background,#fff)}
 </style>
 <main id="cfhNotesPage" hidden aria-label="Notes">
  <header class="cfh-notes-head">
