@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v92-background-sync';
+const CACHE_NAME = 'cashflow-hub-v93-compact-note-audio';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
