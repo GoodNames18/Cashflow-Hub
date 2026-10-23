@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v95-notes-tight-columns';
+const CACHE_NAME = 'cashflow-hub-v96-note-canvas-focus';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
