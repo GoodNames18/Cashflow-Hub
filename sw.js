@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v79-notes-drawer-create-menu";
+const CACHE_NAME = "cashflow-hub-v80-watchlist-editor-buttons";
 
 const OFFLINE_ASSETS=[
   "./",
