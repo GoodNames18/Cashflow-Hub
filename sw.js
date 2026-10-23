@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v85-notes-balanced-pill-padding";
+const CACHE_NAME = "cashflow-hub-v86-notes-fullscreen-immediate-save";
 
 const OFFLINE_ASSETS=[
   "./",
