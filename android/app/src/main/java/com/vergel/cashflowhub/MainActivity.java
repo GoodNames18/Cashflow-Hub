@@ -9,18 +9,12 @@ public class MainActivity extends BridgeActivity {
   getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
    private boolean checking = false;
    @Override public void handleOnBackPressed() {
-    if (checking) return;
-    if (getBridge() == null || getBridge().getWebView() == null) { passBack(); return; }
+    if (checking || getBridge() == null || getBridge().getWebView() == null) return;
     checking = true;
     getBridge().getWebView().evaluateJavascript(
-     "Boolean(window.cfhHandleWatchlistBack && window.cfhHandleWatchlistBack()) || Boolean(window.cfhHandleNotesBack && window.cfhHandleNotesBack()) || Boolean(window.cfhHandleManageMoneyBack && window.cfhHandleManageMoneyBack())",
-     handled -> { checking = false; if (!"true".equals(handled)) passBack(); }
+     "typeof window.cfhHandleAppBack === 'function' ? (window.cfhHandleAppBack() ? 'handled' : 'root') : 'loading'",
+     result -> { checking = false; if ("\"root\"".equals(result)) moveTaskToBack(true); }
     );
-   }
-   private void passBack() {
-    setEnabled(false);
-    try { getOnBackPressedDispatcher().onBackPressed(); }
-    finally { setEnabled(true); }
    }
   });
  }
