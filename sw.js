@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v84-restore-218-behavior";
+const CACHE_NAME = "cashflow-hub-v85-notes-balanced-pill-padding";
 
 const OFFLINE_ASSETS=[
   "./",
