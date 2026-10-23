@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v86-notes-fullscreen-immediate-save";
+const CACHE_NAME = "cashflow-hub-v87-notes-intrinsic-menu-width";
 
 const OFFLINE_ASSETS=[
   "./",
