@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v87-notes-intrinsic-menu-width";
+const CACHE_NAME = "cashflow-hub-v88-notes-attachment-sheet";
 
 const OFFLINE_ASSETS=[
   "./",
