@@ -184,7 +184,6 @@ function openMoneyAction(action){
 function updateMoneyChoices(){for(const option of $('cfhMoneyTo').options)option.disabled=!!option.value&&option.value===$('cfhMoneyFrom').value;if($('cfhMoneyTo').value===$('cfhMoneyFrom').value)$('cfhMoneyTo').value='';$('cfhMoneyAvailable').textContent=$('cfhMoneyFrom').value?'Cash balance: '+(balancesHidden?'••••':peso(portfolio(state.rows,asset,$('cfhMoneyFrom').value).cashAvailable)):'';}
 function mountMoney(){
  window.cfhHandleManageMoneyBack=()=>{if($('cfhMoneyModal').hidden)return false;close('cfhMoneyModal');return true;};
- window.cfhHandlePortfolioBack=()=>{const modals=[...document.querySelectorAll('.cfh-portfolio-overlay')].filter(node=>!node.hidden);modals.sort((a,b)=>(Number(getComputedStyle(b).zIndex)||0)-(Number(getComputedStyle(a).zIndex)||0));if(!modals.length)return false;close(modals[0].id);return true;};
  $('cfhMoneyBack').onclick=()=>close('cfhMoneyModal');
  $('cfhMoneyBroker').onchange=e=>{moneyBroker=e.target.value;renderMoney();};
  $('cfhMoneyFilter').onchange=e=>{moneyFilter=e.target.value;renderMoney();};

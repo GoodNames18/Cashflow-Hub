@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v83-app-wide-back-navigation";
+const CACHE_NAME = "cashflow-hub-v84-restore-218-behavior";
 
 const OFFLINE_ASSETS=[
   "./",

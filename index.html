@@ -11328,19 +11328,6 @@ setInterval(()=>cfhPushSync(),60000);
  </section>
 </div>
 
-<script type="module">
-import {createAppBackHandler} from './supabase/cfh-back-navigation.mjs';
-window.cfhHandleAppBack=createAppBackHandler({document,window,getPage:()=>currentAppPage,goHome:()=>{showAppPage('gcash',false);window.scrollTo(0,0);},legacy:[
- ['dashboardMonthModal',()=>closeDashboardMonthSelector()],
- ['testLoanModal',()=>closeTestLoanModal()],['testAtmModal',()=>closeTestAtmModal()],
- ['testCollectionModal',()=>closeTestCollectionModal()],['testTransferModal',()=>closeTestTransferModal()],
- ['testAddMoneyModal',()=>closeTestAddMoneyModal()],['testBalanceCheckModal',()=>closeTestBalanceCheckModal()],
- ['installmentModal',()=>closeInstallmentModal()],
- ['transactionDeleteModal',()=>document.getElementById('transactionDeleteCancel').click()],
- ['cfhCardPanel',()=>cfhCardPanelClose()],['cfhEditorOverlay',()=>cfhEditorClose()],
- ['cfhMonthPicker',()=>cfhCalendarCloseMonthPicker()]
-]});
-</script>
 </body>
 </html>
 
