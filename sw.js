@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v100-compact-checklist';
+const CACHE_NAME = 'cashflow-hub-v101-stable-checklist-drag';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

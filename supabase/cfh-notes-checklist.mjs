@@ -8,10 +8,11 @@ export function createChecklist(host,addButton,{changed,id}){
  function focusItem(item,end=true){const field=rowFor(item)?.querySelector('textarea');if(!field)return;field.focus();const at=end?field.value.length:0;field.setSelectionRange?.(at,at);}
  function cancelMove(){
   if(!moving)return false;const old=moving;moving=null;if(old.frame)cancelAnimationFrame(old.frame);
-  old.ghost?.remove();old.row.classList.remove('is-moving');return true;
+  old.ghost?.remove();old.marker?.remove();old.row.classList.remove('is-moving');return true;
  }
  function finishMove(commit){
-  if(!moving)return;const {active,group}=moving,ids=active?[...group.children].map(n=>n.dataset.checkId):[];
+  if(!moving)return;const {active,group,row,dropIndex}=moving,ids=active?[...group.children].filter(n=>n!==row).map(n=>n.dataset.checkId):[];
+  if(active&&dropIndex!==null&&dropIndex!==undefined)ids.splice(dropIndex,0,row.dataset.checkId);else commit=false;
   cancelMove();if(!active)return;
   if(commit){const map=new Map(note.items.map(item=>[item.id,item]));note.items=reorderVisibleNotes(note.items.map(item=>item.id),ids).map(key=>map.get(key));changed();}
   render(note);
@@ -19,19 +20,24 @@ export function createChecklist(host,addButton,{changed,id}){
  function place(x,y){
   if(!moving)return;
   if(!moving.active&&Math.hypot(x-moving.x,y-moving.y)<5)return;
-  if(!moving.active){moving.active=true;moving.row.classList.add('is-moving');moving.ghost=moving.row.cloneNode(true);moving.ghost.classList.add('cfh-check-drag-ghost');moving.ghost.removeAttribute('data-check-id');moving.ghost.querySelector('textarea').value=moving.row.querySelector('textarea').value;moving.ghost.setAttribute('aria-hidden','true');moving.ghost.style.width=moving.row.getBoundingClientRect().width+'px';document.body.append(moving.ghost);}
+  if(!moving.active){moving.active=true;moving.row.classList.add('is-moving');moving.ghost=moving.row.cloneNode(true);moving.ghost.classList.add('cfh-check-drag-ghost');moving.ghost.removeAttribute('data-check-id');moving.ghost.querySelector('textarea').value=moving.row.querySelector('textarea').value;moving.ghost.setAttribute('aria-hidden','true');moving.ghost.style.width=moving.row.getBoundingClientRect().width+'px';moving.marker=document.createElement('span');moving.marker.className='cfh-check-drop-marker';moving.marker.setAttribute('aria-hidden','true');document.body.append(moving.ghost,moving.marker);}
   moving.lastX=x;moving.lastY=y;moving.ghost.style.left=(x+10)+'px';moving.ghost.style.top=(y-15)+'px';
-  const target=document.elementFromPoint(x,y)?.closest('[data-check-id]');
-  if(!target||target===moving.row||target.parentElement!==moving.group)return;
-  const r=target.getBoundingClientRect();if(y<r.top+r.height/2)moving.group.insertBefore(moving.row,target);else moving.group.insertBefore(moving.row,target.nextSibling);
+  // Keep the captured grip in its original DOM position until pointerup.
+  // Reparenting its row during a touch drag can lose Android pointer capture.
+  const rows=[...moving.group.children].filter(row=>row!==moving.row),area=host.closest('.cfh-note-editor-content'),bounds=area.getBoundingClientRect();
+  const valid=x>=bounds.left-32&&x<=bounds.right+32;
+  moving.dropIndex=valid?rows.findIndex(row=>{const r=row.getBoundingClientRect();return y<r.top+r.height/2;}):null;
+  if(moving.dropIndex===-1)moving.dropIndex=rows.length;
+  moving.marker.hidden=!valid;
+  if(valid){const groupRect=moving.group.getBoundingClientRect(),target=rows[moving.dropIndex],last=rows.at(-1),top=target?target.getBoundingClientRect().top:last?last.getBoundingClientRect().bottom:moving.row.getBoundingClientRect().top;
+   Object.assign(moving.marker.style,{left:groupRect.left+'px',top:top+'px',width:groupRect.width+'px'});
+  }
  }
  function bindGrip(grip,row){
-  grip.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();cancelMove();moving={row,group:row.parentElement,pointer:e.pointerId,x:e.clientX,y:e.clientY};grip.setPointerCapture?.(e.pointerId);
+  grip.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();cancelMove();moving={row,group:row.parentElement,pointer:e.pointerId,x:e.clientX,y:e.clientY,dropIndex:null};grip.setPointerCapture?.(e.pointerId);
    const scroll=()=>{if(!moving)return;if(moving.active){const area=host.closest('.cfh-note-editor-content'),r=area.getBoundingClientRect(),y=moving.lastY,dy=y<r.top+35?-10:y>r.bottom-35?10:0;if(dy){area.scrollTop+=dy;place(moving.lastX,moving.lastY);}}moving.frame=requestAnimationFrame(scroll);};moving.frame=requestAnimationFrame(scroll);
   });
-  grip.addEventListener('pointermove',e=>{if(moving?.pointer===e.pointerId){e.preventDefault();place(e.clientX,e.clientY);}});
-  grip.addEventListener('pointerup',e=>{if(moving?.pointer===e.pointerId){e.preventDefault();finishMove(true);}});
-  grip.addEventListener('pointercancel',()=>finishMove(false));grip.addEventListener('lostpointercapture',()=>finishMove(false));grip.addEventListener('contextmenu',e=>e.preventDefault());
+  grip.addEventListener('contextmenu',e=>e.preventDefault());
   grip.addEventListener('keydown',e=>{
    if(!e.altKey||!['ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();
    const rows=[...row.parentElement.children],from=rows.indexOf(row),to=from+(e.key==='ArrowUp'?-1:1);if(to<0||to>=rows.length)return;
@@ -80,6 +86,9 @@ export function createChecklist(host,addButton,{changed,id}){
   if(index>=0)note.items.splice(index+1,0,item);else note.items.push(item);changed();render(note);focusItem(item,false);
  }
  addButton.onclick=()=>add();
+ window.addEventListener('pointermove',e=>{if(moving?.pointer===e.pointerId){e.preventDefault();place(e.clientX,e.clientY);}},{passive:false});
+ window.addEventListener('pointerup',e=>{if(moving?.pointer===e.pointerId){e.preventDefault();if(moving.active)place(e.clientX,e.clientY);finishMove(true);}},{passive:false});
+ window.addEventListener('pointercancel',e=>{if(moving?.pointer===e.pointerId)finishMove(false);});
  host.addEventListener('keydown',e=>{if(e.key==='Escape'&&moving){e.preventDefault();e.stopPropagation();finishMove(false);}},{capture:true});
  window.addEventListener('blur',()=>finishMove(false));document.addEventListener('visibilitychange',()=>{if(document.hidden)finishMove(false);});
  window.addEventListener('resize',()=>{if(!host.closest('#cfhNotesEditor')?.hidden)for(const field of host.querySelectorAll('textarea'))fit(field);});
