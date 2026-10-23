@@ -13,8 +13,13 @@ export class CashflowWriteApi {
   constructor(store,reads,{testOnly=false,allowFinancial=false}={}) {this.store=store;this.reads=reads;this.retries=new Map();this.testOnly=testOnly;this.allowFinancial=allowFinancial;this.queue=Promise.resolve();}
   handles(action) {return actions.has(action)||['transactionDelete','transactionRestore','transactionDeleteStatus','transactionEditLoad','transactionEdit'].includes(action);}
   async find(params) {
-    if(String(params.rowNumber||params.id||params.rowFingerprint||'').startsWith('pending:'))throw Error('This entry is pending sync. Connect and sync it before changing it.');
-    if(globalThis.navigator?.onLine===false)throw Error('Connect to change a synced transaction.');
+    const pendingId=String(params.rowNumber||params.id||'');
+    if(pendingId.startsWith('pending:')&&this.outbox){
+      const tab=sheets[params.sheet];if(!tab)throw Error('Unknown transaction sheet.');
+      const record=(await this.reads.snapshot.load(tab)).find(row=>row.id===pendingId);
+      if(!record)throw Error('This transaction has synced. Refresh the list before changing it.');
+      return record;
+    }
     const tab=sheets[params.sheet];
     if(!tab)throw new Error('Unknown transaction sheet.');
     let id=String(params.rowNumber||params.id||'');
@@ -23,12 +28,19 @@ export class CashflowWriteApi {
       id=String(params.rowFingerprint||'').split(':')[0];
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
       throw new Error('Refresh this transaction before changing it.');
+    if(this.outbox){
+      const records=await this.reads.snapshot.load(tab);
+      const cached=records.find(row=>row.id===id);
+      if(cached)return cached;
+      if(globalThis.navigator?.onLine===false)throw Error('Open this transaction online once before changing it offline.');
+    }
     const {data,error}=await this.store.client.from('cfh_records').select('*')
       .eq('owner_id',CFH_OWNER_ID).eq('id',id).eq('tab_key',tab).single();
     if(error)throw error;
     return data;
   }
   assertCurrentRevision(record,fingerprint) {
+    if(record.id.startsWith('pending:')&&fingerprint===record.id+':'+record.revision)return;
     const match=String(fingerprint||'').match(/^([0-9a-f-]{36}):(\d+)$/i);
     if(!match||match[1].toLowerCase()!==record.id.toLowerCase()||Number(match[2])!==Number(record.revision))
       throw Error('This transaction changed. Refresh it before editing.');
@@ -74,6 +86,7 @@ export class CashflowWriteApi {
       if(this.testOnly && record.payload?.cfh_preview_test!==true)
         throw Error('In this preview, edit only the test transactions added here.');
       const p_record=buildTransactionEdit(record,params.values||{});
+      if(this.outbox)return this.outbox.enqueueMutation(record,{type:'edit',values:p_record});
       const updated=await this.store.updateRecord(record,p_record);
       return {success:true,record:updated};
     }
@@ -90,6 +103,7 @@ export class CashflowWriteApi {
       const deleting=params.action==='transactionDelete';
       if(fingerprint && fingerprint!==record.id+':'+record.revision && !!record.deleted_at!==deleting)
         throw new Error('This transaction changed. Refresh it before trying again.');
+      if(this.outbox)return this.outbox.enqueueMutation(record,{type:'delete',deleted:deleting});
       const result=await this.store.setDeleted(record,deleting);
       return {success:true,deleted:!!result.deleted_at,record:result};
     }

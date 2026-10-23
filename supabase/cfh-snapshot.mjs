@@ -30,7 +30,7 @@ export class CashflowSnapshot {
     const records=Array.from(this.records.get(tab)?.values()||[]);
     if(!includePending)return records;
     const confirmed=new Set(records.map(r=>r.client_request_id));
-    return [...records,...(this.pendingRecords?.(tab)||[]).filter(r=>!confirmed.has(r.client_request_id))];
+    return this.pendingView?.(tab,records) ?? [...records,...(this.pendingRecords?.(tab)||[]).filter(r=>!confirmed.has(r.client_request_id))];
   }
   async load(tab, force = false, {includePending=true,requireNetwork=false}={}) {
     this.store.validateTab(tab);

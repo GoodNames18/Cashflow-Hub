@@ -4,7 +4,7 @@ export async function startCalendarSync(client,owner) {
  const META='cfh-cloud-calendar-v1',BACKUP='cfh-calendar-before-cloud-v1';
  const originalSet=Storage.prototype.setItem,originalRemove=Storage.prototype.removeItem;
  let meta;try{meta=JSON.parse(localStorage.getItem(META)||'{}');}catch{meta={};}
- meta.revisions||={};meta.pending||={};let busy=false,applying=false,ready=false,timer,requested=false,deferred=false,channel;
+ meta.revisions||={};meta.pending||={};let busy=false,applying=false,ready=false,timer,requested=false,deferred=false,channel,retryTimer;
  const panel=document.createElement('div');panel.className='cfh-push-panel';panel.id='cfhCloudPanel';
  panel.innerHTML='<strong>Calendar sync</strong><p role="status">Connecting your saved schedules…</p><button type="button">Sync now</button>';
  document.getElementById('cfhCalendarSchedule')?.prepend(panel);
@@ -20,7 +20,7 @@ export async function startCalendarSync(client,owner) {
  function render(){window.cfhReloadCalendarFromStorage?.();window.dispatchEvent(new Event('cfh-native-schedule-change'));}
  async function sync(){
   if(busy){requested=true;return;}if(!navigator.onLine){status('Saved on this device · Waiting for connection');return;}
-  busy=true;
+  clearTimeout(retryTimer);busy=true;
   try{
    const {data,error}=await client.from('cfh_calendar_state').select('*').eq('owner_id',owner);if(error)throw error;
    const rows=new Map(data.map(row=>[row.storage_key,row]));let refreshed=false;
@@ -51,7 +51,7 @@ export async function startCalendarSync(client,owner) {
     }else if(row&&row.revision!==meta.revisions[key]){if(editorOpen())deferred=true;else {apply(row);refreshed=true;}}
    }
    if(refreshed)render();persist();status(Object.keys(meta.pending).length?'Saving calendar changes…':'Calendar synced across devices');
-  }catch(error){status('Saved on this device · Sync will retry');console.error('Calendar sync:',error.message);}
+  }catch(error){status('Saved on this device · Sync will retry');console.error('Calendar sync:',error.message);retryTimer=setTimeout(()=>{if(!document.hidden&&navigator.onLine)void sync();},15000);}
   finally{busy=false;if(requested){requested=false;queue();}}
  }
  panel.querySelector('button').onclick=sync;

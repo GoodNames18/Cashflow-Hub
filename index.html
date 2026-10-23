@@ -4071,16 +4071,18 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     }
 
     function cfhCardKey(entry){return entry.cfhDuplicate|| (entry.cfhCard15?'eastwest':entry.cfhAuto?'metrobank':'');}
-    let cfhCardImageCatalog=[],cfhCardImageCatalogRequest=null;
+    let cfhCardImageCatalog=[];try{cfhCardImageCatalog=JSON.parse(localStorage.getItem('cfh-card-image-catalog-v1')||'[]');if(!Array.isArray(cfhCardImageCatalog))cfhCardImageCatalog=[];}catch{}let cfhCardImageCatalogRequest=null;
     function cfhLoadCardImages(){
+      if(navigator.onLine===false)return Promise.resolve(cfhCardImageCatalog);
       if(cfhCardImageCatalogRequest)return cfhCardImageCatalogRequest;
       cfhCardImageCatalogRequest=(async()=>{
         const response=await fetch('https://mssrsogwxvxyyjnavdiu.supabase.co/storage/v1/object/public/cfh-card-images/catalog.json',{cache:'no-store'});
         if(!response.ok)throw new Error('Card images unavailable');
         const data=await response.json();
         cfhCardImageCatalog=(Array.isArray(data.images)?data.images:[]).sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true}));
+        try{localStorage.setItem('cfh-card-image-catalog-v1',JSON.stringify(cfhCardImageCatalog));}catch{}
         return cfhCardImageCatalog;
-      })().catch(error=>{cfhCardImageCatalogRequest=null;throw error;});
+      })().catch(error=>{cfhCardImageCatalogRequest=null;if(cfhCardImageCatalog.length)return cfhCardImageCatalog;throw error;});
       return cfhCardImageCatalogRequest;
     }
     cfhLoadCardImages().then(()=>{if(typeof cfhCalendarRender==='function')cfhCalendarRender();}).catch(()=>{});

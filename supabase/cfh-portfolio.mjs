@@ -16,12 +16,13 @@ let marketFeed={news:[],dividends:[],companyIds:{},warnings:[]},marketFeedBusy=f
 let feeMode='auto',balanceBroker='',balancesHidden=false,balancePortfolio=null,balanceCloseTimer=null;
 let holdingSort='symbol',confirmationRecordId=null;
 let draft;try{draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');}catch{}
+let portfolioRetryTimer;
 let asset='stock',client,busy=false,channel,refreshRequested=false,editingId=null,portfolioView='portfolio',dividendStatus='upcoming',snapshotTrigger=null;
 let liveStockPrices=new Map(),lastStockPriceAt=null,livePriceTimer=null,livePriceBusy=false,snapshotScrollY=0;
 try{const saved=JSON.parse(localStorage.getItem(STOCK_PRICES_KEY)||'null');if(saved&&Number.isFinite(Date.parse(saved.fetched_at))){liveStockPrices=parsePseStocksResponse(saved);lastStockPriceAt=saved.fetched_at;}}catch{}
 function stockPriceStatus(now=new Date()){
  const phase=marketPhase(now,'stock');
- const label=phase.open?'Last prices':phase.label.startsWith('Market recess')?'Market recess':'Market closed';
+ const label=globalThis.navigator?.onLine===false?'Offline · Saved prices':phase.open?'Last prices':phase.label.startsWith('Market recess')?'Market recess':'Market closed';
  if(!liveStockPrices.size||!lastStockPriceAt)return phase.open?'Waiting for live PSE prices…':label+' · No saved prices yet';
  const updated=new Intl.DateTimeFormat('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}).format(new Date(lastStockPriceAt));
  return label+' · Last updated '+updated;
@@ -447,7 +448,7 @@ export function mountPortfolio(){
 function renderMarketNews(){
  const list=$('cfhMarketNewsList'),node=$('cfhMarketNewsStatus');if(!list||!node)return;list.replaceChildren();
  const date=marketFeed.fetched_at&&Number.isFinite(Date.parse(marketFeed.fetched_at))?new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Manila'}).format(new Date(marketFeed.fetched_at)):null;
- const text=marketFeedBusy?'Checking PSE announcements…':marketFeedError||(date?'Last checked '+date:'Announcements load when connected.');node.textContent=text;
+ const text=navigator.onLine===false?('Offline · '+(date?'Last checked '+date:'No saved announcements yet')):marketFeedBusy?'Checking PSE announcements…':marketFeedError||(date?'Last checked '+date:'Announcements load when connected.');node.textContent=text;
  const dividendStatus=$('cfhDividendAnnouncementStatus');if(dividendStatus)dividendStatus.textContent=text+(marketFeed.warnings?.length?' · '+marketFeed.warnings.join(' '):'');
  $('cfhMarketNewsRefresh').disabled=marketFeedBusy;
  for(const row of marketFeed.news){if(!/^https:\/\/edge\.pse\.com\.ph\/openDiscViewer\.do\?edge_no=[a-f0-9]{32}$/.test(row.url||''))continue;const link=document.createElement('a');link.className='cfh-news-source';link.href=row.url;link.target='_blank';link.rel='noopener noreferrer';const company=document.createElement('small'),title=document.createElement('strong'),date=document.createElement('span');company.textContent=row.company;title.textContent=row.title;date.textContent=row.published+' · PSE EDGE';link.append(company,title,date);list.append(link);}
@@ -490,14 +491,14 @@ function scheduleStockPriceRefresh(){
  clearInterval(marketFeedTimer);marketFeedTimer=setInterval(()=>void refreshMarketNews(),60000);
 }
 async function sync(){
- if(!client||busy||!navigator.onLine){if(state.pending.length)status('Saved on device · Sync pending');return;}busy=true;
+ if(!client||busy||!navigator.onLine){if(state.pending.length)status('Saved on device · Sync pending');return;}clearTimeout(portfolioRetryTimer);busy=true;
  try{
   for(const id of state.pending.slice()){const row=state.rows.find(r=>r.id===id);if(!row)continue;const {error}=await client.from('cfh_portfolio_records').insert({owner_id:OWNER,id,payload:row});if(error&&error.code!=='23505')throw error;state.pending=state.pending.filter(x=>x!==id);persist();}
   const remote=[];for(let start=0;;start+=500){const {data,error}=await client.from('cfh_portfolio_records').select('id,payload').eq('owner_id',OWNER).order('created_at',{ascending:true}).order('id',{ascending:true}).range(start,start+499);if(error)throw error;remote.push(...data);if(data.length<500)break;}
   const pendingIds=new Set(state.pending);
   const map=new Map(state.rows.filter(r=>pendingIds.has(r.id)).map(r=>[r.id,r]));for(const r of remote){try{validateRecord(r.payload);map.set(r.id,{...r.payload,id:r.id});}catch{}}
   state.rows=[...map.values()];persist();render();void refreshMarketNews();status(state.pending.length?'Saved on device · Sync pending':'Portfolio synced');
- }catch(error){status('Saved on device · Sync pending. Reconnect to retry.');console.warn('Portfolio sync:',error.message);}finally{busy=false;if(refreshRequested){refreshRequested=false;void sync();}}
+ }catch(error){status('Saved on device · Sync pending. Reconnect to retry.');console.warn('Portfolio sync:',error.message);if(state.pending.length)portfolioRetryTimer=setTimeout(()=>{if(!document.hidden&&navigator.onLine)void sync();},15000);}finally{busy=false;if(refreshRequested){refreshRequested=false;void sync();}}
 }
 export function startPortfolioSync(c,owner){if(owner!==OWNER)throw Error('Portfolio account mismatch');if(client)return;client=c;mountPortfolio();void sync();scheduleStockPriceRefresh();void refreshStockPrices();
  const connect=()=>{if(document.hidden||!navigator.onLine||channel)return;channel=client.channel('cfh-portfolio:'+OWNER).on('postgres_changes',{event:'*',schema:'public',table:'cfh_portfolio_records',filter:'owner_id=eq.'+OWNER},()=>{if(busy)refreshRequested=true;else void sync();}).subscribe(s=>{if(s==='SUBSCRIBED')void sync();});};

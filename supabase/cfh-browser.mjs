@@ -6,6 +6,7 @@ import { CashflowWriteApi } from './cfh-write-api.mjs?v=transaction-edit1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=offline-home1';
 import { startCalendarSync } from './cfh-calendar-sync.mjs?v=events1';
 import {startPortfolioSync} from './cfh-portfolio.mjs?v=portfolio9';
+import {mountOfflineStatus} from './cfh-offline-status.mjs';
 import {CashflowOfflineQueue,openOfflineQueue,mountHomeSyncStatus} from './cfh-offline-queue.mjs?v=offline-home1';
 const enabled=true;
 if(enabled) {
@@ -20,6 +21,7 @@ if(enabled) {
     throw new Error('This action is not supported. Refresh the app and try again.');
   }};
   const client=createClient(CFH_PROJECT_URL,CFH_PUBLISHABLE_KEY,{
+    global:{fetch:(url,options={})=>fetch(url,{...options,signal:options.signal||AbortSignal.timeout(15000)})},
     auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
   const store=new CashflowStore(client);
   async function start() {
@@ -35,6 +37,9 @@ if(enabled) {
       const fresh=await loadCashflowSettings(client,{force:true});reads.referenceCells=fresh.referenceCells;reads.konekSeed=fresh.konekSeed;
     }}).init();
     snapshot.pendingRecords=tab=>outbox.records(tab);
+    snapshot.pendingView=(tab,records)=>outbox.view(tab,records);
+    mountOfflineStatus(outbox);
+    void navigator.storage?.persist?.().catch(()=>{});
     const writes=new CashflowWriteApi(store,reads,{testOnly:false,allowFinancial:true});
     writes.outbox=outbox;
     window.cfhHomeOfflineQueue=outbox;

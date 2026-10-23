@@ -1,104 +1,37 @@
-const CACHE_NAME = "cashflow-hub-v89-notes-image-gallery-viewer";
-
-const OFFLINE_ASSETS=[
-  "./",
-  "index.html",
-  "supabase/cfh-browser.mjs?v=stock-live1",
-  "supabase/vendor/supabase-js.mjs",
-  "supabase/cfh-store.mjs?v=offline-home1",
-  "supabase/cfh-store.mjs?v=transaction-edit1",
-  "supabase/cfh-store.mjs?v=live2",
-  "supabase/cfh-snapshot.mjs?v=offline-home1",
-  "supabase/cfh-read-api.mjs?v=offline-home1",
-  "supabase/cfh-write-api.mjs?v=transaction-edit1",
-  "supabase/cfh-settings.mjs?v=offline-home1",
-  "supabase/cfh-offline-queue.mjs?v=offline-home1",
-  "supabase/cfh-financial-checks.mjs?v=live2",
-  "supabase/cfh-entry-plan.mjs?v=moneyflow-digits1",
-  "supabase/legacy-rules.mjs?v=moneyflow-digits1",
-  "supabase/legacy-rules.mjs?v=rental-all1",
-  "supabase/manila-date.mjs?v=calendar3",
-  "supabase/rules-environment.mjs?v=transaction-order4",
-  "supabase/cfh-calendar-sync.mjs?v=events1",
-  "supabase/cfh-portfolio.mjs?v=portfolio9",
-  "supabase/cfh-stock-prices.mjs",
-  "supabase/cfh-portfolio-model.mjs",
-  "supabase/cfh-market-announcements.mjs",
-  "supabase/cfh-notes.mjs?v=notes2",
-  "supabase/cfh-notes-model.mjs",
-  "supabase/cfh-dividend-receipts.mjs",
-  "supabase/cfh-portfolio-fees.mjs",
-  "supabase/cfh-portfolio-sort.mjs",
-  "supabase/cfh-crypto-nav.mjs",
-  "supabase/cfh-portfolio-catalog.mjs",
-  "supabase/cfh-stock-logos.mjs",
-  "supabase/cfh-transaction-edit.mjs?v=transaction-edit1",
-  "icon-192.png",
-  "icon-512.png",
-  "cashflow-hub-logo.png"
-];
-self.addEventListener("install", function(event) {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(OFFLINE_ASSETS)).then(()=>self.skipWaiting()));
+const CACHE_NAME = 'cashflow-hub-v90-offline-first';
+const BASE=new URL('./',self.location.href);
+const assetURL=path=>new URL(path,BASE).href;
+self.addEventListener('install',event=>{
+ event.waitUntil((async()=>{
+  const response=await fetch(assetURL('offline-assets.json'),{cache:'no-store'});
+  if(!response.ok)throw Error('Offline asset list unavailable');
+  const paths=await response.json(),cache=await caches.open(CACHE_NAME);
+  // Do not activate a partial release. The previous complete cache remains usable.
+  await cache.addAll(paths.map(assetURL));await self.skipWaiting();
+ })());
 });
-
-self.addEventListener("activate", function(event) {
-  event.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(
-        keys
-          .filter(function(key) {
-            return key !== CACHE_NAME;
-          })
-          .map(function(key) {
-            return caches.delete(key);
-          })
-      );
-    })
-  );
-
-  self.clients.claim();
+self.addEventListener('activate',event=>{
+ event.waitUntil((async()=>{
+  for(const key of await caches.keys())if(key.startsWith('cashflow-hub-')&&key!==CACHE_NAME)await caches.delete(key);
+  await self.clients.claim();
+ })());
 });
-
-self.addEventListener("fetch", function(event) {
-  var request = event.request;
-
-  if (request.method !== "GET") return;
-
-  var url = new URL(request.url);
-
-  // Do not touch Apps Script or other external requests.
-  if (url.origin !== self.location.origin) return;
-
-  var fetchOptions =
-    request.destination === "image"
-      ? { cache: "no-store" }
-      : undefined;
-
-  event.respondWith(
-    fetch(request, fetchOptions)
-      .then(function(response) {
-        if (response && response.ok) {
-          var copy = response.clone();
-
-          event.waitUntil(caches.open(CACHE_NAME).then(function(cache) {
-            return Promise.all([cache.put(request, copy),...(request.mode==='navigate'?[cache.put('/Cashflow-Hub/index.html',response.clone())]:[])]);
-          }));
-        }
-
-        return response;
-      })
-      .catch(function() {
-        return caches.match(request).then(function(cached) {
-          if (cached) return cached;
-
-          if (request.mode === "navigate") {
-            return caches.match("/Cashflow-Hub/index.html").then(shell=>shell||caches.match("/Cashflow-Hub/")).then(shell=>shell||Response.error());
-          }
-
-          return Response.error();
-        });
-      })
-  );
+self.addEventListener('fetch',event=>{
+ const request=event.request,url=new URL(request.url);
+ if(request.method!=='GET'||url.origin!==BASE.origin||!url.pathname.startsWith(BASE.pathname))return;
+ const staticAsset=/\.(?:html|mjs|js|css|png|jpe?g|svg|webp|ico|woff2?)(?:$)/i.test(url.pathname);
+ if(request.mode!=='navigate'&&!staticAsset)return;
+ event.respondWith((async()=>{
+  const cache=await caches.open(CACHE_NAME);
+  // One versioned shell and its matching modules work immediately in airplane mode.
+  const cached=request.mode==='navigate'?await cache.match(assetURL('index.html')):await cache.match(request,{ignoreSearch:true});
+  if(cached)return cached;
+  try{
+   const response=await fetch(request,{signal:AbortSignal.timeout(8000)});
+   if(response.ok)await cache.put(request,response.clone());
+   return response;
+  }catch{return Response.error();}
+ })());
 });
 
 self.addEventListener("push",function(event){
