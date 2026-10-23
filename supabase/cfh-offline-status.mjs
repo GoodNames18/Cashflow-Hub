@@ -13,7 +13,7 @@ export function mountOfflineStatus(queue){
   if(queue.error)dialog.append(el('p',queue.error));
   const retry=el('button','Retry sync');retry.type='button';retry.disabled=navigator.onLine===false||!!queue.busy;retry.onclick=()=>{void queue.flush();};const close=el('button','Close');close.type='button';close.onclick=()=>dialog.close();dialog.append(retry,close);
  }
- function render(){const offline=navigator.onLine===false,count=queue.items.length;button.hidden=!offline&&!count&&!queue.error;button.textContent=offline?'Offline'+(count?' · '+count+' pending':' · Saved data'):queue.error?'Sync needs attention':count+(queue.busy?' syncing…':' pending sync');if(dialog.open)details();}
+ function render(){const offline=navigator.onLine===false,count=queue.items.length;button.hidden=!offline&&!queue.error;button.textContent=offline?'Offline'+(count?' · '+count+' pending':' · Saved data'):queue.error?'Sync needs attention':count+(queue.busy?' syncing…':' pending sync');if(dialog.open)details();}
  let previousOverflow;dialog.addEventListener('close',()=>{document.body.style.overflow=previousOverflow||'';});
  button.onclick=()=>{details();previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';dialog.showModal();};dialog.onclick=event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}};
  queue.onChange(render);window.addEventListener('online',render);window.addEventListener('offline',render);render();

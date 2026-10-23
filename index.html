@@ -11106,6 +11106,9 @@ body.cfh-notes-create-open #cfhNotesCreateButton{visibility:hidden;pointer-event
 #cfhNotesPage .cfh-note-pin{box-sizing:border-box;display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;min-width:24px;min-height:24px;margin:0 0 0 auto;padding:0;font-size:15px}
 
 #cfhNotesEditorBox #cfhNotesTitle:focus,#cfhNotesEditorBox #cfhNotesBody:focus{outline:none;box-shadow:none;border:0}
+#cfhNotesEditor,#cfhNotesEditor *{-webkit-tap-highlight-color:transparent}
+#cfhNotesEditorBox #cfhNotesTitle,#cfhNotesEditorBox #cfhNotesBody,#cfhNotesEditorBox .cfh-note-check-row input[type=text]{-webkit-user-select:text;user-select:text;caret-color:#1B1844;background:transparent}
+#cfhNotesTitle::selection,#cfhNotesBody::selection,.cfh-note-check-row input[type=text]::selection{background:#c5f7e9;color:#1B1844}
 /* Full-screen Notes editor: only its canvas scrolls; tools remain above the keyboard. */
 body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none}
 #cfhNotesEditor{box-sizing:border-box;inset:auto 0 auto;top:var(--cfh-note-viewport-top,0px);height:var(--cfh-note-viewport-height,100dvh);padding:0;background:#fff;display:block;overflow:hidden}
