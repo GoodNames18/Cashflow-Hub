@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v88-notes-attachment-sheet";
+const CACHE_NAME = "cashflow-hub-v89-notes-image-gallery-viewer";
 
 const OFFLINE_ASSETS=[
   "./",
