@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v96-note-canvas-focus';
+const CACHE_NAME = 'cashflow-hub-v97-inline-audio-and-text';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

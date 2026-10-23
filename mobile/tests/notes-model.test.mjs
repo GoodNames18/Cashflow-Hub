@@ -15,3 +15,4 @@ test('manual order survives edits and puts newly created notes first',async()=>{
 test('dragging a filtered or pinned group preserves hidden note positions and all identities',async()=>{
  const {reorderVisibleNotes}=await import('../../supabase/cfh-notes-model.mjs');const all=['hidden','a','pinned','b','archived'];assert.deepEqual(reorderVisibleNotes(all,['b','a']),['hidden','b','pinned','a','archived']);assert.deepEqual(reorderVisibleNotes(all,['b','b','a','unknown']),['hidden','b','pinned','a','archived']);assert.deepEqual(all,['hidden','a','pinned','b','archived']);
 });
+test('text after audio stays searchable and survives archive and restore',()=>{const n={...note,bodyAfter:'Continue after recording'};assert.equal(noteMatches(n,'all','after recording'),true);assert.equal(changeNoteState(changeNoteState(n,'delete',3),'restore',4).bodyAfter,n.bodyAfter);});

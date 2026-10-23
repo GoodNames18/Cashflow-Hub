@@ -1,5 +1,5 @@
 export function noteMatches(note,filter='all',query='',now=Date.now()){
- const q=query.trim().toLocaleLowerCase();if(q&&!`${note.title||''} ${note.body||''} ${(note.items||[]).map(i=>i.text).join(' ')}`.toLocaleLowerCase().includes(q))return false;
+ const q=query.trim().toLocaleLowerCase();if(q&&!`${note.title||''} ${note.body||''} ${note.bodyAfter||''} ${(note.items||[]).map(i=>i.text).join(' ')}`.toLocaleLowerCase().includes(q))return false;
  if(filter==='deleted')return !!note.deletedAt;if(note.deletedAt)return false;
  if(filter==='archive')return !!note.archived;if(note.archived)return false;
  if(filter==='reminders')return !!note.reminder;if(filter==='pinned')return !!note.pinned;
