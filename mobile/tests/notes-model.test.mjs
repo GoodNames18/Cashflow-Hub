@@ -7,3 +7,11 @@ test('label removal keeps every note and its contents',()=>{const result=removeL
 test('checklists generate distinct items, preserve order and searchable text',()=>{let i=0;const items=checklistFromText(' Milk\n\nBread\nCoffee ',()=>String(++i));assert.deepEqual(items.map(i=>i.text),['Milk','Bread','Coffee']);assert.equal(new Set(items.map(i=>i.id)).size,3);assert.ok(items.every(i=>!i.checked));assert.equal(noteMatches({...note,items},'all','bread'),true);});
 test('reminders and label views exclude deleted and archived notes',()=>{const n={...note,reminder:'2026-12-01T09:00',labelId:'banks'};assert.equal(noteMatches(n,'reminders'),true);assert.equal(noteMatches(n,'label:banks'),true);assert.equal(noteMatches({...n,deletedAt:1},'reminders'),false);assert.equal(noteMatches({...n,archived:true},'label:banks'),false);});
 test('sorting honors title, creation and edit dates',()=>{const a={title:'A',createdAt:1,updatedAt:4},b={title:'B',createdAt:3,updatedAt:2};assert.ok(compareNotes(a,b,'title')<0);assert.ok(compareNotes(a,b,'updated')<0);assert.ok(compareNotes(a,b,'created')>0);});
+
+test('manual order survives edits and puts newly created notes first',async()=>{
+ const {customNoteIds}=await import('../../supabase/cfh-notes-model.mjs');const notes=[{id:'a',createdAt:1,updatedAt:99},{id:'b',createdAt:2,updatedAt:2},{id:'c',createdAt:3,updatedAt:3}];
+ assert.deepEqual(customNoteIds(notes,['b','a','b','removed']),['c','b','a']);notes[0].updatedAt=1000;assert.deepEqual(customNoteIds(notes,['c','b','a']),['c','b','a']);assert.deepEqual(customNoteIds(notes,null),['c','b','a']);
+});
+test('dragging a filtered or pinned group preserves hidden note positions and all identities',async()=>{
+ const {reorderVisibleNotes}=await import('../../supabase/cfh-notes-model.mjs');const all=['hidden','a','pinned','b','archived'];assert.deepEqual(reorderVisibleNotes(all,['b','a']),['hidden','b','pinned','a','archived']);assert.deepEqual(reorderVisibleNotes(all,['b','b','a','unknown']),['hidden','b','pinned','a','archived']);assert.deepEqual(all,['hidden','a','pinned','b','archived']);
+});

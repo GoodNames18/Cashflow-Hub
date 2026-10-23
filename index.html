@@ -11119,7 +11119,7 @@ body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none
 #cfhNotesEditorBox .cfh-note-icon-button[aria-pressed=true],#cfhNotesEditorBox .cfh-note-icon-button[aria-expanded=true]{color:#00896b;background:#d8fff3}
 .cfh-note-editor-content{display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:14px 22px 18px;scroll-padding:20px}
 #cfhNotesEditorBox #cfhNotesTitle{flex:0 0 auto;font:700 25px/1.35 Arial,sans-serif;padding:0 0 18px;margin:0;border-radius:0}
-#cfhNotesEditorBox #cfhNotesBody{flex:1 0 160px;min-height:160px;width:100%;padding:0;margin:0;resize:none;font:16px/1.65 Arial,sans-serif;border-radius:0}
+#cfhNotesEditorBox #cfhNotesBody{flex:0 0 auto;min-height:27px;height:27px;overflow:hidden;width:100%;padding:0;margin:0;resize:none;font:16px/1.65 Arial,sans-serif;border-radius:0}
 #cfhNotesAudioAttachments{flex:0 0 auto}
 #cfhNotesEditorBox .cfh-note-audio-bar{display:flex;align-items:center;gap:9px;box-sizing:border-box;width:100%;min-width:0;min-height:48px;margin:14px 0 0;padding:4px 9px;border:0;border-radius:8px;background:color-mix(in srgb,var(--cfh-note-background,#fff) 90%,#1B1844 10%);color:#1B1844}
 #cfhNotesEditorBox .cfh-note-audio-control{display:grid;place-items:center;box-sizing:border-box;flex:0 0 34px;width:34px;height:40px;min-width:34px;margin:0;padding:7px;border:0;border-radius:6px;background:transparent;color:inherit}
@@ -11167,6 +11167,20 @@ body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none
 #cfhNotesImageMenu{position:absolute;top:52px;right:12px;min-width:135px;padding:6px;border-radius:12px;background:#292c3d;box-shadow:0 6px 18px #0005}
 #cfhNotesImageViewer #cfhNotesImageDelete{display:block;width:100%;height:auto;padding:13px 18px;text-align:left;border-radius:6px;font:16px Arial,sans-serif}
 #cfhNotesImageMenu[hidden],#cfhNotesFullImage[hidden]{display:none!important}
+
+#cfhNotesSortMenu{position:fixed;inset:auto 0 0;margin:0 auto;width:100%;max-width:520px;max-height:80dvh;box-sizing:border-box;padding:0 0 calc(16px + env(safe-area-inset-bottom));border:0;border-radius:26px 26px 0 0;background:#f8f6fd;color:#1B1844;overflow:auto;overscroll-behavior:contain;animation:cfhNotesMenuIn .22s ease-out}
+#cfhNotesSortMenu::backdrop{background:#1b184455}
+#cfhNotesSortMenu h2{margin:0 0 10px;padding:25px 24px 23px;border-bottom:1px solid #dedbea;font:600 21px Arial,sans-serif}
+#cfhNotesSortMenu button{display:flex;align-items:center;gap:25px;box-sizing:border-box;width:calc(100% - 20px);min-height:62px;margin:3px 10px;padding:15px 24px;border:0;border-radius:32px;background:transparent;color:inherit;text-align:left;font:17px Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+#cfhNotesSortMenu button[aria-checked=true]{background:#d8f6e9}
+#cfhNotesSortMenu .cfh-sort-check{flex:0 0 22px;font-size:24px;visibility:hidden}
+#cfhNotesSortMenu button[aria-checked=true] .cfh-sort-check{visibility:visible}
+#cfhNotesSortMenu button:focus-visible{outline:2px solid #00896b;outline-offset:-3px}
+#cfhNotesList.is-custom-order .cfh-note-card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.cfh-note-drag-placeholder{opacity:.25;outline:2px dashed #00a77e;outline-offset:-2px}
+.cfh-note-drag-ghost{position:fixed!important;z-index:100300!important;pointer-events:none!important;opacity:.96;transform:scale(1.025);box-shadow:0 12px 35px #1b184433!important;box-sizing:border-box;overflow:hidden!important}
+body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-behavior:none;cursor:grabbing}
+@media(prefers-reduced-motion:reduce){#cfhNotesSortMenu{animation:none}}
 </style>
 <main id="cfhNotesPage" hidden aria-label="Notes">
  <header class="cfh-notes-head">
@@ -11175,7 +11189,7 @@ body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none
   <button type="button" id="cfhNotesLayout" class="cfh-notes-control" aria-label="Switch to list view" onclick="cfhNotesToggleLayout()"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><rect x="3" y="15" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/></svg></button>
   <button type="button" id="cfhNotesSortButton" class="cfh-notes-control" aria-label="Sort by" aria-expanded="false" aria-controls="cfhNotesSortMenu" onclick="cfhNotesMenu('sort')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/></svg></button>
 
-  <div id="cfhNotesSortMenu" class="cfh-notes-menu cfh-notes-sort" hidden><label for="cfhNotesSort">Sort by</label><select id="cfhNotesSort" onchange="cfhNotesSetSort(this.value)"><option value="updated">Recently edited</option><option value="created">Recently created</option><option value="title">Title A–Z</option></select></div>
+  <dialog id="cfhNotesSortMenu" aria-labelledby="cfhNotesSortTitle"><h2 id="cfhNotesSortTitle">Sort by</h2><div role="radiogroup" aria-labelledby="cfhNotesSortTitle"><button type="button" role="radio" data-note-sort="custom" onclick="cfhNotesSetSort('custom')"><span class="cfh-sort-check" aria-hidden="true">✓</span><span>Custom (default)</span></button><button type="button" role="radio" data-note-sort="created" onclick="cfhNotesSetSort('created')"><span class="cfh-sort-check" aria-hidden="true">✓</span><span>Date created</span></button><button type="button" role="radio" data-note-sort="updated" onclick="cfhNotesSetSort('updated')"><span class="cfh-sort-check" aria-hidden="true">✓</span><span>Date modified</span></button></div><select id="cfhNotesSort" hidden aria-hidden="true" tabindex="-1"><option value="custom">Custom</option><option value="created">Date created</option><option value="updated">Date modified</option></select></dialog>
  </header>
  <div id="cfhNotesList"></div>
  <button id="cfhNotesCreateButton" type="button" class="cfh-notes-new" aria-expanded="false" aria-controls="cfhNotesCreateMenu" onclick="cfhNotesCreateMenu()" aria-label="Create a note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></svg></button>
