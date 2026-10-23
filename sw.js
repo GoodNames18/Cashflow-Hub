@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v90-offline-first';
+const CACHE_NAME = 'cashflow-hub-v91-note-audio-below-description';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
