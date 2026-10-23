@@ -23,3 +23,10 @@ test('reading edited paragraphs preserves line breaks but excludes audio control
  const host=node('DIV',[text('Before '),node('SPAN',[text('Play 0:11 Delete')],{audioId:'clip'}),text(' after'),node('DIV',[text('Next line')]),node('DIV',[text('Last line')])]);
  assert.deepEqual(normalizeNoteContent(readNoteContent(host),[audio]),[T('Before '),A,T(' after\nNext line\nLast line')]);
 });
+
+test('Enter and empty paragraphs reopen without adding blank lines',()=>{
+ const read=children=>contentText(readNoteContent(node('DIV',children)));
+ assert.equal(read([text('a'),node('DIV',[node('BR')])]),'a\n');
+ assert.equal(read([node('DIV',[text('a')]),node('DIV',[node('BR')]),node('DIV',[text('b')])]),'a\n\nb');
+ assert.equal(read([text('a'),node('DIV',[text('b')])]),'a\nb');
+});

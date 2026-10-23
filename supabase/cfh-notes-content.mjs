@@ -12,7 +12,7 @@ export function normalizeNoteContent(parts,attachments=[]){
 export function noteContent(note){
  if(Array.isArray(note.content))return normalizeNoteContent(note.content,note.attachments);
  const audio=(note.attachments||[]).filter(m=>m.type==='audio'),parts=[];
- if(note.body)parts.push({type:'text',text:note.body+(audio.length?'\n':'')});
+ if(note.body)parts.push({type:'text',text:note.body+(audio.length&&!note.body.endsWith('\n')?'\n':'')});
  audio.forEach((m,i)=>{if(i)parts.push({type:'text',text:'\n'});parts.push({type:'audio',id:m.id});});
  if(note.bodyAfter)parts.push({type:'text',text:(audio.length?' ':'')+note.bodyAfter});
  return normalizeNoteContent(parts,note.attachments);
@@ -21,16 +21,19 @@ export function contentText(parts){return parts.map(p=>p.type==='text'?p.text:''
 // Preserve browser-created paragraph breaks, but do not read player labels.
 export function readNoteContent(host){
  const out=[];const text=value=>{if(value)out.push({type:'text',text:value});};
+ const block=node=>node?.nodeType===1&&/^(DIV|P|LI)$/.test(node.tagName)&&!node.dataset?.audioId;
+ function children(parent){
+  const nodes=[...parent.childNodes];
+  // A solitary BR inside an empty browser paragraph is a caret placeholder.
+  if(parent!==host&&block(parent)&&nodes.length===1&&nodes[0].tagName==='BR')return;
+  nodes.forEach((node,i)=>{if(i&&(block(node)||block(nodes[i-1])))text('\n');walk(node);});
+ }
  function walk(node){
   if(node.nodeType===3){text(node.nodeValue);return;}
   if(node.nodeType!==1)return;
   if(node.dataset?.audioId){out.push({type:'audio',id:node.dataset.audioId});return;}
   if(node.tagName==='BR'){text('\n');return;}
-  const block=/^(DIV|P|LI)$/.test(node.tagName);
-  if(block&&out.length&&!out.at(-1).text?.endsWith('\n'))text('\n');
-  for(const child of node.childNodes)walk(child);
-  if(block&&node.nextSibling&&!out.at(-1)?.text?.endsWith('\n'))text('\n');
+  children(node);
  }
- for(const child of host.childNodes)walk(child);
- return out;
+ children(host);return out;
 }
