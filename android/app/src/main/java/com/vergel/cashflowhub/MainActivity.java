@@ -13,7 +13,7 @@ public class MainActivity extends BridgeActivity {
     if (getBridge() == null || getBridge().getWebView() == null) { passBack(); return; }
     checking = true;
     getBridge().getWebView().evaluateJavascript(
-     "Boolean(window.cfhHandleManageMoneyBack && window.cfhHandleManageMoneyBack())",
+     "Boolean(window.cfhHandleNotesBack && window.cfhHandleNotesBack()) || Boolean(window.cfhHandleManageMoneyBack && window.cfhHandleManageMoneyBack())",
      handled -> { checking = false; if (!"true".equals(handled)) passBack(); }
     );
    }

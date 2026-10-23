@@ -1,4 +1,4 @@
-const CACHE_NAME = "cashflow-hub-v78-remove-sample-add-icon";
+const CACHE_NAME = "cashflow-hub-v79-notes-drawer-create-menu";
 
 const OFFLINE_ASSETS=[
   "./",
@@ -24,6 +24,8 @@ const OFFLINE_ASSETS=[
   "supabase/cfh-stock-prices.mjs",
   "supabase/cfh-portfolio-model.mjs",
   "supabase/cfh-market-announcements.mjs",
+  "supabase/cfh-notes.mjs?v=notes2",
+  "supabase/cfh-notes-model.mjs",
   "supabase/cfh-dividend-receipts.mjs",
   "supabase/cfh-portfolio-fees.mjs",
   "supabase/cfh-portfolio-sort.mjs",
