@@ -113,14 +113,31 @@ function fitNoteBody(){
  if($('cfhNotesEditor').hidden)return;
  const area=$('cfhNotesEditorBox').querySelector('.cfh-note-editor-content'),body=$('cfhNotesBody'),after=$('cfhNotesBodyAfter'),flow=$('cfhNotesDescriptionFlow'),y=area.scrollTop;
  const hasAudio=!!draft?.attachments?.some(m=>m.type==='audio');after.hidden=!hasAudio&&!after.value;
+ const width=flow.clientWidth||flow.getBoundingClientRect().width,ctx=document.createElement('canvas').getContext?.('2d');
+ if(ctx)ctx.font=window.getComputedStyle?.(body).font||'16px Arial';
+ const measure=text=>Math.ceil(ctx?ctx.measureText(text).width:text.length*8)+10;
+ let beforeWidth=0;
  if(!body.hidden){
-  const width=flow.clientWidth||flow.getBoundingClientRect().width,ctx=document.createElement('canvas').getContext?.('2d');
-  if(ctx)ctx.font=window.getComputedStyle?.(body).font||'16px Arial';
-  const textWidth=Math.ceil(ctx?ctx.measureText(body.value).width:body.value.length*8)+10;
+  const textWidth=measure(body.value);
   const inline=hasAudio&&body.value&&!body.value.includes('\n')&&Math.max(40,textWidth)+186<=width;
+  beforeWidth=inline?Math.max(40,textWidth)+6:0;
   body.style.width=inline?Math.max(40,textWidth)+'px':'100%';
  }
- for(const field of [body,after])if(!field.hidden){field.style.height='auto';field.style.height=Math.max(27,field.scrollHeight)+'px';}
+ const players=[...$('cfhNotesAudioAttachments').querySelectorAll('.cfh-note-audio-bar')];
+ let afterWidth=width;
+ players.forEach((player,index)=>{
+  const available=Math.max(0,width-(index===0?beforeWidth:0));
+  const last=index===players.length-1,firstWord=after.value.trimStart().split(/\s/)[0]||'';
+  const wordWidth=Math.max(24,measure(firstWord));
+  const beside=last&&!after.hidden&&!after.value.startsWith('\n')&&available>=180+6+wordWidth;
+  const playerWidth=beside?Math.min(220,available-6-wordWidth):available;
+  player.style.width=playerWidth+'px';
+  if(last)afterWidth=beside?available-playerWidth-6:width;
+ });
+ after.style.width=afterWidth===width?'100%':afterWidth+'px';
+ // Setting height to auto restores a textarea's default two rows. Collapse it
+ // before measuring so a single text line cannot reserve an empty second row.
+ for(const field of [body,after])if(!field.hidden){field.style.height='0px';field.style.height=Math.max(27,field.scrollHeight)+'px';}
  area.scrollTop=y;
 }
 window.addEventListener('resize',()=>{if(!$('cfhNotesEditor').hidden)fitNoteBody();});
