@@ -321,5 +321,6 @@
   "supabase/vendor/supabase-js.mjs",
   "supabase/cfh-notes-content.mjs",
   "supabase/cfh-notes-editor.mjs",
-  "supabase/cfh-notes-wave.mjs"
+  "supabase/cfh-notes-wave.mjs",
+  "supabase/cfh-notes-checklist.mjs"
 ]

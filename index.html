@@ -11182,6 +11182,30 @@ body.cfh-notes-editor-open .cfh-bottom-nav{visibility:hidden;pointer-events:none
 body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-behavior:none;cursor:grabbing}
 @media(prefers-reduced-motion:reduce){#cfhNotesSortMenu{animation:none}}
 
+/* Compact Keep-style checklist; editor styles do not change note-card previews. */
+#cfhNotesChecklist{flex:0 0 auto;min-width:0;width:100%}
+#cfhNotesChecklist .cfh-note-check-row{position:relative;display:grid;grid-template-columns:20px 20px minmax(0,1fr);column-gap:10px;align-items:start;box-sizing:border-box;min-height:40px;margin:0;padding:7px 0;background:transparent;border:0}
+#cfhNotesChecklist .cfh-check-grip{display:grid;place-items:center;box-sizing:border-box;width:20px;min-width:20px;height:24px;min-height:24px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#93909f;box-shadow:none;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+#cfhNotesChecklist .cfh-check-grip svg{width:11px;height:17px;fill:currentColor;pointer-events:none}
+#cfhNotesChecklist input[type=checkbox]{-webkit-appearance:none;appearance:none;position:relative;display:block!important;box-sizing:border-box;width:20px!important;min-width:20px;height:20px!important;min-height:20px;margin:2px 0 0!important;padding:0;border:1.6px solid #1B1844;border-radius:2px;background:transparent;box-shadow:none;cursor:pointer}
+#cfhNotesChecklist input[type=checkbox]:checked{background:#00F8B9;border-color:#00F8B9}
+#cfhNotesChecklist input[type=checkbox]:checked::after{content:'';position:absolute;left:5px;top:1px;width:6px;height:11px;border:solid #1B1844;border-width:0 2px 2px 0;transform:rotate(45deg)}
+#cfhNotesChecklist input[type=checkbox]:focus-visible,#cfhNotesChecklist button:focus-visible{outline:2px solid #00896b;outline-offset:2px}
+#cfhNotesChecklist textarea{box-sizing:border-box;display:block;min-width:0;max-width:100%;width:100%;height:24px;min-height:24px;margin:0;padding:0;border:0;border-radius:0;outline:none;box-shadow:none;resize:none;overflow:hidden;background:transparent;color:#1B1844;font:400 16px/24px Arial,sans-serif;-webkit-user-select:text;user-select:text;caret-color:#1B1844}
+#cfhNotesChecklist textarea::selection{background:#c5f7e9;color:#1B1844}
+#cfhNotesChecklist .is-checked textarea{text-decoration:line-through;color:#85808f}
+#cfhNotesChecklist .cfh-check-remove{position:absolute;right:0;top:7px;display:none;place-items:center;width:24px;min-width:24px;height:24px;min-height:24px;margin:0;padding:0;border:0;background:transparent;color:#78738c;font:24px/1 Arial;box-shadow:none}
+#cfhNotesChecklist .is-editing .cfh-check-remove{display:grid}
+#cfhNotesChecklist .is-editing textarea{padding-right:28px}
+#cfhNotesChecklist #cfhNotesAddItem{box-sizing:border-box;display:flex;align-items:center;gap:10px;width:auto;min-height:40px;margin:0 0 0 30px;padding:7px 0;border:0;border-radius:0;background:transparent;color:#78738c;font:400 16px/24px Arial;text-align:left;box-shadow:none}
+#cfhNotesAddItem span:first-child{display:inline-block;width:20px;text-align:center;font-size:25px}
+#cfhNotesChecklist .cfh-check-completed-toggle{display:flex;align-items:center;gap:10px;min-height:40px;width:100%;margin:14px 0 0;padding:7px 0;border:0;border-radius:0;background:transparent;color:#78738c;font:400 15px/24px Arial;text-align:left;box-shadow:none}
+#cfhNotesChecklist .cfh-check-completed-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;flex:0 0 20px}
+#cfhNotesChecklist .cfh-check-completed-toggle[aria-expanded=false] svg{transform:rotate(-90deg)}
+#cfhNotesCheckedItems[hidden]{display:none!important}
+#cfhNotesChecklist .is-moving{opacity:.3}
+.cfh-check-drag-ghost{position:fixed;z-index:100350;display:flex;align-items:flex-start;gap:10px;box-sizing:border-box;background:var(--cfh-note-background,#fff);color:#1B1844;padding:7px 10px;border-radius:8px;box-shadow:0 4px 20px #1b18442b;pointer-events:none}
+.cfh-check-drag-ghost button{display:none}.cfh-check-drag-ghost input{width:20px;flex:0 0 20px}.cfh-check-drag-ghost textarea{flex:1;min-width:0;border:0;background:transparent;font:16px/24px Arial;color:#1B1844;resize:none}
 #cfhNotesDescriptionFlow{display:block;flex:0 0 auto;min-width:0;width:100%}
 #cfhNotesEditorBox #cfhNotesBody,#cfhNotesEditorBox #cfhNotesBodyAfter{display:none!important}
 #cfhNotesAudioAttachments{display:block;min-height:27px;width:100%;padding:0;margin:0;font:16px/1.65 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;border:0;outline:none;background:transparent;color:#1B1844;-webkit-user-select:text;user-select:text;caret-color:#1B1844}
