@@ -15,7 +15,13 @@ if(enabled) {
   ready.catch(()=>{});
   window.cashflowDatabase={request:async(params,options)=>{
     const api=await ready;
-    if(api.reads.handles(params.action))return api.reads.request(params,!!options?.skipCache);
+    if(api.reads.handles(params.action)){
+      if(params.action==='testDashboard' && options?.refreshKonekBalances){
+        const fresh=await loadCashflowSettings(client,{force:true});
+        api.reads.konekSeed=fresh.konekSeed;
+      }
+      return api.reads.request(params,!!options?.skipCache);
+    }
     if(api.writes.handles(params.action))return api.writes.request(params);
     if(params.action==='restoreRevisions')return {success:true,revisions:{}};
     throw new Error('This action is not supported. Refresh the app and try again.');

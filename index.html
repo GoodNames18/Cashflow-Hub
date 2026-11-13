@@ -3014,7 +3014,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             <h1>&#x1F4CA; Dashboard</h1>
             <div class="dashboard-header-actions">
               <button class="refresh-button balance-check-button" type="button" onclick="openTestBalanceCheckModal()">Check Balances</button>
-              <button class="refresh-button" type="button" onclick="loadTestDashboard()">&#x21BB; Refresh</button>
+              <button class="refresh-button" type="button" onclick="loadTestDashboard(true, true)">&#x21BB; Refresh</button>
             </div>
           </div>
 
@@ -7426,7 +7426,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     }
 
 
-    function loadTestDashboard(forceFresh) {
+    function loadTestDashboard(forceFresh, refreshKonekBalances) {
       var monthLabel = document.getElementById("testMonthLabel");
       if (monthLabel && !forceFresh) monthLabel.innerText = "Loading...";
 
@@ -7436,9 +7436,11 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           { action: "testDashboard", year: period.year, month: period.month },
           function(data) {
             renderTestDashboard(data);
+            if (refreshKonekBalances) setTestStatus("✓ Balances refreshed.", "success");
             resolve(true);
           },
           function(error) {
+            if (refreshKonekBalances) setTestStatus("Could not refresh balances. Check your connection and try again.", "error");
             if (forceFresh) { console.log(error); resolve(false); return; }
             if (monthLabel) monthLabel.innerText = "Could not load dashboard";
             var recentBox = document.getElementById("testRecentTransactions");
@@ -7450,7 +7452,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             syncActivePageHeight();
             resolve(false);
           },
-          { skipCache: Boolean(forceFresh) }
+          { skipCache: Boolean(forceFresh), refreshKonekBalances: Boolean(refreshKonekBalances) }
         );
       });
     }

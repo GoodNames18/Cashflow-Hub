@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v101-stable-checklist-drag';
+const CACHE_NAME = 'cashflow-hub-v102-konek-balance-refresh';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
