@@ -272,6 +272,19 @@
       cursor: pointer;
     }
 
+    /* Keep the page still until the last popup closes. */
+    html:has(:is(dialog[open], .test-modal, #testBalanceCheckModal, .month-modal,
+      .cfh-portfolio-overlay, .cfh-editor-overlay, .cfh-card-panel-overlay, #cfhNotesEditor):not([hidden], [hidden] *)),
+    body:has(:is(dialog[open], .test-modal, #testBalanceCheckModal, .month-modal,
+      .cfh-portfolio-overlay, .cfh-editor-overlay, .cfh-card-panel-overlay, #cfhNotesEditor):not([hidden], [hidden] *)) {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    :is(dialog[open], [aria-modal="true"]) {
+      overscroll-behavior: contain;
+    }
+
     .month-modal[hidden] {
       display: none;
     }
