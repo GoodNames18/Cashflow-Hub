@@ -17,10 +17,9 @@ if(enabled) {
     const api=await ready;
     if(api.reads.handles(params.action)){
       if(params.action==='testDashboard' && options?.refreshKonekBalances){
-        const fresh=await loadCashflowSettings(client,{force:true});
-        api.reads.konekSeed=fresh.konekSeed;
+        await api.refreshSettings();
       }
-      return api.reads.request(params,!!options?.skipCache);
+      return api.reads.request(params,!!options?.skipCache,{requireNetwork:!!options?.refreshKonekBalances});
     }
     if(api.writes.handles(params.action))return api.writes.request(params);
     if(params.action==='restoreRevisions')return {success:true,revisions:{}};
@@ -39,9 +38,17 @@ if(enabled) {
     try {cache=await openHistoryCache();} catch(error){console.warn('History cache unavailable',error);}
     const snapshot=new CashflowSnapshot(store,cache);
     const reads=new CashflowReadApi(snapshot,settings.referenceCells,settings.konekSeed);
-    const outbox=await new CashflowOfflineQueue(store,reads,await openOfflineQueue(),{settings:async()=>{
-      const fresh=await loadCashflowSettings(client,{force:true});reads.referenceCells=fresh.referenceCells;reads.konekSeed=fresh.konekSeed;
-    }}).init();
+    let settingsRequest;
+    function refreshSettings(){
+      if(!settingsRequest)settingsRequest=loadCashflowSettings(client,{force:true}).then(fresh=>{
+        const changed=JSON.stringify(reads.konekSeed)!==JSON.stringify(fresh.konekSeed);
+        reads.referenceCells=fresh.referenceCells;
+        reads.konekSeed=fresh.konekSeed;
+        if(changed)snapshot.emit('konek2card');
+      }).finally(()=>{settingsRequest=null;});
+      return settingsRequest;
+    }
+    const outbox=await new CashflowOfflineQueue(store,reads,await openOfflineQueue(),{settings:refreshSettings}).init();
     snapshot.pendingRecords=tab=>outbox.records(tab);
     snapshot.pendingView=(tab,records)=>outbox.view(tab,records);
     mountOfflineStatus(outbox);
@@ -51,7 +58,8 @@ if(enabled) {
     window.cfhHomeOfflineQueue=outbox;
     mountHomeSyncStatus(outbox);
     snapshot.onChange(tab=>window.dispatchEvent(new CustomEvent('cashflow-data-changed',{detail:{tab}})));
-    resolveReady({reads,writes});
+    resolveReady({reads,writes,refreshSettings});
+    if(navigator.onLine!==false)void refreshSettings().catch(console.warn);
     if(!window.cfhCalendarSyncStarted){window.cfhCalendarSyncStarted=true;void startCalendarSync(client,'161ecab1-d1d7-4fef-a089-a7300b9da774').catch(console.warn);}
     client.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){try{localStorage.removeItem('cfh-home-verified-owner-v1');}catch{}}});
     const tabs=['cash_in_out','life_log','twice_as_nyce','printing','money_flow','konek2card','rental'];
@@ -62,6 +70,7 @@ if(enabled) {
       if(checking||document.hidden||navigator.onLine===false)return;
       checking=true;
       try {
+        await refreshSettings().catch(console.warn);
         for(let i=0;i<tabs.length;i+=2)
           await Promise.allSettled(tabs.slice(i,i+2).map(tab=>snapshot.refreshChanges(tab)));
       }finally{checking=false;}
