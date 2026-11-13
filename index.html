@@ -1564,6 +1564,18 @@
       color: var(--secondary) !important;
     }
 
+    :is(#twiceRecentTransactions, #printingRecentTransactions, #rentalRecentTransactions, #recentTransactions)
+      .transaction-amount.income-value,
+    #testRecentTransactions .transaction-amount.home-signed.income-value {
+      color: #087c50 !important;
+    }
+
+    :is(#twiceRecentTransactions, #printingRecentTransactions, #rentalRecentTransactions, #recentTransactions)
+      .transaction-amount.expense-value,
+    #testRecentTransactions .transaction-amount.home-signed.expense-value {
+      color: var(--red) !important;
+    }
+
     .gcash-filtered-transactions {
       max-height: min(60dvh, 560px);
       overflow-y: auto;
@@ -7866,7 +7878,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
               '<div class="transaction-name">' + escapeHtml(customer) + '</div>' +
               '<div class="transaction-meta">' + escapeHtml(metaParts.join(" \u2022 ")) + '</div>' +
             '</div>' +
-            '<div class="' + amountClass + '">' + escapeHtml(amountText) + '</div>' +
+            '<div class="' + amountClass + (/^[+−-]/.test(amountText) ? " home-signed" : "") + '">' + escapeHtml(amountText) + '</div>' +
           '</div>'
         );
       }).join("");
