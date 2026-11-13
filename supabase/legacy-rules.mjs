@@ -2267,6 +2267,7 @@ function getTwiceAsNyceDashboardData(selectedYear, selectedMonth) {
 
   var income = 0;
   var totalIncome = 0;
+  var totalExpenses = 0;
   var expenses = 0;
   var transactions = 0;
   var recentTransactions = [];
@@ -2346,6 +2347,7 @@ function getTwiceAsNyceDashboardData(selectedYear, selectedMonth) {
         }
 
         if (isIncome) totalIncome += amount;
+        else totalExpenses += amount;
 
         if (
           transactionDate >= monthStart &&
@@ -2416,6 +2418,7 @@ function getTwiceAsNyceDashboardData(selectedYear, selectedMonth) {
     ),
     income: income,
     totalIncome: totalIncome,
+    totalMoney: totalIncome - totalExpenses,
     expenses: expenses,
     profit: income - expenses,
     transactions: transactions,
