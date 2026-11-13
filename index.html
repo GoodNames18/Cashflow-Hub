@@ -1024,6 +1024,25 @@
 
 
     /* Transfer uses the month selector's fixed panel and scrolling choices. */
+    #testLoanModal[data-mode="add"] .test-modal-card {
+      border-top: 5px solid #00F8B9;
+    }
+    #testLoanModal[data-mode="add"] .test-modal-note {
+      border-left: 3px solid #00F8B9;
+      background: rgba(0, 248, 185, .12);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    #testLoanModal[data-mode="add"] input:focus {
+      outline: 2px solid #00F8B9;
+      outline-offset: 1px;
+    }
+    #testLoanModal[data-mode="add"] #testLoanSaveButton {
+      background: #00F8B9;
+      color: #1B1844;
+      border-color: transparent;
+    }
+
     #testTransferModal {
       position: fixed;
       inset: 0;
@@ -3094,7 +3113,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           <div id="testLoanModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testLoanTitle">
               <div id="testLoanTitle" class="test-modal-title">LOAN PAYMENT AMOUNT</div>
-              <div class="test-modal-note">Edit both amounts. Payment must be greater than rebate.</div>
+              <div id="testLoanInstructions" class="test-modal-note">Edit both amounts. Payment must be greater than rebate.</div>
               <label id="testLoanAmountLabel" for="testLoanAmountInput">Payment</label>
               <input id="testLoanAmountInput" class="quick-custom-input" type="number" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
               <label id="testLoanRebateLabel" for="testLoanRebateInput">Rebate</label>
@@ -7362,11 +7381,20 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       var values = getTestLoanValues();
       var modal = document.getElementById("testLoanModal");
       document.getElementById("testLoanTitle").textContent = add ? "ADD KONEK2CARD LOAN" : "KONEK2CARD LOAN PAYMENT";
-      document.getElementById("testLoanAmountLabel").textContent = add ? "Loan amount owed" : "Payment";
-      document.getElementById("testLoanRebateLabel").textContent = add ? "Amount credited to card" : "Rebate";
+      modal.dataset.mode = testLoanMode;
+      document.getElementById("testLoanInstructions").textContent = add
+        ? "Leave Loan Fees blank if nothing was deducted upfront."
+        : "Edit both amounts. Payment must be greater than rebate.";
+      document.getElementById("testLoanAmountLabel").textContent = add ? "Loan Amount" : "Payment";
+      document.getElementById("testLoanRebateLabel").textContent = add ? "Loan Fees (optional)" : "Rebate";
       document.getElementById("testLoanAmountInput").value = add ? "" : values.payment;
       document.getElementById("testLoanAmountInput").min = "0.01";
       document.getElementById("testLoanRebateInput").value = add ? "" : values.rebate;
+      document.getElementById("testLoanAmountInput").setAttribute("aria-label", add ? "Loan Amount" : "Loan payment amount");
+      var feeInput = document.getElementById("testLoanRebateInput");
+      feeInput.setAttribute("aria-label", add ? "Loan Fees (optional)" : "Loan rebate amount");
+      feeInput.min = add ? "0" : "0.01";
+      feeInput.placeholder = add ? "0.00" : "";
       document.getElementById("testLoanPrincipalInput").value = "";
       document.getElementById("testLoanPrincipalField").hidden = add;
       document.getElementById("testLoanSaveButton").textContent = add ? "Save Loan" : "Save Payment";
@@ -7401,9 +7429,22 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       var payment = document.getElementById("testLoanAmountInput").value;
       var rebate = document.getElementById("testLoanRebateInput").value;
       var principal = document.getElementById("testLoanPrincipalInput").value;
-      var params = add ? {action:"testKonekLoanAdd", principal:payment, netToCard:rebate}
+      var netToCard;
+      if (add) {
+        var amountCents = Math.round(Number(payment) * 100);
+        var feeCents = Math.round(Number(rebate) * 100);
+        if (!Number.isSafeInteger(amountCents) || !Number.isSafeInteger(feeCents) ||
+            Math.abs(Number(payment) * 100 - amountCents) > 0.000001 ||
+            Math.abs(Number(rebate) * 100 - feeCents) > 0.000001 ||
+            amountCents <= 0 || feeCents < 0 || feeCents >= amountCents) {
+          showTestLoanMessage("Enter a positive loan amount and fees smaller than the loan amount, with up to two decimals.");
+          return;
+        }
+        netToCard = ((amountCents - feeCents) / 100).toFixed(2);
+      }
+      var params = add ? {action:"testKonekLoanAdd", principal:payment, netToCard:netToCard}
         : {action:"testLoan", amount:payment, rebate:rebate, principal:principal};
-      if (!payment || !rebate) { showTestLoanMessage("Enter both amounts before saving."); return; }
+      if (!add && (!payment || !rebate)) { showTestLoanMessage("Enter both amounts before saving."); return; }
       save.disabled = true;
       setTestActionButtonsDisabled(true);
       jsonpRequest(params, function(result) {
