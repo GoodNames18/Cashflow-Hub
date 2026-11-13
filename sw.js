@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v105-home-time-picker';
+const CACHE_NAME = 'cashflow-hub-v106-other-loan-form';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

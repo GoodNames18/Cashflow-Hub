@@ -119,7 +119,14 @@ export function planEntry(params, now = new ManilaDate()) {
       break;
     }
     case 'testOthersLoan': {
-      const entry=rules.parseTestOthersLoanInput_(params.text,params.loanAction);
+      let entry;
+      if(params.loanAction==='add' && params.principal!==undefined){
+        const principal=cents(params.principal), fee=Number(params.fee||0);
+        if(!Number.isFinite(fee)||fee<0||fee>=principal||Math.abs(fee*100-Math.round(fee*100))>0.000001)
+          throw new Error('Loan fee must be smaller than the amount and use up to two decimals.');
+        const lender=String(params.lender||'').trim().slice(0,80);
+        entry={action:'add',principal,fee,amount:principal,lender,netToCard:Math.round((principal-fee)*100)/100};
+      }else entry=rules.parseTestOthersLoanInput_(params.text,params.loanAction);
       tab='konek2card';rows=[rules.buildTestOthersLoanRow_(date,entry)];receipt=entry;break;
     }
     case 'testKonekLoanAdd': {
