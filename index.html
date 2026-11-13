@@ -419,6 +419,46 @@
       font-size: 15px;
     }
 
+    .transaction-time-trigger {
+      min-height: 42px;
+      padding: 9px 10px;
+      text-align: left;
+      border: 1px solid var(--secondary);
+      border-radius: 9px;
+      background: var(--surface, #fff);
+      color: var(--text);
+      font: inherit;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    #transactionTimePicker {
+      width: min(360px, calc(100vw - 32px));
+      box-sizing: border-box;
+      border: 1px solid var(--secondary);
+      border-radius: 16px;
+      padding: 18px;
+      background: var(--surface, #fff);
+      color: var(--text);
+    }
+    #transactionTimePicker::backdrop { background: #0006; }
+    .transaction-time-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .transaction-time-options label { display: grid; gap: 5px; }
+    .transaction-time-options select {
+      min-height: 44px;
+      width: 100%;
+      font: inherit;
+      border: 1px solid var(--secondary);
+      border-radius: 8px;
+      background: var(--surface, #fff);
+      color: var(--text);
+    }
+    #transactionTimeDone { background: #00F8B9; color: #1B1844; }
+
     .transaction-edit-fields textarea {
       min-height: 76px;
       resize: vertical;
@@ -3363,6 +3403,19 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     </div>
   </div>
 
+  <dialog id="transactionTimePicker" aria-labelledby="transactionTimeTitle">
+    <h2 id="transactionTimeTitle" class="month-modal-title">Choose time</h2>
+    <div class="transaction-time-options">
+      <label>Hour <select id="transactionTimeHour"></select></label>
+      <label>Minute <select id="transactionTimeMinute"></select></label>
+      <label>AM/PM <select id="transactionTimePeriod"><option>AM</option><option>PM</option></select></label>
+    </div>
+    <div class="transaction-modal-actions">
+      <button type="button" class="month-modal-option" id="transactionTimeCancel">Cancel</button>
+      <button type="button" class="month-modal-option" id="transactionTimeDone">Done</button>
+    </div>
+  </dialog>
+
   <script>
     if (true) {
       window.cashflowDatabaseReady = import("./supabase/cfh-browser.mjs?v=stock-live1");
@@ -3371,6 +3424,12 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
   </script>
 
   <script>
+    window.cfhHandleTransactionTimeBack = function() {
+      var picker = document.getElementById("transactionTimePicker");
+      if (!picker.open) return false;
+      picker.close();
+      return true;
+    };
     document.title = "Cashflow Hub";
 
     const APPS_SCRIPT_URL =
@@ -9601,6 +9660,30 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             var hour = Number(parts[0]);
             return String(hour % 12 || 12) + ":" + parts[1] + (hour >= 12 ? " PM" : " AM");
           }
+          function openTransactionTimePicker(control) {
+            var picker = document.getElementById("transactionTimePicker");
+            var hour = document.getElementById("transactionTimeHour");
+            var minute = document.getElementById("transactionTimeMinute");
+            var period = document.getElementById("transactionTimePeriod");
+            if (!hour.options.length) {
+              for (var h = 1; h <= 12; h++) hour.add(new Option(String(h), String(h)));
+              for (var m = 0; m < 60; m++) {
+                var mm = String(m).padStart(2, "0");
+                minute.add(new Option(mm, mm));
+              }
+            }
+            var parts = (to24Hour(control.value) || "12:00").split(":");
+            hour.value = String(Number(parts[0]) % 12 || 12);
+            minute.value = parts[1];
+            period.value = Number(parts[0]) >= 12 ? "PM" : "AM";
+            document.getElementById("transactionTimeCancel").onclick = function() { picker.close(); };
+            document.getElementById("transactionTimeDone").onclick = function() {
+              control.value = hour.value + ":" + minute.value + " " + period.value;
+              control.textContent = control.value;
+              picker.close();
+            };
+            picker.showModal();
+          }
           function cleanAmount(value) {
             return String(value == null ? "" : value).replace(/[₱,\s]/g, "").trim();
           }
@@ -9723,13 +9806,13 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
               fieldsToRender.forEach(function(field) {
                 var labelNode = document.createElement("label");
                 labelNode.textContent = field.label;
-                var control = field.type === "textarea"
-                  ? document.createElement("textarea")
+                var control = field.key === "time" ? document.createElement("button")
+                  : field.type === "textarea" ? document.createElement("textarea")
                   : document.createElement("input");
                 if (field.key === "time") {
-                  control.type = "text";
-                  control.inputMode = "text";
-                  control.placeholder = "e.g. 1:30 PM";
+                  control.type = "button";
+                  control.className = "transaction-time-trigger";
+                  control.setAttribute("aria-haspopup", "dialog");
                 } else if (field.key === "amount" || field.key === "feeEarned") {
                   control.type = "text";
                   control.inputMode = "decimal";
@@ -9745,10 +9828,8 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
                   : (field.key === "amount" || field.key === "feeEarned") ? formatAmount(rawValue)
                   : rawValue;
                 if (field.key === "time") {
-                  control.addEventListener("blur", function() {
-                    var normalizedTime = to24Hour(control.value);
-                    if (normalizedTime) control.value = to12Hour(normalizedTime);
-                  });
+                  control.textContent = control.value || "Choose time";
+                  control.addEventListener("click", function() { openTransactionTimePicker(control); });
                 } else if (field.key === "amount" || field.key === "feeEarned") {
                   control.addEventListener("focus", function() {
                     control.value = cleanAmount(control.value);

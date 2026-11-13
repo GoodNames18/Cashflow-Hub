@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v104-konek-loan-fees';
+const CACHE_NAME = 'cashflow-hub-v105-home-time-picker';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
