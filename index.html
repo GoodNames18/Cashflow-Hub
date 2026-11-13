@@ -7576,7 +7576,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           try { localStorage.setItem("cashflow-test-loan-values", JSON.stringify({payment:Number(payment), rebate:Number(rebate)})); } catch (error) {}
         }
         closeTestLoanModal();
-        if (other) document.getElementById("testTransactionInput").value = "";
+        if (add) document.getElementById("testTransactionInput").value = "";
         setTestStatus(other ? "Other loan added." : add ? "Konek2Card loan added." : "Konek2Card loan payment recorded.", "success");
         markTestDashboardLoaded_(result.dashboard);
       }, function(error) {
