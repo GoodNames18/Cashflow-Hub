@@ -1084,12 +1084,20 @@
     }
 
     #testLoanTypeModal .test-modal-card { border-top: 5px solid #00F8B9; }
-    #testLoanTypeModal .test-loan-konek { background: #00F8B9; color: #1B1844; }
+    #testLoanTypeModal .test-choice-grid > button { margin-top: 0; }
+    #testLoanTypeModal .test-loan-konek,
     #testLoanTypeModal .test-loan-other,
     #testLoanModal[data-mode="other"] #testLoanSaveButton {
       background: #E5DFFF;
       color: #1B1844;
     }
+    #testLoanTypeModal .test-loan-type-cancel,
+    #testLoanModal:is([data-mode="add"], [data-mode="other"]) #testLoanCancelButton {
+      background: #1B1844;
+      border-color: #1B1844;
+      color: #FFFFFF;
+    }
+    #testLoanTypeModal .test-loan-type-cancel { margin-top: 12px; }
     #testLoanModal[data-mode="other"] .test-modal-card,
     #testLoanModal[data-mode="other"] .test-modal-note { border-color: #A78BFA; }
     #testLoanModal[data-mode="other"] .test-modal-note { background: rgba(167, 139, 250, .2); }
@@ -3157,7 +3165,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
                 <button class="test-modal-cancel test-loan-konek" type="button" onclick="chooseTestLoanType('konek')">Konek2Card Loan</button>
                 <button class="test-modal-cancel test-loan-other" type="button" onclick="chooseTestLoanType('other')">Other Loan</button>
               </div>
-              <button class="test-modal-cancel" type="button" onclick="chooseTestLoanType('')">Cancel</button>
+              <button class="test-modal-cancel test-loan-type-cancel" type="button" onclick="chooseTestLoanType('')">Cancel</button>
             </div>
           </div>
           <div id="testLoanModal" class="test-modal" hidden>
