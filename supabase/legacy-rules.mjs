@@ -1300,8 +1300,17 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
       continue;
     }
 
+    var konekLoanAdd = /^konek2card loan add \| card (\d+\.\d{2})$/.exec(description);
+    if (category === 'transfer' && konekLoanAdd && amount > 0) {
+      loanRemaining += amount;
+      card += Number(konekLoanAdd[1]);
+      continue;
+    }
+
     if (isTestLoanPaymentRow_(row)) {
       card -= amount;
+      var principalPaid = /^loan payment \| principal (\d+\.\d{2})$/.exec(description);
+      if (principalPaid) loanRemaining = Math.max(0, loanRemaining - Number(principalPaid[1]));
       continue;
     }
 
@@ -1423,7 +1432,7 @@ function isTestLoanPaymentRow_(row) {
   var description = String(row && row[6] || '').trim().toLowerCase();
   return amount > 0 &&
     (category === 'expense' || category === 'expenses') &&
-    (description === 'loan' || description === 'loan payment');
+    (description === 'loan' || /^loan payment(?: \| principal \d+\.\d{2})?$/.test(description));
 }
 
 var TEST_BALANCE_RESET_AT_;

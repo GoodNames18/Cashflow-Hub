@@ -3081,14 +3081,29 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             <div id="testRecentTransactions" class="dashboard-message">Loading...</div>
           </div>
 
+          <div id="testLoanTypeModal" class="test-modal" hidden>
+            <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testLoanTypeTitle">
+              <div id="testLoanTypeTitle" class="test-modal-title">ADD LOAN</div>
+              <div class="test-choice-grid">
+                <button class="test-modal-cancel" type="button" onclick="chooseTestLoanType('konek')">Konek2Card Loan</button>
+                <button class="test-modal-cancel" type="button" onclick="chooseTestLoanType('other')">Other Loan</button>
+              </div>
+              <button class="test-modal-cancel" type="button" onclick="chooseTestLoanType('')">Cancel</button>
+            </div>
+          </div>
           <div id="testLoanModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testLoanTitle">
               <div id="testLoanTitle" class="test-modal-title">LOAN PAYMENT AMOUNT</div>
               <div class="test-modal-note">Edit both amounts. Payment must be greater than rebate.</div>
-              <label for="testLoanAmountInput">Payment</label>
+              <label id="testLoanAmountLabel" for="testLoanAmountInput">Payment</label>
               <input id="testLoanAmountInput" class="quick-custom-input" type="number" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
-              <label for="testLoanRebateInput">Rebate</label>
+              <label id="testLoanRebateLabel" for="testLoanRebateInput">Rebate</label>
               <input id="testLoanRebateInput" class="quick-custom-input" type="number" inputmode="decimal" min="0.01" step="0.01" aria-label="Loan rebate amount">
+              <div id="testLoanPrincipalField">
+                <label for="testLoanPrincipalInput">Principal paid (optional)</label>
+                <input id="testLoanPrincipalInput" class="quick-custom-input" type="number" inputmode="decimal" min="0.01" step="0.01">
+              </div>
+              <p id="testLoanWarning" class="test-modal-note" aria-live="polite" hidden></p>
               <button id="testLoanSaveButton" class="test-modal-cancel" type="button">SAVE AMOUNT</button>
               <button id="testLoanCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
             </div>
@@ -5883,7 +5898,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           lifeLogAdd: "lifeLogTransactions", rentalAdd: "rentalTransactions",
           expense: "moneyFlowTransactions", konekAdd: "testTransactions",
           testAapCollection: "testTransactions", testAtmWithdraw: "testTransactions",
-          testCashOut: "testTransactions", testLoan: "testTransactions",
+          testCashOut: "testTransactions", testLoan: "testTransactions", testKonekLoanAdd: "testTransactions",
           testOthersLoan: "testTransactions", testTransfer: "testTransactions",
           testHoldMoney: "testTransactions", testMonthlyInterest: "testTransactions",
           testBalanceAdjustment: "testTransactions",
@@ -5956,7 +5971,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           }
 
         },
-        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testMonthlyInterest|testOthersLoan|testLoan|testAtmWithdraw|testHoldMoney|testBalanceAdjustment|testEarnedAdjustment|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
+        /^(?:konekAdd|testCashOut|testAapCollection|testTransfer|testMonthlyInterest|testOthersLoan|testKonekLoanAdd|testLoan|testAtmWithdraw|testHoldMoney|testBalanceAdjustment|testEarnedAdjustment|lifeLogAdd|twiceAdd|printingAdd|rentalAdd|gcashQuickAdd|gcashTextAdd|expense|transactionDelete)$/.test(String(params.action || "")) ? 45000 : 25000
       );
 
     }
@@ -6677,10 +6692,10 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             event.preventDefault();
             loanLongPressed = false;
           } else {
-            saveTestLoan();
+            openTestLoanModal();
           }
         });
-        loanButton.setAttribute("aria-label", "Loan. Long press to edit payment amount.");
+        loanButton.setAttribute("aria-label", "Konek2Card loan payment");
       }
       var loanSaveButton = document.getElementById("testLoanSaveButton");
       var loanCancelButton = document.getElementById("testLoanCancelButton");
@@ -6688,6 +6703,9 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       if (loanCancelButton) loanCancelButton.addEventListener("click", closeTestLoanModal);
       var loanAmountInput = document.getElementById("testLoanAmountInput");
       var loanRebateInput = document.getElementById("testLoanRebateInput");
+      [loanAmountInput, loanRebateInput].forEach(function(input) {
+        if (input) input.addEventListener("input", updateTestLoanWarning);
+      });
       if (loanRebateInput) loanRebateInput.addEventListener("keydown", function(event) {
         if (event.key === "Enter") saveTestLoanAmount();
       });
@@ -6766,7 +6784,8 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           button.addEventListener("click", function() {
             var action = button.getAttribute("data-others-loan-action");
             closeTestTransferModal();
-            saveTestOthersLoan(action);
+            if (action === "add") document.getElementById("testLoanTypeModal").hidden = false;
+            else saveTestOthersLoan(action);
           });
         });
 
@@ -7330,62 +7349,78 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       return { payment: 415, rebate: 50 };
     }
 
-    function openTestLoanModal() {
+    var testLoanMode = "payment";
+    function chooseTestLoanType(type) {
+      document.getElementById("testLoanTypeModal").hidden = true;
+      if (type === "konek") openTestLoanModal("add");
+      if (type === "other") saveTestOthersLoan("add");
+    }
+
+    function openTestLoanModal(mode) {
+      testLoanMode = mode === "add" ? "add" : "payment";
+      var add = testLoanMode === "add";
       var values = getTestLoanValues();
       var modal = document.getElementById("testLoanModal");
-      var paymentInput = document.getElementById("testLoanAmountInput");
-      var rebateInput = document.getElementById("testLoanRebateInput");
-      if (paymentInput) paymentInput.value = String(values.payment);
-      if (rebateInput) rebateInput.value = String(values.rebate);
-      if (modal) modal.hidden = false;
+      document.getElementById("testLoanTitle").textContent = add ? "ADD KONEK2CARD LOAN" : "KONEK2CARD LOAN PAYMENT";
+      document.getElementById("testLoanAmountLabel").textContent = add ? "Loan amount owed" : "Payment";
+      document.getElementById("testLoanRebateLabel").textContent = add ? "Amount credited to card" : "Rebate";
+      document.getElementById("testLoanAmountInput").value = add ? "" : values.payment;
+      document.getElementById("testLoanAmountInput").min = "0.01";
+      document.getElementById("testLoanRebateInput").value = add ? "" : values.rebate;
+      document.getElementById("testLoanPrincipalInput").value = "";
+      document.getElementById("testLoanPrincipalField").hidden = add;
+      document.getElementById("testLoanSaveButton").textContent = add ? "Save Loan" : "Save Payment";
+      modal.hidden = false;
+      updateTestLoanWarning();
     }
 
     function closeTestLoanModal() {
-      var modal = document.getElementById("testLoanModal");
-      if (modal) modal.hidden = true;
+      document.getElementById("testLoanModal").hidden = true;
+    }
+
+    function showTestLoanMessage(text) {
+      var message = document.getElementById("testLoanWarning");
+      message.textContent = text;
+      message.hidden = !text;
+    }
+
+    function updateTestLoanWarning() {
+      var payment = Number(document.getElementById("testLoanAmountInput").value);
+      var rebate = Number(document.getElementById("testLoanRebateInput").value);
+      var card = Number(latestTestDashboardData?.card);
+      var next = Math.round((card - payment + rebate) * 100) / 100;
+      showTestLoanMessage(testLoanMode === "payment" && payment > rebate && next < 0
+        ? "Your card balance will be " + formatPeso(next) + " after this payment and rebate. You can still save it."
+        : "");
     }
 
     function saveTestLoanAmount() {
-      var paymentInput = document.getElementById("testLoanAmountInput");
-      var rebateInput = document.getElementById("testLoanRebateInput");
-      var payment = Number(paymentInput && paymentInput.value);
-      var rebate = Number(rebateInput && rebateInput.value);
-      if (!Number.isFinite(payment) || !Number.isFinite(rebate) || rebate <= 0 || payment <= rebate ||
-          Math.round(payment * 100) !== payment * 100 || Math.round(rebate * 100) !== rebate * 100) {
-        setTestStatus("Payment must exceed rebate; enter valid amounts with at most two decimals.", "error");
-        return;
-      }
-      try {
-        localStorage.setItem("cashflow-test-loan-values", JSON.stringify({payment: payment, rebate: rebate}));
-      } catch (error) {
-        setTestStatus("Could not save the amounts on this device.", "error");
-        return;
-      }
-      closeTestLoanModal();
-      setTestStatus("Loan set: ₱" + payment + " payment, ₱" + rebate + " rebate. Tap Loan to record.", "success");
-    }
-
-    function saveTestLoan() {
-      var loanValues = getTestLoanValues();
-      setTestStatus("Recording loan...", "preview");
+      var save = document.getElementById("testLoanSaveButton");
+      if (save.disabled) return;
+      var add = testLoanMode === "add";
+      var payment = document.getElementById("testLoanAmountInput").value;
+      var rebate = document.getElementById("testLoanRebateInput").value;
+      var principal = document.getElementById("testLoanPrincipalInput").value;
+      var params = add ? {action:"testKonekLoanAdd", principal:payment, netToCard:rebate}
+        : {action:"testLoan", amount:payment, rebate:rebate, principal:principal};
+      if (!payment || !rebate) { showTestLoanMessage("Enter both amounts before saving."); return; }
+      save.disabled = true;
       setTestActionButtonsDisabled(true);
-
-      jsonpRequest(
-        { action: "testLoan", amount: loanValues.payment, rebate: loanValues.rebate },
-        function(result) {
-          setTestActionButtonsDisabled(false);
-          setTestStatus(result.duplicate
-            ? "This loan payment and rebate were already recorded. No second entry was added."
-            : "Loan recorded — ₱" + loanValues.payment.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " payment + ₱" + loanValues.rebate.toLocaleString("en-PH", {minimumFractionDigits: 2}) + " rebate", "success");
-          markTestDashboardLoaded_(result.dashboard);
-        },
-        function(error) {
-          setTestActionButtonsDisabled(false);
-          setTestStatus("\u274C " + error.message, "error");
+      jsonpRequest(params, function(result) {
+        save.disabled = false;
+        setTestActionButtonsDisabled(false);
+        if (!add) {
+          try { localStorage.setItem("cashflow-test-loan-values", JSON.stringify({payment:Number(payment), rebate:Number(rebate)})); } catch (error) {}
         }
-      );
+        closeTestLoanModal();
+        setTestStatus(add ? "Konek2Card loan added." : "Konek2Card loan payment recorded.", "success");
+        markTestDashboardLoaded_(result.dashboard);
+      }, function(error) {
+        save.disabled = false;
+        setTestActionButtonsDisabled(false);
+        showTestLoanMessage(error.message);
+      });
     }
-
 
     function openTestAtmModal() {
       var modal = document.getElementById("testAtmModal");
@@ -7569,6 +7604,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
 
     function renderTestDashboard(data) {
       latestTestDashboardData = data;
+      if (!document.getElementById("testLoanModal").hidden) updateTestLoanWarning();
       updateTestBalanceCheckSystemValues();
       var monthLabel = document.getElementById("testMonthLabel");
       if (monthLabel) monthLabel.innerText = data.monthLabel || "";

@@ -6,7 +6,9 @@ export function checkKonekEntry(plan,params,balance) {
   switch(params.action) {
     case 'testCashOut': enough('cashOnHand',amount,'Not enough Cash on Hand — borrow first.');break;
     case 'testAtmWithdraw': enough('card',amount,'Not enough Card balance.');break;
-    case 'testLoan': enough('card',receipt.payment,'Not enough Card balance for the loan payment.');break;
+    case 'testLoan':
+      if(receipt.principal>0)enough('loanRemaining',receipt.principal,'Principal paid exceeds Loan Remaining.');
+      break;
     case 'testHoldMoney':
       if(params.holdAction==='release')enough('heldMoney',amount,'Release amount is greater than Money on Hold.');
       else enough('card',amount,'Not enough spendable Card money to hold.');

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v102-konek-balance-refresh';
+const CACHE_NAME = 'cashflow-hub-v103-konek-loan';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

@@ -122,9 +122,20 @@ export function planEntry(params, now = new ManilaDate()) {
       const entry=rules.parseTestOthersLoanInput_(params.text,params.loanAction);
       tab='konek2card';rows=[rules.buildTestOthersLoanRow_(date,entry)];receipt=entry;break;
     }
+    case 'testKonekLoanAdd': {
+      const principal=cents(params.principal), netToCard=cents(params.netToCard);
+      if(netToCard>principal)throw new Error('Amount credited cannot exceed the loan amount.');
+      tab='konek2card';
+      rows=[[date,date,'Konek2Card',principal,'','Transfer','Konek2Card Loan Add | Card '+netToCard.toFixed(2)]];
+      receipt={principal,netToCard};break;
+    }
     case 'testLoan': {
       const entry=rules.validateTestLoanAmount_(params.amount,params.rebate);
-      tab='konek2card';rows=rules.buildTestLoanRows_(date,entry.payment,entry.rebate);receipt=entry;break;
+      entry.principal=String(params.principal??'').trim()===''?0:cents(params.principal);
+      if(entry.principal>entry.payment)throw new Error('Principal paid cannot exceed the payment.');
+      tab='konek2card';rows=rules.buildTestLoanRows_(date,entry.payment,entry.rebate);
+      if(entry.principal)rows[0][6]+=' | Principal '+entry.principal.toFixed(2);
+      receipt=entry;break;
     }
     case 'testAtmWithdraw': {
       const amount=rules.validateTestAtmAmount_(params.amount);
