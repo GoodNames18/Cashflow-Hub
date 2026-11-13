@@ -447,15 +447,33 @@
       gap: 8px;
       margin: 16px 0;
     }
-    .transaction-time-options label { display: grid; gap: 5px; }
-    .transaction-time-options select {
-      min-height: 44px;
+    .transaction-time-options section { min-width: 0; text-align: center; }
+    .transaction-time-wheel {
+      height: 140px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      padding-block: 56px;
+      box-sizing: border-box;
+    }
+    .transaction-time-wheel::-webkit-scrollbar { display: none; }
+    .transaction-time-wheel button {
+      display: block;
       width: 100%;
-      font: inherit;
-      border: 1px solid var(--secondary);
+      height: 28px;
+      scroll-snap-align: center;
+      border: 0;
       border-radius: 8px;
-      background: var(--surface, #fff);
-      color: var(--text);
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      cursor: pointer;
+    }
+    .transaction-time-wheel button[aria-selected="true"] {
+      background: #E5DFFF;
+      color: #1B1844;
+      font-weight: 800;
     }
     #transactionTimeDone { background: #00F8B9; color: #1B1844; }
 
@@ -3428,9 +3446,9 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
   <dialog id="transactionTimePicker" aria-labelledby="transactionTimeTitle">
     <h2 id="transactionTimeTitle" class="month-modal-title">Choose time</h2>
     <div class="transaction-time-options">
-      <label>Hour <select id="transactionTimeHour"></select></label>
-      <label>Minute <select id="transactionTimeMinute"></select></label>
-      <label>AM/PM <select id="transactionTimePeriod"><option>AM</option><option>PM</option></select></label>
+      <section>Hour<div id="transactionTimeHour" class="transaction-time-wheel" role="listbox" aria-label="Hour" tabindex="0"></div></section>
+      <section>Minute<div id="transactionTimeMinute" class="transaction-time-wheel" role="listbox" aria-label="Minute" tabindex="0"></div></section>
+      <section>AM/PM<div id="transactionTimePeriod" class="transaction-time-wheel" role="listbox" aria-label="AM/PM" tabindex="0"></div></section>
     </div>
     <div class="transaction-modal-actions">
       <button type="button" class="month-modal-option" id="transactionTimeCancel">Cancel</button>
@@ -9711,24 +9729,53 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             var hour = document.getElementById("transactionTimeHour");
             var minute = document.getElementById("transactionTimeMinute");
             var period = document.getElementById("transactionTimePeriod");
-            if (!hour.options.length) {
-              for (var h = 1; h <= 12; h++) hour.add(new Option(String(h), String(h)));
-              for (var m = 0; m < 60; m++) {
-                var mm = String(m).padStart(2, "0");
-                minute.add(new Option(mm, mm));
+            function setupWheel(wheel, values, initial) {
+              function index() {
+                return Math.max(0, Math.min(values.length - 1, Math.round(wheel.scrollTop / 28)));
               }
+              function highlight() {
+                var selected = index();
+                Array.from(wheel.children).forEach(function(button, i) {
+                  button.setAttribute("aria-selected", String(i === selected));
+                });
+                wheel.setAttribute("aria-activedescendant", wheel.children[selected].id);
+              }
+              function move(i) {
+                wheel.scrollTop = Math.max(0, Math.min(values.length - 1, i)) * 28;
+                highlight();
+              }
+              if (!wheel.children.length) {
+                values.forEach(function(value, i) {
+                  var option = document.createElement("button");
+                  option.type = "button";
+                  option.tabIndex = -1;
+                  option.id = wheel.id + "-" + i;
+                  option.setAttribute("role", "option");
+                  option.textContent = value;
+                  option.onclick = function() { move(i); };
+                  wheel.appendChild(option);
+                });
+              }
+              wheel.onscroll = highlight;
+              wheel.onkeydown = function(event) {
+                if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+                event.preventDefault();
+                move(index() + (event.key === "ArrowUp" ? -1 : 1));
+              };
+              move(values.indexOf(initial));
+              return function() { return values[index()]; };
             }
             var parts = (to24Hour(control.value) || "12:00").split(":");
-            hour.value = String(Number(parts[0]) % 12 || 12);
-            minute.value = parts[1];
-            period.value = Number(parts[0]) >= 12 ? "PM" : "AM";
+            picker.showModal();
+            var selectedHour = setupWheel(hour, Array.from({length: 12}, function(_, i) { return String(i + 1); }), String(Number(parts[0]) % 12 || 12));
+            var selectedMinute = setupWheel(minute, Array.from({length: 60}, function(_, i) { return String(i).padStart(2, "0"); }), parts[1]);
+            var selectedPeriod = setupWheel(period, ["AM", "PM"], Number(parts[0]) >= 12 ? "PM" : "AM");
             document.getElementById("transactionTimeCancel").onclick = function() { picker.close(); };
             document.getElementById("transactionTimeDone").onclick = function() {
-              control.value = hour.value + ":" + minute.value + " " + period.value;
+              control.value = selectedHour() + ":" + selectedMinute() + " " + selectedPeriod();
               control.textContent = control.value;
               picker.close();
             };
-            picker.showModal();
           }
           function cleanAmount(value) {
             return String(value == null ? "" : value).replace(/[₱,\s]/g, "").trim();
