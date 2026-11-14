@@ -3969,9 +3969,21 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       try{localStorage.setItem(CFH_EVENT_DELETIONS_KEY,JSON.stringify(deleted));}catch(e){alert('Could not delete event.');return;}
       cfhCardPanelClose();cfhCalendarRender();
     }
+    function cfhCardBill(entry){
+      return cfhCardPanelPreferences()[cfhCardKey(entry)]?.bills?.[cfhEntryCycle(entry)]||{};
+    }
+    function cfhSaveCardBill(entry,patch){
+      const bank=cfhCardKey(entry),cycle=cfhEntryCycle(entry),prefs=cfhCardPanelPreferences(),card=prefs[bank]||{};
+      prefs[bank]={...card,bills:{...card.bills,[cycle]:{...card.bills?.[cycle],...patch}}};
+      try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}
+      catch{alert('Could not save bill details.');return false;}
+      window.dispatchEvent(new Event('cfh-native-schedule-change'));
+      cfhCalendarRender();
+      return true;
+    }
     function cfhCalendarForDate(key) {
       if(cfhCalendarRenderCache?.dates.has(key))return cfhCalendarRenderCache.dates.get(key);
-      const entries=cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      const entries=cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)&&!(entry.type==='due'&&cfhCardKey(entry)&&cfhCardBill(entry).paid)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
       cfhCalendarRenderCache?.dates.set(key,entries);return entries;
     }
     function cfhCalendarEdit(id) {
@@ -4379,6 +4391,19 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         const row=document.createElement('div');row.className='cfh-card-panel-row';const text=document.createElement('div');const labelEl=document.createElement('strong');labelEl.textContent=label;const noteEl=document.createElement('small');noteEl.textContent=note;text.append(labelEl,noteEl);row.append(text);if(button)row.append(button);dialog.append(row);
       };
       const toggle=(enabled,label,action)=>{const button=document.createElement('button');button.type='button';button.className='cfh-card-panel-toggle';button.setAttribute('role','switch');button.setAttribute('aria-checked',String(enabled));button.setAttribute('aria-label',label);button.textContent=enabled?'ON':'OFF';button.onclick=action;return button;};
+      if(entry.type==='due'&&due&&!cfhCardPanelManaging){
+        const bill=cfhCardBill(entry),past=due<cfhCalendarTodayKey();
+        const form=document.createElement('form');form.className='cfh-card-range';
+        const label=document.createElement('label');label.textContent='Amount due (₱)';
+        const amount=document.createElement('input');amount.type='number';amount.inputMode='decimal';amount.min='0';amount.step='0.01';amount.value=bill.amount??'';
+        label.append(amount);
+        const save=document.createElement('button');save.textContent='Save amount';
+        const readAmount=()=>amount.value===''?null:Number(amount.value);
+        form.onsubmit=e=>{e.preventDefault();if(cfhSaveCardBill(entry,{amount:readAmount()}))cfhCardPanelRender();};
+        const paid=document.createElement('button');paid.type='button';paid.textContent=past?'Paid':'Mark as paid';paid.disabled=past;
+        paid.onclick=()=>{if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:true,reminderId:entry.id}))cfhCardPanelClose();};
+        form.append(label,save,paid);dialog.append(form);
+      }
       const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
       reminderBell.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'+(!cfhBellEnabled(entry.id)?'<path d="M3 3l18 18"/>':'')+'</svg>';
       reminderBell.setAttribute('aria-label',cfhBellEnabled(entry.id)?'Turn reminder preference off':'Turn reminder preference on');
@@ -4688,6 +4713,10 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         time.textContent=cardBank?'':(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');time.hidden=!!cardBank;
         if(!cardBank){time.textContent=[entry.allDay?'All-day':'',entry.deadline?'Deadline '+cfhWeekdayDateText(entry.deadline):''].filter(Boolean).join(' · ');time.hidden=!time.textContent;}
         details.append(bank,name,time);
+        if(cardBank&&entry.type==='due'){
+          const bill=cfhCardBill(entry),past=entry.cfhDisplayDate<cfhCalendarTodayKey();
+          if(bill.amount!=null||past){const summary=document.createElement('small');summary.textContent=[bill.amount!=null?formatPeso(bill.amount):'',past?'Paid':''].filter(Boolean).join(' · ');details.append(summary);}
+        }
         const notificationTime=cfhCardNotificationTime(entry);
         const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime;
         if(notificationTime){
@@ -11603,7 +11632,13 @@ function cfhPushToken(){
  return token;
 }
 function cfhPushStatus(text){const el=document.getElementById('cfhPushStatus');if(el)el.textContent=text;}
-function cfhPushSnapshot(){const data={};for(const key of CFH_PUSH_KEYS)data[key]=localStorage.getItem(key)||(key==='cfh_calendar_entries_v1'?'[]':'');return data;}
+function cfhPushSnapshot(){
+ const data={};for(const key of CFH_PUSH_KEYS)data[key]=localStorage.getItem(key)||(key==='cfh_calendar_entries_v1'?'[]':'');
+ const bells={...cfhBellSettings()};
+ for(const card of Object.values(cfhCardPanelPreferences()))for(const bill of Object.values(card.bills||{}))if(bill.paid&&bill.reminderId)bells[bill.reminderId]=false;
+ data[CFH_CALENDAR_BELLS_KEY]=JSON.stringify(bells);
+ return data;
+}
 async function cfhPushRequest(action,body={}){
  const response=await fetch(CFH_PUSH_API+'?action='+action,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfhPushToken()},body:JSON.stringify(body)});
  const data=await response.json();if(!response.ok)throw Error(data.error||'Could not sync notifications');return data;
