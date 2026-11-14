@@ -2159,10 +2159,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
  #cfhPortfolioActivityMore{margin-top:12px}
  #cfhPortfolioPage .cfh-portfolio-menu-tabs{grid-template-columns:auto auto auto;gap:2px}
  #cfhPortfolioPage .cfh-portfolio-menu-tabs button{min-width:0;padding-inline:2px;font-size:clamp(10px,3.2vw,14px);white-space:nowrap}
- #cfhPortfolioEditablePurchases .cfh-investment-completed{grid-column:3;grid-row:1;justify-self:end}
- #cfhPortfolioEditablePurchases .cfh-investment-card{grid-template-columns:32px minmax(0,1fr) auto;padding:10px 12px;row-gap:6px;column-gap:8px}
- #cfhPortfolioEditablePurchases .cfh-investment-meta{grid-column:1 / 3;grid-row:2;align-self:center;min-width:0}
- #cfhPortfolioEditablePurchases .cfh-purchase-edit{grid-column:3;grid-row:2;justify-self:end;align-self:center;color:#fff;background:#1B1844}
+ #cfhPortfolioEditablePurchases .cfh-investment-card{grid-template-columns:32px minmax(0,1fr) auto;padding:10px 12px;gap:4px 8px}
+ #cfhPortfolioEditablePurchases .cfh-stock-logo{grid-column:1;grid-row:1;width:32px;height:32px}
+ #cfhPortfolioEditablePurchases .cfh-investment-details{display:contents}
+ #cfhPortfolioEditablePurchases .cfh-investment-title{grid-column:2;grid-row:1;min-width:0;overflow-wrap:anywhere}
+ #cfhPortfolioEditablePurchases .cfh-investment-buy{grid-column:1 / -1;grid-row:2;margin:0}
+ #cfhPortfolioEditablePurchases .cfh-investment-actions{grid-column:3;grid-row:1;display:flex;align-items:center;gap:4px;white-space:nowrap}
+ #cfhPortfolioEditablePurchases .cfh-investment-completed{padding:4px 5px}
+ #cfhPortfolioEditablePurchases .cfh-investment-meta{grid-column:1 / -1;grid-row:3}
+ #cfhPortfolioEditablePurchases .cfh-investment-summary time{display:inline}
+ #cfhPortfolioEditablePurchases .cfh-investment-summary{font-size:12px}
+ #cfhPortfolioEditablePurchases .cfh-purchase-edit{min-width:34px;min-height:28px;padding:4px 7px;border-radius:6px;font-size:11px;color:#fff;background:#1B1844}
  .cfh-stock-delete-dialog{width:min(90vw,400px);box-sizing:border-box;padding:22px;border:1px solid #645b86;border-radius:16px;background:#1B1844;color:#fff}
  .cfh-stock-delete-dialog::backdrop{background:#0009}
  .cfh-stock-delete-dialog h2{margin:0 0 12px}
