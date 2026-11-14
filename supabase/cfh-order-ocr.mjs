@@ -27,8 +27,7 @@ export function parseOrderScreenshot(text, symbols){
 let library;
 let reader;
 let idleTimer;
-let queuedReads=0;
-let lastRead=Promise.resolve();
+let activeReader;
 const asset=name=>new URL('./vendor/order-ocr/'+name,import.meta.url).href;
 
 async function createReader(){
@@ -40,7 +39,19 @@ async function createReader(){
   document.head.append(script);
  }).catch(error=>{library=null;throw error;});
  const tesseract=await library;
- const worker=await tesseract.createWorker('eng',1,{workerPath:asset('worker.min.js'),corePath:asset('tesseract-core-lstm.wasm.js'),langPath:asset(''),workerBlobURL:false});
+ const native=globalThis.CFH_NATIVE===true;
+ let rejectStartup;
+ const startupError=new Promise((_,reject)=>{rejectStartup=reject;});
+ const initialization=tesseract.createWorker('eng',1,{
+  workerPath:asset('worker.min.js'),
+  corePath:asset('tesseract-core-lstm.wasm.js'),
+  langPath:asset(''),
+  workerBlobURL:false,
+  gzip:!native,
+  cacheMethod:native?'none':'write',
+  errorHandler:error=>rejectStartup(new Error(String(error)))
+ });
+ const worker=await Promise.race([initialization,startupError]);
  try{
   await worker.setParameters({tessedit_pageseg_mode:'6'});
   return worker;
@@ -50,23 +61,31 @@ async function createReader(){
  }
 }
 
+function discardReader(current){
+ if(reader!==current)return;
+ reader=null;
+ clearTimeout(idleTimer);
+ void current.then(worker=>worker.terminate()).catch(()=>{});
+}
+
 function getReader(){
- reader||=createReader().catch(error=>{reader=null;throw error;});
+ if(!reader){
+  const current=createReader().catch(error=>{discardReader(current);throw error;});
+  reader=current;
+  idleTimer=setTimeout(()=>discardReader(current),15000);
+ }
  return reader;
 }
 
-function releaseWhenIdle(){
+function releaseWhenIdle(current){
+ if(reader!==current||activeReader===current)return;
  clearTimeout(idleTimer);
- if(queuedReads||!reader)return;
- idleTimer=setTimeout(()=>{
-  const current=reader;
-  reader=null;
-  void current.then(worker=>worker.terminate()).catch(()=>{});
- },120000);
+ idleTimer=setTimeout(()=>discardReader(current),120000);
 }
 
 export function warmOrderReader(){
- void getReader().then(releaseWhenIdle,()=>{});
+ const current=getReader();
+ void current.then(()=>releaseWhenIdle(current),()=>{});
 }
 
 async function smallerScreenshot(file){
@@ -82,22 +101,45 @@ async function smallerScreenshot(file){
  }finally{bitmap.close();}
 }
 
-export async function readOrderImage(file,symbols){
+export async function readOrderImage(file,symbols,signal){
  if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>12000000)throw Error('Choose a PNG, JPEG, or WebP image under 12 MB.');
- queuedReads++;
+ signal.throwIfAborted();
+ if(activeReader)discardReader(activeReader);
+ const current=getReader();
+ activeReader=current;
  clearTimeout(idleTimer);
- const reduced=smallerScreenshot(file).catch(()=>null);
- const read=lastRead.then(async()=>{
-  const [worker,smaller]=await Promise.all([getReader(),reduced]);
+ let timeout;
+ let cancel;
+ const interrupted=new Promise((_,reject)=>{
+  cancel=()=>{discardReader(current);reject(signal.reason);};
+  signal.addEventListener('abort',cancel,{once:true});
+  timeout=setTimeout(()=>{
+   discardReader(current);
+   reject(Error('Screenshot reading timed out. Try again or enter the order details manually.'));
+  },15000);
+ });
+ function checkScan(){
+  signal.throwIfAborted();
+  if(reader!==current)throw new DOMException('Screenshot reading ended.','AbortError');
+ }
+ async function recognize(){
+  const [worker,smaller]=await Promise.all([current,smallerScreenshot(file).catch(()=>null)]);
+  checkScan();
   if(smaller){
    const {data}=await worker.recognize(smaller);
+   checkScan();
    try{return parseOrderScreenshot(data.text,symbols);}
-   catch{/* Retry at full resolution when the smaller scan cannot be verified. */}
+   catch{/* Try the original image if the smaller scan cannot be verified. */}
   }
   const {data}=await worker.recognize(file);
+  checkScan();
   return parseOrderScreenshot(data.text,symbols);
- });
- lastRead=read.catch(()=>{});
- try{return await read;}
- finally{queuedReads--;releaseWhenIdle();}
+ }
+ try{return await Promise.race([recognize(),interrupted]);}
+ finally{
+  clearTimeout(timeout);
+  signal.removeEventListener('abort',cancel);
+  if(activeReader===current)activeReader=null;
+  releaseWhenIdle(current);
+ }
 }
