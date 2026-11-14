@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v108-external-calendar';
+const CACHE_NAME = 'cashflow-hub-v110-order-screenshot';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
@@ -19,7 +19,7 @@ self.addEventListener('activate',event=>{
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
  if(request.method!=='GET'||url.origin!==BASE.origin||!url.pathname.startsWith(BASE.pathname))return;
- const staticAsset=/\.(?:html|mjs|js|css|png|jpe?g|svg|webp|ico|woff2?)(?:$)/i.test(url.pathname);
+ const staticAsset=/\.(?:html|mjs|js|css|png|jpe?g|svg|webp|ico|woff2?|traineddata\.gz)(?:$)/i.test(url.pathname);
  if(request.mode!=='navigate'&&!staticAsset)return;
  event.respondWith((async()=>{
   const cache=await caches.open(CACHE_NAME);

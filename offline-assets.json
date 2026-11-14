@@ -1,5 +1,10 @@
 [
   "./",
+  "supabase/cfh-order-ocr.mjs",
+  "supabase/vendor/order-ocr/tesseract.min.js",
+  "supabase/vendor/order-ocr/worker.min.js",
+  "supabase/vendor/order-ocr/tesseract-core-lstm.wasm.js",
+  "supabase/vendor/order-ocr/eng.traineddata.gz",
   "cashflow-hub-logo.png",
   "gcash-logo.png",
   "icon-192.png",
