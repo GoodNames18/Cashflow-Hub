@@ -1773,6 +1773,13 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-card-range input{display:block;width:100%;max-width:100%;min-width:0;margin-top:6px;padding:10px 6px;border:1px solid #d5dae1;border-radius:8px;background:#fff;color:#171c26;font:inherit}
     #cfhCardPanel .cfh-card-range button{width:100%;margin:12px 0 0;padding:11px;background:var(--primary);color:#171c26;border:0;border-radius:10px}
 
+    #cfhCardPanel .cfh-bill-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end}
+    #cfhCardPanel .cfh-bill-actions button{margin:0;width:auto;white-space:nowrap;font-size:13px}
+    #cfhCardPanel .cfh-peso-input{display:block;position:relative}
+    #cfhCardPanel .cfh-peso-prefix{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none}
+    #cfhCardPanel .cfh-peso-input input{box-sizing:border-box;padding-left:25px;font-size:16px}
+    #cfhCalendarSchedule .cfh-timeline-details .cfh-bill-amount{font-size:clamp(13px,4vw,18px);font-weight:800;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+
     #cfhCalendarSchedule .cfh-timeline-event{grid-template-columns:64px minmax(0,1fr)!important;cursor:pointer}
     #cfhCalendarSchedule .cfh-timeline-event:focus-visible{outline:2px solid var(--secondary);outline-offset:3px}
     @media(max-width:360px){#cfhCalendarSchedule .cfh-timeline-event{grid-template-columns:48px minmax(0,1fr)!important}}
@@ -4394,15 +4401,33 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       if(entry.type==='due'&&due&&!cfhCardPanelManaging){
         const bill=cfhCardBill(entry),past=due<cfhCalendarTodayKey();
         const form=document.createElement('form');form.className='cfh-card-range';
-        const label=document.createElement('label');label.textContent='Amount due (₱)';
-        const amount=document.createElement('input');amount.type='number';amount.inputMode='decimal';amount.min='0';amount.step='0.01';amount.value=bill.amount??'';
-        label.append(amount);
+        const row=document.createElement('div');row.className='cfh-bill-actions';
+        const label=document.createElement('label');label.textContent='Amount due';
+        const wrap=document.createElement('span');wrap.className='cfh-peso-input';
+        const prefix=document.createElement('span');prefix.className='cfh-peso-prefix';prefix.textContent='₱';prefix.setAttribute('aria-hidden','true');
+        const amount=document.createElement('input');amount.type='text';amount.inputMode='decimal';amount.placeholder='0.00';
+        const group=raw=>raw.replace(/^\d+/,digits=>digits.replace(/\B(?=(\d{3})+(?!\d))/g,','));
+        amount.value=bill.amount==null?'':group(Number(bill.amount).toFixed(2));
+        const formatInput=()=>{
+          const raw=amount.value.replace(/,/g,''),start=amount.selectionStart;
+          const left=amount.value.slice(0,start).replace(/,/g,'').length;
+          const valid=/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})?$/.test(raw)&&Number(raw)<=Number.MAX_SAFE_INTEGER/100;
+          amount.setCustomValidity(valid?'':'Enter a positive amount with up to two decimal places.');
+          if(!valid)return;
+          const next=group(raw);
+          if(next===amount.value)return;
+          amount.value=next;
+          let cursor=0,count=0;while(cursor<next.length&&count<left){if(next[cursor++]!==',')count++;}
+          amount.setSelectionRange(cursor,cursor);
+        };
+        amount.addEventListener('input',formatInput);
+        wrap.append(prefix,amount);label.append(wrap);
         const save=document.createElement('button');save.textContent='Save amount';
-        const readAmount=()=>amount.value===''?null:Number(amount.value);
-        form.onsubmit=e=>{e.preventDefault();if(cfhSaveCardBill(entry,{amount:readAmount()}))cfhCardPanelRender();};
-        const paid=document.createElement('button');paid.type='button';paid.textContent=past?'Paid':'Mark as paid';paid.disabled=past;
-        paid.onclick=()=>{if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:true,reminderId:entry.id}))cfhCardPanelClose();};
-        form.append(label,save,paid);dialog.append(form);
+        const readAmount=()=>amount.value===''?null:Number(amount.value.replace(/,/g,''));
+        form.onsubmit=e=>{e.preventDefault();formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount()}))cfhCardPanelRender();};
+        const paid=document.createElement('button');paid.type='button';paid.textContent=past?'✓ Paid':'✓ Mark as paid';paid.disabled=past;
+        paid.onclick=()=>{formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:true,reminderId:entry.id}))cfhCardPanelClose();};
+        row.append(label,paid);form.append(row,save);dialog.append(form);
       }
       const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
       reminderBell.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'+(!cfhBellEnabled(entry.id)?'<path d="M3 3l18 18"/>':'')+'</svg>';
@@ -4715,7 +4740,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         details.append(bank,name,time);
         if(cardBank&&entry.type==='due'){
           const bill=cfhCardBill(entry),past=entry.cfhDisplayDate<cfhCalendarTodayKey();
-          if(bill.amount!=null||past){const summary=document.createElement('small');summary.textContent=[bill.amount!=null?formatPeso(bill.amount):'',past?'Paid':''].filter(Boolean).join(' · ');details.append(summary);}
+          if(bill.amount!=null||past){const summary=document.createElement('small');if(bill.amount!=null)summary.className='cfh-bill-amount';summary.textContent=[bill.amount!=null?formatPeso(bill.amount):'',past?'Paid':''].filter(Boolean).join(' · ');details.append(summary);}
         }
         const notificationTime=cfhCardNotificationTime(entry);
         const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime;
