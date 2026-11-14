@@ -12,6 +12,35 @@ const OWNER='161ecab1-d1d7-4fef-a089-a7300b9da774',KEY='cfh-portfolio-v1:'+OWNER
 let state;try{state=JSON.parse(localStorage.getItem(KEY)||'null');}catch{}state||={rows:[],pending:[]};state.rows||=[];state.pending||=[];
 const DRAFT_KEY=KEY+':draft',BROKERS_KEY=KEY+':brokers',STOCK_PRICES_KEY=KEY+':stock-prices';
 let watchlist=[];try{const saved=JSON.parse(localStorage.getItem(KEY+':watchlist')||'[]');if(Array.isArray(saved))watchlist=[...new Set(saved.filter(s=>Object.hasOwn(stockCompanies,s)))];}catch{}
+const WATCHLIST_KEY=KEY+':watchlist';
+const preferenceKeys={watchlist:WATCHLIST_KEY,brokers:BROKERS_KEY};
+function setPortfolioPreference(name,items){
+ localStorage.setItem(preferenceKeys[name],JSON.stringify(items));
+ localStorage.setItem(preferenceKeys[name]+':pending',JSON.stringify(items));
+ void sync();
+}
+async function syncPortfolioPreferences(){
+ const table=()=>client.from('cfh_portfolio_preferences');
+ const {data,error}=await table().select('name,items').eq('owner_id',OWNER);
+ if(error)throw error;
+ for(const [name,key] of Object.entries(preferenceKeys)){
+  const pending=localStorage.getItem(key+':pending');
+  const remote=data.find(row=>row.name===name);
+  if(pending!==null){
+   const {error}=await table().upsert({owner_id:OWNER,name,items:JSON.parse(pending)});
+   if(error)throw error;
+   if(localStorage.getItem(key+':pending')===pending)localStorage.removeItem(key+':pending');
+  }else if(remote){
+   localStorage.setItem(key,JSON.stringify(remote.items));
+   if(name==='watchlist')watchlist=[...new Set(remote.items.filter(symbol=>Object.hasOwn(stockCompanies,symbol)))];
+  }else{
+   const saved=JSON.parse(localStorage.getItem(key)||'[]');
+   if(!Array.isArray(saved)||!saved.length)continue;
+   const {error}=await table().upsert({owner_id:OWNER,name,items:saved},{ignoreDuplicates:true});
+   if(error)throw error;
+  }
+ }
+}
 let watchSort='name',watchDescending=false,watchEditing=false;
 let marketFeed={news:[],dividends:[],companyIds:{},warnings:[]},marketFeedBusy=false,marketFeedError='',marketFeedCheckedAt=0,marketFeedSymbols='',marketFeedTimer=null;try{const saved=JSON.parse(localStorage.getItem(KEY+':market-feed')||'null');if(saved&&Array.isArray(saved.news)&&Array.isArray(saved.dividends))marketFeed=saved;}catch{}
 let feeMode='auto',balanceBroker='',balancesHidden=false,balancePortfolio=null,balanceCloseTimer=null;
@@ -358,7 +387,7 @@ function renderWatchlist(){
  const list=$('cfhWatchlistRows');list.replaceChildren();$('cfhWatchlistCount').textContent=watchlist.length+' symbols';
  $('cfhWatchlistEdit').setAttribute('aria-pressed',String(watchEditing));$('cfhWatchlistEdit').setAttribute('aria-label',watchEditing?'Finish editing watchlist':'Edit watchlist');
  const symbols=[...watchlist].sort((a,b)=>{let diff=watchSort==='price'?(liveStockPrices.get(a)?.price??-1)-(liveStockPrices.get(b)?.price??-1):a.localeCompare(b);return watchDescending?-diff:diff;});
- for(const symbol of symbols){const row=document.createElement('div');row.className='cfh-watch-row';const name=document.createElement('div');name.className='cfh-watch-name';name.append(stockLogo(symbol));const labels=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=symbol;small.textContent=stockCompanies[symbol];labels.append(strong,small);name.append(labels);const price=document.createElement('strong');price.textContent=peso(liveStockPrices.get(symbol)?.price??null);const action=document.createElement('span');action.textContent='—';action.title='Daily change is unavailable from the current price feed';if(watchEditing){const remove=document.createElement('button');remove.type='button';remove.textContent='−';remove.setAttribute('aria-label','Remove '+symbol);remove.onclick=()=>{watchlist=watchlist.filter(s=>s!==symbol);localStorage.setItem(KEY+':watchlist',JSON.stringify(watchlist));renderWatchlist();};action.replaceChildren(remove);}row.append(name,price,action);list.append(row);}
+ for(const symbol of symbols){const row=document.createElement('div');row.className='cfh-watch-row';const name=document.createElement('div');name.className='cfh-watch-name';name.append(stockLogo(symbol));const labels=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=symbol;small.textContent=stockCompanies[symbol];labels.append(strong,small);name.append(labels);const price=document.createElement('strong');price.textContent=peso(liveStockPrices.get(symbol)?.price??null);const action=document.createElement('span');action.textContent='—';action.title='Daily change is unavailable from the current price feed';if(watchEditing){const remove=document.createElement('button');remove.type='button';remove.textContent='−';remove.setAttribute('aria-label','Remove '+symbol);remove.onclick=()=>{watchlist=watchlist.filter(s=>s!==symbol);setPortfolioPreference('watchlist',watchlist);renderWatchlist();};action.replaceChildren(remove);}row.append(name,price,action);list.append(row);}
  if(!symbols.length){const empty=document.createElement('p');empty.textContent='Add stocks to follow their prices here.';list.append(empty);}
 }
 function renderHistoryView(){
@@ -446,7 +475,7 @@ export function mountPortfolio(){
  window.cfhHandleWatchlistBack=handleWatchlistBack;
  $('cfhWatchlistClose').onclick=handleWatchlistBack;
  watchDialog.addEventListener('cancel',e=>{e.preventDefault();handleWatchlistBack();});
- $('cfhWatchlistSave').onclick=()=>{localStorage.setItem(KEY+':watchlist',JSON.stringify(watchDraft));watchlist=[...watchDraft];watchDialog.close();renderWatchlist();void refreshStockPrices();};
+ $('cfhWatchlistSave').onclick=()=>{setPortfolioPreference('watchlist',watchDraft);watchlist=[...watchDraft];watchDialog.close();renderWatchlist();void refreshStockPrices();};
  watchDialog.addEventListener('close',()=>{unlockInvestmentBackground();watchEditorTrigger?.focus({preventScroll:true});});
  for(const button of document.querySelectorAll('[data-watch-view]'))button.onclick=()=>{const grid=button.dataset.watchView==='grid';$('cfhMarketWatchlist').classList.toggle('is-grid',grid);document.querySelectorAll('[data-watch-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));window.syncActivePageHeight?.();};
  for(const button of document.querySelectorAll('[data-watch-sort]'))button.onclick=()=>{const next=button.dataset.watchSort;watchDescending=watchSort===next?!watchDescending:false;watchSort=next;renderWatchlist();};
@@ -527,7 +556,7 @@ export function mountPortfolio(){
  $('cfhUseFeeEstimate').onclick=()=>{feeMode='auto';updateTotal();saveDraft();};
  $('cfhPortfolioForm').elements.purchaseType.onchange=()=>{feeMode='auto';updateTotal();saveDraft();};
  $('cfhPortfolioBroker').onchange=()=>{const adding=$('cfhPortfolioBroker').value==='__add__';$('cfhPortfolioAddBroker').hidden=!adding;if(adding)$('cfhPortfolioNewBroker').focus();updateTotal();saveDraft();};
- $('cfhPortfolioAddBrokerButton').onclick=()=>{const name=$('cfhPortfolioNewBroker').value.trim();if(!name)return;populateBrokers(name);const names=[...$('cfhPortfolioBroker').options].map(o=>o.value).filter(v=>v&&v!=='__add__');try{localStorage.setItem(BROKERS_KEY,JSON.stringify(names));}catch{}$('cfhPortfolioAddBroker').hidden=true;updateTotal();saveDraft();};
+ $('cfhPortfolioAddBrokerButton').onclick=()=>{const name=$('cfhPortfolioNewBroker').value.trim();if(!name)return;populateBrokers(name);const names=[...$('cfhPortfolioBroker').options].map(o=>o.value).filter(v=>v&&v!=='__add__');try{setPortfolioPreference('brokers',names);}catch{}$('cfhPortfolioAddBroker').hidden=true;updateTotal();saveDraft();};
  $('cfhPortfolioSymbol').addEventListener('input',showSuggestions);$('cfhPortfolioSymbol').onfocus=showSuggestions;
  $('cfhPortfolioSymbol').onkeydown=e=>{if(e.key==='ArrowDown'&&!$('cfhPortfolioSuggestions').hidden){e.preventDefault();$('cfhPortfolioSuggestions').firstElementChild?.focus();}if(e.key==='Escape'){e.stopPropagation();hideSuggestions();}};
  $('cfhPortfolioSuggestions').onkeydown=e=>{const buttons=[...$('cfhPortfolioSuggestions').children],i=buttons.indexOf(document.activeElement);if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){e.stopPropagation();hideSuggestions();$('cfhPortfolioSymbol').focus();hideSuggestions();}};
@@ -584,17 +613,29 @@ function scheduleStockPriceRefresh(){
  clearInterval(marketFeedTimer);marketFeedTimer=setInterval(()=>void refreshMarketNews(),60000);
 }
 async function sync(){
- if(!client||busy||!navigator.onLine){if(state.pending.length)status('Saved on device · Sync pending');return;}clearTimeout(portfolioRetryTimer);busy=true;
+ if(busy){refreshRequested=true;return;}
+ if(!client||!navigator.onLine){if(state.pending.length)status('Saved on device · Sync pending');return;}clearTimeout(portfolioRetryTimer);busy=true;
  try{
   for(const id of state.pending.slice()){const row=state.rows.find(r=>r.id===id);if(!row)continue;const {error}=await client.from('cfh_portfolio_records').insert({owner_id:OWNER,id,payload:row});if(error&&error.code!=='23505')throw error;state.pending=state.pending.filter(x=>x!==id);persist();}
   const remote=[];for(let start=0;;start+=500){const {data,error}=await client.from('cfh_portfolio_records').select('id,payload').eq('owner_id',OWNER).order('created_at',{ascending:true}).order('id',{ascending:true}).range(start,start+499);if(error)throw error;remote.push(...data);if(data.length<500)break;}
   const pendingIds=new Set(state.pending);
   const map=new Map(state.rows.filter(r=>pendingIds.has(r.id)).map(r=>[r.id,r]));for(const r of remote){try{validateRecord(r.payload);map.set(r.id,{...r.payload,id:r.id});}catch{}}
-  state.rows=[...map.values()];persist();render();void refreshMarketNews();status(state.pending.length?'Saved on device · Sync pending':'Portfolio synced');
- }catch(error){status('Saved on device · Sync pending. Reconnect to retry.');console.warn('Portfolio sync:',error.message);if(state.pending.length)portfolioRetryTimer=setTimeout(()=>{if(!document.hidden&&navigator.onLine)void sync();},15000);}finally{busy=false;if(refreshRequested){refreshRequested=false;void sync();}}
+  state.rows=[...map.values()];persist();await syncPortfolioPreferences();render();void refreshMarketNews();status(state.pending.length?'Saved on device · Sync pending':'Portfolio synced');
+ }catch(error){status('Saved on device · Sync pending. Reconnect to retry.');console.warn('Portfolio sync:',error.message);portfolioRetryTimer=setTimeout(()=>{if(!document.hidden&&navigator.onLine)void sync();},15000);}finally{busy=false;if(refreshRequested){refreshRequested=false;void sync();}}
 }
 export function startPortfolioSync(c,owner){if(owner!==OWNER)throw Error('Portfolio account mismatch');if(client)return;client=c;mountPortfolio();void sync();scheduleStockPriceRefresh();void refreshStockPrices();
- const connect=()=>{if(document.hidden||!navigator.onLine||channel)return;channel=client.channel('cfh-portfolio:'+OWNER).on('postgres_changes',{event:'*',schema:'public',table:'cfh_portfolio_records',filter:'owner_id=eq.'+OWNER},()=>{if(busy)refreshRequested=true;else void sync();}).subscribe(s=>{if(s==='SUBSCRIBED')void sync();});};
+ const connect=()=>{
+  if(document.hidden||!navigator.onLine||channel)return;
+  const refresh=()=>void sync();
+  channel=client.channel('cfh-portfolio:'+OWNER)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'cfh_portfolio_records',filter:'owner_id=eq.'+OWNER},refresh)
+   .on('postgres_changes',{event:'UPDATE',schema:'public',table:'cfh_portfolio_records',filter:'owner_id=eq.'+OWNER},refresh)
+   .on('postgres_changes',{event:'DELETE',schema:'public',table:'cfh_portfolio_records'},refresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'cfh_portfolio_preferences',filter:'owner_id=eq.'+OWNER},refresh)
+   .subscribe(s=>{if(s==='SUBSCRIBED')refresh();});
+ };
+ // Catch up if the device missed a realtime event while connected.
+ setInterval(()=>{if(!document.hidden&&navigator.onLine)void sync();},30000);
  const disconnect=()=>{if(channel){void client.removeChannel(channel);channel=null;}};
  document.addEventListener('visibilitychange',()=>{if(document.hidden)disconnect();else{connect();void sync();}});window.addEventListener('online',()=>{connect();void sync();});window.addEventListener('offline',disconnect);window.addEventListener('pagehide',disconnect);window.addEventListener('pageshow',()=>{connect();void sync();});connect();
 }
