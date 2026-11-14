@@ -431,7 +431,7 @@ function renderWatchlist(){
  for(const symbol of symbols){const row=document.createElement('div');row.className='cfh-watch-row';const name=document.createElement('div');name.className='cfh-watch-name';name.append(stockLogo(symbol));const labels=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=symbol;small.textContent=stockCompanies[symbol];labels.append(strong,small);name.append(labels);const price=document.createElement('strong');price.textContent=peso(liveStockPrices.get(symbol)?.price??null);const action=document.createElement('span');action.textContent='—';action.title='Daily change is unavailable from the current price feed';if(watchEditing){const remove=document.createElement('button');remove.type='button';remove.textContent='−';remove.setAttribute('aria-label','Remove '+symbol);remove.onclick=()=>{watchlist=watchlist.filter(s=>s!==symbol);setPortfolioPreference('watchlist',watchlist);renderWatchlist();};action.replaceChildren(remove);}row.append(name,price,action);list.append(row);}
  if(!symbols.length){const empty=document.createElement('p');empty.textContent='Add stocks to follow their prices here.';list.append(empty);}
 }
-const menuViews=['activity','deleted','purchases'];
+const menuViews=['purchases','activity','deleted'];
 let activityView='activity',activityRequest=0,activityRows=[];
 const activityDate=new Intl.DateTimeFormat('en-PH',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Manila'});
 const activityFields={asset:'Asset',broker:'Broker',toBroker:'To broker',symbol:'Symbol',date:'Purchase date',shares:'Shares / units',

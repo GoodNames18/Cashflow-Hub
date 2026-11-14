@@ -2157,7 +2157,11 @@ body.cfh-calendar-active .app-tabs{display:none!important}
  .cfh-activity-menu article time{display:block;font-size:.85em;margin-top:4px}
  .cfh-activity-menu article button,#cfhPortfolioActivityMore,.cfh-purchase-edit{border:0;border-radius:8px;padding:7px 12px;background:#1B1844;color:#fff;cursor:pointer}
  #cfhPortfolioActivityMore{margin-top:12px}
- .cfh-purchase-edit{grid-column:2 / -1;justify-self:start;color:#fff!important;background:#1B1844!important}
+ #cfhPortfolioPage .cfh-portfolio-menu-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #cfhPortfolioEditablePurchases .cfh-investment-completed{grid-column:3;grid-row:1;justify-self:end}
+ #cfhPortfolioEditablePurchases .cfh-investment-card{grid-template-columns:32px minmax(0,1fr) auto;padding:10px 12px;row-gap:6px;column-gap:8px}
+ #cfhPortfolioEditablePurchases .cfh-investment-meta{grid-column:1 / 3;grid-row:2;align-self:center;min-width:0}
+ #cfhPortfolioEditablePurchases .cfh-purchase-edit{grid-column:3;grid-row:2;justify-self:end;align-self:center;color:#fff;background:#1B1844}
  .cfh-stock-delete-dialog{width:min(90vw,400px);box-sizing:border-box;padding:22px;border:1px solid #645b86;border-radius:16px;background:#1B1844;color:#fff}
  .cfh-stock-delete-dialog::backdrop{background:#0009}
  .cfh-stock-delete-dialog h2{margin:0 0 12px}
@@ -11429,10 +11433,10 @@ window.cfhRefreshTestTab = function(page) {
    <div class="cfh-watch-meta"><p id="cfhWatchlistCount"></p><div class="cfh-watch-views" role="group" aria-label="Watchlist layout"><button type="button" data-watch-view="list" aria-label="List view" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button type="button" data-watch-view="grid" aria-label="Grid view" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4ZM14 4h6v6h-6ZM4 14h6v6H4ZM14 14h6v6h-6Z"/></svg></button></div></div><div class="cfh-watch-row cfh-watch-columns"><button type="button" data-watch-sort="name">Name ↕</button><button type="button" data-watch-sort="price">Price ↕</button><span>Change</span></div><div id="cfhWatchlistRows" aria-live="polite"></div>
   </section>
   <section id="cfhPortfolioMenu" class="cfh-activity-menu" hidden>
-   <div class="cfh-portfolio-assets" role="group" aria-label="Portfolio menu">
-    <button type="button" data-portfolio-menu="activity" aria-pressed="true">Activity Log</button>
-    <button type="button" data-portfolio-menu="deleted" aria-pressed="false">Recently Deleted</button>
-    <button type="button" data-portfolio-menu="purchases" aria-pressed="false">Edit Purchases</button>
+   <div class="cfh-portfolio-assets cfh-portfolio-menu-tabs" role="group" aria-label="Portfolio menu">
+    <button type="button" data-portfolio-menu="purchases" aria-label="Edit Purchases" aria-pressed="false">EP</button>
+    <button type="button" data-portfolio-menu="activity" aria-label="Activity Log" aria-pressed="true">AL</button>
+    <button type="button" data-portfolio-menu="deleted" aria-label="Recently Deleted" aria-pressed="false">RD</button>
    </div>
    <div id="cfhPortfolioEditablePurchases" hidden></div>
    <p id="cfhPortfolioActivityStatus" role="status"></p>
