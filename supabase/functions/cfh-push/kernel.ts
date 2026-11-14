@@ -227,7 +227,10 @@ export function createNotificationReader(snapshot:Record<string,string>){
       return false;
     }
  return function(key:string){
- return cfhCalendarForDate(key).filter(e=>cfhBellEnabled(e.id)).map(e=>{
+ return cfhCalendarForDate(key).filter(e=>{
+  const bank=cfhCardKey(e);
+  return cfhBellEnabled(e.id)&&!(e.type==='due'&&bank&&cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]?.paid);
+ }).map(e=>{
  const bank=cfhCardKey(e),prefs=bank?cfhEntryPrefs(e):e,names=bank?cfhCardDisplayNames(e):null;
  return {id:e.id,title:names?names.bank+' '+names.card+' — '+(e.type==='due'?'Due date':'Statement'):e.title,date:key,time:cfhCardNotificationTime(e),days:Array.isArray(prefs.reminderDays)?prefs.reminderDays:[7,5,3,2,1,0]};
  });
