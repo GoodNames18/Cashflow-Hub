@@ -536,7 +536,7 @@ function renderHistoryView(){
  for(const id of ['cfhPortfolioMarket','cfhMarketPriceStatus']){const node=$(id);if(node)node.hidden=portfolioView!=='portfolio';}
  page.hidden=portfolioView==='portfolio';
  const dashboard=$('cfhPortfolioDashboard');if(dashboard)dashboard.hidden=portfolioView!=='portfolio';
- const title=$('cfhPortfolioTitle');if(title)title.parentElement.hidden=portfolioView==='market';if(title)title.textContent=portfolioView==='dividends'?'Dividend History':portfolioView==='history'?'History':portfolioView==='market'?'Market':portfolioView==='news'?'News':portfolioView==='menu'?'Menu':'Portfolio';
+ const title=$('cfhPortfolioTitle');if(title)title.parentElement.hidden=portfolioView==='market';if(title)title.textContent=portfolioView==='dividends'?'Dividend History':portfolioView==='history'?'History':portfolioView==='market'?'Market':portfolioView==='news'?'News':portfolioView==='menu'?'Manage':'Portfolio';
  document.querySelectorAll('[data-portfolio-page]').forEach(b=>{const selected=b.dataset.portfolioPage===portfolioView;b.setAttribute('aria-pressed',String(selected));if(selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  $('cfhPortfolioMenu').hidden=portfolioView!=='menu';
  if(portfolioView==='menu')renderPortfolioMenu();

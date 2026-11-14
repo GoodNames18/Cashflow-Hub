@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v120-purchase-card-layout';
+const CACHE_NAME = 'cashflow-hub-v121-portfolio-manage';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
