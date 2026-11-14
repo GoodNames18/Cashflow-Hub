@@ -4,7 +4,7 @@ import { CashflowSnapshot, openHistoryCache } from './cfh-snapshot.mjs?v=offline
 import { CashflowReadApi } from './cfh-read-api.mjs?v=offline-home1';
 import { CashflowWriteApi } from './cfh-write-api.mjs?v=transaction-edit1';
 import { loadCashflowSettings } from './cfh-settings.mjs?v=offline-home1';
-import { startCalendarSync } from './cfh-calendar-sync.mjs?v=events1';
+import { startCalendarSync } from './cfh-calendar-sync.mjs?v=external1';
 import {startPortfolioSync} from './cfh-portfolio.mjs?v=portfolio9';
 import {mountOfflineStatus} from './cfh-offline-status.mjs';
 import {CashflowOfflineQueue,openOfflineQueue,mountHomeSyncStatus} from './cfh-offline-queue.mjs?v=offline-home1';

@@ -226,13 +226,14 @@ export function createNotificationReader(snapshot:Record<string,string>){
       if(unit==='yearly')return (y-sy)%interval===0&&m===sm&&d===Math.min(sd,new Date(y,m,0).getDate());
       return false;
     }
- return function(key:string){
+ return function(key:string, mode:"reminder"|"export"="reminder"){
  return cfhCalendarForDate(key).filter(e=>{
   const bank=cfhCardKey(e);
-  return cfhBellEnabled(e.id)&&!(e.type==='due'&&bank&&cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]?.paid);
+  return (mode==="export"?e.type==="due"&&!!bank:cfhBellEnabled(e.id))&&!(e.type==='due'&&bank&&cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]?.paid);
  }).map(e=>{
  const bank=cfhCardKey(e),prefs=bank?cfhEntryPrefs(e):e,names=bank?cfhCardDisplayNames(e):null;
- return {id:e.id,title:names?names.bank+' '+names.card+' — '+(e.type==='due'?'Due date':'Statement'):e.title,date:key,time:cfhCardNotificationTime(e),days:Array.isArray(prefs.reminderDays)?prefs.reminderDays:[7,5,3,2,1,0]};
+ const bill=bank?cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]:null;
+ return {...(mode==="export"?{exportKey:JSON.stringify([bank,cfhEntryCycle(e)]),amount:bill?.amount}:{}),id:e.id,title:names?names.bank+' '+names.card+' — '+(e.type==='due'?'Due date':'Statement'):e.title,date:key,time:cfhCardNotificationTime(e),days:Array.isArray(prefs.reminderDays)?prefs.reminderDays:[7,5,3,2,1,0]};
  });
 };
 }

@@ -6,8 +6,9 @@ export async function startCalendarSync(client,owner) {
  let meta;try{meta=JSON.parse(localStorage.getItem(META)||'{}');}catch{meta={};}
  meta.revisions||={};meta.pending||={};let busy=false,applying=false,ready=false,timer,requested=false,deferred=false,channel,retryTimer;
  const panel=document.createElement('div');panel.className='cfh-push-panel';panel.id='cfhCloudPanel';
- panel.innerHTML='<strong>Calendar sync</strong><p role="status">Connecting your saved schedules…</p><button type="button">Sync now</button>';
- document.getElementById('cfhCalendarSchedule')?.prepend(panel);
+ panel.innerHTML='<strong>Calendar sync</strong><p role="status">Connecting your saved schedules…</p><button type="button">Sync now</button><p data-external aria-live="polite"></p>';
+ const schedule=document.getElementById('cfhCalendarSchedule');
+ if(schedule?.before)schedule.before(panel);else schedule?.prepend(panel);
  const status=text=>panel.querySelector('[role=status]').textContent=text;
  function persist(){originalSet.call(localStorage,META,JSON.stringify(meta));}
  function backup(){if(!localStorage.getItem(BACKUP))originalSet.call(localStorage,BACKUP,JSON.stringify(Object.fromEntries(KEYS.map(k=>[k,localStorage.getItem(k)]))));}
@@ -18,7 +19,7 @@ export async function startCalendarSync(client,owner) {
  function editorOpen(){return ['cfhEditorOverlay','cfhCardPanel'].some(id=>{const el=document.getElementById(id);return el&&!el.hidden;});}
  function apply(row){applying=true;try{if(row.value===null)originalRemove.call(localStorage,row.storage_key);else originalSet.call(localStorage,row.storage_key,row.value);meta.revisions[row.storage_key]=row.revision;}finally{applying=false;}}
  function render(){window.cfhReloadCalendarFromStorage?.();window.dispatchEvent(new Event('cfh-native-schedule-change'));}
- async function sync(){
+ async function sync(forceExternal=false){
   if(busy){requested=true;return;}if(!navigator.onLine){status('Saved on this device · Waiting for connection');return;}
   clearTimeout(retryTimer);busy=true;
   try{
@@ -50,11 +51,30 @@ export async function startCalendarSync(client,owner) {
      persist();
     }else if(row&&row.revision!==meta.revisions[key]){if(editorOpen())deferred=true;else {apply(row);refreshed=true;}}
    }
-   if(refreshed)render();persist();status(Object.keys(meta.pending).length?'Saving calendar changes…':'Calendar synced across devices');
+   if(refreshed)render();persist();if(!Object.keys(meta.pending).length)void syncExternal(forceExternal);status(Object.keys(meta.pending).length?'Saving calendar changes…':'Calendar synced across devices');
   }catch(error){status('Saved on this device · Sync will retry');console.error('Calendar sync:',error.message);retryTimer=setTimeout(()=>{if(!document.hidden&&navigator.onLine)void sync();},15000);}
   finally{busy=false;if(requested){requested=false;queue();}}
  }
- panel.querySelector('button').onclick=sync;
+ panel.querySelector('button').onclick=()=>sync(true);
+ const external=panel.querySelector('[data-external]');
+ let externalRevision='',externalRetry,externalBusy=false,externalQueued=false;
+ async function syncExternal(force=false){
+  if(!external||!client.functions)return;
+  if(externalBusy){externalQueued=true;return;}
+  const revision=JSON.stringify(meta.revisions);
+  if(!force&&revision===externalRevision)return;
+  clearTimeout(externalRetry);
+  externalRevision=revision;externalBusy=true;
+  try{
+   const {data,error}=await client.functions.invoke('cfh-external-calendar',{body:{}});
+   if(error)throw error;
+   external.textContent=[['iCloud',data.apple],['Google',data.google]].map(([label,result])=>label+': '+({synced:'synced',failed:'sync failed',not_connected:'not connected'}[result?.state]||'unavailable')).join(' · ');
+   if(data.apple?.state==='failed'||data.google?.state==='failed')throw Error('Provider sync failed');
+  }catch{
+   if(!external.textContent)external.textContent='External calendar sync will retry';
+   externalRetry=setTimeout(()=>{if(navigator.onLine&&!document.hidden)void syncExternal(true);else externalRevision='';},60000);
+  }finally{externalBusy=false;if(externalQueued){externalQueued=false;void syncExternal();}}
+ }
  function disconnect(){if(channel){const previous=channel;channel=null;client.removeChannel(previous);}}
  function connect(){
   if(channel||document.hidden||!navigator.onLine)return;
