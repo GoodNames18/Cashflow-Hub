@@ -1778,7 +1778,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-peso-input{display:block;position:relative}
     #cfhCardPanel .cfh-peso-prefix{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none}
     #cfhCardPanel .cfh-peso-input input{box-sizing:border-box;padding-left:25px;font-size:16px}
-    #cfhCalendarSchedule .cfh-timeline-details .cfh-bill-amount{align-self:center;max-width:100%;box-sizing:border-box;padding:2px 6px;border-radius:6px;background:#d5ffef;color:#1B1844;font-size:clamp(12px,4vw,18px);font-weight:800;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    #cfhCalendarSchedule .cfh-timeline-details .cfh-bill-amount{align-self:center;max-width:100%;color:inherit;font-size:12px;font-weight:700;line-height:1.25;white-space:nowrap;font-variant-numeric:tabular-nums}
 
     #cfhCalendarSchedule .cfh-timeline-event{grid-template-columns:64px minmax(0,1fr)!important;cursor:pointer}
     #cfhCalendarSchedule .cfh-timeline-event:focus-visible{outline:2px solid var(--secondary);outline-offset:3px}
@@ -3988,10 +3988,14 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       cfhCalendarRender();
       return true;
     }
-    function cfhCalendarForDate(key) {
-      if(cfhCalendarRenderCache?.dates.has(key))return cfhCalendarRenderCache.dates.get(key);
-      const entries=cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)&&!(entry.type==='due'&&cfhCardKey(entry)&&cfhCardBill(entry).paid)).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
-      cfhCalendarRenderCache?.dates.set(key,entries);return entries;
+    function cfhIsPaidDue(entry){
+      return entry.type==='due'&&!!cfhCardKey(entry)&&!!cfhCardBill(entry).paid;
+    }
+    function cfhCalendarForDate(key,includePaid=false) {
+      const cacheKey=includePaid?key+'|paid':key;
+      if(cfhCalendarRenderCache?.dates.has(cacheKey))return cfhCalendarRenderCache.dates.get(cacheKey);
+      const entries=cfhCalendarEntries.filter(e => cfhCalendarMatches(e,key)).concat(cfhMetrobankEntriesForDate(key),cfhFifteenthCardEntriesForDate(key),cfhDuplicateEntriesForDate(key)).filter(entry=>cfhCardFutureVisible(entry,key)&&cfhEventVisible(entry,key)&&(includePaid||!cfhIsPaidDue(entry))).sort((a,b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+      cfhCalendarRenderCache?.dates.set(cacheKey,entries);return entries;
     }
     function cfhCalendarEdit(id) {
       const entry = cfhCalendarEntries.find(e => e.id === id);
@@ -4399,7 +4403,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       };
       const toggle=(enabled,label,action)=>{const button=document.createElement('button');button.type='button';button.className='cfh-card-panel-toggle';button.setAttribute('role','switch');button.setAttribute('aria-checked',String(enabled));button.setAttribute('aria-label',label);button.textContent=enabled?'ON':'OFF';button.onclick=action;return button;};
       if(entry.type==='due'&&due&&!cfhCardPanelManaging){
-        const bill=cfhCardBill(entry),past=due<cfhCalendarTodayKey();
+        const bill=cfhCardBill(entry),past=!!bill.paid||due<cfhCalendarTodayKey();
         const form=document.createElement('form');form.className='cfh-card-range';
         const row=document.createElement('div');row.className='cfh-bill-actions';
         const label=document.createElement('label');label.textContent='Amount due';
@@ -4441,7 +4445,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       reminderBell.setAttribute('aria-label',cfhBellEnabled(entry.id)?'Turn reminder preference off':'Turn reminder preference on');
       const savedReminderTime=cfhCardNotificationTime(entry);
       const reminderTimeLabel=savedReminderTime?(()=>{const [h,m]=savedReminderTime.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');})():'';
-      addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
+      if(!cfhIsPaidDue(entry))addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
       const recurring=cfhCardScheduleSettings(bank,cfhEntryCycle(entry));
       addRow('Recurring Schedule','Monthly statement day: '+recurring.statementDay+'; due +'+recurring.dueDays+' calendar days. '+(ew?'Banking-day adjustments apply.':'Due dates adjust for weekends.'));
       const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
@@ -4682,7 +4686,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       const days=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
       for(let day=1;day<=days;day++){
         const key=cfhCalendarDateKey(new Date(view.getFullYear(),view.getMonth(),day));
-        cfhCalendarForDate(key).filter(e=>cfhCardFutureVisible(e,key)).forEach(e=>entries.push({...e,cfhDisplayDate:key}));
+        cfhCalendarForDate(key,true).filter(e=>cfhCardFutureVisible(e,key)).forEach(e=>entries.push({...e,cfhDisplayDate:key}));
       }
       const query=document.getElementById('cfhCalendarSearchInput')?.value||'';
       document.getElementById('calendarPage')?.classList.toggle('cfh-searching-schedules',!!query.trim());
@@ -4693,23 +4697,24 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       const isCurrentMonth=view.getFullYear()===Number(todayKey.slice(0,4))&&view.getMonth()===Number(todayKey.slice(5,7))-1;
       const selectedDateKey=cfhCalendarState.filterSelectedDate&&!cfhCalendarState.selectionCleared&&!query.trim()?cfhCalendarDateKey(cfhCalendarState.selected):null;
       if(selectedDateKey){entries=entries.filter(entry=>entry.cfhDisplayDate===selectedDateKey);label.textContent=cfhCalendarState.selected.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
-      const monthKey=todayKey.slice(0,7);
-      const pastCount=entries.filter(entry=>entry.cfhDisplayDate<todayKey).length;
-      if(isCurrentMonth&&!selectedDateKey&&!query.trim()&&pastCount){
+      const monthKey=cfhCalendarDateKey(view).slice(0,7);
+      const isPastSchedule=entry=>cfhIsPaidDue(entry)||(isCurrentMonth&&entry.cfhDisplayDate<todayKey);
+      const pastCount=entries.filter(isPastSchedule).length;
+      if(pastCount&&(entries.some(cfhIsPaidDue)||(isCurrentMonth&&!selectedDateKey&&!query.trim()))){
         const showPast=cfhSchedulePastMonth===monthKey;
         const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-schedule-past-toggle';
         toggle.textContent=showPast?'Hide past schedules':'Show past schedules';
         toggle.setAttribute('aria-expanded',String(showPast));
         toggle.onclick=()=>{cfhSchedulePastMonth=showPast?null:monthKey;cfhCalendarRenderSchedule();};
         schedule.appendChild(toggle);
-        if(!showPast)entries=entries.filter(entry=>entry.cfhDisplayDate>=todayKey);
+        if(!showPast)entries=entries.filter(entry=>!isPastSchedule(entry));
       }
       if(!entries.length){
         const empty=document.createElement('p');
         empty.textContent=selectedDateKey?'No schedules on this date.':query.trim()?'No matching schedules this month.':isCurrentMonth?'No upcoming schedules this month.':'No events scheduled this month.';
         schedule.appendChild(empty);return;
       }
-      const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey);
+      const nextScheduledEntry=entries.find(entry=>entry.cfhDisplayDate>=todayKey&&!cfhIsPaidDue(entry));
       const highlightedDate=isCurrentMonth&&nextScheduledEntry?nextScheduledEntry.cfhDisplayDate:null;
       let lastDate='';
       entries.forEach(entry=>{
@@ -4746,12 +4751,13 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         if(!cardBank){time.textContent=[entry.allDay?'All-day':'',entry.deadline?'Deadline '+cfhWeekdayDateText(entry.deadline):''].filter(Boolean).join(' · ');time.hidden=!time.textContent;}
         details.append(bank,name,time);
         if(cardBank&&entry.type==='due'){
-          const bill=cfhCardBill(entry),past=entry.cfhDisplayDate<cfhCalendarTodayKey();
-          if(bill.amount!=null||past){const summary=document.createElement('small');if(bill.amount!=null)summary.className='cfh-bill-amount';summary.textContent=[bill.amount!=null?formatPeso(bill.amount):'',past?'Paid':''].filter(Boolean).join(' · ');details.append(summary);}
+          const bill=cfhCardBill(entry),past=!!bill.paid||entry.cfhDisplayDate<cfhCalendarTodayKey();
+          if(bill.amount!=null){const summary=document.createElement('small');summary.className='cfh-bill-amount';summary.textContent=formatPeso(bill.amount);details.append(summary);}
+          if(past){const status=document.createElement('small');status.textContent='Paid';details.append(status);}
         }
         const notificationTime=cfhCardNotificationTime(entry);
-        const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime;
-        if(notificationTime){
+        const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime||cfhIsPaidDue(entry);
+        if(!clock.hidden){
           const [hour,minute]=notificationTime.split(':').map(Number);
           const period=hour>=12?'PM':'AM';
           clock.setAttribute('aria-label','Notification time '+String(hour%12||12).padStart(2,'0')+':'+String(minute).padStart(2,'0')+' '+period+' Philippine time');
