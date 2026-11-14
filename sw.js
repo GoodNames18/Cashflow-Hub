@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v110-order-screenshot';
+const CACHE_NAME = 'cashflow-hub-v111-faster-order-screenshot';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

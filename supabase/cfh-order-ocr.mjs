@@ -25,19 +25,79 @@ export function parseOrderScreenshot(text, symbols){
  return {symbol,shares,price,fees,date,broker};
 }
 let library;
+let reader;
+let idleTimer;
+let queuedReads=0;
+let lastRead=Promise.resolve();
 const asset=name=>new URL('./vendor/order-ocr/'+name,import.meta.url).href;
-export async function readOrderImage(file,symbols){
- if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>12000000)throw Error('Choose a PNG, JPEG, or WebP image under 12 MB.');
+
+async function createReader(){
  library||=new Promise((resolve,reject)=>{
-  const script=document.createElement('script');script.src=asset('tesseract.min.js');
-  script.onload=()=>resolve(globalThis.Tesseract);script.onerror=()=>reject(Error('Could not load the screenshot reader.'));
+  const script=document.createElement('script');
+  script.src=asset('tesseract.min.js');
+  script.onload=()=>resolve(globalThis.Tesseract);
+  script.onerror=()=>{script.remove();reject(Error('Could not load the screenshot reader.'));};
   document.head.append(script);
- }).catch(err=>{library=null;throw err;});
+ }).catch(error=>{library=null;throw error;});
  const tesseract=await library;
  const worker=await tesseract.createWorker('eng',1,{workerPath:asset('worker.min.js'),corePath:asset('tesseract-core-lstm.wasm.js'),langPath:asset(''),workerBlobURL:false});
  try{
   await worker.setParameters({tessedit_pageseg_mode:'6'});
+  return worker;
+ }catch(error){
+  await worker.terminate();
+  throw error;
+ }
+}
+
+function getReader(){
+ reader||=createReader().catch(error=>{reader=null;throw error;});
+ return reader;
+}
+
+function releaseWhenIdle(){
+ clearTimeout(idleTimer);
+ if(queuedReads||!reader)return;
+ idleTimer=setTimeout(()=>{
+  const current=reader;
+  reader=null;
+  void current.then(worker=>worker.terminate()).catch(()=>{});
+ },120000);
+}
+
+export function warmOrderReader(){
+ void getReader().then(releaseWhenIdle,()=>{});
+}
+
+async function smallerScreenshot(file){
+ const bitmap=await createImageBitmap(file);
+ try{
+  const scale=Math.min(1,800/bitmap.width,1800/bitmap.height);
+  if(scale===1)return null;
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.round(bitmap.width*scale);
+  canvas.height=Math.round(bitmap.height*scale);
+  canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
+  return new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+ }finally{bitmap.close();}
+}
+
+export async function readOrderImage(file,symbols){
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>12000000)throw Error('Choose a PNG, JPEG, or WebP image under 12 MB.');
+ queuedReads++;
+ clearTimeout(idleTimer);
+ const reduced=smallerScreenshot(file).catch(()=>null);
+ const read=lastRead.then(async()=>{
+  const [worker,smaller]=await Promise.all([getReader(),reduced]);
+  if(smaller){
+   const {data}=await worker.recognize(smaller);
+   try{return parseOrderScreenshot(data.text,symbols);}
+   catch{/* Retry at full resolution when the smaller scan cannot be verified. */}
+  }
   const {data}=await worker.recognize(file);
   return parseOrderScreenshot(data.text,symbols);
- }finally{await worker.terminate();}
+ });
+ lastRead=read.catch(()=>{});
+ try{return await read;}
+ finally{queuedReads--;releaseWhenIdle();}
 }
