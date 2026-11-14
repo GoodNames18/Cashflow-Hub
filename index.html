@@ -3451,6 +3451,8 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
                 <h2>Schedule</h2>
                 <span id="cfhCalendarSelectedLabel" class="dashboard-message"></span>
               </div>
+              <button type="button" class="cfh-schedule-past-toggle" onclick="cfhExportCardDueDates(this)" title="Export 12 months of upcoming unpaid card due dates">Export Card Due Dates (.ics)</button>
+              <div id="cfhDueDateExportStatus" class="dashboard-message" role="status"></div>
               <div id="cfhCalendarSchedule" class="cfh-schedule-empty">No events scheduled.</div>
             </div>
           </div>
@@ -4674,6 +4676,66 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       const formatted=date?new Date(date+'T12:00:00').toLocaleDateString('en-PH',{day:'numeric',month:'long',year:'numeric'}):'';
       const text=[entry.title,names.bank,names.card,type,entry.notes,date,formatted].filter(Boolean).join(' ').toLocaleLowerCase();
       return words.every(word=>text.includes(word));
+    }
+    function cfhBuildDueDateIcs(events,stamp){
+      const escapeText=value=>String(value).replace(/\\/g,'\\\\').replace(/\r\n|\r|\n/g,'\\n').replace(/[,;]/g,'\\$&');
+      const encoder=new TextEncoder();
+      function fold(line){
+        let output='',bytes=0;
+        for(const char of line){
+          const size=encoder.encode(char).length;
+          if(bytes+size>75){output+='\r\n ';bytes=1;}
+          output+=char;
+          bytes+=size;
+        }
+        return output;
+      }
+      const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Cashflow Hub//Card Due Dates//EN','CALSCALE:GREGORIAN'];
+      for(const event of events){
+        lines.push('BEGIN:VEVENT','UID:'+encodeURIComponent(event.id)+'@cashflowhub','DTSTAMP:'+stamp,
+          'DTSTART;VALUE=DATE:'+event.date.replace(/-/g,''),'SUMMARY:'+escapeText(event.title),
+          'TRANSP:TRANSPARENT','END:VEVENT');
+      }
+      return lines.concat('END:VCALENDAR').map(fold).join('\r\n')+'\r\n';
+    }
+    async function cfhExportCardDueDates(button){
+      const status=document.getElementById('cfhDueDateExportStatus');
+      button.disabled=true;
+      status.textContent='';
+      try{
+        const now=new Date(),day=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+        const endMonth=new Date(day.getFullYear()+1,day.getMonth(),1);
+        const end=new Date(endMonth.getFullYear(),endMonth.getMonth(),Math.min(day.getDate(),new Date(endMonth.getFullYear(),endMonth.getMonth()+1,0).getDate()));
+        const events=new Map();
+        for(;day<end;day.setDate(day.getDate()+1)){
+          const date=cfhCalendarDateKey(day);
+          for(const entry of cfhCalendarForDate(date)){
+            if(entry.type!=='due'||!cfhCardKey(entry))continue;
+            const id=JSON.stringify([cfhCardKey(entry),cfhEntryCycle(entry)]);
+            const names=cfhCardDisplayNames(entry);
+            events.set(id,{id,date,title:[names.bank,names.card].filter(Boolean).join(' ')+' — Due date'});
+          }
+        }
+        if(!events.size){status.textContent='No upcoming unpaid card due dates to export.';return;}
+        const content=cfhBuildDueDateIcs(events.values(),now.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z'));
+        if(window.cfhSaveCalendarFile){
+          const result=await window.cfhSaveCalendarFile(content);
+          if(!result.saved)return;
+        }else{
+          const url=URL.createObjectURL(new Blob([content],{type:'text/calendar;charset=utf-8'}));
+          const link=document.createElement('a');
+          link.href=url;
+          link.download='Cashflow-Hub-Card-Due-Dates.ics';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(()=>URL.revokeObjectURL(url),60000);
+        }
+        status.textContent=events.size+' due dates exported.';
+      }catch(error){
+        console.error('Could not export card due dates',error);
+        status.textContent='Could not export due dates. Please try again.';
+      }finally{button.disabled=false;}
     }
     let cfhSchedulePastMonth=null;
     function cfhCalendarRenderSchedule() {

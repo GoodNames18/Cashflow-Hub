@@ -5,6 +5,7 @@ import { reminderDelta } from './reconcile-reminders.mjs';
 import { createReminderScheduler } from './reminder-scheduler.mjs';
 import { registerReminderDelta } from './register-reminders.mjs';
 const Diagnostics=registerPlugin('ReminderDiagnostics');
+const CalendarExport=registerPlugin('CalendarExport');
 const PLAN='cfh-native-alarm-plan-v1';
 const KEYS=['cfh_card_panel_preferences_v1','cfh_eastwest_cycle_overrides_v1','cfh_calendar_bells_v1','cfh_calendar_event_deletions_v1','cfh_metrobank_due_overrides_v1','cfh_metrobank_status_v1','cfh_calendar_entries_v1'];
 const ENABLED='cfh-native-reminders-enabled';let timer,last='';
@@ -33,6 +34,7 @@ const backgroundSchedule=()=>schedule().catch(()=>{});
 function queue(){clearTimeout(timer);timer=setTimeout(backgroundSchedule,800);}
 if(Capacitor.isNativePlatform()){
  window.CFH_NATIVE=true;
+ window.cfhSaveCalendarFile=content=>CalendarExport.save({content});
  window.cfhRegisterReminders=async()=>{clearTimeout(timer);return schedule();};
  window.cfhEnablePush=async()=>{
   const permission=await LocalNotifications.requestPermissions();if(permission.display!=='granted'){status('Allow notifications in Android settings');return;}
