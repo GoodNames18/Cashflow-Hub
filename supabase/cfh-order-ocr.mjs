@@ -15,7 +15,7 @@ export function parseOrderScreenshot(text, symbols){
  const fees=(cents(total)-cents(gross))/100,commission=read('Commissions'),other=read('Other Fees');
  if(commission!==undefined&&other!==undefined&&cents(commission+other)!==cents(fees))throw Error('The fees and total don’t match. Try a clearer screenshot.');
  const i=lines.findIndex(l=>/^Order Date\b/i.test(l));
- const match=i>=0?lines[i+1]?.match(/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b/):null;
+ const match=i>=0?(lines[i].replace(/^Order Date\b/i,'').trim()+' '+(lines[i+1]||'')).trim().match(/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b/):null;
  const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
  const month=match?months.indexOf(match[1].slice(0,3).toLowerCase())+1:0;
  const date=month?match[3]+'-'+String(month).padStart(2,'0')+'-'+match[2].padStart(2,'0'):'';
@@ -84,6 +84,7 @@ function releaseWhenIdle(current){
 }
 
 export function warmOrderReader(){
+ if(globalThis.CFH_NATIVE)return;
  const current=getReader();
  void current.then(()=>releaseWhenIdle(current),()=>{});
 }
@@ -104,6 +105,24 @@ async function smallerScreenshot(file){
 export async function readOrderImage(file,symbols,signal){
  if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>12000000)throw Error('Choose a PNG, JPEG, or WebP image under 12 MB.');
  signal.throwIfAborted();
+ if(globalThis.CFH_NATIVE){
+  const native=globalThis.cfhRecognizeOrderImage;
+  if(!native)throw Error('Android screenshot reader is unavailable.');
+  const data=await new Promise((resolve,reject)=>{
+   const reader=new FileReader();
+   reader.onload=()=>resolve(String(reader.result).split(',')[1]);
+   reader.onerror=()=>reject(Error('Could not open the selected screenshot.'));
+   reader.readAsDataURL(file);
+  });
+  signal.throwIfAborted();
+  let timeout;
+  const deadline=new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Android screenshot reading timed out. Try again.')),20000);});
+  let text;
+  try{({text}=await Promise.race([native(data),deadline]));}
+  finally{clearTimeout(timeout);}
+  signal.throwIfAborted();
+  return parseOrderScreenshot(text,symbols);
+ }
  if(activeReader)discardReader(activeReader);
  const current=getReader();
  activeReader=current;

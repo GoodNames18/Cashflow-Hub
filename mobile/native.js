@@ -6,6 +6,8 @@ import { createReminderScheduler } from './reminder-scheduler.mjs';
 import { registerReminderDelta } from './register-reminders.mjs';
 const Diagnostics=registerPlugin('ReminderDiagnostics');
 const CalendarExport=registerPlugin('CalendarExport');
+const OrderScreenshot=registerPlugin('OrderScreenshot');
+window.cfhRecognizeOrderImage=image=>OrderScreenshot.recognize({image});
 const PLAN='cfh-native-alarm-plan-v1';
 const KEYS=['cfh_card_panel_preferences_v1','cfh_eastwest_cycle_overrides_v1','cfh_calendar_bells_v1','cfh_calendar_event_deletions_v1','cfh_metrobank_due_overrides_v1','cfh_metrobank_status_v1','cfh_calendar_entries_v1'];
 const ENABLED='cfh-native-reminders-enabled';let timer,last='';

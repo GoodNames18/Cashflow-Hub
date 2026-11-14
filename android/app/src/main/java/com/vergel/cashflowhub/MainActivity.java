@@ -6,6 +6,7 @@ public class MainActivity extends BridgeActivity {
  @Override public void onCreate(Bundle savedInstanceState) {
   registerPlugin(ReminderDiagnosticsPlugin.class);
   registerPlugin(CalendarExportPlugin.class);
+  registerPlugin(OrderScreenshotPlugin.class);
   super.onCreate(savedInstanceState);
   getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
    private boolean checking = false;
