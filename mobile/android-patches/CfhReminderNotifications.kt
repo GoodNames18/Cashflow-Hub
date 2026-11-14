@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.graphics.drawable.Icon
 import org.json.JSONObject
 
 /** One AlarmManager wake-up can deliver several independent reminder cards. */
@@ -38,8 +39,12 @@ object CfhReminderNotifications {
                 .setGroup(null)
                 .setGroupSummary(false)
                 .setDeleteIntent(deleteIntent)
-                .build()
-            result.add(id to child)
+            val iconName = item.optString("largeIcon")
+            if (iconName.startsWith("cfh_bank_")) {
+                val iconId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+                if (iconId != 0) child.setLargeIcon(Icon.createWithResource(context, iconId))
+            }
+            result.add(id to child.build())
         }
         return result.ifEmpty { listOf(parentId to original) }
     }

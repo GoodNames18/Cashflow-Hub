@@ -1,6 +1,18 @@
 import { createNotificationReader } from '../supabase/functions/cfh-push/kernel.ts';
 function key(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');}
 function idFor(value){let n=2166136261;for(const char of value)n=Math.imul(n^char.charCodeAt(0),16777619);return (n>>>0)%2147483646+1;}
+const issuerIcons = [
+ [/^metrobank\b/i, 'metrobank'], [/^rcbc\b/i, 'rcbc'],
+ [/^china\s?bank\b/i, 'chinabank'], [/^union\s?bank\b/i, 'unionbank'],
+ [/^east\s?west\b/i, 'eastwest'], [/^atome\b/i, 'atome'],
+ [/^bpi\b/i, 'bpi'], [/^bdo\b/i, 'bdo'], [/^security\s?bank\b/i, 'security_bank'],
+ [/^hsbc\b/i, 'hsbc'], [/^pnb\b/i, 'pnb'], [/^aub\b/i, 'aub'], [/^maya\b/i, 'maya'],
+];
+function issuerIcon(title){
+ if (!/ — (Statement|Due date)$/.test(title)) return null;
+ const issuer=issuerIcons.find(([prefix])=>prefix.test(title));
+ return issuer?'cfh_bank_'+issuer[1]:null;
+}
 export function reminderJobs(snapshot,now=new Date()){
   const jobs=new Map(),used=new Set(),visibleIds=new Set(),seen=new Set(),entriesForDate=createNotificationReader(snapshot);
   // Refilled whenever the app opens or a synced schedule changes.
@@ -26,9 +38,10 @@ export function reminderJobs(snapshot,now=new Date()){
     let visibleId=-idFor(JSON.stringify(['cfh-item',job.at.toISOString(),entry.id,entry.date,before]));
     while(visibleIds.has(visibleId))visibleId=visibleId===-2147483646?-1:visibleId-1;
     visibleIds.add(visibleId);
-    return {id:visibleId,title:entry.title,body:titles[index]};
+    const largeIcon=issuerIcon(entry.title);
+    return {id:visibleId,title:entry.title,body:titles[index],...(largeIcon?{largeIcon}:{})};
    });
-   return {id,title:job.entries.length===1?job.entries[0].entry.title:'Cashflow Hub · '+job.entries.length+' reminders',body:titles.join('\n'),largeBody:titles.join('\n'),smallIcon:'ic_stat_reminder',largeIcon:'cfh_app_icon',channelId:'cfh-reminders',schedule:{at:job.at,allowWhileIdle:true},extra:{page:'calendar',...(items.length>1?{cfhItems:items}:{})}};
+   return {id,title:job.entries.length===1?job.entries[0].entry.title:'Cashflow Hub · '+job.entries.length+' reminders',body:titles.join('\n'),largeBody:titles.join('\n'),smallIcon:'ic_stat_reminder',largeIcon:(items.length===1&&items[0].largeIcon)||'cfh_app_icon',channelId:'cfh-reminders',schedule:{at:job.at,allowWhileIdle:true},extra:{page:'calendar',...(items.length>1?{cfhItems:items}:{})}};
   });
   return notifications;
 }

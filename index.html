@@ -2415,6 +2415,22 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('other')"><div class="metric-icon">&#x1F4DD;</div><div class="metric-label">Other</div><div id="lifeLogOtherCount" class="metric-value">&#x2014;</div></div>
           </div>
 
+          <h2 class="rental-dashboard-category">&#x1F4F7; Insta360</h2>
+          <div class="metric-grid">
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','income')"><div class="metric-icon">&#x1F4B0;</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','expense')"><div class="metric-icon">&#x1F4B8;</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','total-money')"><div class="metric-icon">&#x1F4BC;</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','transactions')"><div class="metric-icon">&#x1F9FE;</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">&#x2014;</div></div>
+          </div>
+
+          <h2 class="rental-dashboard-category">&#x1FA91; Chair &amp; Table</h2>
+          <div class="metric-grid">
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','income')"><div class="metric-icon">&#x1F4B0;</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','expense')"><div class="metric-icon">&#x1F4B8;</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','total-money')"><div class="metric-icon">&#x1F4BC;</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">&#x2014;</div></div>
+            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','transactions')"><div class="metric-icon">&#x1F9FE;</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">&#x2014;</div></div>
+          </div>
+
           <h2 class="rental-dashboard-category">Health Insights</h2>
           <div class="metric-grid">
             <div class="metric-card" onclick="toggleLifeLogTransactionFilter('common-health')"><div class="metric-icon">&#x1F501;</div><div class="metric-label">Most Common Health Issue</div><div id="lifeLogCommonIssue" class="metric-value">&#x2014;</div><div id="lifeLogCommonCount" class="transaction-meta"></div></div>
@@ -3373,8 +3389,8 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
               <input id="rentalTransactionInput" class="quick-custom-input" type="text" inputmode="text" enterkeyhint="done" maxlength="120" placeholder="Enter transaction">
 
               <div class="printing-entry-grid">
-                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Insta360')">Insta360</button>
                 <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Chair & Table')">Chair &amp; Table</button>
+                <button class="rental-category-button printing-entry-button" type="button" onclick="selectRentalCategory('Insta360')">Insta360</button>
               </div>
 
               <div class="printing-entry-grid">
@@ -3392,22 +3408,6 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
           <div class="cash-month-summary">
             <div class="cash-income-only"><span>Total Income</span><strong id="rentalLifetimeIncome">&#x2014;</strong></div>
             <div id="rentalMonthLabel" class="month-label selectable-month-label" role="button" tabindex="0" onclick="openDashboardMonthSelector('rental')">Loading...</div>
-          </div>
-
-          <h2 class="rental-dashboard-category">&#x1F4F7; Insta360</h2>
-          <div class="metric-grid">
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','income')"><div class="metric-icon">&#x1F4B0;</div><div class="metric-label">Income</div><div id="rentalInsta360Income" class="metric-value income-value">&#x2014;</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','expense')"><div class="metric-icon">&#x1F4B8;</div><div class="metric-label">Expenses</div><div id="rentalInsta360Expenses" class="metric-value expense-value">&#x2014;</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','total-money')"><div class="metric-icon">&#x1F4BC;</div><div class="metric-label">Total Money</div><div id="rentalInsta360TotalMoney" class="metric-value">&#x2014;</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Insta360','transactions')"><div class="metric-icon">&#x1F9FE;</div><div class="metric-label">Transactions</div><div id="rentalInsta360Transactions" class="metric-value">&#x2014;</div></div>
-          </div>
-
-          <h2 class="rental-dashboard-category">&#x1FA91; Chair &amp; Table</h2>
-          <div class="metric-grid">
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','income')"><div class="metric-icon">&#x1F4B0;</div><div class="metric-label">Income</div><div id="rentalChairTableIncome" class="metric-value income-value">&#x2014;</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','expense')"><div class="metric-icon">&#x1F4B8;</div><div class="metric-label">Expenses</div><div id="rentalChairTableExpenses" class="metric-value expense-value">&#x2014;</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','total-money')"><div class="metric-icon">&#x1F4BC;</div><div class="metric-label">Total Money</div><div id="rentalChairTableTotalMoney" class="metric-value">&#x2014;</div></div>
-            <div class="metric-card" onclick="toggleRentalTransactionFilter('Chair &amp; Table','transactions')"><div class="metric-icon">&#x1F9FE;</div><div class="metric-label">Transactions</div><div id="rentalChairTableTransactions" class="metric-value">&#x2014;</div></div>
           </div>
 
           <div class="recent-card">
