@@ -1778,7 +1778,7 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #cfhCardPanel .cfh-peso-input{display:block;position:relative}
     #cfhCardPanel .cfh-peso-prefix{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none}
     #cfhCardPanel .cfh-peso-input input{box-sizing:border-box;padding-left:25px;font-size:16px}
-    #cfhCalendarSchedule .cfh-timeline-details .cfh-bill-amount{font-size:clamp(13px,4vw,18px);font-weight:800;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    #cfhCalendarSchedule .cfh-timeline-details .cfh-bill-amount{align-self:center;max-width:100%;box-sizing:border-box;padding:2px 6px;border-radius:6px;background:#d5ffef;color:#1B1844;font-size:clamp(12px,4vw,18px);font-weight:800;line-height:1.25;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 
     #cfhCalendarSchedule .cfh-timeline-event{grid-template-columns:64px minmax(0,1fr)!important;cursor:pointer}
     #cfhCalendarSchedule .cfh-timeline-event:focus-visible{outline:2px solid var(--secondary);outline-offset:3px}
@@ -4422,12 +4422,19 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         };
         amount.addEventListener('input',formatInput);
         wrap.append(prefix,amount);label.append(wrap);
-        const save=document.createElement('button');save.textContent='Save amount';
         const readAmount=()=>amount.value===''?null:Number(amount.value.replace(/,/g,''));
-        form.onsubmit=e=>{e.preventDefault();formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount()}))cfhCardPanelRender();};
-        const paid=document.createElement('button');paid.type='button';paid.textContent=past?'✓ Paid':'💳 Mark as paid';paid.disabled=past;
+        let savedAmount=bill.amount??null;
+        const saveAmount=()=>{
+          formatInput();
+          if(!amount.reportValidity())return;
+          const value=readAmount();
+          if(value!==savedAmount&&cfhSaveCardBill(entry,{amount:value}))savedAmount=value;
+        };
+        amount.addEventListener('change',saveAmount);
+        form.onsubmit=e=>{e.preventDefault();saveAmount();};
+        const paid=document.createElement('button');paid.type='button';paid.textContent='💳';paid.title=past?'Paid':'Mark as paid';paid.setAttribute('aria-label',paid.title);paid.disabled=past;
         paid.onclick=()=>{formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:true,reminderId:entry.id}))cfhCardPanelClose();};
-        row.append(label,paid);form.append(row,save);dialog.append(form);
+        row.append(label,paid);form.append(row);dialog.append(form);
       }
       const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
       reminderBell.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'+(!cfhBellEnabled(entry.id)?'<path d="M3 3l18 18"/>':'')+'</svg>';
