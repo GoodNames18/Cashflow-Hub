@@ -4425,7 +4425,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         const save=document.createElement('button');save.textContent='Save amount';
         const readAmount=()=>amount.value===''?null:Number(amount.value.replace(/,/g,''));
         form.onsubmit=e=>{e.preventDefault();formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount()}))cfhCardPanelRender();};
-        const paid=document.createElement('button');paid.type='button';paid.textContent=past?'✓ Paid':'✓ Mark as paid';paid.disabled=past;
+        const paid=document.createElement('button');paid.type='button';paid.textContent=past?'✓ Paid':'💳 Mark as paid';paid.disabled=past;
         paid.onclick=()=>{formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:true,reminderId:entry.id}))cfhCardPanelClose();};
         row.append(label,paid);form.append(row,save);dialog.append(form);
       }
