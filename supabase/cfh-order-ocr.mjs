@@ -15,7 +15,9 @@ export function parseOrderScreenshot(text, symbols){
  const fees=(cents(total)-cents(gross))/100,commission=read('Commissions'),other=read('Other Fees');
  if(commission!==undefined&&other!==undefined&&cents(commission+other)!==cents(fees))throw Error('The fees and total don’t match. Try a clearer screenshot.');
  const i=lines.findIndex(l=>/^Order Date\b/i.test(l));
- const match=i>=0?(lines[i].replace(/^Order Date\b/i,'').trim()+' '+(lines[i+1]||'')).trim().match(/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b/):null;
+ const datePattern=/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b/;
+ const match=i<0?null:lines[i].replace(/^Order Date\b/i,'').trim().match(datePattern)
+  ||lines[i+1]?.match(datePattern);
  const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
  const month=match?months.indexOf(match[1].slice(0,3).toLowerCase())+1:0;
  const date=month?match[3]+'-'+String(month).padStart(2,'0')+'-'+match[2].padStart(2,'0'):'';

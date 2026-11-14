@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v114-live-portfolio';
+const CACHE_NAME = 'cashflow-hub-v115-dragonfi-order-date';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
