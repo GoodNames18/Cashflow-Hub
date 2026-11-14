@@ -32,6 +32,7 @@ if(enabled) {
   async function start() {
     await store.requireOwner({allowOffline:true});
 
+    void import('./cfh-notes.mjs?v=notes2').then(module=>module.startNotesSync(client,'161ecab1-d1d7-4fef-a089-a7300b9da774')).catch(console.warn);
     startPortfolioSync(client,'161ecab1-d1d7-4fef-a089-a7300b9da774');
     const settings=await loadCashflowSettings(client);
     let cache=null;

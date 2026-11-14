@@ -305,6 +305,7 @@
   "supabase/cfh-market-announcements.mjs",
   "supabase/cfh-notes-model.mjs",
   "supabase/cfh-notes.mjs",
+  "supabase/cfh-notes-sync.mjs",
   "supabase/cfh-offline-queue.mjs",
   "supabase/cfh-offline-status.mjs",
   "supabase/cfh-portfolio-catalog.mjs",

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v121-portfolio-manage';
+const CACHE_NAME = 'cashflow-hub-v122-notes-sync';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
