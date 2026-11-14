@@ -4403,7 +4403,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       };
       const toggle=(enabled,label,action)=>{const button=document.createElement('button');button.type='button';button.className='cfh-card-panel-toggle';button.setAttribute('role','switch');button.setAttribute('aria-checked',String(enabled));button.setAttribute('aria-label',label);button.textContent=enabled?'ON':'OFF';button.onclick=action;return button;};
       if(entry.type==='due'&&due&&!cfhCardPanelManaging){
-        const bill=cfhCardBill(entry),past=!!bill.paid||due<cfhCalendarTodayKey();
+        const bill=cfhCardBill(entry),past=bill.paid??(due<cfhCalendarTodayKey());
         const form=document.createElement('form');form.className='cfh-card-range';
         const row=document.createElement('div');row.className='cfh-bill-actions';
         const label=document.createElement('label');label.textContent='Amount due';
@@ -4436,8 +4436,8 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         };
         amount.addEventListener('change',saveAmount);
         form.onsubmit=e=>{e.preventDefault();saveAmount();};
-        const paid=document.createElement('button');paid.type='button';paid.textContent='💳';paid.title=past?'Paid':'Mark as paid';paid.setAttribute('aria-label',paid.title);paid.disabled=past;
-        paid.onclick=()=>{formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:true,reminderId:entry.id}))cfhCardPanelClose();};
+        const paid=document.createElement('button');paid.type='button';paid.textContent='💳';paid.title=past?'Mark as unpaid':'Mark as paid';paid.setAttribute('aria-label',paid.title);paid.setAttribute('aria-pressed',String(past));
+        paid.onclick=()=>{formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:!past,reminderId:entry.id}))cfhCardPanelClose();};
         row.append(label,paid);form.append(row);dialog.append(form);
       }
       const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
@@ -4751,12 +4751,15 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         if(!cardBank){time.textContent=[entry.allDay?'All-day':'',entry.deadline?'Deadline '+cfhWeekdayDateText(entry.deadline):''].filter(Boolean).join(' · ');time.hidden=!time.textContent;}
         details.append(bank,name,time);
         if(cardBank&&entry.type==='due'){
-          const bill=cfhCardBill(entry),past=!!bill.paid||entry.cfhDisplayDate<cfhCalendarTodayKey();
-          if(bill.amount!=null){const summary=document.createElement('small');summary.className='cfh-bill-amount';summary.textContent=formatPeso(bill.amount);details.append(summary);}
-          if(past){const status=document.createElement('small');status.textContent='Paid';details.append(status);}
+          const bill=cfhCardBill(entry),past=bill.paid??(entry.cfhDisplayDate<cfhCalendarTodayKey());
+          if(bill.amount!=null||past||bill.paid===false){
+            const summary=document.createElement('small');summary.className='cfh-bill-amount';
+            summary.textContent=[past?'Paid':bill.paid===false&&entry.cfhDisplayDate<cfhCalendarTodayKey()?'Unpaid':'',bill.amount!=null?formatPeso(bill.amount):''].filter(Boolean).join(' ');
+            details.append(summary);
+          }
         }
         const notificationTime=cfhCardNotificationTime(entry);
-        const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime||cfhIsPaidDue(entry);
+        const clock=document.createElement('div');clock.className='cfh-timeline-notification-time';clock.hidden=!notificationTime;
         if(!clock.hidden){
           const [hour,minute]=notificationTime.split(':').map(Number);
           const period=hour>=12?'PM':'AM';
