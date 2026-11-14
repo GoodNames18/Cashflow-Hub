@@ -1,3 +1,4 @@
+import {noteMathResults} from './cfh-notes-math.mjs';
 import {normalizeNoteContent,readNoteContent} from './cfh-notes-content.mjs';
 
 export function createNoteFlow(host,{changed}){
@@ -61,7 +62,7 @@ export function createNoteFlow(host,{changed}){
   });
   atom.addEventListener('dragstart',e=>e.preventDefault());
  }
- host.addEventListener('input',e=>{if(!e.target.closest?.('[data-audio-id]'))changed();});
+ host.addEventListener('input',e=>{if(!e.isComposing&&!e.target.closest?.('[data-audio-id]'))changed();});
  host.addEventListener('compositionend',()=>changed());
  host.addEventListener('paste',e=>{
   e.preventDefault();const text=e.clipboardData?.getData('text/plain')||'';
@@ -85,6 +86,24 @@ export function createNoteFlow(host,{changed}){
  window.addEventListener('blur',cancelMove);document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelMove();});
  return {
   bindAudio,cancelMove,
+  renderMath(){
+   for(const marker of host.querySelectorAll('[data-note-math-result]'))marker.remove();
+   const anchors=[];
+   const text=readNoteContent(host,(node,offset)=>anchors.push({node,offset})).map(part=>part.text??'').join('');
+   let index=anchors.length-1;
+   for(const result of noteMathResults(text).reverse()){
+    while(index>=0&&anchors[index].offset>=result.offset)index--;
+    if(index<0)break;
+    const {node,offset}=anchors[index];
+    const position=result.offset-offset;
+    if(node.nodeValue[position-1]!=='=')continue;
+    const marker=document.createElement('span');
+    marker.dataset.noteMathResult='';
+    marker.contentEditable='false';
+    marker.textContent=' '+result.text+(/^[^\s]/.test(text.slice(result.offset))?' ':'');
+    node.splitText(position).before(marker);
+   }
+  },
   read:attachments=>normalizeNoteContent(readNoteContent(host),attachments),
   focusEnd(){host.focus({preventScroll:true});const r=document.createRange();r.selectNodeContents(host);r.collapse(false);const s=selection();s?.removeAllRanges();s?.addRange(r);},
  };

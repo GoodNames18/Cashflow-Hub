@@ -19,18 +19,19 @@ export function noteContent(note){
 }
 export function contentText(parts){return parts.map(p=>p.type==='text'?p.text:'').join('');}
 // Preserve browser-created paragraph breaks, but do not read player labels.
-export function readNoteContent(host){
- const out=[];const text=value=>{if(value)out.push({type:'text',text:value});};
+export function readNoteContent(host,onText){
+ const out=[];let offset=0;const text=(value,node)=>{if(value){if(node)onText?.(node,offset);out.push({type:'text',text:value});offset+=value.length;}};
  const block=node=>node?.nodeType===1&&/^(DIV|P|LI)$/.test(node.tagName)&&!node.dataset?.audioId;
  function children(parent){
-  const nodes=[...parent.childNodes];
+  const nodes=[...parent.childNodes].filter(node=>!node.hasAttribute?.('data-note-math-result'));
   // A solitary BR inside an empty browser paragraph is a caret placeholder.
   if(parent!==host&&block(parent)&&nodes.length===1&&nodes[0].tagName==='BR')return;
   nodes.forEach((node,i)=>{if(i&&(block(node)||block(nodes[i-1])))text('\n');walk(node);});
  }
  function walk(node){
-  if(node.nodeType===3){text(node.nodeValue);return;}
+  if(node.nodeType===3){text(node.nodeValue,node);return;}
   if(node.nodeType!==1)return;
+  if(node.hasAttribute?.('data-note-math-result'))return;
   if(node.dataset?.audioId){out.push({type:'audio',id:node.dataset.audioId});return;}
   if(node.tagName==='BR'){text('\n');return;}
   children(node);
