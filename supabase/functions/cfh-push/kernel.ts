@@ -29,11 +29,13 @@ export function createNotificationReader(snapshot:Record<string,string>){
     function cfhEastwestCycle(year,month){const cacheKey=JSON.stringify([year,month]);if(!eastwest.has(cacheKey))eastwest.set(cacheKey,cfhEastwestCycleUncached(year,month));return eastwest.get(cacheKey);}
     function cfhEastwestCycleUncached(year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,15)).slice(0,7);
-      const override=cfhEastwestOverrides()[cycle]||{};
-      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(cfhCardStatementDate('eastwest',year,month)));
+      const known=cycle==='2026-11'?{statement:'2026-11-15',due:'2026-12-09'}:{};
+      const override={...known,...cfhEastwestOverrides()[cycle]};
+      const scheduled=cfhCardStatementDate('eastwest',year,month);
+      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(scheduled));
       const [y,m,d]=statement.split('-').map(Number);
       const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(y,m-1,d+cfhCardScheduleSettings('eastwest',cycle).dueDays)));
-      return {cycle,statement,due,statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
+      return {cycle,statement,due,check:cfhEastwestStatementCheck(scheduled),statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
     }
     function cfhEastwestValidDate(key){
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key||''))return false;
@@ -60,6 +62,15 @@ export function createNotificationReader(snapshot:Record<string,string>){
       scoped.set(cacheKey,result);return result;
     }
     function cfhCardPanelPreferences(){try{return readJSON(CFH_CARD_PANEL_KEY)||{};}catch(e){return {};}}
+    const CFH_EASTWEST_NCR_HOLIDAYS=new Set(['2026-11-16','2026-11-17','2026-11-18']); // Proclamation No. 1447.
+    function cfhEastwestStatementCheck(date){
+      const weekday=date.getDay();
+      if(weekday!==0&&weekday!==6)return '';
+      const monday=new Date(date.getFullYear(),date.getMonth(),date.getDate()+(weekday===0?1:2));
+      if(!cfhEastwestHoliday(monday)&&!CFH_EASTWEST_NCR_HOLIDAYS.has(cfhCalendarDateKey(monday)))return '';
+      const friday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()-3);
+      return cfhCalendarDateKey(friday);
+    }
     function cfhEastwestBankingDate(date){
       const result=new Date(date.getFullYear(),date.getMonth(),date.getDate());
       while(result.getDay()===0||result.getDay()===6||cfhEastwestHoliday(result))result.setDate(result.getDate()+1);
@@ -108,7 +119,7 @@ export function createNotificationReader(snapshot:Record<string,string>){
     function cfhCardKey(entry){return entry.cfhDuplicate|| (entry.cfhCard15?'eastwest':entry.cfhAuto?'metrobank':'');}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
-      const value=bank?cfhEntryPrefs(entry).notificationTime:entry.time;
+      const value=bank?(cfhEntryPrefs(entry).notificationTime||(entry.type==='statement-check'?'09:00':'')):entry.time;
       return /^([01]\d|2[0-3]):[0-5]\d$/.test(value||'')?value:'';
     }
     function cfhBellEnabled(id){const saved=cfhBellSettings()[id];if(saved!==undefined)return saved!==false;const key=id.split('|')[0];return !key.startsWith('duplicate-')||(cfhCardPanelPreferences()[key]||{}).remindersEnabled!==false;}
@@ -158,11 +169,14 @@ export function createNotificationReader(snapshot:Record<string,string>){
       const [year,month]=key.split('-').map(Number);
       // Include neighboring cycles for due dates crossing month/year boundaries.
       const cycles=new Set();
-      for(let delta=-2;delta<=0;delta++)cycles.add(cfhCalendarDateKey(new Date(year,month-1+delta,15)).slice(0,7));
+      for(let delta=-2;delta<=1;delta++)cycles.add(cfhCalendarDateKey(new Date(year,month-1+delta,15)).slice(0,7));
       Object.keys(cfhEastwestOverrides()).filter(cycle=>/^\d{4}-\d{2}$/.test(cycle)).forEach(cycle=>cycles.add(cycle));
       cycles.forEach(cycleKey=>{
         if(cycleKey<'2026-10')return;
         const [y,m]=cycleKey.split('-').map(Number),cycle=cfhEastwestCycle(y,m-1);
+        if(key===cycle.check){
+          entries.push({id:'eastwest-check-'+cycleKey,type:'statement-check',title:'EastWest Visa Platinum — Check for statement',date:key,time:'',repeat:'none',notes:'The regular statement date falls on a weekend followed by a Monday holiday. Check EastWest for early availability.',cfhCard15:true,cfhEastwestCycle:cycleKey});
+        }
         ['statement','due'].forEach(type=>{
           if(key!==cycle[type])return;
           const confirmed=type==='statement'?cycle.statementConfirmed:cycle.dueConfirmed;
@@ -229,11 +243,11 @@ export function createNotificationReader(snapshot:Record<string,string>){
  return function(key:string, mode:"reminder"|"export"="reminder"){
  return cfhCalendarForDate(key).filter(e=>{
   const bank=cfhCardKey(e);
-  return (mode==="export"?e.type==="due"&&!!bank:cfhBellEnabled(e.id))&&!(e.type==='due'&&bank&&cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]?.paid);
+  return (mode==="export"?e.type==="due"&&!!bank:cfhBellEnabled(e.id)&&(e.type!=='statement-check'||cfhBellEnabled('eastwest-statement-'+cfhEntryCycle(e))))&&!(e.type==='due'&&bank&&cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]?.paid);
  }).map(e=>{
  const bank=cfhCardKey(e),prefs=bank?cfhEntryPrefs(e):e,names=bank?cfhCardDisplayNames(e):null;
  const bill=bank?cfhCardPanelPreferences()[bank]?.bills?.[cfhEntryCycle(e)]:null;
- return {...(mode==="export"?{exportKey:JSON.stringify([bank,cfhEntryCycle(e)]),amount:bill?.amount}:{}),id:e.id,title:names?names.bank+' '+names.card+' — '+(e.type==='due'?'Due date':'Statement'):e.title,date:key,time:cfhCardNotificationTime(e),days:Array.isArray(prefs.reminderDays)?prefs.reminderDays:[7,5,3,2,1,0]};
+ return {...(mode==="export"?{exportKey:JSON.stringify([bank,cfhEntryCycle(e)]),amount:bill?.amount}:{}),id:e.id,title:names?names.bank+' '+names.card+' — '+(e.type==='due'?'Due date':e.type==='statement-check'?'Check for statement':'Statement'):e.title,date:key,time:cfhCardNotificationTime(e),days:e.type==='statement-check'?[0]:Array.isArray(prefs.reminderDays)?prefs.reminderDays:[7,5,3,2,1,0]};
  });
 };
 }

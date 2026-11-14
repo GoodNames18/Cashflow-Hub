@@ -3926,6 +3926,15 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       const month=Math.floor((h+l-7*n+114)/31),day=(h+l-7*n+114)%31+1;
       return [-3,-2,-1].some(offset=>key===cfhCalendarDateKey(new Date(y,month-1,day+offset)));
     }
+    const CFH_EASTWEST_NCR_HOLIDAYS=new Set(['2026-11-16','2026-11-17','2026-11-18']); // Proclamation No. 1447.
+    function cfhEastwestStatementCheck(date){
+      const weekday=date.getDay();
+      if(weekday!==0&&weekday!==6)return '';
+      const monday=new Date(date.getFullYear(),date.getMonth(),date.getDate()+(weekday===0?1:2));
+      if(!cfhEastwestHoliday(monday)&&!CFH_EASTWEST_NCR_HOLIDAYS.has(cfhCalendarDateKey(monday)))return '';
+      const friday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()-3);
+      return cfhCalendarDateKey(friday);
+    }
     function cfhEastwestBankingDate(date){
       const result=new Date(date.getFullYear(),date.getMonth(),date.getDate());
       while(result.getDay()===0||result.getDay()===6||cfhEastwestHoliday(result))result.setDate(result.getDate()+1);
@@ -3943,11 +3952,13 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     }
     function cfhEastwestCycle(year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,15)).slice(0,7);
-      const override=cfhEastwestOverrides()[cycle]||{};
-      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(cfhCardStatementDate('eastwest',year,month)));
+      const known=cycle==='2026-11'?{statement:'2026-11-15',due:'2026-12-09'}:{};
+      const override={...known,...cfhEastwestOverrides()[cycle]};
+      const scheduled=cfhCardStatementDate('eastwest',year,month);
+      const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(scheduled));
       const [y,m,d]=statement.split('-').map(Number);
       const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(new Date(y,m-1,d+cfhCardScheduleSettings('eastwest',cycle).dueDays)));
-      return {cycle,statement,due,statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
+      return {cycle,statement,due,check:cfhEastwestStatementCheck(scheduled),statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
     }
     function cfhEastwestConfirmDate(entry){
       const type=entry.type==='statement'?'statement':'due';
@@ -3974,15 +3985,18 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       const [year,month]=key.split('-').map(Number);
       // Include neighboring cycles for due dates crossing month/year boundaries.
       const cycles=new Set();
-      for(let delta=-2;delta<=0;delta++)cycles.add(cfhCalendarDateKey(new Date(year,month-1+delta,15)).slice(0,7));
+      for(let delta=-2;delta<=1;delta++)cycles.add(cfhCalendarDateKey(new Date(year,month-1+delta,15)).slice(0,7));
       Object.keys(cfhEastwestOverrides()).filter(cycle=>/^\d{4}-\d{2}$/.test(cycle)).forEach(cycle=>cycles.add(cycle));
       cycles.forEach(cycleKey=>{
         if(cycleKey<'2026-10')return;
         const [y,m]=cycleKey.split('-').map(Number),cycle=cfhEastwestCycle(y,m-1);
+        if(key===cycle.check){
+          entries.push({id:'eastwest-check-'+cycleKey,type:'statement-check',title:'EastWest Visa Platinum — Check for statement',date:key,time:'',repeat:'none',notes:'The regular statement date falls on a weekend followed by a Monday holiday. Check EastWest for early availability.',cfhCard15:true,cfhEastwestCycle:cycleKey});
+        }
         ['statement','due'].forEach(type=>{
           if(key!==cycle[type])return;
           const confirmed=type==='statement'?cycle.statementConfirmed:cycle.dueConfirmed;
-          entries.push({id:'eastwest-'+type+'-'+cycleKey,type,title:'EastWest Visa Platinum — '+(type==='statement'?'Statement':'Payment Due'),date:key,time:'',amount:null,repeat:'none',notes:confirmed?'Confirmed SOA date saved on this device.':'Estimated: statement on the 15th, due 24 calendar days later; weekends and known Philippine non-working holidays adjusted. Newly announced holidays may change dates.',cfhCard15:true,cfhEastwestCycle:cycleKey,cfhConfirmed:confirmed});
+          entries.push({id:'eastwest-'+type+'-'+cycleKey,type,title:'EastWest Visa Platinum — '+(type==='statement'?'Statement':'Payment Due'),date:key,time:'',amount:null,repeat:'none',notes:confirmed?'Confirmed SOA date.':'Estimated: statement on the 15th, due 24 calendar days later; weekends and known Philippine non-working holidays adjusted. Newly announced holidays may change dates.',cfhCard15:true,cfhEastwestCycle:cycleKey,cfhConfirmed:confirmed});
         });
       });
       return entries;
@@ -4391,7 +4405,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(Number(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
-      const value=bank?cfhEntryPrefs(entry).notificationTime:entry.time;
+      const value=bank?(cfhEntryPrefs(entry).notificationTime||(entry.type==='statement-check'?'09:00':'')):entry.time;
       return /^([01]\d|2[0-3]):[0-5]\d$/.test(value||'')?value:'';
     }
     function cfhCardDisplayNames(entry){
@@ -4417,6 +4431,9 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
       photo.onclick=cfhCardPanelClose;
       photo.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cfhCardPanelClose();}};
       dialog.append(photo,title);
+      if(entry.type==='statement-check'){
+        const note=document.createElement('p');note.textContent=entry.notes;dialog.append(note);
+      }
       const format=key=>{if(!key)return 'Not available';const [y,m,d]=key.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric',weekday:'short'});};
       const dates=document.createElement('div');dates.className='cfh-card-panel-dates';
       for(const [label,key,type] of [['Statement Date',statement,'statement'],['Due Date',due,'due']]){
@@ -4831,7 +4848,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         }else{visual.textContent='📅';}
         const eventIcon=document.createElement('span');eventIcon.className='cfh-timeline-type-icon';eventIcon.textContent=entry.type==='statement'?'▤':entry.type==='due'?'▣':entry.type==='task'?'🔧':'▣';
         const details=document.createElement('div');details.className='cfh-timeline-details';
-        const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':'Event'):entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':entry.type==='task'?'Task':'Event';
+        const bank=document.createElement('small');const cardBank=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).bank:'';bank.textContent=cardBank?cardBank+' '+(entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':entry.type==='statement-check'?'Check for statement':'Event'):entry.type==='statement'?'Statement':entry.type==='due'?'Due Date':entry.type==='task'?'Task':'Event';
         const name=document.createElement('strong');name.textContent=(entry.cfhAuto||entry.cfhCard15)?cfhCardDisplayNames(entry).card:entry.title;
         const time=document.createElement('small');time.textContent=cardBank?(entry.time||''):(entry.allDay?'All-day · ':entry.time?entry.time+' · ':'')+(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');if(cardBank&&!entry.time)time.hidden=true;
         time.textContent=cardBank?'':(entry.type==='statement'?'Statement':entry.type==='due'?'Due date':entry.type==='task'?'Task':'Event');time.hidden=!!cardBank;

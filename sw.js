@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v123-notes-inline-math';
+const CACHE_NAME = 'cashflow-hub-v124-eastwest-statement-check';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
