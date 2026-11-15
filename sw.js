@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v125-note-item-timestamps';
+const CACHE_NAME = 'cashflow-hub-v126-note-formatting';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

@@ -1,3 +1,4 @@
+import {applyNoteFormat} from './cfh-notes-content.mjs';
 import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
 
 const timestampFormat=new Intl.DateTimeFormat('en-PH',{
@@ -114,7 +115,8 @@ export function createChecklist(host,addButton,{changed,id}){
   const grip=document.createElement(item.checked?'span':'button');grip.className='cfh-check-grip';
   if(!item.checked){grip.type='button';grip.setAttribute('aria-label','Move list item');grip.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown');grip.innerHTML='<svg viewBox="0 0 12 18" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/></svg>';bindGrip(grip,row);}else grip.setAttribute('aria-hidden','true');
   const check=document.createElement('input');check.type='checkbox';check.checked=!!item.checked;check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));
-  const text=document.createElement('textarea');text.rows=1;text.maxLength=1000;text.placeholder='List item';text.setAttribute('aria-label','List item');text.value=item.text||'';
+  const text=document.createElement('textarea');text.rows=1;text.maxLength=1000;text.placeholder='List item';text.setAttribute('aria-label','List item');text.value=item.text||'';applyNoteFormat(text,item.format);
+  if(item.checked&&item.format?.u)text.style.textDecorationLine='underline line-through';
   check.onchange=()=>{item.checked=check.checked;changed();render(note);rowFor(item)?.querySelector('input')?.focus({preventScroll:true});};
   text.oninput=()=>{item.text=text.value;check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));fit(text);changed();};
   let explicitNewline=false;

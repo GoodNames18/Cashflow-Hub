@@ -2,7 +2,7 @@ import {displayNoteMath} from './cfh-notes-math.mjs';
 import {createNotesSync} from './cfh-notes-sync.mjs';
 import {createChecklist} from './cfh-notes-checklist.mjs';
 import {startRecordingWave} from './cfh-notes-wave.mjs';
-import {noteContent,normalizeNoteContent,contentText} from './cfh-notes-content.mjs';
+import {noteContent,normalizeNoteContent,makeNoteText,applyNoteFormat,contentText} from './cfh-notes-content.mjs';
 import {createNoteFlow} from './cfh-notes-editor.mjs';
 import {noteMatches,compareNotes,changeNoteState,checklistFromText,removeLabel,customNoteIds,reorderVisibleNotes} from './cfh-notes-model.mjs';
 const KEY='cfh_notes_v1',$=id=>document.getElementById(id),uid=()=>crypto.randomUUID();
@@ -206,7 +206,7 @@ function renderAttachments(){const host=$('cfhNotesAttachments'),audioHost=$('cf
  const byId=new Map(audio.map(m=>[m.id,m]));
  audioHost.dataset.noteId=draft.id;audioHost.hidden=draft.kind==='list'&&!audio.length;
  const parts=noteContent(draft);draft.content=parts;
- for(const part of parts){if(part.type==='text'){if(draft.kind!=='list')audioHost.append(document.createTextNode(part.text));}else if(byId.has(part.id))audioHost.append(audioPlayer(byId.get(part.id),load));}
+ for(const part of parts){if(part.type==='text'){if(draft.kind!=='list')audioHost.append(makeNoteText(part));}else if(byId.has(part.id))audioHost.append(audioPlayer(byId.get(part.id),load));}
  if(draft.kind!=='list'){audioHost.append(document.createTextNode('\u200b'));noteFlow.renderMath();}
  fitNoteBody();
 }
@@ -243,7 +243,99 @@ for(const id of ['cfhNotesTitle','cfhNotesBody','cfhNotesBodyAfter','cfhNotesRem
 $('cfhNotesEditor').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();if(!closeEditorPanel())close();}});document.addEventListener('click',e=>{if(!e.target.closest('.cfh-notes-head'))menus();});
 window.cfhHandleNotesBack=()=>{if(checklist.cancelMove())return true;if(noteFlow.cancelMove())return true;if(drag){cancelDrag();render();return true;}if($('cfhNotesImageViewer').open&&!$('cfhNotesImageMenu').hidden){$('cfhNotesImageMenu').hidden=true;$('cfhNotesImageMore').setAttribute('aria-expanded','false');return true;}for(const id of ['cfhNotesSortMenu','cfhNotesImageViewer','cfhNotesRecording','cfhNotesAttachmentPanel','cfhNotesDrawing','cfhNotesUtility','cfhNotesCreateMenu','cfhNotesDrawer'])if($(id).open){$(id).close();return true;}if(!$('cfhNotesEditor').hidden){if(!closeEditorPanel())close();return true;}return false;};
 const editorPanels=['Attachment','Color','Text','More'];
-function editorPanel(which){for(const name of editorPanels){const panel=$('cfhNotes'+name+'Panel'),trigger=$('cfhNotes'+name+'Button');panel.hidden=name!==which;if(name==='Attachment'){if(name===which&&!panel.open){document.activeElement?.blur();panel.showModal();}else if(name!==which&&panel.open)panel.close();}trigger.setAttribute('aria-expanded',String(name===which));trigger.setAttribute('aria-controls',panel.id);}}
+const formattingPanel=$('cfhNotesTextPanel');
+const formatBody=$('cfhNotesAudioAttachments');
+const formatOptions=[
+ ['h1','H1','Heading 1','fontSize','6'],['h2','H2','Heading 2','fontSize','5'],
+ ['body','Aa','Body text','fontSize','3'],['b','B','Bold','bold'],['i','I','Italic','italic'],
+ ['u','U','Underline','underline'],['s','S','Strikethrough','strikeThrough']
+];
+const formatBar=el('div','cfh-note-format-bar');
+formatBar.setAttribute('role','group');formatBar.setAttribute('aria-label','Text formatting');
+const formatButtons=formatOptions.map(([key,label,name,command,value])=>{
+ const control=button(label,()=>formatSelection(key,command,value));
+ control.dataset.format=key;control.setAttribute('aria-label',name);
+ control.addEventListener('pointerdown',event=>event.preventDefault());
+ formatBar.append(control);return control;
+});
+const formatClose=button('×',()=>editorPanel());
+formatClose.setAttribute('aria-label','Close formatting');formatBar.append(formatClose);
+formattingPanel.prepend(formatBar);
+$('cfhNotesMorePanel').prepend($('cfhNotesChecklistMode'));
+$('cfhNotesTextButton').setAttribute('aria-label','Text formatting');
+$('cfhNotesTextButton').addEventListener('pointerdown',event=>event.preventDefault());
+let savedFormatRange=null,formatItemField=null;
+$('cfhNotesChecklist').addEventListener('focusin',event=>{
+ if(event.target.tagName==='TEXTAREA')formatItemField=event.target;
+ updateFormattingToolbar();
+});
+document.addEventListener('selectionchange',()=>{
+ const selection=window.getSelection();
+ if(selection?.rangeCount&&formatBody.contains(selection.getRangeAt(0).commonAncestorContainer)){
+  savedFormatRange=selection.getRangeAt(0).cloneRange();
+ }
+ if(!formattingPanel.hidden)updateFormattingToolbar();
+});
+function activeFormatItem(){
+ const row=formatItemField?.isConnected&&formatItemField.closest('[data-check-id]');
+ return row&&draft?.items?.find(item=>item.id===row.dataset.checkId);
+}
+function updateFormattingToolbar(){
+ const list=draft?.kind==='list',item=list&&activeFormatItem();
+ const rangeValid=savedFormatRange&&formatBody.contains(savedFormatRange.commonAncestorContainer);
+ const sizes={'6':'h1','5':'h2','3':'body'};
+ for(const [index,[key,,,command]] of formatOptions.entries()){
+  const control=formatButtons[index],isSize=command==='fontSize';
+  control.disabled=!!list&&!item;
+  const active=list?(isSize?(item?.format?.size||'body')===key:!!item?.format?.[key])
+   :isSize?(rangeValid?sizes[document.queryCommandValue(command)]||'body':'body')===key
+   :!!rangeValid&&document.queryCommandState(command);
+  control.setAttribute('aria-pressed',String(active));
+ }
+}
+function formatSelection(key,command,value){
+ if(!draft)return;
+ if(draft.kind==='list'){
+  const item=activeFormatItem();
+  if(!item)return;
+  item.format??={};
+  if(command==='fontSize')item.format.size=key;
+  else item.format[key]=!item.format[key];
+  applyNoteFormat(formatItemField,item.format);
+  if(item.checked&&item.format.u)formatItemField.style.textDecorationLine='underline line-through';
+  const area=formatItemField.closest('.cfh-note-editor-content'),scroll=area.scrollTop;
+  formatItemField.style.height='0px';
+  formatItemField.style.height=Math.max(24,formatItemField.scrollHeight)+'px';
+  area.scrollTop=scroll;
+  scheduleSave();
+ }else{
+  if(!savedFormatRange||!formatBody.contains(savedFormatRange.commonAncestorContainer))noteFlow.focusEnd();
+  else{
+   const range=savedFormatRange.cloneRange();
+   formatBody.focus({preventScroll:true});
+   const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+  }
+  document.execCommand(command,false,value);
+  scheduleSave();
+ }
+ updateFormattingToolbar();
+}
+const formatStyle=el('style');
+formatStyle.textContent=`
+ #cfhNotesEditorBox #cfhNotesTextPanel{padding:0;display:block;border-bottom:0}
+ #cfhNotesEditorBox #cfhNotesTextPanel:not([hidden]) ~ .cfh-note-editor-toolbar{display:none}
+ #cfhNotesEditorBox .cfh-note-format-bar{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));align-items:center;gap:2px;padding:4px;background:#452f59;color:#dce4e0}
+ #cfhNotesEditorBox #cfhNotesTextPanel .cfh-note-format-bar button{padding:2px;min-width:0;min-height:44px;border-radius:12px;background:transparent;color:inherit;font-size:clamp(14px,5vw,23px);font-weight:700}
+ #cfhNotesEditorBox #cfhNotesTextPanel .cfh-note-format-bar button[aria-pressed=true]{background:#1b2321}
+ .cfh-note-format-bar [data-format=i]{font-style:italic}
+ .cfh-note-format-bar [data-format=u]{text-decoration:underline}
+ .cfh-note-format-bar [data-format=s]{text-decoration:line-through}
+ #cfhNotesAudioAttachments font[size="6"]{font-size:1.65em;font-weight:700}
+ #cfhNotesAudioAttachments font[size="5"]{font-size:1.3em;font-weight:700}
+ #cfhNotesAudioAttachments font[size="3"]{font-size:1em}
+`;
+document.head.append(formatStyle);
+function editorPanel(which){if(which==='Text')updateFormattingToolbar();for(const name of editorPanels){const panel=$('cfhNotes'+name+'Panel'),trigger=$('cfhNotes'+name+'Button');panel.hidden=name!==which;if(name==='Attachment'){if(name===which&&!panel.open){document.activeElement?.blur();panel.showModal();}else if(name!==which&&panel.open)panel.close();}trigger.setAttribute('aria-expanded',String(name===which));trigger.setAttribute('aria-controls',panel.id);}}
 function closeEditorPanel(){if(!editorPanels.some(name=>!$('cfhNotes'+name+'Panel').hidden))return false;editorPanel();return true;}
 function syncEditorViewport(){const viewport=window.visualViewport;if(viewport){$('cfhNotesEditor').style.setProperty('--cfh-note-viewport-height',viewport.height+'px');$('cfhNotesEditor').style.setProperty('--cfh-note-viewport-top',viewport.offsetTop+'px');}}
 window.visualViewport?.addEventListener('resize',syncEditorViewport);window.visualViewport?.addEventListener('scroll',syncEditorViewport);window.addEventListener('resize',syncEditorViewport);
