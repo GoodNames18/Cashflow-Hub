@@ -2,7 +2,7 @@ import {applyNoteFormat} from './cfh-notes-content.mjs';
 import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
 
 const timestampFormat=new Intl.DateTimeFormat('en-PH',{
- month:'short',day:'numeric',year:'2-digit',hour:'numeric',minute:'2-digit',hour12:true
+ month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true
 });
 
 function itemTimestamp(item){
