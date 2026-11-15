@@ -2,7 +2,7 @@ import {applyNoteFormat} from './cfh-notes-content.mjs';
 import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
 
 const timestampFormat=new Intl.DateTimeFormat('en-PH',{
- month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true
+ month:'short',day:'numeric',year:'2-digit',hour:'numeric',minute:'2-digit',hour12:true
 });
 
 function itemTimestamp(item){
@@ -10,24 +10,31 @@ function itemTimestamp(item){
  if(!Number.isFinite(item.createdAt)||!Number.isFinite(date.getTime()))return 'Date unavailable';
  const parts=timestampFormat.formatToParts(date);
  const datePart=type=>parts.find(part=>part.type===type).value;
- return datePart('month')+' '+datePart('day')+', '+datePart('year')+' · '
-  +datePart('hour')+':'+datePart('minute')+' '+datePart('dayPeriod').toUpperCase();
+ return datePart('hour')+':'+datePart('minute')+' '+datePart('dayPeriod').toUpperCase()+'\n'
+  +datePart('month')+' '+datePart('day')+', '+datePart('year');
 }
 
 export function createChecklist(host,addButton,{changed,id}){
  let note=null,moving=null,swipe=null,suppressSwipeClick=false;
  const style=document.createElement('style');
  style.textContent=`
-  #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
-  #cfhNotesChecklist .cfh-check-timestamp{display:none}
-  #cfhNotesChecklist.is-revealing-timestamps .cfh-note-check-row{overflow:hidden}
-  #cfhNotesChecklist.is-revealing-timestamps .cfh-note-check-row > :not(.cfh-check-timestamp){
-   transform:translateX(calc(-1 * var(--cfh-check-swipe)));
+  #cfhNotesChecklist .cfh-note-check-row{
+   --cfh-check-timestamp-width:84px;
+   touch-action:pan-y pinch-zoom;
+   grid-template-columns:20px 20px minmax(0,1fr) var(--cfh-check-timestamp-width);
+  }
+  #cfhNotesChecklist .cfh-check-remove{right:calc(var(--cfh-check-timestamp-width) + 10px)}
+  .cfh-check-timestamp-slot{display:none}
+  #cfhNotesChecklist .cfh-check-timestamp-slot{
+   display:block;min-width:0;overflow:hidden;pointer-events:none;
+  }
+  #cfhNotesChecklist .cfh-check-timestamp{
+   display:block;visibility:hidden;min-height:24px;align-content:center;
+   text-align:right;white-space:pre-line;line-height:12px;font-size:11px;color:#514a65;
   }
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
-   display:block;position:absolute;right:0;top:7px;line-height:24px;font-size:11px;
-   color:#514a65;white-space:nowrap;pointer-events:none;
-   transform:translateX(calc(100% - var(--cfh-check-swipe)));
+   visibility:visible;
+   transform:translateX(max(0px,calc(100% - var(--cfh-check-swipe))));
   }`;
  document.head.append(style);
  function endSwipe(){
@@ -53,7 +60,7 @@ export function createChecklist(host,addButton,{changed,id}){
    host.classList.add('is-revealing-timestamps');
   }
   e.preventDefault();
-  host.style.setProperty('--cfh-check-swipe',Math.min(160,Math.max(0,dx))+'px');
+  host.style.setProperty('--cfh-check-swipe',Math.min(84,Math.max(0,dx))+'px');
  },{passive:false});
  window.addEventListener('pointerup',e=>{
   if(swipe?.pointer!==e.pointerId)return;
@@ -133,8 +140,10 @@ export function createChecklist(host,addButton,{changed,id}){
   text.onfocus=()=>{row.classList.add('is-editing');fit(text);};text.onblur=()=>{row.classList.remove('is-editing');fit(text);};
   const timestamp=document.createElement('span');timestamp.className='cfh-check-timestamp';
   timestamp.textContent=itemTimestamp(item);timestamp.setAttribute('aria-hidden','true');
-  text.setAttribute('aria-description',timestamp.textContent);
-  row.append(grip,check,text,removeButton,timestamp);requestAnimationFrame(()=>{if(text.isConnected)fit(text);});return row;
+  text.setAttribute('aria-description',timestamp.textContent.replace('\n',', '));
+  const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
+  timestampSlot.append(timestamp);
+  row.append(grip,check,text,removeButton,timestampSlot);requestAnimationFrame(()=>{if(text.isConnected)fit(text);});return row;
  }
  function render(current){
   endSwipe();cancelMove();note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
