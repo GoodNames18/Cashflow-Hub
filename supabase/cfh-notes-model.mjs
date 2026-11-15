@@ -7,7 +7,8 @@ export function noteMatches(note,filter='all',query='',now=Date.now()){
 }
 export function compareNotes(a,b,sort='updated'){if(sort==='title')return String(a.title||a.body||'').localeCompare(String(b.title||b.body||''));return (Number(b[sort==='created'?'createdAt':'updatedAt'])||0)-(Number(a[sort==='created'?'createdAt':'updatedAt'])||0);}
 export function changeNoteState(note,action,now=Date.now()){const next={...note,updatedAt:now};if(action==='delete')next.deletedAt=now;else if(action==='restore')delete next.deletedAt;else if(action==='archive')next.archived=true;else if(action==='unarchive')next.archived=false;else throw Error('Unknown note action');return next;}
-export function checklistFromText(text,id=()=>crypto.randomUUID()){return String(text).split('\n').map(t=>t.trim()).filter(Boolean).map(text=>({id:id(),text,checked:false}));}
+export function createChecklistItem(text,id){return {id:id(),text,checked:false,createdAt:Date.now()};}
+export function checklistFromText(text,id=()=>crypto.randomUUID()){return String(text).split('\n').map(t=>t.trim()).filter(Boolean).map(text=>createChecklistItem(text,id));}
 export function removeLabel(notes,labelId){return notes.map(n=>n.labelId===labelId?{...n,labelId:''}:n);}
 
 // Manual order lives separately from content dates. New notes appear first.

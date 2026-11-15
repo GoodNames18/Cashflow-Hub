@@ -1,7 +1,72 @@
-import {reorderVisibleNotes} from './cfh-notes-model.mjs';
+import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
+
+const timestampFormat=new Intl.DateTimeFormat('en-PH',{
+ month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true
+});
+
+function itemTimestamp(item){
+ const date=new Date(item.createdAt);
+ if(!Number.isFinite(item.createdAt)||!Number.isFinite(date.getTime()))return 'Date unavailable';
+ const parts=timestampFormat.formatToParts(date);
+ const datePart=type=>parts.find(part=>part.type===type).value;
+ return datePart('month')+' '+datePart('day')+', '+datePart('year')+' · '
+  +datePart('hour')+':'+datePart('minute')+' '+datePart('dayPeriod').toUpperCase();
+}
 
 export function createChecklist(host,addButton,{changed,id}){
- let note=null,moving=null;
+ let note=null,moving=null,swipe=null,suppressSwipeClick=false;
+ const style=document.createElement('style');
+ style.textContent=`
+  #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
+  #cfhNotesChecklist .cfh-check-timestamp{display:none}
+  #cfhNotesChecklist.is-revealing-timestamps .cfh-note-check-row{overflow:hidden}
+  #cfhNotesChecklist.is-revealing-timestamps .cfh-note-check-row > :not(.cfh-check-timestamp){
+   transform:translateX(calc(-1 * var(--cfh-check-swipe)));
+  }
+  #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
+   display:block;position:absolute;right:0;top:7px;line-height:24px;font-size:11px;
+   color:#514a65;white-space:nowrap;pointer-events:none;
+   transform:translateX(calc(100% - var(--cfh-check-swipe)));
+  }`;
+ document.head.append(style);
+ function endSwipe(){
+  const revealed=swipe?.revealed;
+  swipe=null;
+  host.classList.remove('is-revealing-timestamps');
+  host.style.removeProperty('--cfh-check-swipe');
+  return revealed;
+ }
+ host.addEventListener('pointerdown',e=>{
+  suppressSwipeClick=false;
+  if(e.pointerType!=='touch'||!e.isPrimary||moving||!e.target.closest('[data-check-id]')
+    ||e.target.closest('.cfh-check-grip,.cfh-check-remove'))return;
+  swipe={pointer:e.pointerId,x:e.clientX,y:e.clientY,revealed:false};
+ });
+ window.addEventListener('pointermove',e=>{
+  if(swipe?.pointer!==e.pointerId)return;
+  const dx=swipe.x-e.clientX,dy=Math.abs(swipe.y-e.clientY);
+  if(!swipe.revealed){
+   if((dy>10&&dy>=Math.abs(dx))||dx < -10){endSwipe();return;}
+   if(dx<12||dx<dy*1.3)return;
+   swipe.revealed=true;
+   host.classList.add('is-revealing-timestamps');
+  }
+  e.preventDefault();
+  host.style.setProperty('--cfh-check-swipe',Math.min(160,Math.max(0,dx))+'px');
+ },{passive:false});
+ window.addEventListener('pointerup',e=>{
+  if(swipe?.pointer!==e.pointerId)return;
+  suppressSwipeClick=!!endSwipe();
+  if(suppressSwipeClick)e.preventDefault();
+ },{passive:false});
+ host.addEventListener('click',e=>{
+  if(!suppressSwipeClick||e.detail===0)return;
+  suppressSwipeClick=false;
+  e.preventDefault();e.stopImmediatePropagation();
+ },true);
+ window.addEventListener('pointercancel',e=>{
+  if(swipe?.pointer===e.pointerId)endSwipe();
+ });
  addButton.replaceChildren();const plus=document.createElement('span');plus.textContent='＋';plus.setAttribute('aria-hidden','true');const addLabel=document.createElement('span');addLabel.textContent='List item';addButton.append(plus,addLabel);addButton.setAttribute('aria-label','Add list item');
  const rowFor=item=>[...host.querySelectorAll('[data-check-id]')].find(row=>row.dataset.checkId===item.id);
  function fit(field){const area=host.closest('.cfh-note-editor-content'),y=area?.scrollTop;field.style.height='0px';field.style.height=Math.max(24,field.scrollHeight)+'px';if(area)area.scrollTop=y;}
@@ -64,10 +129,13 @@ export function createChecklist(host,addButton,{changed,id}){
   };
   const removeButton=document.createElement('button');removeButton.type='button';removeButton.className='cfh-check-remove';removeButton.textContent='×';removeButton.setAttribute('aria-label','Delete list item');removeButton.onpointerdown=e=>e.preventDefault();removeButton.onclick=()=>remove(item);
   text.onfocus=()=>{row.classList.add('is-editing');fit(text);};text.onblur=()=>{row.classList.remove('is-editing');fit(text);};
-  row.append(grip,check,text,removeButton);requestAnimationFrame(()=>{if(text.isConnected)fit(text);});return row;
+  const timestamp=document.createElement('span');timestamp.className='cfh-check-timestamp';
+  timestamp.textContent=itemTimestamp(item);timestamp.setAttribute('aria-hidden','true');
+  text.setAttribute('aria-description',timestamp.textContent);
+  row.append(grip,check,text,removeButton,timestamp);requestAnimationFrame(()=>{if(text.isConnected)fit(text);});return row;
  }
  function render(current){
-  cancelMove();note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
+  endSwipe();cancelMove();note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
   note.items||=[];const pending=document.createElement('div');pending.className='cfh-check-pending';
   for(const item of note.items.filter(i=>!i.checked))pending.append(makeRow(item));
   addButton.hidden=false;host.append(pending,addButton);
@@ -82,7 +150,7 @@ export function createChecklist(host,addButton,{changed,id}){
   note.items=note.items.filter(i=>i!==item);changed();render(note);if(next)focusItem(next);else addButton.focus();
  }
  function add(after=null,text=''){
-  if(!note||note.kind!=='list')return;note.items||=[];const item={id:id(),text,checked:false},index=after?note.items.indexOf(after):-1;
+  if(!note||note.kind!=='list')return;note.items||=[];const item=createChecklistItem(text,id),index=after?note.items.indexOf(after):-1;
   if(index>=0)note.items.splice(index+1,0,item);else note.items.push(item);changed();render(note);focusItem(item,false);
  }
  addButton.onclick=()=>add();
@@ -90,7 +158,7 @@ export function createChecklist(host,addButton,{changed,id}){
  window.addEventListener('pointerup',e=>{if(moving?.pointer===e.pointerId){e.preventDefault();if(moving.active)place(e.clientX,e.clientY);finishMove(true);}},{passive:false});
  window.addEventListener('pointercancel',e=>{if(moving?.pointer===e.pointerId)finishMove(false);});
  host.addEventListener('keydown',e=>{if(e.key==='Escape'&&moving){e.preventDefault();e.stopPropagation();finishMove(false);}},{capture:true});
- window.addEventListener('blur',()=>finishMove(false));document.addEventListener('visibilitychange',()=>{if(document.hidden)finishMove(false);});
+ window.addEventListener('blur',()=>{endSwipe();finishMove(false);});document.addEventListener('visibilitychange',()=>{if(document.hidden){endSwipe();finishMove(false);}});
  window.addEventListener('resize',()=>{if(!host.closest('#cfhNotesEditor')?.hidden)for(const field of host.querySelectorAll('textarea'))fit(field);});
- return {render,add,cancelMove:()=>{if(!moving)return false;finishMove(false);return true;}};
+ return {render,add,cancelMove:()=>{if(endSwipe())return true;if(!moving)return false;finishMove(false);return true;}};
 }
