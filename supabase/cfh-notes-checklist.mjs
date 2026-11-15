@@ -10,7 +10,7 @@ function itemTimestamp(item){
  if(!Number.isFinite(item.createdAt)||!Number.isFinite(date.getTime()))return 'Date unavailable';
  const parts=timestampFormat.formatToParts(date);
  const datePart=type=>parts.find(part=>part.type===type).value;
- return datePart('hour')+':'+datePart('minute')+' '+datePart('dayPeriod').toUpperCase()+'\n'
+ return datePart('hour')+':'+datePart('minute')+' '+datePart('dayPeriod').toUpperCase()+' · '
   +datePart('month')+' '+datePart('day')+', '+datePart('year');
 }
 
@@ -18,19 +18,22 @@ export function createChecklist(host,addButton,{changed,id}){
  let note=null,moving=null,swipe=null,suppressSwipeClick=false;
  const style=document.createElement('style');
  style.textContent=`
-  #cfhNotesChecklist .cfh-note-check-row{
-   --cfh-check-timestamp-width:84px;
+  #cfhNotesEditorBox #cfhNotesChecklist .cfh-note-check-row{
+   --cfh-check-timestamp-width:134px;
    touch-action:pan-y pinch-zoom;
-   grid-template-columns:20px 20px minmax(0,1fr) var(--cfh-check-timestamp-width);
+   padding-right:calc(var(--cfh-check-timestamp-width) + 6px);
   }
-  #cfhNotesChecklist .cfh-check-remove{right:calc(var(--cfh-check-timestamp-width) + 10px)}
+  #cfhNotesEditorBox #cfhNotesChecklist .cfh-check-remove{
+   right:calc(var(--cfh-check-timestamp-width) + 6px);
+  }
   .cfh-check-timestamp-slot{display:none}
   #cfhNotesChecklist .cfh-check-timestamp-slot{
-   display:block;min-width:0;overflow:hidden;pointer-events:none;
+   display:block;position:absolute;top:7px;right:0;width:var(--cfh-check-timestamp-width);
+   overflow:hidden;pointer-events:none;
   }
   #cfhNotesChecklist .cfh-check-timestamp{
-   display:block;visibility:hidden;min-height:24px;align-content:center;
-   text-align:right;white-space:pre-line;line-height:12px;font-size:11px;color:#514a65;
+   display:block;visibility:hidden;text-align:right;white-space:nowrap;
+   line-height:24px;font-size:11px;color:#514a65;
   }
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
    visibility:visible;
@@ -60,7 +63,7 @@ export function createChecklist(host,addButton,{changed,id}){
    host.classList.add('is-revealing-timestamps');
   }
   e.preventDefault();
-  host.style.setProperty('--cfh-check-swipe',Math.min(84,Math.max(0,dx))+'px');
+  host.style.setProperty('--cfh-check-swipe',Math.max(0,dx)+'px');
  },{passive:false});
  window.addEventListener('pointerup',e=>{
   if(swipe?.pointer!==e.pointerId)return;
@@ -140,7 +143,7 @@ export function createChecklist(host,addButton,{changed,id}){
   text.onfocus=()=>{row.classList.add('is-editing');fit(text);};text.onblur=()=>{row.classList.remove('is-editing');fit(text);};
   const timestamp=document.createElement('span');timestamp.className='cfh-check-timestamp';
   timestamp.textContent=itemTimestamp(item);timestamp.setAttribute('aria-hidden','true');
-  text.setAttribute('aria-description',timestamp.textContent.replace('\n',', '));
+  text.setAttribute('aria-description',timestamp.textContent);
   const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
   timestampSlot.append(timestamp);
   row.append(grip,check,text,removeButton,timestampSlot);requestAnimationFrame(()=>{if(text.isConnected)fit(text);});return row;
