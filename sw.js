@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v130-checklist-timestamp-overlay';
+const CACHE_NAME = 'cashflow-hub-v131-checklist-pins-and-dividers';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
