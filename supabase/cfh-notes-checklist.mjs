@@ -18,25 +18,18 @@ export function createChecklist(host,addButton,{changed,id}){
  let note=null,moving=null,swipe=null,suppressSwipeClick=false;
  const style=document.createElement('style');
  style.textContent=`
-  #cfhNotesEditorBox #cfhNotesChecklist .cfh-note-check-row{
-   --cfh-check-timestamp-width:134px;
-   touch-action:pan-y pinch-zoom;
-   padding-right:calc(var(--cfh-check-timestamp-width) + 6px);
-  }
-  #cfhNotesEditorBox #cfhNotesChecklist .cfh-check-remove{
-   right:calc(var(--cfh-check-timestamp-width) + 6px);
-  }
+  #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
   .cfh-check-timestamp-slot{display:none}
-  #cfhNotesChecklist .cfh-check-timestamp-slot{
-   display:block;position:absolute;top:7px;right:0;width:var(--cfh-check-timestamp-width);
+  #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp-slot{
+   display:block;position:absolute;z-index:2;top:7px;right:0;max-width:100%;
    overflow:hidden;pointer-events:none;
   }
   #cfhNotesChecklist .cfh-check-timestamp{
-   display:block;visibility:hidden;text-align:right;white-space:nowrap;
+   display:block;padding-left:6px;text-align:right;white-space:nowrap;
+   background:var(--cfh-note-background,#fff);
    line-height:24px;font-size:11px;color:#514a65;
   }
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
-   visibility:visible;
    transform:translateX(max(0px,calc(100% - var(--cfh-check-swipe))));
   }`;
  document.head.append(style);
@@ -125,7 +118,7 @@ export function createChecklist(host,addButton,{changed,id}){
   const grip=document.createElement(item.checked?'span':'button');grip.className='cfh-check-grip';
   if(!item.checked){grip.type='button';grip.setAttribute('aria-label','Move list item');grip.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown');grip.innerHTML='<svg viewBox="0 0 12 18" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/></svg>';bindGrip(grip,row);}else grip.setAttribute('aria-hidden','true');
   const check=document.createElement('input');check.type='checkbox';check.checked=!!item.checked;check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));
-  const text=document.createElement('textarea');text.rows=1;text.maxLength=1000;text.placeholder='List item';text.setAttribute('aria-label','List item');text.value=item.text||'';applyNoteFormat(text,item.format);
+  const text=document.createElement('textarea');text.rows=1;text.placeholder='List item';text.setAttribute('aria-label','List item');text.value=item.text||'';applyNoteFormat(text,item.format);
   if(item.checked&&item.format?.u)text.style.textDecorationLine='underline line-through';
   check.onchange=()=>{item.checked=check.checked;changed();render(note);rowFor(item)?.querySelector('input')?.focus({preventScroll:true});};
   text.oninput=()=>{item.text=text.value;check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));fit(text);changed();};

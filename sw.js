@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v129-inline-checklist-timestamps';
+const CACHE_NAME = 'cashflow-hub-v130-checklist-timestamp-overlay';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
