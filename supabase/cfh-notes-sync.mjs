@@ -1,3 +1,4 @@
+import {repairLegacyChecklist} from './cfh-notes-repair.mjs';
 const canonical=value=>JSON.stringify(value,(_key,item)=>item&&typeof item==='object'&&!Array.isArray(item)
  ?Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])):item);
 
@@ -27,7 +28,19 @@ export function createNotesSync(key,{changed,status,localMedia}){
   clearTimeout(timer);
   timer=setTimeout(()=>void sync(),350);
  }
+ const originals=load(key,[]);
+ function repairNotes(notes){
+  return notes.map(note=>{
+   const result=repairLegacyChecklist(note,Array.isArray(originals)?originals:[]);
+   if(result.changed){
+    const backupKey=key+':checklist-repair-backups-v1',backups=load(backupKey,{});
+    if(!backups[note.id]){backups[note.id]=note;localStorage.setItem(backupKey,JSON.stringify(backups));}
+   }
+   return result.note;
+  });
+ }
  function saveNotes(notes){
+  notes=repairNotes(notes);
   const before=new Map(state.notes.map(note=>[note.id,note]));
   const after=new Map(notes.map(note=>[note.id,note]));
   const pending={...state.pending};
@@ -85,9 +98,13 @@ export function createNotesSync(key,{changed,status,localMedia}){
     if(id.startsWith('@'))prefs[id.slice(1)]=payload;
     else if(payload)notes.push(payload);
    }
-   const updated=canonical(notes)!==canonical(state.notes)||canonical(prefs)!==canonical(state.prefs);
-   commit({notes,prefs,pending:state.pending});
-   report(Object.keys(state.pending).length||!navigator.onLine?'Sync pending':'Synced');
+   const repaired=repairNotes(notes),pending={...state.pending};
+   for(let index=0;index<notes.length;index++)if(repaired[index]!==notes[index]){
+    pending[repaired[index].id]={payload:repaired[index],removed:[]};again=true;
+   }
+   const updated=canonical(repaired)!==canonical(state.notes)||canonical(prefs)!==canonical(state.prefs);
+   commit({notes:repaired,prefs,pending});
+   report(Object.keys(pending).length||!navigator.onLine?'Sync pending':'Synced');
    if(updated)changed();
   }catch(error){
    console.warn('Notes sync:',error.message);
@@ -97,6 +114,8 @@ export function createNotesSync(key,{changed,status,localMedia}){
    if(again){again=false;schedule();}
   }
  }
+ const repaired=repairNotes(state.notes);
+ if(repaired.some((note,index)=>note!==state.notes[index]))saveNotes(repaired);
  return {
   read:()=>structuredClone(state.notes),
   getStatus:()=>lastStatus,

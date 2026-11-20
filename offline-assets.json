@@ -332,5 +332,6 @@
   "supabase/cfh-notes-checklist.mjs",
   "supabase/cfh-notes-image.mjs",
   "supabase/cfh-notes-history.mjs",
-  "supabase/cfh-notes-tools.mjs"
+  "supabase/cfh-notes-tools.mjs",
+  "supabase/cfh-notes-repair.mjs"
 ]

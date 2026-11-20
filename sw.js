@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v140-notes-exclude-load-totals';
+const CACHE_NAME = 'cashflow-hub-v141-notes-recover-checklist-data';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

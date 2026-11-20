@@ -193,7 +193,7 @@ export function createChecklist(host,addButton,{changed,id}){
    host.classList.add('is-revealing-timestamps');
   }
   e.preventDefault();
-  host.style.setProperty('--cfh-check-swipe',Math.max(0,dx)+'px');
+  host.style.setProperty('--cfh-check-swipe','100%');
  },{passive:false});
  window.addEventListener('pointerup',e=>{
   if(swipe?.pointer!==e.pointerId)return;
