@@ -42,7 +42,7 @@ export function createChecklist(host,addButton,{changed,id}){
   #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
   #cfhNotesChecklist .cfh-check-entry{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 7px;flex:1;min-width:0}
   #cfhNotesChecklist .cfh-check-entry{position:relative}
-  #cfhNotesChecklist .cfh-check-math{display:none;white-space:pre-wrap;overflow-wrap:anywhere;font:16px/24px Arial;pointer-events:none}
+  #cfhNotesChecklist .cfh-check-math{order:1;display:none;white-space:pre-wrap;overflow-wrap:anywhere;font:16px/24px Arial;pointer-events:none}
   #cfhNotesChecklist .has-math:not(:focus-within) textarea{position:absolute;opacity:0;inset:0;width:100%!important;height:100%!important}
   #cfhNotesChecklist .has-math:not(:focus-within) .cfh-check-math{display:block;flex:1 1 120px}
   #cfhNotesChecklist .has-math:focus-within .cfh-check-math{display:block;flex:0 0 auto}
@@ -453,7 +453,7 @@ export function createChecklist(host,addButton,{changed,id}){
  function remove(item){
   const peers=note.items.filter(i=>!!inCompleted(i)===!!inCompleted(item)),index=peers.indexOf(item),next=peers[index+1]||peers[index-1];
   const row=rowFor(item),refresh=item.divider||inCompleted(item);
-  note.items=note.items.filter(i=>i!==item);
+  note.items=note.items.filter(i=>i!==item);mathRefresh.delete(item.id);
   if(refresh)render(note);else row?.remove();
   queueFit();changed();if(next)focusItem(next);else addButton.focus();
  }
