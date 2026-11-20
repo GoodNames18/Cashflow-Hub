@@ -273,7 +273,18 @@ export function createChecklist(host,addButton,{changed,id}){
    text.inputMode=numeric?'decimal':'text';text.enterKeyHint=numeric?'next':'enter';
   }
   updateKeyboard();
+  function acceptCompletion(){
+   if(!completion||text.selectionStart!==completion.start||text.selectionEnd!==completion.end)return false;
+   completion=null;
+   text.setSelectionRange(text.value.length,text.value.length);
+   item.text=text.value;
+   return true;
+  }
   text.addEventListener('beforeinput',e=>{
+   if(!e.isComposing&&e.inputType==='insertText'&&e.data===' '&&acceptCompletion()){
+    e.preventDefault();text.value+=' ';text.setSelectionRange(text.value.length,text.value.length);
+    text.oninput({inputType:'insertText'});return;
+   }
    if(completion&&e.inputType?.startsWith('delete')&&text.selectionStart===completion.start&&text.selectionEnd===completion.end){
     e.preventDefault();text.value=text.value.slice(0,completion.start);completion=null;
     text.setSelectionRange(text.value.length,text.value.length);
@@ -308,6 +319,7 @@ export function createChecklist(host,addButton,{changed,id}){
   let explicitNewline=false;
   text.addEventListener('compositionend',()=>text.oninput({inputType:'insertText'}));
   const split=()=>{
+   if(acceptCompletion()){changed();return;}
    if(amountOnly()&&/\d/.test(text.value)){
     text.value+=' ';text.oninput({inputType:'insertText'});
     text.blur();text.focus({preventScroll:true});text.setSelectionRange(text.value.length,text.value.length);return;
@@ -318,6 +330,10 @@ export function createChecklist(host,addButton,{changed,id}){
   text.onkeydown=e=>{
    explicitNewline=e.key==='Enter'&&e.shiftKey;
    if(e.isComposing||e.keyCode===229)return;
+   if(e.key===' '&&acceptCompletion()){
+    e.preventDefault();text.value+=' ';text.setSelectionRange(text.value.length,text.value.length);
+    text.oninput({inputType:'insertText'});return;
+   }
    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();split();}
    else if(e.key==='Backspace'&&!text.value){e.preventDefault();if(!blankFor)remove(item);}
   };
