@@ -411,7 +411,7 @@ function optionsPage(title,main=false){
  noteOptions.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');noteOptions.replaceChildren();
  const head=el('div','cfh-note-options-head');
  if(!main){const back=button('‹',showNoteOptions);back.setAttribute('aria-label','Back to note options');head.append(back);}
- head.append(el('h2','',title));const dismiss=button('×',()=>editorPanel());dismiss.setAttribute('aria-label','Close note options');head.append(dismiss);noteOptions.append(head);
+ head.append(el('h2','',title));noteOptions.append(head);
  const body=el('div','cfh-note-options-body');noteOptions.append(body);return body;
 }
 function optionsRow(body,label,icon,action){const row=button('',action,'cfh-note-options-row');row.append(svg(icon),el('span','',label));body.append(row);return row;}
@@ -481,16 +481,17 @@ function showSendNote(){
 }
 async function copyNoteText(text){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);const field=el('textarea');field.value=text;field.style.cssText='position:fixed;left:-10000px;top:0';document.body.append(field);try{field.select();if(!document.execCommand('copy'))throw Error('Copy unavailable');}finally{field.remove();}}
 const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
-#cfhNotesMorePanel.cfh-note-options{box-sizing:border-box;position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,560px);max-width:100%;max-height:85dvh;overflow:auto;border:0;border-radius:26px 26px 0 0;padding:18px 20px calc(20px + env(safe-area-inset-bottom,0px));background:var(--cfh-note-background,#fff);color:#1b1844;box-shadow:0 -6px 28px #0002}
+#cfhNotesMorePanel.cfh-note-options{box-sizing:border-box;position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,560px);max-width:100%;max-height:85dvh;overflow:auto;border:0;border-radius:26px 26px 0 0;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));background:var(--cfh-note-background,#fff);color:#1b1844;box-shadow:0 -6px 28px #0002}
 #cfhNotesMorePanel[hidden]{display:none!important}
 #cfhNotesMorePanel::backdrop{background:#1b184466}
-.cfh-note-options-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.cfh-note-options-head h2{flex:1;margin:0;font:600 18px/1.4 Arial,sans-serif}
+.cfh-note-options-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cfh-note-options-head h2{flex:1;min-width:0;max-width:none;width:auto;margin:0;white-space:nowrap;font:600 clamp(15px,4.5vw,18px)/1.4 Arial,sans-serif}
+#cfhNotesMorePanel .cfh-note-options-head button{flex:0 0 36px;width:36px;min-width:36px;padding:4px;margin:0}
 #cfhNotesMorePanel button{border:0;background:transparent;color:inherit;padding:12px;border-radius:10px;font:16px/1.4 Arial,sans-serif;cursor:pointer}
-#cfhNotesMorePanel .cfh-note-options-row{display:flex;align-items:center;gap:22px;width:100%;padding:14px 4px;text-align:left;min-height:52px}
+#cfhNotesMorePanel .cfh-note-options-row{display:flex;align-items:center;gap:16px;width:100%;padding:8px 4px;text-align:left;min-height:42px}
 .cfh-note-options-row svg{width:24px;height:24px;flex:0 0 24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 #cfhNotesMorePanel button:hover,#cfhNotesMorePanel button:focus-visible{background:#1b184411}
-.cfh-note-options-body{display:grid;gap:7px}
+.cfh-note-options-body{display:grid;gap:2px}
 #cfhNotesMorePanel input,#cfhNotesMorePanel select,#cfhNotesMorePanel textarea{box-sizing:border-box;width:100%;min-width:0;padding:12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px Arial,sans-serif}
 #cfhNotesMorePanel label{display:grid;gap:8px}
 #cfhNotesMorePanel .cfh-note-options-primary{background:#00e5ad;color:#1b1844;font-weight:600}
@@ -499,3 +500,20 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-options-controls{display:flex;flex-wrap:wrap;gap:5px}
 .cfh-note-find-preview{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 Arial,sans-serif}
 `;document.head.append(noteOptionsStyle);
+
+// Dismiss from the backdrop or with a downward swipe from the sheet's top.
+let optionsSwipe=null;
+noteOptions.addEventListener('touchstart',event=>{
+ if(event.touches.length!==1){optionsSwipe=null;return;}
+ const touch=event.touches[0],bounds=noteOptions.getBoundingClientRect();
+ const interactive=event.target.closest('input,textarea,select,button');
+ optionsSwipe=!interactive&&noteOptions.scrollTop<=0?{x:touch.clientX,y:touch.clientY,top:touch.clientY<bounds.top+80}:null;
+},{passive:true});
+noteOptions.addEventListener('touchend',event=>{
+ const start=optionsSwipe;optionsSwipe=null;if(!start||!event.changedTouches.length)return;
+ const touch=event.changedTouches[0],dy=touch.clientY-start.y,dx=Math.abs(touch.clientX-start.x);
+ if(dy>(start.top?55:90)&&dy>dx*1.5)editorPanel();
+},{passive:true});
+noteOptions.addEventListener('touchcancel',()=>{optionsSwipe=null;});
+// A downward trackpad/mouse scroll closes a sheet already at its top edge.
+noteOptions.addEventListener('wheel',event=>{if(event.deltaY< -45&&noteOptions.scrollTop<=0&&!event.target.closest('input,textarea,select'))editorPanel();},{passive:true});

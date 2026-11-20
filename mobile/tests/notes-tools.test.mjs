@@ -36,3 +36,10 @@ test('names still autocomplete with shorthand k amounts',()=>{
  assert.equal(checklistNameCompletion('2k Ce',[{id:'old',text:'510 Cecil'}],'new').value,'2k Cecil');
  assert.equal(checklistNameCompletion('510 Ce',[{id:'old',text:'2k Cecil'}],'new').value,'510 Cecil');
 });
+
+test('Load is excluded from totals without removing entries or excluding named people',()=>{
+ const items=[{id:'l1',text:'105 load'},{id:'l2',text:'200 LOAD'},{id:'l3',text:' 300 Load  '},{id:'p1',text:'510 Cecil'},{id:'p2',text:'2k cecil'}];
+ assert.deepEqual([...nameTotals(items)],[['p2','Total ₱2,510']]);
+ const shared=noteShareText({kind:'list',items});
+ assert.ok(shared.includes('105 load'));assert.ok(shared.includes('200 LOAD'));assert.ok(!shared.includes('Load (Total'));assert.ok(shared.includes('2k cecil (Total ₱2,510)'));
+});
