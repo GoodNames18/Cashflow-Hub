@@ -1,6 +1,6 @@
 import {nameTotals} from './cfh-notes-tools.mjs';
 import {applyNoteFormat} from './cfh-notes-content.mjs';
-import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
+import {createChecklistItem,reorderVisibleNotes,setChecklistText} from './cfh-notes-model.mjs';
 
 const timestampFormat=new Intl.DateTimeFormat('en-PH',{
  month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true
@@ -333,8 +333,7 @@ export function createChecklist(host,addButton,{changed,id}){
     }
    }
    updateKeyboard();
-   if(!item.text?.trim()&&text.value.trim()&&!item.createdAt)item.createdAt=Date.now();
-   item.text=text.value;
+   setChecklistText(item,text.value);
    timestamp.textContent=item.text.trim()?itemTimestamp(item):'';
    text.setAttribute('aria-description',timestamp.textContent);
    if(blankFor){
@@ -357,7 +356,7 @@ export function createChecklist(host,addButton,{changed,id}){
     text.value+=' ';text.oninput({inputType:'insertText'});
     text.blur();text.focus({preventScroll:true});text.setSelectionRange(text.value.length,text.value.length);return;
    }
-   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);item.text=text.value.slice(0,start);text.value=item.text;fit(text);changed();add(item,tail);};
+   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);setChecklistText(item,text.value.slice(0,start));text.value=item.text;timestamp.textContent=item.text.trim()?itemTimestamp(item):'';text.setAttribute('aria-description',timestamp.textContent);fit(text);changed();add(item,tail);};
   text.addEventListener('beforeinput',e=>{if(!e.isComposing&&!explicitNewline&&['insertLineBreak','insertParagraph'].includes(e.inputType)){e.preventDefault();split();}});
   text.onkeyup=()=>explicitNewline=false;
   text.onkeydown=e=>{

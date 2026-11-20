@@ -20,3 +20,21 @@ export function reorderVisibleNotes(allIds,visibleIds){
  const visible=[...new Set(visibleIds)].filter(id=>allIds.includes(id)),members=new Set(visible);let index=0;
  return allIds.map(id=>members.has(id)?visible[index++]:id);
 }
+
+// A row's original timestamp belongs to the current nonblank entry.
+export function setChecklistText(item,text,now=Date.now()){
+ const wasBlank=!item.text?.trim(),isBlank=!text.trim();
+ if(isBlank){
+  delete item.createdAt;
+  delete item.conversionCreatedAt;
+  delete item.originalDateUnavailable;
+  delete item.recoveredFromCheckboxText;
+ }else if(wasBlank){
+  item.createdAt=now;
+  delete item.conversionCreatedAt;
+  delete item.originalDateUnavailable;
+  delete item.recoveredFromCheckboxText;
+ }
+ item.text=text;
+ return item;
+}
