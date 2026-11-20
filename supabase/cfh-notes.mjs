@@ -1,3 +1,4 @@
+import {createNoteHistory} from './cfh-notes-history.mjs';
 import {createNoteImage} from './cfh-notes-image.mjs';
 import {displayNoteMath} from './cfh-notes-math.mjs';
 import {createNotesSync} from './cfh-notes-sync.mjs';
@@ -155,7 +156,7 @@ function scheduleSave(){
  saveTimer=setTimeout(flush,200);
  maxSaveTimer??=setTimeout(flush,1000);
 }
-function open(id,kind='text'){undoStack=[];redoStack=[];undoLast=null;const n=id?read().find(x=>x.id===id):null;createdInEditor=!n;activeId=n?.id||null;draft=n?structuredClone(n):{id:uid(),kind,items:[],attachments:[],pinned:false,color:'white',createdAt:Date.now()};selectedColor=draft.color||'white';$('cfhNotesTitle').value=draft.title||'';$('cfhNotesBody').value=draft.body||'';$('cfhNotesBodyAfter').value=draft.bodyAfter||'';const select=$('cfhNotesLabel');select.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));select.value=draft.labelId||'';$('cfhNotesReminder').value=draft.reminder||'';$('cfhNotesEditor').hidden=false;requestAnimationFrame(fitNoteBody);document.body.classList.add('cfh-notes-editor-open');editorPanel();syncEditorViewport();lock();paint();renderChecklist();renderAttachments();$('cfhNotesDelete').hidden=!n;$('cfhNotesDelete').textContent=draft.deletedAt?'Delete permanently':'Delete';$('cfhNotesRestore').hidden=!draft.deletedAt;$('cfhNotesArchive').hidden=!!draft.deletedAt;$('cfhNotesArchive').replaceChildren(svg(draft.archived?'unarchive':'archive'));$('cfhNotesArchive').setAttribute('aria-label',draft.archived?'Unarchive note':'Archive note');$('cfhNotesEditorStatus').textContent='Saved on this device';$('cfhNotesPinButton').setAttribute('aria-pressed',String(!!draft.pinned));$('cfhNotesPinButton').replaceChildren(svg('pin'));$('cfhNotesPinButton').setAttribute('aria-label',draft.pinned?'Unpin note':'Pin note');if(n){captureNoteFlow();Object.assign(draft,{title:$('cfhNotesTitle').value,body:$('cfhNotesBody').value,bodyAfter:$('cfhNotesBodyAfter').value,labelId:select.value,reminder:$('cfhNotesReminder').value,color:selectedColor});}editorSnapshot=n?JSON.stringify(draft):null;recordUndo();if(!id)setTimeout(()=>$('cfhNotesTitle').focus(),50);}
+function open(id,kind='text'){if(draft&&!saveDraft())return;const n=id?read().find(x=>x.id===id):null;createdInEditor=!n;activeId=n?.id||null;draft=n?structuredClone(n):{id:uid(),kind,items:[],attachments:[],pinned:false,color:'white',createdAt:Date.now()};selectedColor=draft.color||'white';$('cfhNotesTitle').value=draft.title||'';$('cfhNotesBody').value=draft.body||'';$('cfhNotesBodyAfter').value=draft.bodyAfter||'';const select=$('cfhNotesLabel');select.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));select.value=draft.labelId||'';$('cfhNotesReminder').value=draft.reminder||'';$('cfhNotesEditor').hidden=false;requestAnimationFrame(fitNoteBody);document.body.classList.add('cfh-notes-editor-open');editorPanel();syncEditorViewport();lock();paint();renderChecklist();renderAttachments();$('cfhNotesDelete').hidden=!n;$('cfhNotesDelete').textContent=draft.deletedAt?'Delete permanently':'Delete';$('cfhNotesRestore').hidden=!draft.deletedAt;$('cfhNotesArchive').hidden=!!draft.deletedAt;$('cfhNotesArchive').replaceChildren(svg(draft.archived?'unarchive':'archive'));$('cfhNotesArchive').setAttribute('aria-label',draft.archived?'Unarchive note':'Archive note');$('cfhNotesEditorStatus').textContent='Saved on this device';$('cfhNotesPinButton').setAttribute('aria-pressed',String(!!draft.pinned));$('cfhNotesPinButton').replaceChildren(svg('pin'));$('cfhNotesPinButton').setAttribute('aria-label',draft.pinned?'Unpin note':'Pin note');if(n){captureNoteFlow();Object.assign(draft,{title:$('cfhNotesTitle').value,body:$('cfhNotesBody').value,bodyAfter:$('cfhNotesBodyAfter').value,labelId:select.value,reminder:$('cfhNotesReminder').value,color:selectedColor});}editorSnapshot=n?JSON.stringify(draft):null;noteHistory.select(draft.id,undoValue());updateUndoButtons();if(!id)setTimeout(()=>$('cfhNotesTitle').focus(),50);}
 function paint(){$('cfhNotesEditorBox').style.background=colors[selectedColor]||'white';$('cfhNotesEditorBox').style.setProperty('--cfh-note-background',colors[selectedColor]||'#ffffff');document.querySelectorAll('.cfh-note-color').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.noteColor===selectedColor)));}
 function renderChecklist(){
  const isList=draft?.kind==='list';$('cfhNotesBody').hidden=true;$('cfhNotesBodyAfter').hidden=true;
@@ -364,39 +365,38 @@ render();
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&draft){clearTimeout(saveTimer);saveDraft();}});window.addEventListener('pagehide',()=>{if(draft)saveDraft();});
 
-// Local edit history belongs to the current editor session only.
-let undoStack=[],redoStack=[],undoLast=null,restoringUndo=false;
+// Each note keeps its own undo and redo stacks while the app stays open.
+const noteHistory=createNoteHistory();let restoringUndo=false;
 function undoValue(){const value=structuredClone(draft);delete value.updatedAt;return JSON.stringify(value);}
-function updateUndoButtons(){undoButton.disabled=!undoStack.length;redoButton.disabled=!redoStack.length;}
-function recordUndo(){if(!draft||restoringUndo)return;const value=undoValue();if(undoLast!==null&&value!==undoLast){undoStack.push(undoLast);if(undoStack.length>60)undoStack.shift();redoStack=[];}undoLast=value;updateUndoButtons();}
+function updateUndoButtons(){undoButton.disabled=!noteHistory.canUndo();redoButton.disabled=!noteHistory.canRedo();}
+function recordUndo(){if(!draft||restoringUndo)return;noteHistory.record(undoValue());updateUndoButtons();}
 function restoreUndo(direction){
  if(!draft||!saveDraft())return;
- const from=direction==='undo'?undoStack:redoStack,to=direction==='undo'?redoStack:undoStack;
- if(!from.length)return;
- to.push(undoValue());const value=from.pop();restoringUndo=true;
+ const value=noteHistory.move(direction);if(value===null)return;restoringUndo=true;
  try{draft=JSON.parse(value);selectedColor=draft.color||'white';
  $('cfhNotesTitle').value=draft.title||'';$('cfhNotesBody').value=draft.body||'';$('cfhNotesBodyAfter').value=draft.bodyAfter||'';
  $('cfhNotesLabel').value=draft.labelId||'';$('cfhNotesReminder').value=draft.reminder||'';
- paint();renderChecklist();renderAttachments();saveDraft();undoLast=undoValue();
+ paint();renderChecklist();renderAttachments();saveDraft();
  }finally{restoringUndo=false;updateUndoButtons();}
 }
 function footerIcon(label,path,action){const control=button('',action,'cfh-note-icon-button');control.setAttribute('aria-label',label);control.title=label;const icon=svg('camera');icon.firstChild.setAttribute('d',path);control.append(icon);control.addEventListener('pointerdown',event=>event.preventDefault());return control;}
 const undoButton=footerIcon('Undo','M9 5 4 10l5 5M4 10h10a6 6 0 0 1 0 12',()=>restoreUndo('undo'));
 const redoButton=footerIcon('Redo','m15 5 5 5-5 5M20 10H10a6 6 0 0 0 0 12',()=>restoreUndo('redo'));
-$('cfhNotesMoreButton').before(undoButton,redoButton);updateUndoButtons();
+undoButton.id='cfhNotesUndoButton';$('cfhNotesMoreButton').before(undoButton,redoButton);updateUndoButtons();
 const captureButton=footerIcon('Save whole note as image',paths.camera,async()=>{
  if(!draft||captureButton.disabled||!saveDraft())return;
- document.activeElement?.blur();editorPanel();captureButton.disabled=true;
+ document.activeElement?.blur();editorPanel();captureButton.disabled=true;captureButton.setAttribute('aria-busy','true');toast('Creating note image…');
  const note=structuredClone(draft),name=(note.title||'Note').replace(/[^a-zA-Z0-9 _-]/g,'').trim().slice(0,70)||'Note';
  try{const blob=await createNoteImage(note,colors[note.color]||'#fff',loadMedia);
- if(window.cfhSaveNoteImage){const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(blob);});const result=await window.cfhSaveNoteImage({content:base64,fileName:name+'.png'});if(result.saved)toast('Note image saved.');}
+ if(window.cfhSaveNoteImage){const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(blob);});const result=await window.cfhSaveNoteImage({content:base64,fileName:name+'.png'});if(result.saved)toast('Saved to Pictures / Cashflow Hub.');}
  else{const file=new File([blob],name+'.png',{type:'image/png'});if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});}else{const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name+'.png';link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);toast('Note image downloaded.');}}
- }catch(error){if(error?.name!=='AbortError')toast('Could not create note image. '+(error?.message||'Try again.'));}finally{captureButton.disabled=false;}
+ }catch(error){if(error?.name!=='AbortError')toast('Could not create note image. '+(error?.message||'Try again.'));}finally{captureButton.disabled=false;captureButton.removeAttribute('aria-busy');}
 });
 $('cfhNotesTextButton').after(captureButton);
 const footerStyle=el('style');footerStyle.textContent=`
 #cfhNotesEditorBox .cfh-note-editor-toolbar{flex-wrap:nowrap}
 #cfhNotesEditorBox .cfh-note-editor-toolbar .cfh-note-icon-button{flex:0 0 36px;min-width:36px;width:36px;padding:6px}
-#cfhNotesEditorBox .cfh-notes-editor-status{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+#cfhNotesEditorBox .cfh-notes-editor-status{display:none!important}
+#cfhNotesEditorBox #cfhNotesUndoButton{margin-left:auto}
 #cfhNotesEditorBox .cfh-note-editor-toolbar button:disabled{opacity:.3}
 `;document.head.append(footerStyle);

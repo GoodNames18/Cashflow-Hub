@@ -330,5 +330,6 @@
   "supabase/cfh-notes-editor.mjs",
   "supabase/cfh-notes-wave.mjs",
   "supabase/cfh-notes-checklist.mjs",
-  "supabase/cfh-notes-image.mjs"
+  "supabase/cfh-notes-image.mjs",
+  "supabase/cfh-notes-history.mjs"
 ]
