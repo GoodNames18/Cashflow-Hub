@@ -14,7 +14,8 @@ export function createNotesSync(key,{changed,status,localMedia}){
    .map(([id,payload])=>[id,{payload,removed:[],seed:true}]));
   state={notes,prefs,pending};
  }
- let client,owner,busy=false,again=false,timer;
+ let client,owner,busy=false,again=false,timer,lastStatus='Sync pending';
+ function report(value){lastStatus=value;status(value);}
  const uploaded=new Set();
  const bucket=()=>client.storage.from('cfh-note-media');
  const path=id=>owner+'/'+id;
@@ -38,12 +39,13 @@ export function createNotesSync(key,{changed,status,localMedia}){
    pending[id]={payload:note??null,removed:[...new Set(removed.filter(media=>!keep.has(media)))]};
   }
   commit({...state,notes,pending});
+  report('Sync pending');
   schedule();
  }
  async function sync(){
-  if(!client||!navigator.onLine)return;
+  if(!client||!navigator.onLine){report('Sync pending');return;}
   if(busy){again=true;return;}
-  busy=true;
+  busy=true;report('Syncing…');
   try{
    const table=()=>client.from('cfh_notes');
    for(const [id,entry] of Object.entries(state.pending)){
@@ -85,11 +87,11 @@ export function createNotesSync(key,{changed,status,localMedia}){
    }
    const updated=canonical(notes)!==canonical(state.notes)||canonical(prefs)!==canonical(state.prefs);
    commit({notes,prefs,pending:state.pending});
-   status(Object.keys(state.pending).length?'Saved on this device · Sync pending':'Synced');
+   report(Object.keys(state.pending).length||!navigator.onLine?'Sync pending':'Synced');
    if(updated)changed();
   }catch(error){
    console.warn('Notes sync:',error.message);
-   status('Saved on this device · Sync pending');
+   report('Sync pending');
   }finally{
    busy=false;
    if(again){again=false;schedule();}
@@ -97,11 +99,12 @@ export function createNotesSync(key,{changed,status,localMedia}){
  }
  return {
   read:()=>structuredClone(state.notes),
+  getStatus:()=>lastStatus,
   saveNotes,
   pref:name=>state.prefs[name],
   savePref(name,value){
    commit({...state,prefs:{...state.prefs,[name]:value},pending:{...state.pending,['@'+name]:{payload:value,removed:[]}}});
-   schedule();
+   report('Sync pending');schedule();
   },
   async download(id){
    if(!client||!navigator.onLine)return;
@@ -115,6 +118,7 @@ export function createNotesSync(key,{changed,status,localMedia}){
     {event:'*',schema:'public',table:'cfh_notes',filter:'owner_id=eq.'+owner},schedule)
     .subscribe(result=>{if(result==='SUBSCRIBED')schedule();});
    window.addEventListener('online',schedule);
+   window.addEventListener('offline',()=>report('Sync pending'));
    document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
    setInterval(()=>{if(!document.hidden)schedule();},30000);
    schedule();
