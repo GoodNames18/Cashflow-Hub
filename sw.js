@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v142-notes-interactions';
+const CACHE_NAME = 'cashflow-hub-v142-notes-interactions-final';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
