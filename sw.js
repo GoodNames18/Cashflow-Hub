@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v138-notes-format-panel-sync-status';
+const CACHE_NAME = 'cashflow-hub-v139-notes-actions-name-totals';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

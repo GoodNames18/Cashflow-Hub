@@ -1,3 +1,4 @@
+import {nameTotals} from './cfh-notes-tools.mjs';
 import {noteContent} from './cfh-notes-content.mjs';
 import {displayNoteMath} from './cfh-notes-math.mjs';
 
@@ -40,9 +41,10 @@ export async function createNoteImage(note,background,loadMedia){
   commands.push({type:'image',image,x:pad,y,w:width-pad*2,h});y+=h+16;await breathe();
  }
  if(note.kind==='list'){
+  const totals=nameTotals(note.items);
   for(const item of note.items||[]){await breathe();if(item.checked||(!item.divider&&!item.text?.trim()))continue;
    if(item.divider){commands.push({type:'divider',y:y+12});y+=28;continue;}
-   commands.push({type:'box',x:pad,y:y+4});text(displayNoteMath(item.text),item.format||{},32);y+=10;
+   commands.push({type:'box',x:pad,y:y+4});text(displayNoteMath(item.text)+(totals.has(item.id)?' ('+totals.get(item.id)+')':''),item.format||{},32);y+=10;
   }
  }else{
   // Adjacent spans retain their style and share a line until an explicit newline.

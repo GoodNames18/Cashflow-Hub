@@ -1,3 +1,4 @@
+import {nameTotals} from './cfh-notes-tools.mjs';
 import {applyNoteFormat} from './cfh-notes-content.mjs';
 import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
 
@@ -15,13 +16,13 @@ function itemTimestamp(item){
 }
 
 export function checklistNameCompletion(value,items,excludeId){
- const match=/^([+-]?[\d,.]+\s+)([\p{L}][\p{L} '\-]*)$/u.exec(value);
+ const match=/^([+-]?[\d,.]+[km]?\s+)([\p{L}][\p{L} '\-]*)$/iu.exec(value);
  if(!match)return null;
  const prefix=match[2],lower=prefix.toLocaleLowerCase();
  const names=new Map();
  for(const item of items||[]){
   if(item.id===excludeId||item.divider)continue;
-  const previous=/^[+-]?[\d,.]+\s+([\p{L}][\p{L} '\-]*)$/u.exec(item.text?.trim()||'');
+  const previous=/^[+-]?[\d,.]+[km]?\s+([\p{L}][\p{L} '\-]*)$/iu.exec(item.text?.trim()||'');
   if(!previous)continue;
   const name=previous[1],key=name.toLocaleLowerCase(),existing=names.get(key);
   names.set(key,{name,count:(existing?.count||0)+1});
@@ -38,6 +39,11 @@ export function createChecklist(host,addButton,{changed,id}){
  const style=document.createElement('style');
  style.textContent=`
   #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
+  #cfhNotesChecklist .cfh-check-entry{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 7px;flex:1;min-width:0}
+  #cfhNotesChecklist .cfh-check-entry textarea{flex:1 1 120px;min-width:0;width:120px}
+  #cfhNotesChecklist .cfh-check-name-total{font:11px/1.5 Arial,sans-serif;color:#007b61;white-space:nowrap}
+  #cfhNotesChecklist .cfh-check-name-total[hidden]{display:none}
+
   #cfhNotesChecklist .cfh-check-fixed{padding-top:2px;text-align:center;color:#514a65;font-size:13px}
   .cfh-check-drag-ghost .cfh-check-drag-text{
    min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:35vh;overflow:hidden;
@@ -66,7 +72,7 @@ export function createChecklist(host,addButton,{changed,id}){
  function queueFit(){
   if(fitFrame!==null)return;
   fitFrame=requestAnimationFrame(()=>{
-   fitFrame=null;
+   fitFrame=null;refreshTotals();
    const fields=[...host.querySelectorAll('textarea')].filter(field=>!field.closest('[hidden]'));
    const area=host.closest('.cfh-note-editor-content'),scroll=area?.scrollTop;
    for(const field of fields)field.style.height='0px';
@@ -271,6 +277,7 @@ export function createChecklist(host,addButton,{changed,id}){
   }
   return grip;
  }
+ function refreshTotals(){const totals=nameTotals(note?.items);for(const row of host.querySelectorAll('[data-check-id]')){const label=row.querySelector('.cfh-check-name-total');if(label){label.textContent=totals.get(row.dataset.checkId)||'';label.hidden=!label.textContent;}}}
  function makeRow(item,blankFor=null){
   const row=document.createElement('div');row.className='cfh-note-check-row'+(item.checked?' is-checked':'');row.dataset.checkId=item.id;
   const fixed=!!(item.pinned||item.divider||blankFor);
@@ -332,7 +339,7 @@ export function createChecklist(host,addButton,{changed,id}){
     timestamp.textContent=itemTimestamp(item);
     text.setAttribute('aria-description',timestamp.textContent);
    }
-   check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));fit(text);changed();};
+   check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));queueFit();changed();};
   let explicitNewline=false;
   text.addEventListener('compositionend',()=>text.oninput({inputType:'insertText'}));
   const split=()=>{
@@ -366,7 +373,7 @@ export function createChecklist(host,addButton,{changed,id}){
   text.setAttribute('aria-description',timestamp.textContent);
   const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
   timestampSlot.append(timestamp);
-  row.append(grip,check,text,removeButton,timestampSlot);queueFit();return row;
+  const entry=document.createElement('div');entry.className='cfh-check-entry';const total=document.createElement('span');total.className='cfh-check-name-total';total.hidden=true;entry.append(text,total);row.append(grip,check,entry,removeButton,timestampSlot);queueFit();return row;
  }
  function render(current){
   endSwipe();cancelHold();cancelMove();blanks.clear();if(note!==current)manualBlankId=null;note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
@@ -390,7 +397,7 @@ export function createChecklist(host,addButton,{changed,id}){
   const row=rowFor(item),refresh=item.divider||inCompleted(item);
   note.items=note.items.filter(i=>i!==item);
   if(refresh)render(note);else row?.remove();
-  changed();if(next)focusItem(next);else addButton.focus();
+  queueFit();changed();if(next)focusItem(next);else addButton.focus();
  }
  function add(after=null,text=''){
   if(!note||note.kind!=='list')return;

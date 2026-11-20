@@ -111,4 +111,15 @@ public class CalendarExportPlugin extends Plugin {
    call.reject("Could not save note image. Check free storage.",error);
   }
  }
+ @PluginMethod
+ public void shareNote(PluginCall call) {
+  String text=call.getString("text","");
+  if(text.length()>100000){call.reject("Note text is too large to share");return;}
+  Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");
+  send.putExtra(Intent.EXTRA_SUBJECT,call.getString("title","Note"));send.putExtra(Intent.EXTRA_TEXT,text);
+  getActivity().runOnUiThread(()->{
+   try{getActivity().startActivity(Intent.createChooser(send,"Send note"));call.resolve(new JSObject().put("opened",true));}
+   catch(Exception error){call.reject("Could not open sharing",error);}
+  });
+ }
 }

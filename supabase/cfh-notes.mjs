@@ -1,3 +1,4 @@
+import {copyNoteData,findNoteMatches,noteShareText} from './cfh-notes-tools.mjs';
 import {createNoteHistory} from './cfh-notes-history.mjs';
 import {createNoteImage} from './cfh-notes-image.mjs';
 import {displayNoteMath} from './cfh-notes-math.mjs';
@@ -249,7 +250,7 @@ $('cfhNotesDrawer').addEventListener('close',()=>{$('cfhNotesMenuButton').setAtt
 $('cfhNotesUtilityClose').onclick=()=>$('cfhNotesUtility').close();$('cfhNotesAddItem').onclick=addItem;$('cfhNotesChecklistMode').onclick=()=>{captureNoteFlow();if(draft.kind==='list'){draft.body=(draft.items||[]).map(i=>(i.checked?'☑ ':'☐ ')+i.text).join('\n');$('cfhNotesBody').value=draft.body;draft.kind='text';delete draft.content;}else{draft.items=checklistFromText($('cfhNotesBody').value,uid);draft.kind='list';}renderChecklist();renderAttachments();saveDraft();};$('cfhNotesArchive').onclick=()=>stateAction(draft.archived?'unarchive':'archive');$('cfhNotesRestore').onclick=()=>stateAction('restore');
 for(const id of ['cfhNotesTitle','cfhNotesBody','cfhNotesBodyAfter','cfhNotesReminder'])$(id).addEventListener('input',scheduleSave);$('cfhNotesLabel').onchange=scheduleSave;
 $('cfhNotesEditor').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();if(!closeEditorPanel())close();}});document.addEventListener('click',e=>{if(!e.target.closest('.cfh-notes-head'))menus();});
-window.cfhHandleNotesBack=()=>{if(checklist.cancelMove())return true;if(noteFlow.cancelMove())return true;if(drag){cancelDrag();render();return true;}if($('cfhNotesImageViewer').open&&!$('cfhNotesImageMenu').hidden){$('cfhNotesImageMenu').hidden=true;$('cfhNotesImageMore').setAttribute('aria-expanded','false');return true;}for(const id of ['cfhNotesSortMenu','cfhNotesImageViewer','cfhNotesRecording','cfhNotesAttachmentPanel','cfhNotesDrawing','cfhNotesUtility','cfhNotesCreateMenu','cfhNotesDrawer'])if($(id).open){$(id).close();return true;}if(!$('cfhNotesEditor').hidden){if(!closeEditorPanel())close();return true;}return false;};
+window.cfhHandleNotesBack=()=>{if(checklist.cancelMove())return true;if(noteFlow.cancelMove())return true;if(drag){cancelDrag();render();return true;}if($('cfhNotesImageViewer').open&&!$('cfhNotesImageMenu').hidden){$('cfhNotesImageMenu').hidden=true;$('cfhNotesImageMore').setAttribute('aria-expanded','false');return true;}for(const id of ['cfhNotesMorePanel','cfhNotesSortMenu','cfhNotesImageViewer','cfhNotesRecording','cfhNotesAttachmentPanel','cfhNotesDrawing','cfhNotesUtility','cfhNotesCreateMenu','cfhNotesDrawer'])if($(id).open){$(id).close();return true;}if(!$('cfhNotesEditor').hidden){if(!closeEditorPanel())close();return true;}return false;};
 const editorPanels=['Attachment','Color','Text','More'];
 const formattingPanel=$('cfhNotesTextPanel');
 const formatBody=$('cfhNotesAudioAttachments');
@@ -342,7 +343,7 @@ formatStyle.textContent=`
  #cfhNotesAudioAttachments font[size="3"]{font-size:1em}
 `;
 document.head.append(formatStyle);
-function editorPanel(which){if(which==='Text')updateFormattingToolbar();for(const name of editorPanels){const panel=$('cfhNotes'+name+'Panel'),trigger=$('cfhNotes'+name+'Button');panel.hidden=name!==which;if(name==='Attachment'){if(name===which&&!panel.open){document.activeElement?.blur();panel.showModal();}else if(name!==which&&panel.open)panel.close();}trigger.setAttribute('aria-expanded',String(name===which));trigger.setAttribute('aria-controls',panel.id);}}
+function editorPanel(which){if(which==='Text')updateFormattingToolbar();for(const name of editorPanels){const panel=$('cfhNotes'+name+'Panel'),trigger=$('cfhNotes'+name+'Button');panel.hidden=name!==which;if(name==='More'){if(name===which&&!panel.open){document.activeElement?.blur();showNoteOptions();panel.showModal();}else if(name!==which&&panel.open)panel.close();}if(name==='Attachment'){if(name===which&&!panel.open){document.activeElement?.blur();panel.showModal();}else if(name!==which&&panel.open)panel.close();}trigger.setAttribute('aria-expanded',String(name===which));trigger.setAttribute('aria-controls',panel.id);}}
 function closeEditorPanel(){if(!editorPanels.some(name=>!$('cfhNotes'+name+'Panel').hidden))return false;editorPanel();return true;}
 function syncEditorViewport(){const viewport=window.visualViewport;if(viewport){$('cfhNotesEditor').style.setProperty('--cfh-note-viewport-height',viewport.height+'px');$('cfhNotesEditor').style.setProperty('--cfh-note-viewport-top',viewport.offsetTop+'px');}}
 window.visualViewport?.addEventListener('resize',syncEditorViewport);window.visualViewport?.addEventListener('scroll',syncEditorViewport);window.addEventListener('resize',syncEditorViewport);
@@ -399,3 +400,102 @@ const footerStyle=el('style');footerStyle.textContent=`
 #cfhNotesEditorBox #cfhNotesUndoButton{margin-left:0}
 #cfhNotesEditorBox .cfh-note-editor-toolbar button:disabled{opacity:.3}
 `;document.head.append(footerStyle);
+
+// Note actions use a modal bottom sheet, independent of the formatting footer.
+const oldMorePanel=$('cfhNotesMorePanel'),moreFields=el('div');moreFields.hidden=true;
+moreFields.append(...oldMorePanel.childNodes);$('cfhNotesEditorBox').append(moreFields);
+const noteOptions=el('dialog','cfh-note-options');noteOptions.id='cfhNotesMorePanel';noteOptions.hidden=true;noteOptions.setAttribute('aria-label','Note options');oldMorePanel.replaceWith(noteOptions);
+outsideClose(noteOptions);noteOptions.addEventListener('close',()=>{noteOptions.hidden=true;$('cfhNotesMoreButton').setAttribute('aria-expanded','false');});
+Object.assign(paths,{search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM15 15l6 6',copy:'M8 3h13v15H8ZM3 7v15h13',share:'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8 10l7-4M8 14l7 4'});
+function optionsPage(title,main=false){
+ noteOptions.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');noteOptions.replaceChildren();
+ const head=el('div','cfh-note-options-head');
+ if(!main){const back=button('‹',showNoteOptions);back.setAttribute('aria-label','Back to note options');head.append(back);}
+ head.append(el('h2','',title));const dismiss=button('×',()=>editorPanel());dismiss.setAttribute('aria-label','Close note options');head.append(dismiss);noteOptions.append(head);
+ const body=el('div','cfh-note-options-body');noteOptions.append(body);return body;
+}
+function optionsRow(body,label,icon,action){const row=button('',action,'cfh-note-options-row');row.append(svg(icon),el('span','',label));body.append(row);return row;}
+function showNoteOptions(){
+ if(!draft)return;if(!saveDraft())return;
+ const date=new Date(draft.updatedAt||draft.createdAt||NaN);
+ const edited=Number.isFinite(date.getTime())?'Edited '+new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric'}).format(date):'Edited date unavailable';
+ const body=optionsPage(edited,true);
+ optionsRow(body,'Reminder','reminders',showNoteReminder);
+ optionsRow(body,'Find in note','search',showFindInNote);
+ optionsRow(body,'Make a copy','copy',duplicateOpenNote);
+ optionsRow(body,'Send','share',showSendNote);
+ optionsRow(body,'Labels','label',showNoteLabels);
+ if(activeId)optionsRow(body,draft.deletedAt?'Delete permanently':'Delete','deleted',()=>stateAction(draft.deletedAt?'permanent':'delete'));
+ if(draft.deletedAt)optionsRow(body,'Restore','unarchive',()=>stateAction('restore'));
+ const mode=$('cfhNotesChecklistMode');optionsRow(body,mode.textContent,'list',()=>{editorPanel();mode.onclick();});
+}
+function showNoteReminder(){
+ const body=optionsPage('Reminder'),label=el('label','','Date and time'),input=el('input');input.type='datetime-local';input.value=$('cfhNotesReminder').value;label.append(input);body.append(label,el('p','cfh-note-options-hint','Reminder dates appear in the app. Notification delivery for notes is not enabled.'));
+ const error=el('p','cfh-note-options-error');error.setAttribute('role','status');body.append(error);
+ body.append(button('Save reminder',()=>{if(input.value&&!Number.isFinite(new Date(input.value).getTime())){error.textContent='Choose a valid date and time.';return;}$('cfhNotesReminder').value=input.value;if(saveDraft()){toast(input.value?'Reminder saved.':'Reminder removed.');showNoteOptions();}},'cfh-note-options-primary'));
+ if(input.value)body.append(button('Remove reminder',()=>{$('cfhNotesReminder').value='';if(saveDraft())showNoteOptions();}));
+}
+function showNoteLabels(){
+ const body=optionsPage('Labels'),select=el('select');select.setAttribute('aria-label','Note label');
+ const fill=value=>{select.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));select.value=value||'';};fill($('cfhNotesLabel').value);body.append(select);
+ const input=el('input');input.placeholder='New label';input.maxLength=60;input.setAttribute('aria-label','New label name');const status=el('p','cfh-note-options-error');status.setAttribute('role','status');body.append(input,button('Create label',()=>{
+  const name=input.value.trim();if(!name){status.textContent='Enter a label name.';return;}
+  const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());const label=existing||{id:uid(),name};
+  if(existing||saveLabels([...current,label])){fill(label.id);input.value='';status.textContent='';}
+ }),button('Apply label',()=>{const target=$('cfhNotesLabel');target.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));target.value=select.value;if(saveDraft())showNoteOptions();},'cfh-note-options-primary'),status);
+}
+async function duplicateOpenNote(){
+ if(!draft||!saveDraft())return;const source=structuredClone(draft),body=optionsPage('Making a copy');body.append(el('p','','Copying note and attachments…'));
+ let copy;
+ try{copy=await copyNoteData(source,{id:uid,loadMedia,saveMedia:(id,blob)=>mediaOp('readwrite',id,blob),removeMedia:deleteMedia});
+  if(!write([...read(),copy])){await Promise.allSettled((copy.attachments||[]).map(m=>deleteMedia(m.id)));showNoteOptions();return;}
+  editorPanel();if(draft?.id===source.id)open(copy.id);else render();toast('Note copied.');
+ }catch(error){toast(error.message||'Could not copy note.');if(noteOptions.open)showNoteOptions();}
+}
+function showFindInNote(){
+ const body=optionsPage('Find in note'),input=el('input');input.type='search';input.placeholder='Search this note';input.setAttribute('aria-label','Find in note');
+ const status=el('p');status.setAttribute('role','status');const preview=el('p','cfh-note-find-preview'),controls=el('div','cfh-note-options-controls');let matches=[],index=0;
+ function show(){const match=matches[index];status.textContent=input.value.trim()?(matches.length?(index+1)+' of '+matches.length+' matches':'No matches'):'Search the title or note text, including checked entries.';preview.replaceChildren();if(match){const start=Math.max(0,match.start-35),end=Math.min(match.text.length,match.start+match.length+55);preview.append(document.createTextNode((start?'…':'')+match.text.slice(start,match.start)),el('mark','',match.text.slice(match.start,match.start+match.length)),document.createTextNode(match.text.slice(match.start+match.length,end)+(end<match.text.length?'…':'')));}previous.disabled=next.disabled=jump.disabled=!match;}
+ const previous=button('Previous',()=>{index=(index+matches.length-1)%matches.length;show();}),next=button('Next',()=>{index=(index+1)%matches.length;show();}),jump=button('Go to match',()=>goToNoteMatch(matches[index]),'cfh-note-options-primary');
+ controls.append(previous,next,jump);body.append(input,status,preview,controls);input.oninput=()=>{matches=findNoteMatches(draft,input.value);index=0;show();};input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();if(matches.length){index=(index+1)%matches.length;show();}}};show();setTimeout(()=>input.focus(),0);
+}
+function goToNoteMatch(match){
+ if(!match)return;editorPanel();
+ let field;
+ if(match.type==='title')field=$('cfhNotesTitle');
+ else if(match.type==='item'){
+  const row=[...$('cfhNotesChecklist').querySelectorAll('[data-check-id]')].find(n=>n.dataset.checkId===match.id);
+  if(!row)return;const completed=row.closest('.cfh-check-completed');if(completed){completed.hidden=false;$('cfhNotesChecklist').querySelector('.cfh-check-completed-toggle')?.setAttribute('aria-expanded','true');}field=row.querySelector('textarea');
+ }else{
+  const host=$('cfhNotesAudioAttachments'),walker=document.createTreeWalker(host,NodeFilter.SHOW_TEXT),chars=[];let node;
+  while((node=walker.nextNode())){if(node.parentElement?.closest('[data-audio-id],[data-note-math-result]'))continue;for(let offset=0;offset<node.nodeValue.length;offset++)if(node.nodeValue[offset]!=='\u200b')chars.push({node,offset});}
+  const a=chars[match.start],b=chars[match.start+match.length-1];if(!a||!b)return;
+  host.focus({preventScroll:true});const range=document.createRange();range.setStart(a.node,a.offset);range.setEnd(b.node,b.offset+1);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);a.node.parentElement?.scrollIntoView({block:'center',behavior:'smooth'});return;
+ }
+ if(field?.tagName==='TEXTAREA'){field.style.height='0px';field.style.height=field.scrollHeight+'px';}field?.focus({preventScroll:true});field?.setSelectionRange(match.start,match.start+match.length);field?.scrollIntoView({block:'center',behavior:'smooth'});
+}
+function showSendNote(){
+ const body=optionsPage('Send'),text=noteShareText(draft);body.append(el('p','cfh-note-options-hint','Share the title and unchecked note text, including name totals. Images and recordings stay in the note.'));
+ const share=button('Share note text',async()=>{share.disabled=true;try{const options={title:draft.title||'Note',text};if(window.cfhShareNote)await window.cfhShareNote(options);else if(navigator.share)await navigator.share(options);else{await copyNoteText(text);toast('Note text copied.');}}catch(error){if(error.name!=='AbortError')toast('Could not share. Try Copy text.');}finally{share.disabled=false;}},'cfh-note-options-primary');
+ body.append(share,button('Copy text',async()=>{try{await copyNoteText(text);toast('Note text copied.');}catch{toast('Could not copy. Select the text below to copy it.');const field=el('textarea');field.value=text;field.readOnly=true;field.setAttribute('aria-label','Note text to copy');body.append(field);field.focus();field.select();}}));
+}
+async function copyNoteText(text){if(navigator.clipboard?.writeText)return navigator.clipboard.writeText(text);const field=el('textarea');field.value=text;field.style.cssText='position:fixed;left:-10000px;top:0';document.body.append(field);try{field.select();if(!document.execCommand('copy'))throw Error('Copy unavailable');}finally{field.remove();}}
+const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
+#cfhNotesMorePanel.cfh-note-options{box-sizing:border-box;position:fixed;inset:auto 0 0;margin:0 auto;width:min(100%,560px);max-width:100%;max-height:85dvh;overflow:auto;border:0;border-radius:26px 26px 0 0;padding:18px 20px calc(20px + env(safe-area-inset-bottom,0px));background:var(--cfh-note-background,#fff);color:#1b1844;box-shadow:0 -6px 28px #0002}
+#cfhNotesMorePanel[hidden]{display:none!important}
+#cfhNotesMorePanel::backdrop{background:#1b184466}
+.cfh-note-options-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cfh-note-options-head h2{flex:1;margin:0;font:600 18px/1.4 Arial,sans-serif}
+#cfhNotesMorePanel button{border:0;background:transparent;color:inherit;padding:12px;border-radius:10px;font:16px/1.4 Arial,sans-serif;cursor:pointer}
+#cfhNotesMorePanel .cfh-note-options-row{display:flex;align-items:center;gap:22px;width:100%;padding:14px 4px;text-align:left;min-height:52px}
+.cfh-note-options-row svg{width:24px;height:24px;flex:0 0 24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#cfhNotesMorePanel button:hover,#cfhNotesMorePanel button:focus-visible{background:#1b184411}
+.cfh-note-options-body{display:grid;gap:7px}
+#cfhNotesMorePanel input,#cfhNotesMorePanel select,#cfhNotesMorePanel textarea{box-sizing:border-box;width:100%;min-width:0;padding:12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px Arial,sans-serif}
+#cfhNotesMorePanel label{display:grid;gap:8px}
+#cfhNotesMorePanel .cfh-note-options-primary{background:#00e5ad;color:#1b1844;font-weight:600}
+.cfh-note-options-hint{font:13px/1.5 Arial,sans-serif;color:#514a65}
+.cfh-note-options-error{font-size:13px;color:#a3273d}
+.cfh-note-options-controls{display:flex;flex-wrap:wrap;gap:5px}
+.cfh-note-find-preview{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 Arial,sans-serif}
+`;document.head.append(noteOptionsStyle);

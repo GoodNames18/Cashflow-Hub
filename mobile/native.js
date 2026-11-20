@@ -36,6 +36,7 @@ const backgroundSchedule=()=>schedule().catch(()=>{});
 function queue(){clearTimeout(timer);timer=setTimeout(backgroundSchedule,800);}
 if(Capacitor.isNativePlatform()){
  window.CFH_NATIVE=true;
+ window.cfhShareNote=options=>CalendarExport.shareNote(options);
  window.cfhSaveNoteImage=options=>CalendarExport.saveImage(options);
  window.cfhSaveCalendarFile=content=>CalendarExport.save({content});
  window.cfhRegisterReminders=async()=>{clearTimeout(timer);return schedule();};
