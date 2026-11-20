@@ -41,6 +41,8 @@ export function createChecklist(host,addButton,{changed,id}){
   #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
   #cfhNotesChecklist .cfh-check-entry{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 7px;flex:1;min-width:0}
   #cfhNotesChecklist .cfh-check-entry textarea{flex:1 1 120px;min-width:0;width:120px}
+  #cfhNotesChecklist .is-editing .cfh-check-entry{padding-right:28px}
+  #cfhNotesChecklist .is-editing .cfh-check-entry textarea{padding-right:0}
   #cfhNotesChecklist .cfh-check-name-total{font:11px/1.5 Arial,sans-serif;color:#007b61;white-space:nowrap}
   #cfhNotesChecklist .cfh-check-name-total[hidden]{display:none}
 
