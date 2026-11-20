@@ -2,17 +2,24 @@ import {findNoteMatches,nameTotals} from './cfh-notes-tools.mjs';
 import {noteContent,applyNoteFormat} from './cfh-notes-content.mjs';
 import {noteMathResults} from './cfh-notes-math.mjs';
 
+const inCompleted=item=>item.checked&&!item.divider&&(!item.pinned||item.pinInCompleted);
+// Collapsed completed entries are outside the visible search scope.
+export function noteForVisibleSearch(note){
+ if(note.kind!=='list'||note.checkedExpanded!==false)return note;
+ return {...note,items:(note.items||[]).filter(item=>!inCompleted(item))};
+}
+
 // Read-only search presentation: editable DOM and saved note data stay intact.
 export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
  let session=null;
  const node=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
  const style=node('style');style.textContent=`
- #cfhNotesEditorBox .cfh-note-find-bar{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:8px;background:var(--cfh-note-background,#fff);color:#1b1844}
- #cfhNotesEditorBox .cfh-note-find-bar input{box-sizing:border-box;flex:1;min-width:0;width:0;padding:10px;border:2px solid #00ad8a;border-radius:10px;background:#ffffff66;font:16px Arial;color:inherit}
- #cfhNotesEditorBox .cfh-note-find-bar button{flex:0 0 34px;width:34px;min-width:0;margin:0;padding:5px;border:0;border-radius:8px;background:transparent;color:inherit;font:26px/1.2 Arial;cursor:pointer}
+ #cfhNotesEditorBox .cfh-note-find-bar{display:grid;grid-template-columns:minmax(0,1fr) auto repeat(3,34px);align-items:center;gap:3px;padding:8px;background:var(--cfh-note-background,#fff);color:#1b1844}
+ #cfhNotesEditorBox .cfh-note-find-bar input{box-sizing:border-box;min-width:0;width:100%;padding:10px;border:2px solid #00ad8a;border-radius:10px;background:#ffffff66;font:16px Arial;color:inherit}
+ #cfhNotesEditorBox .cfh-note-find-bar button{box-sizing:border-box;display:grid;place-items:center;width:34px;height:36px;min-width:0;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font:26px/1.2 Arial;cursor:pointer}
  #cfhNotesEditorBox .cfh-note-find-bar button:disabled{opacity:.3}
  .cfh-note-find-bar small{font:11px/1.4 Arial;max-width:52px}
- .cfh-note-find-bar .cfh-note-find-sync{flex:0 0 100%;max-width:none;text-align:right;color:#514a65}
+ .cfh-note-find-bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
  .cfh-note-find-mirror{font:16px/24px Arial;color:#1b1844;white-space:pre-wrap;overflow-wrap:anywhere}
  .cfh-note-find-mirror h2{font:700 26px/1.4 Arial;margin:0 0 20px}
  .cfh-note-find-row{display:flex;align-items:baseline;gap:10px;min-height:40px;padding:7px 0}
@@ -27,7 +34,7 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
  `;document.head.append(style);
  function close(){
   if(!session)return false;
-  const old=session;session=null;old.observer?.disconnect();
+  const old=session;session=null;
   for(const [element,hidden]of old.hidden)element.hidden=hidden;
   old.bar.querySelector('input')?.blur();old.mirror.remove();old.bar.remove();old.toolbar.hidden=old.toolbarHidden;old.area.scrollTop=old.scroll;
   for(const url of old.urls.values())if(typeof url==='string')URL.revokeObjectURL(url);
@@ -41,14 +48,9 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
   const mirror=node('div','cfh-note-find-mirror'),bar=node('div','cfh-note-find-bar'),input=node('input'),status=node('small');
   input.type='search';input.placeholder='Find in note';input.setAttribute('aria-label','Find in note');input.enterKeyHint='search';status.setAttribute('role','status');
   const s={area,toolbar,toolbarHidden,hidden,scroll,mirror,bar,urls:new Map()};session=s;
-  const sync=node('small','cfh-note-find-sync'),sourceStatus=editor.querySelector('#cfhNotesEditorStatus');sync.setAttribute('role','status');
-  function syncStatus(){const value=sourceStatus?.textContent||'';sync.textContent=/^Sync(?: pending|ing|ed)/.test(value)?value:'';sync.hidden=!sync.textContent;}
-  syncStatus();const Observer=document.defaultView?.MutationObserver;
-  if(sourceStatus&&Observer){s.observer=new Observer(syncStatus);s.observer.observe(sourceStatus,{childList:true,characterData:true,subtree:true});}
   let matches=[],marks=new Map(),index=0;
-  const completed=item=>item.checked&&!item.divider&&(!item.pinned||item.pinInCompleted);
-  const pending=(note.items||[]).filter(item=>!completed(item)),checked=(note.items||[]).filter(completed);
-  const searchNote={...note,items:[...pending,...checked]};
+  const pending=(note.items||[]).filter(item=>!inCompleted(item)),checked=(note.items||[]).filter(inCompleted);
+  const searchNote=noteForVisibleSearch({...note,items:[...pending,...checked]});
   function media(attachment,tag){
    const element=node(tag);if(tag==='img')element.alt=attachment.name||'Note image';else element.controls=true;
    let value=s.urls.get(attachment.id);
@@ -93,7 +95,7 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
      if(totals.has(item.id))line.append(node('span','cfh-note-find-total',totals.get(item.id)));mirror.append(line);
     }
     pending.forEach(row);
-    if(checked.length){mirror.append(node('p','cfh-note-find-completed',checked.length+' checked items'));if(note.checkedExpanded!==false||matches.some(m=>checked.some(item=>item.id===m.id)))checked.forEach(row);}
+    if(checked.length){mirror.append(node('p','cfh-note-find-completed',checked.length+' checked items'));if(note.checkedExpanded!==false)checked.forEach(row);}
    }else{
     const body=node('div'),parts=noteContent(note),text=parts.map(p=>p.type==='text'?p.text:'').join(''),math=noteMathResults(text);let offset=0;
     const bodyMatches=matches.filter(m=>m.type==='body');
@@ -101,9 +103,13 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
    }
    highlight();
   }
-  function control(label,text,action){const b=node('button','',text);b.type='button';b.setAttribute('aria-label',label);b.onclick=action;b.onpointerdown=e=>e.preventDefault();return b;}
-  const previous=control('Previous match','⌃',()=>{if(matches.length){index=(index+matches.length-1)%matches.length;highlight();}}),next=control('Next match','⌄',()=>{if(matches.length){index=(index+1)%matches.length;highlight();}}),exit=control('Close find in note','×',close);
-  bar.append(input,status,previous,next,exit,sync);area.append(mirror);toolbar.before(bar);
+  function control(label,path,action){
+   const b=node('button');b.type='button';b.setAttribute('aria-label',label);b.onclick=action;b.onpointerdown=e=>e.preventDefault();
+   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),line=document.createElementNS(svg.namespaceURI,'path');
+   svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');line.setAttribute('d',path);svg.append(line);b.append(svg);return b;
+  }
+  const previous=control('Previous match','M6 15l6-6 6 6',()=>{if(matches.length){index=(index+matches.length-1)%matches.length;highlight();}}),next=control('Next match','M6 9l6 6 6-6',()=>{if(matches.length){index=(index+1)%matches.length;highlight();}}),exit=control('Close find in note','M6 6l12 12M18 6 6 18',close);
+  bar.append(input,status,previous,next,exit);area.append(mirror);toolbar.before(bar);
   input.oninput=draw;input.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}else if(e.key==='Enter'){e.preventDefault();(e.shiftKey?previous:next).click();}};
   draw();input.focus({preventScroll:true});return true;
  }
