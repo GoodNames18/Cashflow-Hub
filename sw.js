@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v143-restore-stable-notes-287';
+const CACHE_NAME = 'cashflow-hub-v144-finger-tracked-note-dates';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

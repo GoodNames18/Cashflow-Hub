@@ -35,7 +35,7 @@ export function checklistNameCompletion(value,items,excludeId){
 }
 
 export function createChecklist(host,addButton,{changed,id}){
- let note=null,moving=null,swipe=null,suppressSwipeClick=false,hold=null,rowMenu=null;
+ let note=null,moving=null,swipe=null,suppressSwipeClick=false,hold=null,rowMenu=null,dateOffset=0;
  const style=document.createElement('style');
  style.textContent=`
   #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
@@ -66,7 +66,7 @@ export function createChecklist(host,addButton,{changed,id}){
    line-height:24px;font-size:11px;color:#514a65;
   }
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
-   transform:translateX(max(0px,calc(100% - var(--cfh-check-swipe))));
+   transform:translateX(clamp(0px,calc(100% - var(--cfh-check-swipe,0px)),100%));
   }`;
  document.head.append(style);
  const blanks=new Map();
@@ -170,34 +170,36 @@ export function createChecklist(host,addButton,{changed,id}){
   blanks.set(divider.id,item);dividerRow.before(row);
  }
 
- function endSwipe(){
-  const revealed=swipe?.revealed;
+ function endSwipe(reset=true){
+  const revealed=swipe?.revealed||dateOffset>0;
   swipe=null;
-  host.classList.remove('is-revealing-timestamps');
-  host.style.removeProperty('--cfh-check-swipe');
+  if(reset){dateOffset=0;host.classList.remove('is-revealing-timestamps');host.style.removeProperty('--cfh-check-swipe');}
   return revealed;
  }
  host.addEventListener('pointerdown',e=>{
   suppressSwipeClick=false;
   if(e.pointerType!=='touch'||!e.isPrimary||moving||!e.target.closest('[data-check-id]')
     ||e.target.closest('.cfh-check-grip,.cfh-check-remove'))return;
-  swipe={pointer:e.pointerId,x:e.clientX,y:e.clientY,revealed:false};
+  swipe={pointer:e.pointerId,x:e.clientX,y:e.clientY,startOffset:dateOffset,revealed:false};
  });
  window.addEventListener('pointermove',e=>{
   if(swipe?.pointer!==e.pointerId)return;
   const dx=swipe.x-e.clientX,dy=Math.abs(swipe.y-e.clientY);
   if(!swipe.revealed){
-   if((dy>10&&dy>=Math.abs(dx))||dx < -10){endSwipe();return;}
-   if(dx<12||dx<dy*1.3)return;
+   if(dy>10&&dy>=Math.abs(dx)){endSwipe(false);return;}
+   if(!swipe.startOffset&&dx<0)return;
+   if(Math.abs(dx)<12||Math.abs(dx)<dy*1.3)return;
    swipe.revealed=true;
    host.classList.add('is-revealing-timestamps');
+   swipe.width=Math.max(1,...[...host.querySelectorAll('.cfh-check-timestamp')].map(label=>label.getBoundingClientRect().width));
   }
   e.preventDefault();
-  host.style.setProperty('--cfh-check-swipe','100%');
+  dateOffset=Math.max(0,Math.min(swipe.width,swipe.startOffset+dx));
+  host.style.setProperty('--cfh-check-swipe',dateOffset+'px');
  },{passive:false});
  window.addEventListener('pointerup',e=>{
   if(swipe?.pointer!==e.pointerId)return;
-  suppressSwipeClick=!!endSwipe();
+  suppressSwipeClick=!!endSwipe(false);
   if(suppressSwipeClick)e.preventDefault();
  },{passive:false});
  host.addEventListener('click',e=>{
@@ -206,7 +208,7 @@ export function createChecklist(host,addButton,{changed,id}){
   e.preventDefault();e.stopImmediatePropagation();
  },true);
  window.addEventListener('pointercancel',e=>{
-  if(swipe?.pointer===e.pointerId)endSwipe();
+  if(swipe?.pointer===e.pointerId)endSwipe(false);
  });
  addButton.replaceChildren();const plus=document.createElement('span');plus.textContent='＋';plus.setAttribute('aria-hidden','true');addButton.append(plus);addButton.setAttribute('aria-label','Add list item');
  const rowFor=item=>[...host.querySelectorAll('[data-check-id]')].find(row=>row.dataset.checkId===item.id);
@@ -286,7 +288,7 @@ export function createChecklist(host,addButton,{changed,id}){
   if(fixed)row.dataset.fixed='true';
   let grip=makeGrip(item,row,fixed);
   const check=document.createElement('input');check.type='checkbox';check.checked=!!item.checked;check.disabled=!!(blankFor||item.divider);check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));
-  const text=document.createElement('textarea');text.rows=1;text.setAttribute('aria-label','List item');text.value=item.text||'';applyNoteFormat(text,item.format);
+  const text=document.createElement('textarea');text.rows=1;text.placeholder='';text.setAttribute('aria-label','List item');text.value=item.text||'';applyNoteFormat(text,item.format);
   text.autocapitalize='words';text.autocomplete='off';
   let completion=null;
   const amountOnly=()=>/^[+-]?[\d,.]*$/.test(text.value);
@@ -334,7 +336,7 @@ export function createChecklist(host,addButton,{changed,id}){
     if(!item.text.trim()){fit(text);return;}
     const index=note.items.indexOf(blankFor),dividerRow=rowFor(blankFor);
     if(index<0||!dividerRow)return;
-    item.createdAt=Date.now();note.items.splice(index,0,item);
+    note.items.splice(index,0,item);
     blankFor=null;check.disabled=false;delete row.dataset.fixed;
     const liveGrip=makeGrip(item,row,false);grip.replaceWith(liveGrip);grip=liveGrip;
     insertBlank(note.items[index+1],dividerRow);
