@@ -48,7 +48,7 @@ export function createChecklist(host,addButton,{changed,id}){
 
   #cfhNotesChecklist .cfh-check-fixed{padding-top:2px;text-align:center;color:#514a65;font-size:13px}
   .cfh-check-drag-ghost .cfh-check-drag-text{
-   min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:35vh;overflow:hidden;
+   min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;
    font:400 16px/24px Arial,sans-serif;color:#1b1844;margin:0;
   }
   .cfh-check-row-menu{border:0;border-radius:16px;padding:16px;color:#1b1844;background:#fff;width:min(300px,85vw)}
@@ -242,7 +242,9 @@ export function createChecklist(host,addButton,{changed,id}){
    const text=document.createElement('div');text.className='cfh-check-drag-text';
    text.textContent=source.value||' ';text.style.cssText=source.style.cssText;
    // The preview uses ordinary text so Android cannot clip a cloned text field.
-   text.style.height='auto';text.style.padding='0';text.style.width='100%';
+   text.style.height='auto';text.style.padding='0';text.style.width='auto';text.style.flex='1';text.style.lineHeight='1.5';
+   const box=document.createElement('span');box.className='cfh-check-drag-box';box.style.cssText='box-sizing:border-box;width:20px;height:20px;flex:0 0 20px;border:1.5px solid currentColor;border-radius:3px';
+   moving.ghost.style.alignItems='center';moving.ghost.style.gap='12px';moving.ghost.append(box);
    moving.ghost.append(text);moving.ghost.style.width=bounds.width+'px';
    moving.ghost.style.background=getComputedStyle(host.closest('#cfhNotesEditorBox')).getPropertyValue('--cfh-note-background')||'#fff';
    moving.marker=document.createElement('span');moving.marker.className='cfh-check-drop-marker';

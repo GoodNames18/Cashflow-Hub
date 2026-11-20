@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v147-notes-history-stable-totals';
+const CACHE_NAME = 'cashflow-hub-v148-inline-note-find-drag-preview';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
