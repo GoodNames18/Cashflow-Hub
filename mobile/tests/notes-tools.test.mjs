@@ -1,7 +1,7 @@
 import {checklistNameCompletion} from '../../supabase/cfh-notes-checklist.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseNameAmount,nameTotals,findNoteMatches,copyNoteData,noteShareText} from '../../supabase/cfh-notes-tools.mjs';
+import {parseNameAmount,nameTotals,findNoteMatches,copyNoteData,noteShareText,canRestoreChecklist} from '../../supabase/cfh-notes-tools.mjs';
 test('amount totals match whole names across dividers, parse k, and exclude completed rows',()=>{
  const items=[{id:'old',text:'510 cecil'},{id:'divider',text:'line',divider:true},{id:'new',text:'2k Cecil',createdAt:3},{id:'other',text:'20 Cecilia'},{id:'paid',text:'9k CECIL',checked:true}];
  assert.deepEqual([...nameTotals(items)],[['new','Total ₱2,510']]);
@@ -42,4 +42,12 @@ test('Load is excluded from totals without removing entries or excluding named p
  assert.deepEqual([...nameTotals(items)],[['p2','Total ₱2,510']]);
  const shared=noteShareText({kind:'list',items});
  assert.ok(shared.includes('105 load'));assert.ok(shared.includes('200 LOAD'));assert.ok(!shared.includes('Load (Total'));assert.ok(shared.includes('2k cecil (Total ₱2,510)'));
+});
+
+test('legacy text conversion can restore original checklist data only while its text still matches',()=>{
+ const items=[{id:'1',text:'510 Cecil',checked:false,createdAt:1},{id:'2',text:'200 Noel',checked:true,createdAt:2}];
+ const note={kind:'text',items,body:'☐ 510 Cecil\n☑ 200 Noel'};
+ assert.equal(canRestoreChecklist(note),true);note.body+=' changed';assert.equal(canRestoreChecklist(note),false);
+ assert.equal(items[1].checked,true);assert.equal(items[1].createdAt,2);
+ assert.equal(canRestoreChecklist({kind:'text',body:'ordinary note'}),false);
 });

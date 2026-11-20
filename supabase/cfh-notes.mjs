@@ -1,4 +1,4 @@
-import {copyNoteData,findNoteMatches,noteShareText} from './cfh-notes-tools.mjs';
+import {copyNoteData,findNoteMatches,noteShareText,canRestoreChecklist} from './cfh-notes-tools.mjs';
 import {createNoteHistory} from './cfh-notes-history.mjs';
 import {createNoteImage} from './cfh-notes-image.mjs';
 import {displayNoteMath} from './cfh-notes-math.mjs';
@@ -162,7 +162,7 @@ function paint(){$('cfhNotesEditorBox').style.background=colors[selectedColor]||
 function renderChecklist(){
  const isList=draft?.kind==='list';$('cfhNotesBody').hidden=true;$('cfhNotesBodyAfter').hidden=true;
  $('cfhNotesAudioAttachments').setAttribute('contenteditable',String(!isList));
- $('cfhNotesChecklistMode').textContent=isList?'Use text note':'Use checklist';checklist.render(draft);
+ $('cfhNotesChecklistMode').textContent='Use checklist';checklist.render(draft);
  if(!isList)requestAnimationFrame(fitNoteBody);
 }
 function addItem(){checklist.add();}
@@ -247,7 +247,7 @@ function point(e){const r=canvas.getBoundingClientRect();return[(e.clientX-r.lef
 canvas.onpointerdown=e=>{e.preventDefault();drawing=true;canvas.setPointerCapture(e.pointerId);const [x,y]=point(e);ctx.beginPath();ctx.moveTo(x,y);ctx.lineWidth=Number($('cfhNotesDrawSize').value);ctx.strokeStyle=$('cfhNotesDrawInk').value;ctx.lineCap='round';ctx.lineJoin='round';ctx.lineTo(x+.1,y+.1);ctx.stroke();};canvas.onpointermove=e=>{if(!drawing)return;e.preventDefault();ctx.lineTo(...point(e));ctx.stroke();};canvas.onpointerup=canvas.onpointercancel=()=>drawing=false;
 $('cfhNotesDrawClear').onclick=()=>{ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);};$('cfhNotesDrawCancel').onclick=()=>$('cfhNotesDrawing').close();$('cfhNotesDrawing').addEventListener('close',unlock);$('cfhNotesDrawSave').onclick=async()=>{const b=$('cfhNotesDrawSave');b.disabled=true;try{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error();$('cfhNotesDrawing').close();await attach(blob,'image','Drawing');}catch{toast('Drawing could not be saved.');}finally{b.disabled=false;}};
 $('cfhNotesDrawer').addEventListener('close',()=>{$('cfhNotesMenuButton').setAttribute('aria-expanded','false');});
-$('cfhNotesUtilityClose').onclick=()=>$('cfhNotesUtility').close();$('cfhNotesAddItem').onclick=addItem;$('cfhNotesChecklistMode').onclick=()=>{captureNoteFlow();if(draft.kind==='list'){draft.body=(draft.items||[]).map(i=>(i.checked?'☑ ':'☐ ')+i.text).join('\n');$('cfhNotesBody').value=draft.body;draft.kind='text';delete draft.content;}else{draft.items=checklistFromText($('cfhNotesBody').value,uid);draft.kind='list';}renderChecklist();renderAttachments();saveDraft();};$('cfhNotesArchive').onclick=()=>stateAction(draft.archived?'unarchive':'archive');$('cfhNotesRestore').onclick=()=>stateAction('restore');
+$('cfhNotesUtilityClose').onclick=()=>$('cfhNotesUtility').close();$('cfhNotesAddItem').onclick=addItem;$('cfhNotesChecklistMode').onclick=()=>{if(!draft||draft.kind==='list')return;captureNoteFlow();if(!canRestoreChecklist(draft))draft.items=checklistFromText($('cfhNotesBody').value,uid);draft.kind='list';renderChecklist();renderAttachments();saveDraft();};$('cfhNotesArchive').onclick=()=>stateAction(draft.archived?'unarchive':'archive');$('cfhNotesRestore').onclick=()=>stateAction('restore');
 for(const id of ['cfhNotesTitle','cfhNotesBody','cfhNotesBodyAfter','cfhNotesReminder'])$(id).addEventListener('input',scheduleSave);$('cfhNotesLabel').onchange=scheduleSave;
 $('cfhNotesEditor').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();if(!closeEditorPanel())close();}});document.addEventListener('click',e=>{if(!e.target.closest('.cfh-notes-head'))menus();});
 window.cfhHandleNotesBack=()=>{if(checklist.cancelMove())return true;if(noteFlow.cancelMove())return true;if(drag){cancelDrag();render();return true;}if($('cfhNotesImageViewer').open&&!$('cfhNotesImageMenu').hidden){$('cfhNotesImageMenu').hidden=true;$('cfhNotesImageMore').setAttribute('aria-expanded','false');return true;}for(const id of ['cfhNotesMorePanel','cfhNotesSortMenu','cfhNotesImageViewer','cfhNotesRecording','cfhNotesAttachmentPanel','cfhNotesDrawing','cfhNotesUtility','cfhNotesCreateMenu','cfhNotesDrawer'])if($(id).open){$(id).close();return true;}if(!$('cfhNotesEditor').hidden){if(!closeEditorPanel())close();return true;}return false;};
@@ -427,7 +427,7 @@ function showNoteOptions(){
  optionsRow(body,'Labels','label',showNoteLabels);
  if(activeId)optionsRow(body,draft.deletedAt?'Delete permanently':'Delete','deleted',()=>stateAction(draft.deletedAt?'permanent':'delete'));
  if(draft.deletedAt)optionsRow(body,'Restore','unarchive',()=>stateAction('restore'));
- const mode=$('cfhNotesChecklistMode');optionsRow(body,mode.textContent,'list',()=>{editorPanel();mode.onclick();});
+ if(draft.kind!=='list'){const mode=$('cfhNotesChecklistMode');optionsRow(body,canRestoreChecklist(draft)?'Restore checklist':'Use checklist','list',()=>{editorPanel();mode.onclick();});}
 }
 function showNoteReminder(){
  const body=optionsPage('Reminder'),label=el('label','','Date and time'),input=el('input');input.type='datetime-local';input.value=$('cfhNotesReminder').value;label.append(input);body.append(label,el('p','cfh-note-options-hint','Reminder dates appear in the app. Notification delivery for notes is not enabled.'));

@@ -35,3 +35,9 @@ export async function copyNoteData(source,{id,loadMedia,saveMedia,removeMedia,no
   return note;
  }catch(error){await Promise.allSettled(saved.map(removeMedia));throw error;}
 }
+
+export function canRestoreChecklist(note){
+ if(note?.kind!=='text'||!note.items?.length)return false;
+ const original=note.items.map(item=>(item.checked?'☑ ':'☐ ')+(item.text||'')).join('\n');
+ return contentText(noteContent(note)).trim()===original.trim();
+}
