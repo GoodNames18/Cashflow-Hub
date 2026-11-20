@@ -502,18 +502,19 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 `;document.head.append(noteOptionsStyle);
 
 // Dismiss from the backdrop or with a downward swipe from the sheet's top.
-let optionsSwipe=null;
+let optionsSwipe=null,optionsIgnoreClickUntil=0;
 noteOptions.addEventListener('touchstart',event=>{
  if(event.touches.length!==1){optionsSwipe=null;return;}
  const touch=event.touches[0],bounds=noteOptions.getBoundingClientRect();
- const interactive=event.target.closest('input,textarea,select,button');
+ const interactive=event.target.closest('input,textarea,select');
  optionsSwipe=!interactive&&noteOptions.scrollTop<=0?{x:touch.clientX,y:touch.clientY,top:touch.clientY<bounds.top+80}:null;
 },{passive:true});
 noteOptions.addEventListener('touchend',event=>{
  const start=optionsSwipe;optionsSwipe=null;if(!start||!event.changedTouches.length)return;
  const touch=event.changedTouches[0],dy=touch.clientY-start.y,dx=Math.abs(touch.clientX-start.x);
- if(dy>(start.top?55:90)&&dy>dx*1.5)editorPanel();
-},{passive:true});
+ if(dy>(start.top?55:90)&&dy>dx*1.5){optionsIgnoreClickUntil=Date.now()+400;if(event.cancelable)event.preventDefault();editorPanel();}
+},{passive:false});
+noteOptions.addEventListener('click',event=>{if(Date.now()<optionsIgnoreClickUntil){event.preventDefault();event.stopImmediatePropagation();}},true);
 noteOptions.addEventListener('touchcancel',()=>{optionsSwipe=null;});
 // A downward trackpad/mouse scroll closes a sheet already at its top edge.
 noteOptions.addEventListener('wheel',event=>{if(event.deltaY< -45&&noteOptions.scrollTop<=0&&!event.target.closest('input,textarea,select'))editorPanel();},{passive:true});
