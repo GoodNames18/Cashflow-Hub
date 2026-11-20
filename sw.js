@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v135-notes-typing-performance';
+const CACHE_NAME = 'cashflow-hub-v136-notes-toolbar-undo-image';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

@@ -48,4 +48,27 @@ public class CalendarExportPlugin extends Plugin {
   }
   call.resolve(new JSObject().put("saved", true));
  }
+
+ @PluginMethod
+ public void saveImage(PluginCall call) {
+  String content=call.getString("content");
+  if(content==null || content.length()>64000000){call.reject("Invalid image");return;}
+  Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+  intent.addCategory(Intent.CATEGORY_OPENABLE);
+  intent.setType("image/png");
+  intent.putExtra(Intent.EXTRA_TITLE,call.getString("fileName","Note.png"));
+  startActivityForResult(call,intent,"writeImage");
+ }
+ @ActivityCallback
+ private void writeImage(PluginCall call,ActivityResult result) {
+  if(call==null)return;
+  Intent data=result.getData();Uri uri=data==null?null:data.getData();
+  if(result.getResultCode()!=Activity.RESULT_OK||uri==null){call.resolve(new JSObject().put("saved",false));return;}
+  try(OutputStream stream=getContext().getContentResolver().openOutputStream(uri,"wt")){
+   if(stream==null)throw new IOException("Could not open destination");
+   byte[] bytes=android.util.Base64.decode(call.getString("content"),android.util.Base64.DEFAULT);
+   stream.write(bytes);
+  }catch(IOException|SecurityException|IllegalArgumentException e){call.reject("Could not save note image",e);return;}
+  call.resolve(new JSObject().put("saved",true));
+ }
 }
