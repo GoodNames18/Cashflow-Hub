@@ -367,13 +367,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&draft){cle
 
 // Each note keeps its own undo and redo stacks while the app stays open.
 const noteHistory=createNoteHistory();let restoringUndo=false;
-function undoValue(){const value=structuredClone(draft);delete value.updatedAt;return JSON.stringify(value);}
+function undoValue(){const value=structuredClone(draft);delete value.updatedAt;delete value.createdAt;return JSON.stringify(value);}
 function updateUndoButtons(){undoButton.disabled=!noteHistory.canUndo();redoButton.disabled=!noteHistory.canRedo();}
 function recordUndo(){if(!draft||restoringUndo)return;noteHistory.record(undoValue());updateUndoButtons();}
 function restoreUndo(direction){
  if(!draft||!saveDraft())return;
  const value=noteHistory.move(direction);if(value===null)return;restoringUndo=true;
- try{draft=JSON.parse(value);selectedColor=draft.color||'white';
+ try{draft={...JSON.parse(value),createdAt:draft.createdAt};selectedColor=draft.color||'white';
  $('cfhNotesTitle').value=draft.title||'';$('cfhNotesBody').value=draft.body||'';$('cfhNotesBodyAfter').value=draft.bodyAfter||'';
  $('cfhNotesLabel').value=draft.labelId||'';$('cfhNotesReminder').value=draft.reminder||'';
  paint();renderChecklist();renderAttachments();saveDraft();
