@@ -66,10 +66,11 @@ export function createChecklist(host,addButton,{changed,id}){
   action('Cancel');
   document.body.append(menu);rowMenu=menu;
   menu.addEventListener('close',()=>{if(rowMenu===menu)rowMenu=null;menu.remove();});
+  document.activeElement?.blur();window.getSelection?.()?.removeAllRanges();
   menu.showModal();
  }
  host.addEventListener('pointerdown',e=>{
-  if(e.button!==0||!e.isPrimary||e.target.closest('.cfh-check-remove,input'))return;
+  if(e.button!==0||!e.isPrimary||e.target.tagName!=='TEXTAREA')return;
   const row=e.target.closest('[data-check-id]');
   const item=note?.items?.find(item=>item.id===row?.dataset.checkId);
   if(!item)return;
@@ -85,7 +86,27 @@ export function createChecklist(host,addButton,{changed,id}){
  for(const event of ['pointerup','pointercancel'])window.addEventListener(event,e=>{
   if(hold?.pointer===e.pointerId)cancelHold();
  });
- host.addEventListener('contextmenu',e=>{if(hold||rowMenu)e.preventDefault();});
+ // Android can cancel pointer events when native text selection begins.
+ // Keep the timer tied to the physical touch as well as the pointer.
+ host.addEventListener('touchstart',e=>{
+  if(e.touches.length!==1){cancelHold();return;}
+  const field=e.target.closest('textarea');
+  const row=field?.closest('[data-check-id]');
+  const item=note?.items?.find(item=>item.id===row?.dataset.checkId);
+  if(!item)return;
+  cancelHold();
+  const touch=e.touches[0];
+  hold={touch:touch.identifier,x:touch.clientX,y:touch.clientY,timer:setTimeout(()=>{
+   suppressSwipeClick=true;showRowMenu(item);
+  },3000)};
+ },{passive:true});
+ host.addEventListener('touchmove',e=>{
+  if(hold?.touch===undefined)return;
+  const touch=[...e.touches].find(touch=>touch.identifier===hold.touch);
+  if(!touch||Math.hypot(touch.clientX-hold.x,touch.clientY-hold.y)>12)cancelHold();
+ },{passive:true});
+ for(const event of ['touchend','touchcancel'])window.addEventListener(event,()=>cancelHold(),{passive:true});
+ host.addEventListener('contextmenu',e=>{if(e.target.closest('textarea'))e.preventDefault();});
  host.addEventListener('keydown',e=>{
   if(e.key!=='ContextMenu'&&!(e.shiftKey&&e.key==='F10'))return;
   const row=e.target.closest('[data-check-id]');
