@@ -14,6 +14,25 @@ function itemTimestamp(item){
   +datePart('month')+' '+datePart('day')+', '+datePart('year');
 }
 
+export function checklistNameCompletion(value,items,excludeId){
+ const match=/^([+-]?[\d,.]+\s+)([\p{L}][\p{L} '\-]*)$/u.exec(value);
+ if(!match)return null;
+ const prefix=match[2],lower=prefix.toLocaleLowerCase();
+ const names=new Map();
+ for(const item of items||[]){
+  if(item.id===excludeId||item.divider)continue;
+  const previous=/^[+-]?[\d,.]+\s+([\p{L}][\p{L} '\-]*)$/u.exec(item.text?.trim()||'');
+  if(!previous)continue;
+  const name=previous[1],key=name.toLocaleLowerCase(),existing=names.get(key);
+  names.set(key,{name,count:(existing?.count||0)+1});
+ }
+ const candidates=[...names.values()].filter(item=>item.name.toLocaleLowerCase().startsWith(lower));
+ candidates.sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
+ const name=candidates[0]?.name;
+ const capitalized=prefix[0].toLocaleUpperCase()+prefix.slice(1);
+ return {value:match[1]+(name||capitalized),start:match[1].length+capitalized.length};
+}
+
 export function createChecklist(host,addButton,{changed,id}){
  let note=null,moving=null,swipe=null,suppressSwipeClick=false,hold=null,rowMenu=null;
  const style=document.createElement('style');
@@ -246,10 +265,34 @@ export function createChecklist(host,addButton,{changed,id}){
   let grip=makeGrip(item,row,fixed);
   const check=document.createElement('input');check.type='checkbox';check.checked=!!item.checked;check.disabled=!!(blankFor||item.divider);check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));
   const text=document.createElement('textarea');text.rows=1;text.setAttribute('aria-label','List item');text.value=item.text||'';applyNoteFormat(text,item.format);
+  text.autocapitalize='words';text.autocomplete='off';
+  let completion=null;
+  const amountOnly=()=>/^[+-]?[\d,.]*$/.test(text.value);
+  function updateKeyboard(){
+   const numeric=amountOnly();
+   text.inputMode=numeric?'decimal':'text';text.enterKeyHint=numeric?'next':'enter';
+  }
+  updateKeyboard();
+  text.addEventListener('beforeinput',e=>{
+   if(completion&&e.inputType?.startsWith('delete')&&text.selectionStart===completion.start&&text.selectionEnd===completion.end){
+    e.preventDefault();text.value=text.value.slice(0,completion.start);completion=null;
+    text.setSelectionRange(text.value.length,text.value.length);
+    text.oninput({inputType:'deleteContentBackward'});
+   }
+  });
   if(item.checked&&item.format?.u)text.style.textDecorationLine='underline line-through';
   check.onchange=()=>{item.checked=check.checked;changed();render(note);rowFor(item)?.querySelector('input')?.focus({preventScroll:true});};
-  text.oninput=()=>{
-   item.text=text.value;
+  text.oninput=(event={})=>{
+   completion=null;
+   if(!event.isComposing&&!event.inputType?.startsWith('delete')&&text.selectionStart===text.value.length&&text.selectionEnd===text.value.length){
+    const result=checklistNameCompletion(text.value,note.items,item.id);
+    if(result){
+     text.value=result.value;
+     text.setSelectionRange(result.start,result.value.length);
+     if(result.start<result.value.length)completion={start:result.start,end:result.value.length};
+    }
+   }
+   updateKeyboard();item.text=text.value;
    if(blankFor){
     if(!item.text.trim()){fit(text);return;}
     const index=note.items.indexOf(blankFor),dividerRow=rowFor(blankFor);
@@ -263,7 +306,13 @@ export function createChecklist(host,addButton,{changed,id}){
    }
    check.setAttribute('aria-label',(item.checked?'Uncheck ':'Complete ')+(item.text||'item'));fit(text);changed();};
   let explicitNewline=false;
-  const split=()=>{if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);item.text=text.value.slice(0,start);text.value=item.text;fit(text);changed();add(item,tail);};
+  text.addEventListener('compositionend',()=>text.oninput({inputType:'insertText'}));
+  const split=()=>{
+   if(amountOnly()&&/\d/.test(text.value)){
+    text.value+=' ';text.oninput({inputType:'insertText'});
+    text.blur();text.focus({preventScroll:true});text.setSelectionRange(text.value.length,text.value.length);return;
+   }
+   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);item.text=text.value.slice(0,start);text.value=item.text;fit(text);changed();add(item,tail);};
   text.addEventListener('beforeinput',e=>{if(!e.isComposing&&!explicitNewline&&['insertLineBreak','insertParagraph'].includes(e.inputType)){e.preventDefault();split();}});
   text.onkeyup=()=>explicitNewline=false;
   text.onkeydown=e=>{
