@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v134-accept-completed-names';
+const CACHE_NAME = 'cashflow-hub-v134-accept-names-and-date-filled-rows';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
