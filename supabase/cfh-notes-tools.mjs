@@ -1,3 +1,4 @@
+import {ensureChecklistOrder} from './cfh-notes-model.mjs';
 import {noteContent,contentText} from './cfh-notes-content.mjs';
 const money=new Intl.NumberFormat('en-PH',{maximumFractionDigits:2});
 export function parseNameAmount(text){
@@ -8,10 +9,12 @@ export function parseNameAmount(text){
  return Number.isSafeInteger(amount)?{amount,name,key:name.toLocaleLowerCase('en-PH')}:null;
 }
 export function nameTotals(items){
+ const ordered=(items||[]).map(item=>({...item}));ensureChecklistOrder(ordered);
  const groups=new Map();
- for(const item of items||[]){if(item.checked||item.divider)continue;const parsed=parseNameAmount(item.text);if(!parsed||parsed.key==='load')continue;
+ for(const item of ordered){if(item.checked||item.divider)continue;const parsed=parseNameAmount(item.text);if(!parsed||parsed.key==='load')continue;
   const group=groups.get(parsed.key)||{cents:0,count:0,item,at:-Infinity};group.cents+=parsed.amount;group.count++;
-  const at=Number(item.createdAt)||0;if(at>=group.at){group.item=item;group.at=at;}groups.set(parsed.key,group);
+  const at=item.addedOrder,time=Number(item.createdAt)||0,previousTime=Number(group.item.createdAt)||0;
+  if(at>group.at||(at===group.at&&(time>previousTime||(time===previousTime&&String(item.id)>String(group.item.id))))){group.item=item;group.at=at;}groups.set(parsed.key,group);
  }
  return new Map([...groups.values()].filter(g=>g.count>1&&Number.isSafeInteger(g.cents)).map(g=>[g.item.id,'Total ₱'+money.format(g.cents/100)]));
 }

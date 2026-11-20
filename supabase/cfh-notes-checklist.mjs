@@ -1,6 +1,6 @@
 import {nameTotals} from './cfh-notes-tools.mjs';
 import {applyNoteFormat} from './cfh-notes-content.mjs';
-import {createChecklistItem,reorderVisibleNotes,setChecklistText} from './cfh-notes-model.mjs';
+import {createChecklistItem,reorderVisibleNotes,setChecklistText,ensureChecklistOrder} from './cfh-notes-model.mjs';
 
 const timestampFormat=new Intl.DateTimeFormat('en-PH',{
  month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true
@@ -333,7 +333,7 @@ export function createChecklist(host,addButton,{changed,id}){
     }
    }
    updateKeyboard();
-   setChecklistText(item,text.value);
+   setChecklistText(item,text.value,Date.now(),note.items);
    timestamp.textContent=item.text.trim()?itemTimestamp(item):'';
    text.setAttribute('aria-description',timestamp.textContent);
    if(blankFor){
@@ -356,7 +356,7 @@ export function createChecklist(host,addButton,{changed,id}){
     text.value+=' ';text.oninput({inputType:'insertText'});
     text.blur();text.focus({preventScroll:true});text.setSelectionRange(text.value.length,text.value.length);return;
    }
-   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);setChecklistText(item,text.value.slice(0,start));text.value=item.text;timestamp.textContent=item.text.trim()?itemTimestamp(item):'';text.setAttribute('aria-description',timestamp.textContent);fit(text);changed();add(item,tail);};
+   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);setChecklistText(item,text.value.slice(0,start),Date.now(),note.items);text.value=item.text;timestamp.textContent=item.text.trim()?itemTimestamp(item):'';text.setAttribute('aria-description',timestamp.textContent);fit(text);changed();add(item,tail);};
   text.addEventListener('beforeinput',e=>{if(!e.isComposing&&!explicitNewline&&['insertLineBreak','insertParagraph'].includes(e.inputType)){e.preventDefault();split();}});
   text.onkeyup=()=>explicitNewline=false;
   text.onkeydown=e=>{
@@ -385,7 +385,7 @@ export function createChecklist(host,addButton,{changed,id}){
  }
  function render(current){
   endSwipe();cancelHold();cancelMove();blanks.clear();if(note!==current)manualBlankId=null;note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
-  note.items||=[];const pending=document.createElement('div');pending.className='cfh-check-pending';
+  note.items||=[];ensureChecklistOrder(note.items);const pending=document.createElement('div');pending.className='cfh-check-pending';
   const divided=hasDivider();
   for(const item of note.items.filter(item=>!inCompleted(item))){
    if(divided&&item.id!==manualBlankId&&!item.divider&&!item.pinned&&!item.text?.trim())continue;

@@ -152,6 +152,8 @@ $('cfhNotesEditorBox').querySelector('.cfh-note-editor-content').addEventListene
  if(event.target===event.currentTarget||event.target===$('cfhNotesDescriptionFlow'))noteFlow.focusEnd();
 });
 function scheduleSave(){
+ // Undo flushes the pending edit before moving history; it must be clickable immediately.
+ undoButton.disabled=false;redoButton.disabled=true;
  clearTimeout(saveTimer);$('cfhNotesEditorStatus').textContent='Sync pending';
  const flush=()=>{if(draft?.kind==='text'){noteFlow.renderMath();fitNoteBody();}saveDraft();};
  saveTimer=setTimeout(flush,200);

@@ -22,19 +22,30 @@ export function reorderVisibleNotes(allIds,visibleIds){
 }
 
 // A row's original timestamp belongs to the current nonblank entry.
-export function setChecklistText(item,text,now=Date.now()){
+export function setChecklistText(item,text,now=Date.now(),items=[]){
  const wasBlank=!item.text?.trim(),isBlank=!text.trim();
  if(isBlank){
   delete item.createdAt;
+  delete item.addedOrder;
   delete item.conversionCreatedAt;
   delete item.originalDateUnavailable;
   delete item.recoveredFromCheckboxText;
  }else if(wasBlank){
   item.createdAt=now;
+  item.addedOrder=nextChecklistOrder(items);
   delete item.conversionCreatedAt;
   delete item.originalDateUnavailable;
   delete item.recoveredFromCheckboxText;
  }
  item.text=text;
  return item;
+}
+
+// Once assigned, row addition order survives dragging, editing and undo/redo.
+function nextChecklistOrder(items){return items.reduce((max,item)=>Math.max(max,Number(item.addedOrder)||0),0)+1;}
+export function ensureChecklistOrder(items=[]){
+ let next=nextChecklistOrder(items);
+ const missing=items.filter(item=>item.text?.trim()&&!Number.isFinite(item.addedOrder));
+ missing.sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0));
+ for(const item of missing)item.addedOrder=next++;
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v146-checklist-original-date-lifecycle';
+const CACHE_NAME = 'cashflow-hub-v147-notes-history-stable-totals';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
