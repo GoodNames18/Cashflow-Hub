@@ -29,7 +29,8 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
  .cfh-note-find-mirror mark{background:#ffe46c;color:#1b1844}.cfh-note-find-mirror mark.is-current{background:#ffc14d;outline:1px solid #a96d00}
  .cfh-note-find-mirror img{display:block;max-width:100%;height:auto;border-radius:12px;margin:8px 0}
  .cfh-note-find-mirror audio{max-width:100%;vertical-align:middle}
- .cfh-note-find-completed{font:13px Arial;color:#514a65;margin:16px 0 8px}
+ #cfhNotesEditorBox .cfh-note-find-completed{display:flex;align-items:center;gap:10px;box-sizing:border-box;width:100%;min-height:40px;padding:8px 0;border:0;background:transparent;font:13px Arial;color:#514a65;margin:12px 0 4px;text-align:left;cursor:pointer}
+ .cfh-note-find-completed svg{width:22px;height:22px;flex:0 0 22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
  #cfhNotesEditorBox .cfh-note-editor-toolbar[hidden]{display:none}
  `;document.head.append(style);
  function close(){
@@ -48,9 +49,8 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
   const mirror=node('div','cfh-note-find-mirror'),bar=node('div','cfh-note-find-bar'),input=node('input'),status=node('small');
   input.type='search';input.placeholder='Find in note';input.setAttribute('aria-label','Find in note');input.enterKeyHint='search';status.setAttribute('role','status');
   const s={area,toolbar,toolbarHidden,hidden,scroll,mirror,bar,urls:new Map()};session=s;
-  let matches=[],marks=new Map(),index=0;
+  let matches=[],marks=new Map(),index=0,checkedExpanded=note.checkedExpanded!==false;
   const pending=(note.items||[]).filter(item=>!inCompleted(item)),checked=(note.items||[]).filter(inCompleted);
-  const searchNote=noteForVisibleSearch({...note,items:[...pending,...checked]});
   function media(attachment,tag){
    const element=node(tag);if(tag==='img')element.alt=attachment.name||'Note image';else element.controls=true;
    let value=s.urls.get(attachment.id);
@@ -75,33 +75,46 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
     for(const result of results.filter(r=>r.offset===base+end)){const answer=node('strong','', ' '+result.text);answer.style.color='#087959';host.append(answer);}
    }
   }
-  function highlight(){
+  function highlight(scrollToMatch=true){
    for(const [key,nodes]of marks)for(const mark of nodes)mark.classList.toggle('is-current',key===index);
    status.textContent=matches.length?(index+1)+' / '+matches.length:input.value.trim()?'No matches':'';
    previous.disabled=next.disabled=!matches.length;
    const first=marks.get(index)?.[0];
-   if(first){const a=area.getBoundingClientRect(),r=first.getBoundingClientRect();area.scrollTo({top:area.scrollTop+r.top-a.top-Math.max(0,(area.clientHeight-r.height)/2),behavior:'smooth'});}
+   if(first&&scrollToMatch){const a=area.getBoundingClientRect(),r=first.getBoundingClientRect();area.scrollTo({top:area.scrollTop+r.top-a.top-Math.max(0,(area.clientHeight-r.height)/2),behavior:'smooth'});}
   }
-  function draw(){
-   matches=findNoteMatches(searchNote,input.value).map((m,index)=>({...m,index}));index=0;marks=new Map();mirror.replaceChildren();
+  function draw(scrollToMatch=true,keepMatch=null){
+   const searchNote=noteForVisibleSearch({...note,checkedExpanded,items:[...pending,...checked]});
+   matches=findNoteMatches(searchNote,input.value).map((m,index)=>({...m,index}));
+   index=keepMatch?Math.max(0,matches.findIndex(m=>m.type===keepMatch.type&&m.id===keepMatch.id&&m.start===keepMatch.start)):0;
+   marks=new Map();mirror.replaceChildren();
    const title=node('h2');appendText(title,note.title||'',matches.filter(m=>m.type==='title'));mirror.append(title);
    for(const attachment of note.attachments||[])if(attachment.type==='image')mirror.append(media(attachment,'img'));
    if(note.kind==='list'){
     const totals=nameTotals(note.items);
-    function row(item){
+    function row(item,host=mirror){
      const line=node('div','cfh-note-find-row'+(item.checked?' is-checked':'')),check=node('input'),text=node('div','cfh-note-find-row-text');
      check.type='checkbox';check.checked=!!item.checked;check.disabled=true;check.tabIndex=-1;check.setAttribute('aria-label',item.checked?'Checked item':'Unchecked item');
      appendText(text,item.text||'',matches.filter(m=>m.type==='item'&&m.id===item.id),0,item.format);line.append(check,text);
-     if(totals.has(item.id))line.append(node('span','cfh-note-find-total',totals.get(item.id)));mirror.append(line);
+     if(totals.has(item.id))line.append(node('span','cfh-note-find-total',totals.get(item.id)));host.append(line);
     }
-    pending.forEach(row);
-    if(checked.length){mirror.append(node('p','cfh-note-find-completed',checked.length+' checked items'));if(note.checkedExpanded!==false)checked.forEach(row);}
+    pending.forEach(item=>row(item));
+    if(checked.length){
+     const toggle=control(checkedExpanded?'Hide checked items':'Show checked items',checkedExpanded?'M6 9l6 6 6-6':'M9 6l6 6-6 6',()=>{
+      const focused=document.activeElement===toggle,top=area.scrollTop,current=matches[index];
+      checkedExpanded=!checkedExpanded;draw(false,current);area.scrollTop=top;
+      if(focused)mirror.querySelector('.cfh-note-find-completed')?.focus({preventScroll:true});
+     });
+     toggle.className='cfh-note-find-completed';toggle.setAttribute('aria-expanded',String(checkedExpanded));toggle.setAttribute('aria-controls','cfhNoteFindCheckedItems');
+     toggle.append(node('span','',checked.length+' checked '+(checked.length===1?'item':'items')));
+     const group=node('div');group.id='cfhNoteFindCheckedItems';group.hidden=!checkedExpanded;
+     if(checkedExpanded)checked.forEach(item=>row(item,group));mirror.append(toggle,group);
+    }
    }else{
     const body=node('div'),parts=noteContent(note),text=parts.map(p=>p.type==='text'?p.text:'').join(''),math=noteMathResults(text);let offset=0;
     const bodyMatches=matches.filter(m=>m.type==='body');
     for(const part of parts){if(part.type==='text'){appendText(body,part.text,bodyMatches,offset,part.format,math);offset+=part.text.length;}else{const attachment=(note.attachments||[]).find(m=>m.id===part.id);if(attachment)body.append(media(attachment,'audio'));}}mirror.append(body);
    }
-   highlight();
+   highlight(scrollToMatch);
   }
   function control(label,path,action){
    const b=node('button');b.type='button';b.setAttribute('aria-label',label);b.onclick=action;b.onpointerdown=e=>e.preventDefault();
@@ -110,7 +123,7 @@ export function createNoteFind(editor,{getNote,saveNote,closePanels,loadMedia}){
   }
   const previous=control('Previous match','M6 15l6-6 6 6',()=>{if(matches.length){index=(index+matches.length-1)%matches.length;highlight();}}),next=control('Next match','M6 9l6 6 6-6',()=>{if(matches.length){index=(index+1)%matches.length;highlight();}}),exit=control('Close find in note','M6 6l12 12M18 6 6 18',close);
   bar.append(input,status,previous,next,exit);area.append(mirror);toolbar.before(bar);
-  input.oninput=draw;input.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}else if(e.key==='Enter'){e.preventDefault();(e.shiftKey?previous:next).click();}};
+  input.oninput=()=>draw();input.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}else if(e.key==='Enter'){e.preventDefault();(e.shiftKey?previous:next).click();}};
   draw();input.focus({preventScroll:true});return true;
  }
  return {open,close};
