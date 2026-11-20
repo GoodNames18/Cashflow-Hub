@@ -21,13 +21,13 @@ function fixture(){
  const target={tagName:'DIV',closest:selector=>selector==='[data-check-id]'?{}:null};
  return {host,window,controller,down:x=>host.emit('pointerdown',{clientX:x,target}),move:x=>window.emit('pointermove',{clientX:x,target}),up:()=>window.emit('pointerup',{target}),restore(){globalThis.window=oldWindow;globalThis.document=oldDocument;}};
 }
-test('note date overlay follows both directions and retains its exact position on release',()=>{
+test('note dates follow both directions while touching and return to hidden on release',()=>{
  const f=fixture();try{
   f.down(300);f.move(250);assert.equal(f.host.properties.get('--cfh-check-swipe'),'50px');
   f.move(210);assert.equal(f.host.properties.get('--cfh-check-swipe'),'90px');
   f.move(270);assert.equal(f.host.properties.get('--cfh-check-swipe'),'30px');
-  f.up();assert.equal(f.host.properties.get('--cfh-check-swipe'),'30px');
-  f.down(270);f.move(300);assert.equal(f.host.properties.get('--cfh-check-swipe'),'0px');f.up();
+  f.up();assert.equal(f.host.properties.has('--cfh-check-swipe'),false);
+  assert.equal(f.host.classes.has('is-revealing-timestamps'),false);
   f.down(300);f.move(0);assert.equal(f.host.properties.get('--cfh-check-swipe'),'240px');
   f.move(200);assert.equal(f.host.properties.get('--cfh-check-swipe'),'100px');
  }finally{f.restore();}
@@ -35,7 +35,17 @@ test('note date overlay follows both directions and retains its exact position o
 test('vertical scrolling does not reveal note dates and back dismisses a partially revealed overlay',()=>{
  const f=fixture();try{
   f.down(300);f.window.emit('pointermove',{clientX:296,clientY:150});assert.equal(f.host.properties.has('--cfh-check-swipe'),false);
-  f.down(300);f.move(250);f.up();assert.equal(f.controller.cancelMove(),true);
+  f.down(300);f.move(250);assert.equal(f.controller.cancelMove(),true);
   assert.equal(f.host.properties.has('--cfh-check-swipe'),false);assert.equal(f.host.classes.has('is-revealing-timestamps'),false);
+ }finally{f.restore();}
+});
+
+test('cancelled touches also hide dates and the next gesture starts from hidden',()=>{
+ const f=fixture();try{
+  f.down(300);f.move(200);f.window.emit('pointercancel',{});
+  assert.equal(f.host.properties.has('--cfh-check-swipe'),false);
+  assert.equal(f.host.classes.has('is-revealing-timestamps'),false);
+  f.down(300);f.move(280);assert.equal(f.host.properties.get('--cfh-check-swipe'),'20px');
+  f.up();assert.equal(f.host.properties.has('--cfh-check-swipe'),false);
  }finally{f.restore();}
 });

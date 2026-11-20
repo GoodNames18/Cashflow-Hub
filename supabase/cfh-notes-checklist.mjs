@@ -54,19 +54,24 @@ export function createChecklist(host,addButton,{changed,id}){
   .cfh-check-row-menu{border:0;border-radius:16px;padding:16px;color:#1b1844;background:#fff;width:min(300px,85vw)}
   .cfh-check-row-menu::backdrop{background:#1b184455}
   .cfh-check-row-menu button{display:block;width:100%;margin:4px 0;text-align:left}
-  .cfh-check-timestamp-slot{display:none}
-  #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp-slot{
+  #cfhNotesChecklist .cfh-check-timestamp-slot{
    display:block;position:absolute;z-index:2;top:7px;right:0;max-width:100%;
-   overflow:hidden;pointer-events:none;
+   overflow:hidden;pointer-events:none;visibility:hidden;
+   transition:visibility 0s linear 200ms;
+  }
+  #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp-slot{
+   visibility:visible;transition-delay:0s;
   }
   #cfhNotesChecklist .cfh-check-timestamp-slot:has(.cfh-check-timestamp:empty){display:none}
   #cfhNotesChecklist .cfh-check-timestamp{
    display:block;padding-left:6px;text-align:right;white-space:nowrap;
    background:var(--cfh-note-background,#fff);
    line-height:24px;font-size:11px;color:#514a65;
+   transform:translateX(100%);transition:transform 200ms ease-out;
   }
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
    transform:translateX(clamp(0px,calc(100% - var(--cfh-check-swipe,0px)),100%));
+   transition:none;
   }`;
  document.head.append(style);
  const blanks=new Map();
@@ -199,7 +204,7 @@ export function createChecklist(host,addButton,{changed,id}){
  },{passive:false});
  window.addEventListener('pointerup',e=>{
   if(swipe?.pointer!==e.pointerId)return;
-  suppressSwipeClick=!!endSwipe(false);
+  suppressSwipeClick=!!endSwipe();
   if(suppressSwipeClick)e.preventDefault();
  },{passive:false});
  host.addEventListener('click',e=>{
@@ -208,7 +213,7 @@ export function createChecklist(host,addButton,{changed,id}){
   e.preventDefault();e.stopImmediatePropagation();
  },true);
  window.addEventListener('pointercancel',e=>{
-  if(swipe?.pointer===e.pointerId)endSwipe(false);
+  if(swipe?.pointer===e.pointerId)endSwipe();
  });
  addButton.replaceChildren();const plus=document.createElement('span');plus.textContent='＋';plus.setAttribute('aria-hidden','true');addButton.append(plus);addButton.setAttribute('aria-label','Add list item');
  const rowFor=item=>[...host.querySelectorAll('[data-check-id]')].find(row=>row.dataset.checkId===item.id);
