@@ -62,6 +62,19 @@ export function createChecklist(host,addButton,{changed,id}){
   }`;
  document.head.append(style);
  const blanks=new Map();
+ let fitFrame=null;
+ function queueFit(){
+  if(fitFrame!==null)return;
+  fitFrame=requestAnimationFrame(()=>{
+   fitFrame=null;
+   const fields=[...host.querySelectorAll('textarea')].filter(field=>!field.closest('[hidden]'));
+   const area=host.closest('.cfh-note-editor-content'),scroll=area?.scrollTop;
+   for(const field of fields)field.style.height='0px';
+   const heights=fields.map(field=>Math.max(24,field.scrollHeight)+'px');
+   fields.forEach((field,index)=>field.style.height=heights[index]);
+   if(area)area.scrollTop=scroll;
+  });
+ }
  let manualBlankId=null;
  const inCompleted=item=>item.checked&&!item.divider&&(!item.pinned||item.pinInCompleted);
  const hasDivider=()=>note?.items?.some(item=>item.divider);
@@ -353,7 +366,7 @@ export function createChecklist(host,addButton,{changed,id}){
   text.setAttribute('aria-description',timestamp.textContent);
   const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
   timestampSlot.append(timestamp);
-  row.append(grip,check,text,removeButton,timestampSlot);requestAnimationFrame(()=>{if(text.isConnected)fit(text);});return row;
+  row.append(grip,check,text,removeButton,timestampSlot);queueFit();return row;
  }
  function render(current){
   endSwipe();cancelHold();cancelMove();blanks.clear();if(note!==current)manualBlankId=null;note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
@@ -374,7 +387,10 @@ export function createChecklist(host,addButton,{changed,id}){
  }
  function remove(item){
   const peers=note.items.filter(i=>!!inCompleted(i)===!!inCompleted(item)),index=peers.indexOf(item),next=peers[index+1]||peers[index-1];
-  note.items=note.items.filter(i=>i!==item);changed();render(note);if(next)focusItem(next);else addButton.focus();
+  const row=rowFor(item),refresh=item.divider||inCompleted(item);
+  note.items=note.items.filter(i=>i!==item);
+  if(refresh)render(note);else row?.remove();
+  changed();if(next)focusItem(next);else addButton.focus();
  }
  function add(after=null,text=''){
   if(!note||note.kind!=='list')return;
@@ -393,6 +409,6 @@ export function createChecklist(host,addButton,{changed,id}){
  window.addEventListener('pointercancel',e=>{if(moving?.pointer===e.pointerId)finishMove(false);});
  host.addEventListener('keydown',e=>{if(e.key==='Escape'&&moving){e.preventDefault();e.stopPropagation();finishMove(false);}},{capture:true});
  window.addEventListener('blur',()=>{cancelHold();endSwipe();finishMove(false);});document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelHold();endSwipe();finishMove(false);}});
- window.addEventListener('resize',()=>{if(!host.closest('#cfhNotesEditor')?.hidden)for(const field of host.querySelectorAll('textarea'))fit(field);});
+ window.addEventListener('resize',()=>{if(!host.closest('#cfhNotesEditor')?.hidden)queueFit();});
  return {render,add,cancelMove:()=>{cancelHold();if(rowMenu?.open){rowMenu.close();return true;}if(endSwipe())return true;if(!moving)return false;finishMove(false);return true;}};
 }
