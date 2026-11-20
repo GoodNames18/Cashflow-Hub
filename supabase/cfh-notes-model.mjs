@@ -20,3 +20,23 @@ export function reorderVisibleNotes(allIds,visibleIds){
  const visible=[...new Set(visibleIds)].filter(id=>allIds.includes(id)),members=new Set(visible);let index=0;
  return allIds.map(id=>members.has(id)?visible[index++]:id);
 }
+
+// Addition order is independent of list position and later edits.
+export function ensureChecklistOrder(items=[]){
+ let next=Math.max(0,...items.map(i=>Number(i.addedOrder)||0));
+ const missing=items.filter(i=>i.text?.trim()&&!Number.isFinite(i.addedOrder));
+ missing.sort((a,b)=>(Number(a.createdAt)||0)-(Number(b.createdAt)||0));
+ for(const item of missing)item.addedOrder=++next;
+}
+export function updateChecklistText(items,item,text,now=Date.now()){
+ const wasEmpty=!item.text?.trim(),isEmpty=!text.trim();
+ if(isEmpty){
+  for(const key of ['createdAt','addedOrder','conversionCreatedAt','originalDateUnavailable','recoveredFromCheckboxText'])delete item[key];
+ }else if(wasEmpty){
+  item.createdAt=now;
+  item.addedOrder=Math.max(0,...items.map(i=>Number(i.addedOrder)||0))+1;
+  delete item.originalDateUnavailable;delete item.conversionCreatedAt;delete item.recoveredFromCheckboxText;
+ }
+ item.text=text;
+ return item;
+}

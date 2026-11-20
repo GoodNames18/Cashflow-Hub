@@ -1,6 +1,7 @@
+import {noteMathResults} from './cfh-notes-math.mjs';
 import {nameTotals} from './cfh-notes-tools.mjs';
 import {applyNoteFormat} from './cfh-notes-content.mjs';
-import {createChecklistItem,reorderVisibleNotes} from './cfh-notes-model.mjs';
+import {createChecklistItem,reorderVisibleNotes,ensureChecklistOrder,updateChecklistText} from './cfh-notes-model.mjs';
 
 const timestampFormat=new Intl.DateTimeFormat('en-PH',{
  month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true
@@ -40,6 +41,12 @@ export function createChecklist(host,addButton,{changed,id}){
  style.textContent=`
   #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
   #cfhNotesChecklist .cfh-check-entry{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 7px;flex:1;min-width:0}
+  #cfhNotesChecklist .cfh-check-entry{position:relative}
+  #cfhNotesChecklist .cfh-check-math{display:none;white-space:pre-wrap;overflow-wrap:anywhere;font:16px/24px Arial;pointer-events:none}
+  #cfhNotesChecklist .has-math:not(:focus-within) textarea{position:absolute;opacity:0;inset:0;width:100%!important;height:100%!important}
+  #cfhNotesChecklist .has-math:not(:focus-within) .cfh-check-math{display:block;flex:1 1 120px}
+  #cfhNotesChecklist .has-math:focus-within .cfh-check-math{display:block;flex:0 0 auto}
+  #cfhNotesChecklist .has-math:focus-within .cfh-math-source{display:none}
   #cfhNotesChecklist .cfh-check-entry textarea{flex:1 1 120px;min-width:0;width:120px}
   #cfhNotesChecklist .is-editing .cfh-check-entry{padding-right:28px}
   #cfhNotesChecklist .is-editing .cfh-check-entry textarea{padding-right:0}
@@ -54,7 +61,9 @@ export function createChecklist(host,addButton,{changed,id}){
   .cfh-check-row-menu{border:0;border-radius:16px;padding:16px;color:#1b1844;background:#fff;width:min(300px,85vw)}
   .cfh-check-row-menu::backdrop{background:#1b184455}
   .cfh-check-row-menu button{display:block;width:100%;margin:4px 0;text-align:left}
-  .cfh-check-timestamp-slot{display:none}
+  #cfhNotesChecklist .cfh-check-timestamp-slot{position:absolute;z-index:2;top:7px;right:0;max-width:100%;overflow:hidden;pointer-events:none;visibility:hidden;transition:visibility 0s 180ms}
+  #cfhNotesChecklist .cfh-check-timestamp{transform:translateX(101%);transition:transform 180ms ease-out}
+  #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp-slot{visibility:visible;transition-delay:0s}
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp-slot{
    display:block;position:absolute;z-index:2;top:7px;right:0;max-width:100%;
    overflow:hidden;pointer-events:none;
@@ -66,15 +75,20 @@ export function createChecklist(host,addButton,{changed,id}){
    line-height:24px;font-size:11px;color:#514a65;
   }
   #cfhNotesChecklist.is-revealing-timestamps .cfh-check-timestamp{
-   transform:translateX(max(0px,calc(100% - var(--cfh-check-swipe))));
+   transform:translateX(0);
   }`;
  document.head.append(style);
  const blanks=new Map();
+ const mathRefresh=new Map();let mathById=new Map();
+ function calculateMath(){
+  const items=note?.items||[],results=noteMathResults(items.map(i=>i.text||'').join('\n'));mathById=new Map();let offset=0,index=0;
+  for(const item of items){const matches=[];while(index<results.length&&results[index].offset<=offset+(item.text||'').length){if(results[index].offset>=offset)matches.push({...results[index],offset:results[index].offset-offset});index++;}mathById.set(item.id,matches);offset+=(item.text||'').length+1;}
+ }
  let fitFrame=null;
  function queueFit(){
   if(fitFrame!==null)return;
   fitFrame=requestAnimationFrame(()=>{
-   fitFrame=null;refreshTotals();
+   fitFrame=null;reconcileBlankRows();calculateMath();refreshTotals();for(const refresh of mathRefresh.values())refresh();
    const fields=[...host.querySelectorAll('textarea')].filter(field=>!field.closest('[hidden]'));
    const area=host.closest('.cfh-note-editor-content'),scroll=area?.scrollTop;
    for(const field of fields)field.style.height='0px';
@@ -165,11 +179,32 @@ export function createChecklist(host,addButton,{changed,id}){
   return rows;
  }
  function insertBlank(divider,dividerRow){
-  const item={id:id(),text:'',checked:false};
+  const position=note.items.indexOf(divider),previous=note.items[position-1];
+  const item=previous&&!previous.text?.trim()&&!previous.divider&&!previous.checked?previous:{id:id(),text:'',checked:false};
   const row=makeRow(item,divider);
   blanks.set(divider.id,item);dividerRow.before(row);
  }
 
+ function appendTailBlank(pending,item={id:id(),text:'',checked:false}){
+  const row=makeRow(item);pending.append(row);
+  const field=row.querySelector('textarea'),input=field.oninput;
+  field.oninput=event=>{if(field.value.trim()&&!note.items.includes(item))note.items.push(item);input(event);};
+ }
+ function reconcileBlankRows(){
+  if(note?.kind!=='list')return;
+  const pending=host.querySelector('.cfh-check-pending');if(!pending)return;
+  let section=[];
+  function reconcile(dividerRow){
+   const empty=section.filter(row=>!row.querySelector('textarea')?.value.trim()&&!note.items.find(i=>i.id===row.dataset.checkId)?.pinned);
+   const keep=empty.find(row=>row.contains(document.activeElement))||empty.at(-1);
+   for(const row of empty)if(row!==keep){mathRefresh.delete(row.dataset.checkId);row.remove();}
+   if(keep&&dividerRow){const item=note.items.find(i=>i.id===keep.dataset.checkId)||[...blanks.values()].find(i=>i.id===keep.dataset.checkId);if(item)blanks.set(dividerRow.dataset.checkId,item);}
+   if(!keep){if(dividerRow){const divider=note.items.find(i=>i.id===dividerRow.dataset.checkId);insertBlank(divider,dividerRow);}else appendTailBlank(pending);}
+   section=[];
+  }
+  for(const row of [...pending.children]){if(note.items.find(i=>i.id===row.dataset.checkId)?.divider)reconcile(row);else section.push(row);}
+  if(section.length||!note.items.filter(i=>!inCompleted(i)).at(-1)?.divider)reconcile(null);
+ }
  function endSwipe(){
   const revealed=swipe?.revealed;
   swipe=null;
@@ -235,7 +270,8 @@ export function createChecklist(host,addButton,{changed,id}){
    const text=document.createElement('div');text.className='cfh-check-drag-text';
    text.textContent=source.value||' ';text.style.cssText=source.style.cssText;
    // The preview uses ordinary text so Android cannot clip a cloned text field.
-   text.style.height='auto';text.style.padding='0';text.style.width='100%';
+   text.style.height='auto';text.style.padding='0 0 0 12px';text.style.flex='1';text.style.width='auto';text.style.minHeight='24px';
+   const box=document.createElement('span');box.textContent='☐';box.style.cssText='flex:0 0 20px;font:24px/24px Arial';moving.ghost.style.alignItems='center';moving.ghost.append(box);
    moving.ghost.append(text);moving.ghost.style.width=bounds.width+'px';
    moving.ghost.style.background=getComputedStyle(host.closest('#cfhNotesEditorBox')).getPropertyValue('--cfh-note-background')||'#fff';
    moving.marker=document.createElement('span');moving.marker.className='cfh-check-drop-marker';
@@ -326,18 +362,17 @@ export function createChecklist(host,addButton,{changed,id}){
     }
    }
    updateKeyboard();
-   if(!item.text?.trim()&&text.value.trim()&&!item.createdAt)item.createdAt=Date.now();
-   item.text=text.value;
+   updateChecklistText(note.items,item,text.value);
    timestamp.textContent=item.text.trim()?itemTimestamp(item):'';
    text.setAttribute('aria-description',timestamp.textContent);
    if(blankFor){
     if(!item.text.trim()){fit(text);return;}
     const index=note.items.indexOf(blankFor),dividerRow=rowFor(blankFor);
     if(index<0||!dividerRow)return;
-    item.createdAt=Date.now();note.items.splice(index,0,item);
+    if(!note.items.includes(item))note.items.splice(index,0,item);
     blankFor=null;check.disabled=false;delete row.dataset.fixed;
     const liveGrip=makeGrip(item,row,false);grip.replaceWith(liveGrip);grip=liveGrip;
-    insertBlank(note.items[index+1],dividerRow);
+    insertBlank(note.items.find(i=>i.id===dividerRow.dataset.checkId),dividerRow);
     timestamp.textContent=itemTimestamp(item);
     text.setAttribute('aria-description',timestamp.textContent);
    }
@@ -350,7 +385,7 @@ export function createChecklist(host,addButton,{changed,id}){
     text.value+=' ';text.oninput({inputType:'insertText'});
     text.blur();text.focus({preventScroll:true});text.setSelectionRange(text.value.length,text.value.length);return;
    }
-   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);item.text=text.value.slice(0,start);text.value=item.text;fit(text);changed();add(item,tail);};
+   if(blankFor)return;const start=text.selectionStart??text.value.length,end=text.selectionEnd??start,tail=text.value.slice(end);updateChecklistText(note.items,item,text.value.slice(0,start));text.value=item.text;timestamp.textContent=item.text.trim()?itemTimestamp(item):'';refreshMath();fit(text);changed();add(item,tail);};
   text.addEventListener('beforeinput',e=>{if(!e.isComposing&&!explicitNewline&&['insertLineBreak','insertParagraph'].includes(e.inputType)){e.preventDefault();split();}});
   text.onkeyup=()=>explicitNewline=false;
   text.onkeydown=e=>{
@@ -366,28 +401,49 @@ export function createChecklist(host,addButton,{changed,id}){
   const removeButton=document.createElement('button');removeButton.type='button';removeButton.className='cfh-check-remove';removeButton.textContent='×';removeButton.setAttribute('aria-label','Delete list item');removeButton.onpointerdown=e=>e.preventDefault();removeButton.onclick=()=>{if(!blankFor)remove(item);};
   text.onfocus=()=>{if(!blankFor)row.classList.add('is-editing');fit(text);};text.onblur=()=>{
    row.classList.remove('is-editing');fit(text);
-   if(hasDivider()&&!item.pinned&&!item.divider&&!item.text.trim()&&row.isConnected&&!blankFor){
-    row.remove();
-   }
+   queueFit();
   };
   const timestamp=document.createElement('span');timestamp.className='cfh-check-timestamp';
   timestamp.textContent=blankFor||!item.text?.trim()?'':itemTimestamp(item);timestamp.setAttribute('aria-hidden','true');
   text.setAttribute('aria-description',timestamp.textContent);
   const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
   timestampSlot.append(timestamp);
-  const entry=document.createElement('div');entry.className='cfh-check-entry';const total=document.createElement('span');total.className='cfh-check-name-total';total.hidden=true;entry.append(text,total);row.append(grip,check,entry,removeButton,timestampSlot);queueFit();return row;
+  const entry=document.createElement('div');entry.className='cfh-check-entry';
+  const math=document.createElement('div');math.className='cfh-check-math';math.setAttribute('aria-hidden','true');
+  let mathKey;
+  applyNoteFormat(math,item.format);
+  function refreshMath(){
+   const key=JSON.stringify([text.value,mathById.get(item.id)||[]]);if(key===mathKey)return;mathKey=key;
+   math.replaceChildren();let cursor=0;
+   const source=value=>{const span=document.createElement('span');span.className='cfh-math-source';span.textContent=value;math.append(span);};
+   for(const result of mathById.get(item.id)||[]){
+    const offset=result.offset;source(text.value.slice(cursor,offset));
+    const value=document.createElement('strong');value.textContent=' '+result.text;value.style.color='#007b61';math.append(value);cursor=offset;
+   }
+   source(text.value.slice(cursor));const hasMath=math.querySelector('strong')!==null;entry.classList.toggle('has-math',hasMath);
+   if(hasMath){
+    const canvas=refreshMath.canvas||=(document.createElement('canvas'));const ctx=canvas.getContext('2d');if(ctx){ctx.font=getComputedStyle(text).font||'16px Arial';text.style.width=Math.ceil(ctx.measureText(text.value.split('\n').at(-1)).width+8)+'px';}text.style.flex='0 1 auto';
+   }else{text.style.width='120px';text.style.flex='1 1 120px';}
+  }
+  entry.append(math);mathRefresh.set(item.id,refreshMath);refreshMath();const total=document.createElement('span');total.className='cfh-check-name-total';total.hidden=true;entry.append(text,total);row.append(grip,check,entry,removeButton,timestampSlot);queueFit();return row;
  }
  function render(current){
-  endSwipe();cancelHold();cancelMove();blanks.clear();if(note!==current)manualBlankId=null;note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
-  note.items||=[];const pending=document.createElement('div');pending.className='cfh-check-pending';
+  endSwipe();cancelHold();cancelMove();blanks.clear();mathRefresh.clear();if(note!==current)manualBlankId=null;note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}
+  note.items||=[];ensureChecklistOrder(note.items);calculateMath();const pending=document.createElement('div');pending.className='cfh-check-pending';
   const divided=hasDivider();
   for(const item of note.items.filter(item=>!inCompleted(item))){
-   if(divided&&item.id!==manualBlankId&&!item.divider&&!item.pinned&&!item.text?.trim())continue;
+   if(!item.divider&&!item.pinned&&!item.text?.trim())continue;
    const row=makeRow(item);
    pending.append(row);
    if(item.divider)insertBlank(item,row);
   }
-  addButton.hidden=!!divided;host.append(pending,addButton);
+  const lastDivider=note.items.findLastIndex(item=>item.divider);
+  const lastPending=note.items.filter(item=>!inCompleted(item)).at(-1);
+  if(!lastPending?.divider){
+   let empty=note.items.slice(lastDivider+1).find(item=>!inCompleted(item)&&!item.divider&&!item.pinned&&!item.text?.trim());
+   appendTailBlank(pending,empty);
+  }
+  addButton.hidden=true;host.append(pending,addButton);
   const checked=note.items.filter(inCompleted);if(!checked.length)return;
   const toggle=document.createElement('button');toggle.type='button';toggle.className='cfh-check-completed-toggle';const expanded=note.checkedExpanded!==false;toggle.setAttribute('aria-expanded',String(expanded));toggle.setAttribute('aria-controls','cfhNotesCheckedItems');
   toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';const label=document.createElement('span');label.textContent=checked.length+' checked '+(checked.length===1?'item':'items');toggle.append(label);
@@ -403,6 +459,7 @@ export function createChecklist(host,addButton,{changed,id}){
  }
  function add(after=null,text=''){
   if(!note||note.kind!=='list')return;
+  if(!text)reconcileBlankRows();
   if(!text&&hasDivider()){
    const start=after?note.items.indexOf(after)+1:0;
    const divider=note.items.slice(start).find(item=>item.divider);

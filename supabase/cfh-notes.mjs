@@ -10,6 +10,7 @@ import {createNoteFlow} from './cfh-notes-editor.mjs';
 import {noteMatches,compareNotes,changeNoteState,checklistFromText,removeLabel,customNoteIds,reorderVisibleNotes} from './cfh-notes-model.mjs';
 const KEY='cfh_notes_v1',$=id=>document.getElementById(id),uid=()=>crypto.randomUUID();
 let drag=null,ignoreNoteClickUntil=0;
+const selectedNotes=new Set();let selectionBar=null;
 let editorSnapshot=null;
 let createdInEditor=false,activeId=null,draft=null,saveTimer,filter='all',view='grid',sort='custom',selectedColor='yellow',toastTimer,lockedY=0,bodyStyle=null;
 const colors={white:'#ffffff',yellow:'#fff5c2',mint:'#d8f6e9',lavender:'#e9e6fa',rose:'#ffe1e4',blue:'#dcedff'};
@@ -63,10 +64,10 @@ function keyboardMove(card,direction){
  if(saveManualOrder(ids)){const id=card.dataset.noteId;render();[...$('cfhNotesList').querySelectorAll('[data-note-id]')].find(n=>n.dataset.noteId===id)?.focus({preventScroll:true});}
 }
 function cancelDrag(){
- if(!drag)return;const old=drag;drag=null;clearTimeout(old.timer);if(old.frame)cancelAnimationFrame(old.frame);old.ghost?.remove();old.card.classList.remove('cfh-note-drag-placeholder');old.card.removeAttribute('aria-grabbed');document.body.classList.remove('cfh-note-dragging');
+ if(!drag)return;const old=drag;drag=null;clearTimeout(old.timer);if(old.frame)cancelAnimationFrame(old.frame);old.ghost?.remove();old.marker?.remove();old.card.classList.remove('cfh-note-drag-placeholder');old.card.removeAttribute('aria-grabbed');document.body.classList.remove('cfh-note-dragging');
 }
 function finishDrag(commit){
- if(!drag)return;const active=drag.active,ids=active?sameGroup(drag.card).map(n=>n.dataset.noteId):[];cancelDrag();
+ if(!drag)return;const held=drag.selected;if(held)ignoreNoteClickUntil=Date.now()+500;const active=drag.active,ids=active?sameGroup(drag.card).map(n=>n.dataset.noteId):[];cancelDrag();
  if(active){ignoreNoteClickUntil=Date.now()+500;if(commit)saveManualOrder(ids);render();}
 }
 function placeDraggedNote(x,y){
@@ -75,6 +76,7 @@ function placeDraggedNote(x,y){
  if(!target||target===drag.card||target.parentElement!==drag.grid||target.dataset.pinned!==drag.card.dataset.pinned)return;
  const rect=target.getBoundingClientRect(),list=drag.grid.classList.contains('is-list');
  const before=list?y<rect.top+rect.height/2:x<rect.left+rect.width/2;
+ if(drag.marker)Object.assign(drag.marker.style,{left:rect.left+'px',top:(before?rect.top:rect.bottom)+'px',width:rect.width+'px'});
  if(before){if(drag.card.nextElementSibling!==target)drag.grid.insertBefore(drag.card,target);}
  else if(target.nextElementSibling!==drag.card)drag.grid.insertBefore(drag.card,target.nextElementSibling);
 }
@@ -84,40 +86,40 @@ function beginNoteDrag(){
  drag.ghost=drag.card.cloneNode(true);drag.ghost.classList.add('cfh-note-drag-ghost');drag.ghost.removeAttribute('tabindex');drag.ghost.setAttribute('aria-hidden','true');
  Object.assign(drag.ghost.style,{width:rect.width+'px',height:rect.height+'px',left:rect.left+'px',top:rect.top+'px'});
  for(const control of drag.ghost.querySelectorAll('button,input,audio'))control.tabIndex=-1;
- document.body.append(drag.ghost);drag.card.classList.add('cfh-note-drag-placeholder');drag.card.setAttribute('aria-grabbed','true');document.body.classList.add('cfh-note-dragging');ignoreNoteClickUntil=Date.now()+500;
+ drag.marker=el('div','cfh-note-grid-drop');document.body.append(drag.ghost,drag.marker);drag.card.classList.add('cfh-note-drag-placeholder');drag.card.setAttribute('aria-grabbed','true');document.body.classList.add('cfh-note-dragging');ignoreNoteClickUntil=Date.now()+500;
  const scroll=()=>{if(!drag?.active)return;const height=window.innerHeight,edge=65,dy=drag.y<edge?-Math.ceil((edge-drag.y)/5):drag.y>height-edge?Math.ceil((drag.y-height+edge)/5):0;
   if(dy){window.scrollBy(0,Math.max(-18,Math.min(18,dy)));placeDraggedNote(drag.x,drag.y);}drag.frame=requestAnimationFrame(scroll);};
  drag.frame=requestAnimationFrame(scroll);
 }
 function armNoteDrag(card,x,y,type){
- if(sort!=='custom')return;cancelDrag();drag={card,startX:x,startY:y,x,y,type,active:false};drag.timer=setTimeout(beginNoteDrag,350);
+ cancelDrag();drag={card,startX:x,startY:y,x,y,type,active:false,selected:false};drag.timer=setTimeout(()=>{if(!drag)return;drag.selected=true;selectedNotes.add(card.dataset.noteId);card.classList.add('cfh-note-selected');card.setAttribute('aria-pressed','true');refreshSelectionBar();ignoreNoteClickUntil=Date.now()+600;},450);
 }
 function moveNoteDrag(x,y){
- if(!drag)return;if(!drag.active){if(Math.hypot(x-drag.startX,y-drag.startY)>8)cancelDrag();return;}placeDraggedNote(x,y);
+ if(!drag)return;if(!drag.active){if(Math.hypot(x-drag.startX,y-drag.startY)>8){if(drag.selected&&sort==='custom')beginNoteDrag();else cancelDrag();}if(!drag?.active)return;}placeDraggedNote(x,y);
 }
 function bindNoteDrag(card){
- card.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown');
+ card.setAttribute('aria-keyshortcuts','Alt+ArrowUp Alt+ArrowDown Shift+F10');card.addEventListener('keydown',event=>{if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();toggleNoteSelection(card.dataset.noteId);}});
  card.addEventListener('touchstart',e=>{if(e.touches.length!==1){finishDrag(false);return;}if(e.target.closest('button,input,audio'))return;const t=e.touches[0];armNoteDrag(card,t.clientX,t.clientY,'touch');},{passive:true});
  card.addEventListener('touchmove',e=>{if(!drag||drag.card!==card||drag.type!=='touch')return;if(e.touches.length!==1){finishDrag(false);return;}if(drag.active&&e.cancelable)e.preventDefault();const t=e.touches[0];moveNoteDrag(t.clientX,t.clientY);},{passive:false});
  card.addEventListener('touchend',e=>{if(drag?.card!==card||drag.type!=='touch')return;if(drag.active&&e.cancelable)e.preventDefault();finishDrag(true);},{passive:false});
  card.addEventListener('touchcancel',()=>{if(drag?.card===card)finishDrag(false);});
  card.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.button!==0||e.target.closest('button,input,audio'))return;armNoteDrag(card,e.clientX,e.clientY,'pointer');});
- card.addEventListener('contextmenu',e=>{if(sort==='custom')e.preventDefault();});
+ card.addEventListener('contextmenu',e=>{e.preventDefault();});
 }
 window.addEventListener('pointermove',e=>{if(drag?.type==='pointer'){if(drag.active)e.preventDefault();moveNoteDrag(e.clientX,e.clientY);}},{passive:false});
 window.addEventListener('pointerup',()=>{if(drag?.type==='pointer')finishDrag(true);});
 window.addEventListener('pointercancel',()=>{if(drag?.type==='pointer')finishDrag(false);});
 window.addEventListener('blur',()=>finishDrag(false));document.addEventListener('visibilitychange',()=>{if(document.hidden)finishDrag(false);});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag){e.preventDefault();finishDrag(false);}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drag){e.preventDefault();finishDrag(false);}else if(e.key==='Escape'&&selectedNotes.size){e.preventDefault();clearNoteSelection();}});
 
 function utility(title){$('cfhNotesDrawer').close();$('cfhNotesUtilityTitle').textContent=title;$('cfhNotesUtilityBody').replaceChildren();showDialog('cfhNotesUtility');return $('cfhNotesUtilityBody');}
 function editLabels(create=false){const host=utility('Labels');const form=el('form'),input=el('input');input.placeholder='New label';input.maxLength=60;input.required=true;const add=button('Create',()=>form.requestSubmit());form.append(input,add);form.onsubmit=e=>{e.preventDefault();const name=input.value.trim(),list=labels();if(!name)return;if(list.some(l=>l.name.toLowerCase()===name.toLowerCase())){toast('That label already exists.');return;}if(saveLabels([...list,{id:uid(),name}]))editLabels(true);};host.append(form);for(const label of labels()){const row=el('div','cfh-notes-label-edit'),text=el('input');text.value=label.name;text.maxLength=60;text.setAttribute('aria-label','Label name');row.append(text,button('Save',()=>{const name=text.value.trim();if(!name)return;if(labels().some(l=>l.id!==label.id&&l.name.toLowerCase()===name.toLowerCase())){toast('That label already exists.');return;}saveLabels(labels().map(l=>l.id===label.id?{...l,name}:l));render();}),button('×',()=>{if(!confirm('Remove this label? Notes will be kept.'))return;if(!write(removeLabel(read(),label.id)))return;if(saveLabels(labels().filter(l=>l.id!==label.id))){if(filter==='label:'+label.id)filter='all';editLabels();render();}}));host.append(row);}if(create)input.focus();}
 function settings(){const host=utility('Notes settings');host.append(el('p','','Notes and attachments sync across Cashflow Hub devices signed into the same account.'));host.append(el('p','','Reminder dates appear in the app. Notes notification delivery is not enabled yet.'));host.append(button('Switch list / grid',()=>{view=view==='grid'?'list':'grid';prefs();render();toast(view==='grid'?'Grid view':'List view');}));}
 function help(){const host=utility('Notes help');for(const t of ['Use the note button to create text, a checklist, an image attachment, a drawing or an audio attachment.','Notes save as you type. Pin important notes, choose a color, assign a label or set a reminder date.','Archived notes are kept separately. Deleted notes stay in Deleted until you restore or permanently delete them.','To report a problem, share the app version and a screenshot in your Cashflow Hub chat.'])host.append(el('p','',t));}
 function reminderText(value){const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString('en-PH',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';}
-function render(){cancelDrag();const host=$('cfhNotesList');if(!host)return;host.replaceChildren();const q=$('cfhNotesSearch').value.trim(),all=read(),positions=new Map(manualIds(all).map((id,i)=>[id,i])),matches=all.filter(n=>noteMatches(n,filter,q)).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||(sort==='custom'?positions.get(a.id)-positions.get(b.id):compareNotes(a,b,sort)));syncSortChoices();host.classList.toggle('is-custom-order',sort==='custom');$('cfhNotesLayout').setAttribute('aria-label',view==='grid'?'Switch to list view':'Switch to grid view');$('cfhNotesLayout').setAttribute('aria-pressed',String(view==='list'));$('cfhNotesLayout').replaceChildren(svg(view==='grid'?'listView':'gridView'));
+function render(){cancelDrag();refreshSelectionBar();const host=$('cfhNotesList');if(!host)return;host.replaceChildren();const q=$('cfhNotesSearch').value.trim(),all=read(),positions=new Map(manualIds(all).map((id,i)=>[id,i])),matches=all.filter(n=>noteMatches(n,filter,q)).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||(sort==='custom'?positions.get(a.id)-positions.get(b.id):compareNotes(a,b,sort)));syncSortChoices();host.classList.toggle('is-custom-order',sort==='custom');$('cfhNotesLayout').setAttribute('aria-label',view==='grid'?'Switch to list view':'Switch to grid view');$('cfhNotesLayout').setAttribute('aria-pressed',String(view==='list'));$('cfhNotesLayout').replaceChildren(svg(view==='grid'?'listView':'gridView'));
  if(!matches.length){host.append(el('p','cfh-notes-empty',q?'No matching notes.':filter==='deleted'?'No deleted notes.':filter==='archive'?'No archived notes.':filter==='reminders'?'Notes with reminder dates appear here.':'Your notes will appear here. Tap the note button to start.'));return;}
- const section=(label,items)=>{if(!items.length)return;host.append(el('div','cfh-notes-section-title',label));const grid=el('div','cfh-notes-grid'+(view==='list'?' is-list':''));for(const n of items){const card=el('article','cfh-note-card');card.tabIndex=0;card.role='button';card.setAttribute('aria-label','Open note '+(n.title||'Untitled'));card.style.background=colors[n.color]||colors.white;card.dataset.noteId=n.id;card.dataset.pinned=String(!!n.pinned);bindNoteDrag(card);card.onclick=e=>{if(Date.now()<ignoreNoteClickUntil)return;if(!e.target.closest('button,input,audio'))open(n.id);};card.onkeydown=e=>{if(e.target===card&&sort==='custom'&&e.altKey&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();keyboardMove(card,['ArrowUp','ArrowLeft'].includes(e.key)?-1:1);return;}if(e.target===card&&['Enter',' '].includes(e.key)){e.preventDefault();open(n.id);}};const top=el('div','cfh-note-card-top');if(n.title)top.append(el('h3','',n.title));if(n.pinned)top.append(button('📌',()=>{const items=read(),i=items.findIndex(x=>x.id===n.id);if(i>=0){items[i]={...items[i],pinned:false};if(write(items))render();}},'cfh-note-pin'));card.append(top);
+ const section=(label,items)=>{if(!items.length)return;host.append(el('div','cfh-notes-section-title',label));const grid=el('div','cfh-notes-grid'+(view==='list'?' is-list':''));for(const n of items){const card=el('article','cfh-note-card');card.tabIndex=0;card.role='button';card.setAttribute('aria-label','Open note '+(n.title||'Untitled'));card.style.background=colors[n.color]||colors.white;card.dataset.noteId=n.id;card.classList.toggle('cfh-note-selected',selectedNotes.has(n.id));card.setAttribute('aria-pressed',String(selectedNotes.has(n.id)));card.dataset.pinned=String(!!n.pinned);bindNoteDrag(card);card.addEventListener('click',event=>{if(selectedNotes.size){event.preventDefault();event.stopImmediatePropagation();if(Date.now()>=ignoreNoteClickUntil)toggleNoteSelection(n.id);}},{capture:true});card.onclick=e=>{if(Date.now()<ignoreNoteClickUntil)return;if(selectedNotes.size){toggleNoteSelection(n.id);return;}if(!e.target.closest('button,input,audio'))open(n.id);};card.onkeydown=e=>{if(e.target===card&&sort==='custom'&&e.altKey&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();keyboardMove(card,['ArrowUp','ArrowLeft'].includes(e.key)?-1:1);return;}if(e.target===card&&['Enter',' '].includes(e.key)){e.preventDefault();if(selectedNotes.size)toggleNoteSelection(n.id);else open(n.id);}};const top=el('div','cfh-note-card-top');if(n.title)top.append(el('h3','',n.title));if(n.pinned)top.append(button('📌',()=>{const items=read(),i=items.findIndex(x=>x.id===n.id);if(i>=0){items[i]={...items[i],pinned:false};if(write(items))render();}},'cfh-note-pin'));card.append(top);
  if(n.attachments?.length){const media=n.attachments[0];if(media.type==='image'){const img=el('img','cfh-note-media-preview');img.alt='Note image';loadMedia(media.id).then(blob=>{if(blob&&img.isConnected){const u=URL.createObjectURL(blob);img.src=u;img.onload=()=>URL.revokeObjectURL(u);}}).catch(()=>{});card.append(img);}else card.append(el('p','cfh-note-media-label','Audio attachment'));}
  if(n.kind==='list'){for(const item of (n.items||[]).filter(item=>!item.checked).slice(0,7)){const line=el('div','cfh-note-check-row'+(item.checked?' is-checked':'')),check=el('input');check.type='checkbox';check.checked=!!item.checked;check.setAttribute('aria-label',item.text);check.disabled=!!n.deletedAt;check.onchange=()=>{const items=read(),note=items.find(x=>x.id===n.id);if(note){note.items=note.items.map(i=>i.id===item.id?{...i,checked:check.checked}:i);note.updatedAt=Date.now();if(write(items))render();}};line.append(check,el('span','',item.text));card.append(line);}}else if(n.body)card.append(el('p','',displayNoteMath(n.body)));
  if(n.bodyAfter)card.append(el('p','',displayNoteMath(n.bodyAfter)));
@@ -152,12 +154,13 @@ $('cfhNotesEditorBox').querySelector('.cfh-note-editor-content').addEventListene
  if(event.target===event.currentTarget||event.target===$('cfhNotesDescriptionFlow'))noteFlow.focusEnd();
 });
 function scheduleSave(){
+ undoButton.disabled=false;
  clearTimeout(saveTimer);$('cfhNotesEditorStatus').textContent='Sync pending';
  const flush=()=>{if(draft?.kind==='text'){noteFlow.renderMath();fitNoteBody();}saveDraft();};
  saveTimer=setTimeout(flush,200);
  maxSaveTimer??=setTimeout(flush,1000);
 }
-function open(id,kind='text'){if(draft&&!saveDraft())return;const n=id?read().find(x=>x.id===id):null;createdInEditor=!n;activeId=n?.id||null;draft=n?structuredClone(n):{id:uid(),kind,items:[],attachments:[],pinned:false,color:'white',createdAt:Date.now()};selectedColor=draft.color||'white';$('cfhNotesTitle').value=draft.title||'';$('cfhNotesBody').value=draft.body||'';$('cfhNotesBodyAfter').value=draft.bodyAfter||'';const select=$('cfhNotesLabel');select.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));select.value=draft.labelId||'';$('cfhNotesReminder').value=draft.reminder||'';$('cfhNotesEditor').hidden=false;requestAnimationFrame(fitNoteBody);document.body.classList.add('cfh-notes-editor-open');editorPanel();syncEditorViewport();lock();paint();renderChecklist();renderAttachments();$('cfhNotesDelete').hidden=!n;$('cfhNotesDelete').textContent=draft.deletedAt?'Delete permanently':'Delete';$('cfhNotesRestore').hidden=!draft.deletedAt;$('cfhNotesArchive').hidden=!!draft.deletedAt;$('cfhNotesArchive').replaceChildren(svg(draft.archived?'unarchive':'archive'));$('cfhNotesArchive').setAttribute('aria-label',draft.archived?'Unarchive note':'Archive note');$('cfhNotesEditorStatus').textContent=notesSync.getStatus();$('cfhNotesPinButton').setAttribute('aria-pressed',String(!!draft.pinned));$('cfhNotesPinButton').replaceChildren(svg('pin'));$('cfhNotesPinButton').setAttribute('aria-label',draft.pinned?'Unpin note':'Pin note');if(n){captureNoteFlow();Object.assign(draft,{title:$('cfhNotesTitle').value,body:$('cfhNotesBody').value,bodyAfter:$('cfhNotesBodyAfter').value,labelId:select.value,reminder:$('cfhNotesReminder').value,color:selectedColor});}editorSnapshot=n?JSON.stringify(draft):null;noteHistory.select(draft.id,undoValue());updateUndoButtons();if(!id)setTimeout(()=>$('cfhNotesTitle').focus(),50);}
+function open(id,kind='text'){closeFind();clearNoteSelection();if(draft&&!saveDraft())return;const n=id?read().find(x=>x.id===id):null;createdInEditor=!n;activeId=n?.id||null;draft=n?structuredClone(n):{id:uid(),kind,items:[],attachments:[],pinned:false,color:'white',createdAt:Date.now()};selectedColor=draft.color||'white';$('cfhNotesTitle').value=draft.title||'';$('cfhNotesBody').value=draft.body||'';$('cfhNotesBodyAfter').value=draft.bodyAfter||'';const select=$('cfhNotesLabel');select.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));select.value=draft.labelId||'';$('cfhNotesReminder').value=draft.reminder||'';$('cfhNotesEditor').hidden=false;requestAnimationFrame(fitNoteBody);document.body.classList.add('cfh-notes-editor-open');editorPanel();syncEditorViewport();lock();paint();renderChecklist();renderAttachments();$('cfhNotesDelete').hidden=!n;$('cfhNotesDelete').textContent=draft.deletedAt?'Delete permanently':'Delete';$('cfhNotesRestore').hidden=!draft.deletedAt;$('cfhNotesArchive').hidden=!!draft.deletedAt;$('cfhNotesArchive').replaceChildren(svg(draft.archived?'unarchive':'archive'));$('cfhNotesArchive').setAttribute('aria-label',draft.archived?'Unarchive note':'Archive note');$('cfhNotesEditorStatus').textContent=notesSync.getStatus();$('cfhNotesPinButton').setAttribute('aria-pressed',String(!!draft.pinned));$('cfhNotesPinButton').replaceChildren(svg('pin'));$('cfhNotesPinButton').setAttribute('aria-label',draft.pinned?'Unpin note':'Pin note');if(n){captureNoteFlow();Object.assign(draft,{title:$('cfhNotesTitle').value,body:$('cfhNotesBody').value,bodyAfter:$('cfhNotesBodyAfter').value,labelId:select.value,reminder:$('cfhNotesReminder').value,color:selectedColor});}editorSnapshot=n?JSON.stringify(draft):null;noteHistory.select(draft.id,undoValue());updateUndoButtons();if(!id)setTimeout(()=>$('cfhNotesTitle').focus(),50);}
 function paint(){$('cfhNotesEditorBox').style.background=colors[selectedColor]||'white';$('cfhNotesEditorBox').style.setProperty('--cfh-note-background',colors[selectedColor]||'#ffffff');document.querySelectorAll('.cfh-note-color').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.noteColor===selectedColor)));}
 function renderChecklist(){
  const isList=draft?.kind==='list';$('cfhNotesBody').hidden=true;$('cfhNotesBodyAfter').hidden=true;
@@ -166,10 +169,10 @@ function renderChecklist(){
  if(!isList)requestAnimationFrame(fitNoteBody);
 }
 function addItem(){checklist.add();}
-function close(){checklist.cancelMove();noteFlow.cancelMove();clearTimeout(saveTimer);if(!saveDraft())return false;$('cfhNotesEditor').hidden=true;document.body.classList.remove('cfh-notes-editor-open');editorPanel();document.activeElement?.blur();for(const n of $('cfhNotesEditorBox').querySelectorAll('.cfh-note-editor-content [data-media-url]')){if(n.tagName==='AUDIO')n.pause();URL.revokeObjectURL(n.dataset.mediaUrl);}draft=null;activeId=null;unlock();render();return true;}
+function close(){if(closeFind())return true;checklist.cancelMove();noteFlow.cancelMove();clearTimeout(saveTimer);if(!saveDraft())return false;$('cfhNotesEditor').hidden=true;document.body.classList.remove('cfh-notes-editor-open');editorPanel();document.activeElement?.blur();for(const n of $('cfhNotesEditorBox').querySelectorAll('.cfh-note-editor-content [data-media-url]')){if(n.tagName==='AUDIO')n.pause();URL.revokeObjectURL(n.dataset.mediaUrl);}draft=null;activeId=null;unlock();render();return true;}
 function pin(){if(!draft)return;draft.pinned=!draft.pinned;$('cfhNotesPinButton').replaceChildren(svg('pin'));$('cfhNotesPinButton').setAttribute('aria-label',draft.pinned?'Unpin note':'Pin note');$('cfhNotesPinButton').setAttribute('aria-pressed',String(draft.pinned));saveDraft();}
 function color(c){if(colors[c]){selectedColor=c;paint();saveDraft();}}
-function stateAction(action){checklist.cancelMove();noteFlow.cancelMove();clearTimeout(saveTimer);if(!saveDraft()||!activeId)return;const items=read(),i=items.findIndex(n=>n.id===activeId);if(i<0)return;if(action==='permanent'){if(!confirm('Permanently delete this note? This cannot be undone.'))return;const media=items[i].attachments||[];items.splice(i,1);if(!write(items))return;for(const attachment of media)deleteMedia(attachment.id).catch(()=>{});}else{items[i]=changeNoteState(items[i],action);if(!write(items))return;}$('cfhNotesEditor').hidden=true;document.body.classList.remove('cfh-notes-editor-open');editorPanel();document.activeElement?.blur();for(const n of $('cfhNotesEditorBox').querySelectorAll('.cfh-note-editor-content [data-media-url]')){if(n.tagName==='AUDIO')n.pause();URL.revokeObjectURL(n.dataset.mediaUrl);}draft=null;activeId=null;unlock();render();}
+function stateAction(action,confirmed=false){closeFind();if(action==='delete'&&!confirmed){showDeleteConfirmation(()=>stateAction(action,true));return;}checklist.cancelMove();noteFlow.cancelMove();clearTimeout(saveTimer);if(!saveDraft()||!activeId)return;const items=read(),i=items.findIndex(n=>n.id===activeId);if(i<0)return;if(action==='permanent'){if(!confirm('Permanently delete this note? This cannot be undone.'))return;const media=items[i].attachments||[];items.splice(i,1);if(!write(items))return;for(const attachment of media)deleteMedia(attachment.id).catch(()=>{});}else{items[i]=changeNoteState(items[i],action);if(!write(items))return;}$('cfhNotesEditor').hidden=true;document.body.classList.remove('cfh-notes-editor-open');editorPanel();document.activeElement?.blur();for(const n of $('cfhNotesEditorBox').querySelectorAll('.cfh-note-editor-content [data-media-url]')){if(n.tagName==='AUDIO')n.pause();URL.revokeObjectURL(n.dataset.mediaUrl);}draft=null;activeId=null;unlock();render();}
 let dbPromise;function db(){return dbPromise||=(new Promise((resolve,reject)=>{const request=indexedDB.open('cfh_notes_media_v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('media');request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);}));}
 async function mediaOp(mode,id,value){const database=await db();return new Promise((resolve,reject)=>{const tx=database.transaction('media',mode),store=tx.objectStore('media');const req=value===undefined?(mode==='readonly'?store.get(id):store.delete(id)):store.put(value,id);let result;req.onsuccess=()=>result=req.result;tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Attachment save failed'));});}
 async function loadMedia(id){
@@ -249,8 +252,8 @@ $('cfhNotesDrawClear').onclick=()=>{ctx.fillStyle='white';ctx.fillRect(0,0,canva
 $('cfhNotesDrawer').addEventListener('close',()=>{$('cfhNotesMenuButton').setAttribute('aria-expanded','false');});
 $('cfhNotesUtilityClose').onclick=()=>$('cfhNotesUtility').close();$('cfhNotesAddItem').onclick=addItem;$('cfhNotesChecklistMode').onclick=()=>{if(!draft||draft.kind==='list')return;captureNoteFlow();if(!canRestoreChecklist(draft))draft.items=checklistFromText($('cfhNotesBody').value,uid);draft.kind='list';renderChecklist();renderAttachments();saveDraft();};$('cfhNotesArchive').onclick=()=>stateAction(draft.archived?'unarchive':'archive');$('cfhNotesRestore').onclick=()=>stateAction('restore');
 for(const id of ['cfhNotesTitle','cfhNotesBody','cfhNotesBodyAfter','cfhNotesReminder'])$(id).addEventListener('input',scheduleSave);$('cfhNotesLabel').onchange=scheduleSave;
-$('cfhNotesEditor').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();if(!closeEditorPanel())close();}});document.addEventListener('click',e=>{if(!e.target.closest('.cfh-notes-head'))menus();});
-window.cfhHandleNotesBack=()=>{if(checklist.cancelMove())return true;if(noteFlow.cancelMove())return true;if(drag){cancelDrag();render();return true;}if($('cfhNotesImageViewer').open&&!$('cfhNotesImageMenu').hidden){$('cfhNotesImageMenu').hidden=true;$('cfhNotesImageMore').setAttribute('aria-expanded','false');return true;}for(const id of ['cfhNotesMorePanel','cfhNotesSortMenu','cfhNotesImageViewer','cfhNotesRecording','cfhNotesAttachmentPanel','cfhNotesDrawing','cfhNotesUtility','cfhNotesCreateMenu','cfhNotesDrawer'])if($(id).open){$(id).close();return true;}if(!$('cfhNotesEditor').hidden){if(!closeEditorPanel())close();return true;}return false;};
+$('cfhNotesEditor').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();if(closeFind())return;if(!closeEditorPanel())close();}});document.addEventListener('click',e=>{if(!e.target.closest('.cfh-notes-head'))menus();});
+window.cfhHandleNotesBack=()=>{const modal=document.querySelector('.cfh-note-confirm[open],.cfh-note-selection-sheet[open]');if(modal){modal.close();return true;}if(closeFind())return true;if(selectedNotes.size){clearNoteSelection();return true;}if(checklist.cancelMove())return true;if(noteFlow.cancelMove())return true;if(drag){cancelDrag();render();return true;}if($('cfhNotesImageViewer').open&&!$('cfhNotesImageMenu').hidden){$('cfhNotesImageMenu').hidden=true;$('cfhNotesImageMore').setAttribute('aria-expanded','false');return true;}for(const id of ['cfhNotesMorePanel','cfhNotesSortMenu','cfhNotesImageViewer','cfhNotesRecording','cfhNotesAttachmentPanel','cfhNotesDrawing','cfhNotesUtility','cfhNotesCreateMenu','cfhNotesDrawer'])if($(id).open){$(id).close();return true;}if(!$('cfhNotesEditor').hidden){if(!closeEditorPanel())close();return true;}return false;};
 const editorPanels=['Attachment','Color','Text','More'];
 const formattingPanel=$('cfhNotesTextPanel');
 const formatBody=$('cfhNotesAudioAttachments');
@@ -406,7 +409,7 @@ const oldMorePanel=$('cfhNotesMorePanel'),moreFields=el('div');moreFields.hidden
 moreFields.append(...oldMorePanel.childNodes);$('cfhNotesEditorBox').append(moreFields);
 const noteOptions=el('dialog','cfh-note-options');noteOptions.id='cfhNotesMorePanel';noteOptions.hidden=true;noteOptions.setAttribute('aria-label','Note options');oldMorePanel.replaceWith(noteOptions);
 outsideClose(noteOptions);noteOptions.addEventListener('close',()=>{noteOptions.hidden=true;$('cfhNotesMoreButton').setAttribute('aria-expanded','false');});
-Object.assign(paths,{search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM15 15l6 6',copy:'M8 3h13v15H8ZM3 7v15h13',share:'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8 10l7-4M8 14l7 4'});
+Object.assign(paths,{palette:'M12 3a9 9 0 1 0 0 18h2a2 2 0 0 0 0-4h-1a2 2 0 0 1 0-4h4a4 4 0 0 0 4-4c0-4-5-6-9-6ZM7 8h.01M11 6h.01M16 8h.01M6 13h.01',search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM15 15l6 6',copy:'M8 3h13v15H8ZM3 7v15h13',share:'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8 10l7-4M8 14l7 4'});
 function optionsPage(title,main=false){
  noteOptions.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');noteOptions.replaceChildren();
  const head=el('div','cfh-note-options-head');
@@ -435,14 +438,30 @@ function showNoteReminder(){
  body.append(button('Save reminder',()=>{if(input.value&&!Number.isFinite(new Date(input.value).getTime())){error.textContent='Choose a valid date and time.';return;}$('cfhNotesReminder').value=input.value;if(saveDraft()){toast(input.value?'Reminder saved.':'Reminder removed.');showNoteOptions();}},'cfh-note-options-primary'));
  if(input.value)body.append(button('Remove reminder',()=>{$('cfhNotesReminder').value='';if(saveDraft())showNoteOptions();}));
 }
+function labelPicker(body,current,apply){
+ const input=el('input');input.type='search';input.placeholder='Search or create label';input.maxLength=60;input.setAttribute('aria-label','Search or create label');
+ const list=el('div','cfh-note-label-list');body.append(input,list);
+ function draw(){
+  list.replaceChildren();const query=input.value.trim().toLocaleLowerCase();
+  for(const label of labels().filter(l=>l.name.toLocaleLowerCase().includes(query))){
+   const row=button('',()=>{apply(current()===label.id?'':label.id);draw();},'cfh-note-options-row cfh-note-label-choice');
+   row.setAttribute('role','checkbox');row.setAttribute('aria-checked',String(current()===label.id));row.append(svg('label'),el('span','',label.name),el('span','cfh-label-check',current()===label.id?'☑':'☐'));list.append(row);
+  }
+  if(query&&!labels().some(l=>l.name.toLocaleLowerCase()===query)){
+   const name=input.value.trim();optionsRow(list,'Create “'+name+'”','add',()=>{const label={id:uid(),name};if(saveLabels([...labels(),label])){apply(label.id);input.value='';draw();}});
+  }
+ }
+ input.oninput=draw;draw();
+}
 function showNoteLabels(){
- const body=optionsPage('Labels'),select=el('select');select.setAttribute('aria-label','Note label');
- const fill=value=>{select.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));select.value=value||'';};fill($('cfhNotesLabel').value);body.append(select);
- const input=el('input');input.placeholder='New label';input.maxLength=60;input.setAttribute('aria-label','New label name');const status=el('p','cfh-note-options-error');status.setAttribute('role','status');body.append(input,button('Create label',()=>{
-  const name=input.value.trim();if(!name){status.textContent='Enter a label name.';return;}
-  const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());const label=existing||{id:uid(),name};
-  if(existing||saveLabels([...current,label])){fill(label.id);input.value='';status.textContent='';}
- }),button('Apply label',()=>{const target=$('cfhNotesLabel');target.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));target.value=select.value;if(saveDraft())showNoteOptions();},'cfh-note-options-primary'),status);
+ const body=optionsPage('Labels');labelPicker(body,()=>$('cfhNotesLabel').value,value=>{
+  const target=$('cfhNotesLabel');target.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));target.value=value;saveDraft();
+ });
+}
+function showDeleteConfirmation(remove){
+ const dialog=el('dialog','cfh-note-confirm');dialog.setAttribute('aria-label','Delete this note?');
+ dialog.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');dialog.append(el('h2','','Delete this note?'),el('p','','You can restore it from Deleted.'));
+ const actions=el('div','cfh-note-options-controls');actions.append(button('Cancel',()=>dialog.close()),button('Delete',()=>{dialog.close();remove();}));dialog.append(actions);document.body.append(dialog);outsideClose(dialog);dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();
 }
 async function duplicateOpenNote(){
  if(!draft||!saveDraft())return;const source=structuredClone(draft),body=optionsPage('Making a copy');body.append(el('p','','Copying note and attachments…'));
@@ -452,12 +471,50 @@ async function duplicateOpenNote(){
   editorPanel();if(draft?.id===source.id)open(copy.id);else render();toast('Note copied.');
  }catch(error){toast(error.message||'Could not copy note.');if(noteOptions.open)showNoteOptions();}
 }
+var findSession=null;
+function closeFind(){
+ if(!findSession)return false;
+ const {area,hidden,mirror,bar,toolbar,scroll}=findSession;
+ for(const [node,value]of hidden)node.hidden=value;
+ mirror.remove();bar.remove();toolbar.hidden=false;area.scrollTop=scroll;findSession=null;return true;
+}
 function showFindInNote(){
- const body=optionsPage('Find in note'),input=el('input');input.type='search';input.placeholder='Search this note';input.setAttribute('aria-label','Find in note');
- const status=el('p');status.setAttribute('role','status');const preview=el('p','cfh-note-find-preview'),controls=el('div','cfh-note-options-controls');let matches=[],index=0;
- function show(){const match=matches[index];status.textContent=input.value.trim()?(matches.length?(index+1)+' of '+matches.length+' matches':'No matches'):'Search the title or note text, including checked entries.';preview.replaceChildren();if(match){const start=Math.max(0,match.start-35),end=Math.min(match.text.length,match.start+match.length+55);preview.append(document.createTextNode((start?'…':'')+match.text.slice(start,match.start)),el('mark','',match.text.slice(match.start,match.start+match.length)),document.createTextNode(match.text.slice(match.start+match.length,end)+(end<match.text.length?'…':'')));}previous.disabled=next.disabled=jump.disabled=!match;}
- const previous=button('Previous',()=>{index=(index+matches.length-1)%matches.length;show();}),next=button('Next',()=>{index=(index+1)%matches.length;show();}),jump=button('Go to match',()=>goToNoteMatch(matches[index]),'cfh-note-options-primary');
- controls.append(previous,next,jump);body.append(input,status,preview,controls);input.oninput=()=>{matches=findNoteMatches(draft,input.value);index=0;show();};input.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();if(matches.length){index=(index+1)%matches.length;show();}}};show();setTimeout(()=>input.focus(),0);
+ if(!draft||!saveDraft())return;editorPanel();closeFind();
+ const area=$('cfhNotesEditorBox').querySelector('.cfh-note-editor-content');
+ const hidden=[...area.children].map(node=>[node,node.hidden]);for(const [node]of hidden)node.hidden=true;
+ const mirror=el('div','cfh-note-find-mirror'),bar=el('div','cfh-note-find-bar'),input=el('input');
+ input.type='search';input.placeholder='Find in note';input.setAttribute('aria-label','Find in note');
+ const status=el('small');status.setAttribute('role','status');
+ const toolbar=$('cfhNotesEditorBox').querySelector('.cfh-note-editor-toolbar');toolbar.hidden=true;
+ let marks=[],index=0;
+ function highlight(){
+  const mark=marks[index];marks.forEach((node,i)=>node.classList.toggle('is-current',i===index));
+  status.textContent=marks.length?(index+1)+' / '+marks.length:input.value?'No matches':'';
+  previous.disabled=next.disabled=!marks.length;
+  mark?.scrollIntoView({block:'center',behavior:'smooth'});
+ }
+ function field(text,tag='p',checked=false,format){
+  const node=el(tag);if(format)applyNoteFormat(node,format);if(checked)node.classList.add('is-checked');
+  const query=input.value.trim().toLocaleLowerCase();let cursor=0,at;
+  if(query)while((at=text.toLocaleLowerCase().indexOf(query,cursor))>=0){node.append(document.createTextNode(text.slice(cursor,at)));const mark=el('mark','',text.slice(at,at+query.length));marks.push(mark);node.append(mark);cursor=at+query.length;}
+  node.append(document.createTextNode(text.slice(cursor)));return node;
+ }
+ function draw(){
+  mirror.replaceChildren();marks=[];index=0;mirror.append(field(draft.title||'','h2'));
+  // Clone attachment presentation only. The editable note stays intact underneath.
+  const media=$('cfhNotesAttachments').cloneNode(true);media.removeAttribute('id');media.hidden=false;for(const control of media.querySelectorAll('button'))control.remove();mirror.append(media);
+  if(draft.kind==='list')for(const item of draft.items||[]){
+   const row=el('div','cfh-note-find-row');row.append(el('span','',item.divider?'—':item.checked?'☑':'☐'),field(item.text||'','div',item.checked,item.format));mirror.append(row);
+  }else mirror.append(field(contentText(noteContent(draft))));
+  highlight();
+ }
+ const previous=button('⌃',()=>{if(marks.length){index=(index+marks.length-1)%marks.length;highlight();}}),next=button('⌄',()=>{if(marks.length){index=(index+1)%marks.length;highlight();}}),exit=button('×',()=>closeFind());
+ previous.setAttribute('aria-label','Previous match');next.setAttribute('aria-label','Next match');exit.setAttribute('aria-label','Close find in note');
+ for(const control of [previous,next,exit])control.onpointerdown=event=>event.preventDefault();
+ bar.append(input,status,previous,next,exit);area.append(mirror);toolbar.before(bar);
+ findSession={area,hidden,mirror,bar,toolbar,scroll:area.scrollTop};
+ input.oninput=draw;input.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeFind();}else if(event.key==='Enter'){event.preventDefault();(event.shiftKey?previous:next).click();}};
+ draw();input.focus();
 }
 function goToNoteMatch(match){
  if(!match)return;editorPanel();
@@ -518,3 +575,56 @@ noteOptions.addEventListener('click',event=>{if(Date.now()<optionsIgnoreClickUnt
 noteOptions.addEventListener('touchcancel',()=>{optionsSwipe=null;});
 // A downward trackpad/mouse scroll closes a sheet already at its top edge.
 noteOptions.addEventListener('wheel',event=>{if(event.deltaY< -45&&noteOptions.scrollTop<=0&&!event.target.closest('input,textarea,select'))editorPanel();},{passive:true});
+
+function clearNoteSelection(){selectedNotes.clear();refreshSelectionBar();document.querySelectorAll('.cfh-note-selected').forEach(card=>{card.classList.remove('cfh-note-selected');card.setAttribute('aria-pressed','false');});}
+function toggleNoteSelection(id){if(selectedNotes.has(id))selectedNotes.delete(id);else selectedNotes.add(id);render();}
+function applyToSelection(change){
+ const ids=new Set(selectedNotes),now=Date.now();
+ if(write(read().map(note=>ids.has(note.id)?{...note,...change(note),updatedAt:now}:note))){render();return true;}return false;
+}
+function selectionSheet(title,fill){
+ const dialog=el('dialog','cfh-note-selection-sheet');dialog.setAttribute('aria-label',title);dialog.append(el('h2','',title));
+ fill(dialog);document.body.append(dialog);outsideClose(dialog);dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();return dialog;
+}
+function refreshSelectionBar(){
+ $('cfhNotesPage').classList.toggle('is-selecting',!!selectedNotes.size);
+ const all=new Set(read().map(n=>n.id));for(const id of selectedNotes)if(!all.has(id))selectedNotes.delete(id);
+ if(!selectedNotes.size){selectionBar?.remove();selectionBar=null;return;}
+ if(!selectionBar){selectionBar=el('div','cfh-note-selection-toolbar');selectionBar.setAttribute('role','toolbar');selectionBar.setAttribute('aria-label','Selected notes');$('cfhNotesList').before(selectionBar);}
+ selectionBar.replaceChildren();
+ const icon=(label,path,action)=>{const b=button('',action,'cfh-note-icon-button');b.title=label;b.setAttribute('aria-label',label);b.append(svg(path));selectionBar.append(b);};
+ icon('Clear selection','close',clearNoteSelection);selectionBar.append(el('span','cfh-note-selection-count',String(selectedNotes.size)));
+ icon('Pin selected notes','pin',()=>{const unpin=read().filter(n=>selectedNotes.has(n.id)).every(n=>n.pinned);applyToSelection(()=>({pinned:!unpin}));});
+ icon('Reminder for selected notes','reminders',()=>selectionSheet('Reminder',body=>{
+  const input=el('input');input.type='datetime-local';input.setAttribute('aria-label','Reminder date and time');body.append(input,el('p','','Reminder dates are shown in the app. Notes notifications are not enabled.'),button('Save reminder',()=>{if(input.value&&!Number.isFinite(new Date(input.value).getTime()))return;if(applyToSelection(()=>({reminder:input.value})))body.close();}),button('Remove reminder',()=>{if(applyToSelection(()=>({reminder:''})))body.close();}));
+ }));
+ icon('Color selected notes','palette',()=>selectionSheet('Color',body=>{const row=el('div','cfh-selection-colors');for(const [name,color]of Object.entries(colors)){const b=button('',()=>{if(applyToSelection(()=>({color:name})))body.close();});b.style.background=color;b.setAttribute('aria-label',name);row.append(b);}body.append(row);}));
+ icon('Label selected notes','label',()=>selectionSheet('Labels',body=>labelPicker(body,()=>{const notes=read().filter(n=>selectedNotes.has(n.id));return notes.every(n=>n.labelId===notes[0]?.labelId)?notes[0]?.labelId:'';},value=>applyToSelection(()=>({labelId:value})))));
+ const more=button('⋮',()=>selectionSheet('More',body=>{
+  optionsRow(body,'Archive','archive',()=>{if(applyToSelection(()=>({archived:true}))){body.close();clearNoteSelection();render();}});
+  optionsRow(body,'Delete','deleted',()=>{body.close();showDeleteConfirmation(()=>{if(applyToSelection(()=>({deletedAt:Date.now()}))){clearNoteSelection();render();}});});
+ }), 'cfh-note-icon-button');more.setAttribute('aria-label','More selected note actions');selectionBar.append(more);
+}
+const notes288Style=el('style');notes288Style.textContent=`
+.cfh-note-confirm,.cfh-note-selection-sheet{border:0;border-radius:22px;padding:20px;box-sizing:border-box;width:min(92vw,480px);max-height:80dvh;overflow:auto;background:var(--cfh-note-background,#e9e6fa);color:#1b1844}
+.cfh-note-confirm::backdrop,.cfh-note-selection-sheet::backdrop{background:#1b184466}
+.cfh-note-confirm h2,.cfh-note-selection-sheet h2{font-size:20px;margin:0 0 14px}
+.cfh-note-label-choice .cfh-label-check{margin-left:auto}
+.cfh-note-label-choice span:nth-child(2){flex:1;text-align:left}
+#cfhNotesPage.is-selecting>.cfh-notes-head{display:none}
+.cfh-note-grid-drop{position:fixed;z-index:100351;height:3px;border-radius:3px;background:#00b99b;pointer-events:none}
+.cfh-note-selection-toolbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:4px;padding:8px;background:#e9e6fa;box-shadow:0 2px 8px #1b184422}
+.cfh-note-selection-toolbar button{flex:0 0 36px;width:36px!important;min-width:0;padding:6px}
+.cfh-note-selection-count{flex:1;font-size:20px}
+.cfh-note-card.cfh-note-selected{outline:3px solid #00d5a0;outline-offset:-3px}
+.cfh-selection-colors{display:flex;gap:10px;flex-wrap:wrap}.cfh-selection-colors button{width:42px;height:42px;border:1px solid #1b184444;border-radius:50%}
+#cfhNotesEditorBox .cfh-note-find-bar{display:flex;align-items:center;gap:3px;padding:8px;background:var(--cfh-note-background)}
+#cfhNotesEditorBox .cfh-note-find-bar input{flex:1;min-width:0;width:0;padding:10px;border:2px solid #00b99b;border-radius:10px;background:#ffffff66;font:16px Arial;color:#1b1844}
+#cfhNotesEditorBox .cfh-note-find-bar button{flex:0 0 32px;width:32px;min-width:0;padding:5px;background:transparent;border:0;color:inherit;font-size:26px}
+.cfh-note-find-bar small{font:11px Arial;max-width:48px}
+.cfh-note-find-mirror{font:16px/1.5 Arial;white-space:pre-wrap;overflow-wrap:anywhere}
+.cfh-note-find-mirror h2{font-size:26px;margin:0 0 20px}.cfh-note-find-row{display:flex;align-items:baseline;gap:12px;min-height:40px;padding:7px 0}
+.cfh-note-find-row>div{min-width:0;flex:1}.cfh-note-find-mirror mark{background:#ffe46c;color:#1b1844}.cfh-note-find-mirror mark.is-current{background:#ffc14d;outline:1px solid #a96d00}
+.cfh-note-find-mirror .is-checked{text-decoration:line-through}.cfh-note-find-mirror img{max-width:100%}
+#cfhNotesEditorBox .cfh-note-editor-toolbar[hidden]{display:none}
+`;document.head.append(notes288Style);
