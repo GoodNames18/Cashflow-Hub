@@ -303,7 +303,11 @@ export function createChecklist(host,addButton,{changed,id}){
      if(result.start<result.value.length)completion={start:result.start,end:result.value.length};
     }
    }
-   updateKeyboard();item.text=text.value;
+   updateKeyboard();
+   if(!item.text?.trim()&&text.value.trim()&&!item.createdAt)item.createdAt=Date.now();
+   item.text=text.value;
+   timestamp.textContent=item.text.trim()?itemTimestamp(item):'';
+   text.setAttribute('aria-description',timestamp.textContent);
    if(blankFor){
     if(!item.text.trim()){fit(text);return;}
     const index=note.items.indexOf(blankFor),dividerRow=rowFor(blankFor);
@@ -345,7 +349,7 @@ export function createChecklist(host,addButton,{changed,id}){
    }
   };
   const timestamp=document.createElement('span');timestamp.className='cfh-check-timestamp';
-  timestamp.textContent=blankFor?'':itemTimestamp(item);timestamp.setAttribute('aria-hidden','true');
+  timestamp.textContent=blankFor||!item.text?.trim()?'':itemTimestamp(item);timestamp.setAttribute('aria-hidden','true');
   text.setAttribute('aria-description',timestamp.textContent);
   const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
   timestampSlot.append(timestamp);
