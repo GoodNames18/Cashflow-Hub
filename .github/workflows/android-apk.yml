@@ -3,6 +3,15 @@ on:
  push:
   branches: ['Haeo!']
  workflow_dispatch:
+  inputs:
+   source_ref:
+    description: 'Optional older commit or tag to rebuild as an installable rollback'
+    required: false
+    type: string
+   release_version:
+    description: 'Next release name for a rollback, for example 2.8.9 (required with source_ref)'
+    required: false
+    type: string
 permissions:
  contents: read
  id-token: write
@@ -11,6 +20,24 @@ jobs:
   runs-on: ubuntu-latest
   steps:
    - uses: actions/checkout@v4
+     with:
+      ref: ${{ inputs.source_ref || github.ref }}
+   - name: Set rollback release version
+     env:
+      CFH_ROLLBACK_SOURCE: ${{ inputs.source_ref }}
+      CFH_RELEASE_VERSION: ${{ inputs.release_version }}
+     run: |
+      node --input-type=module <<'JS'
+      import {readFileSync,writeFileSync} from 'node:fs';
+      const version=process.env.CFH_RELEASE_VERSION;
+      if(process.env.CFH_ROLLBACK_SOURCE&&!version)throw Error('An older source must be rebuilt with the next release version.');
+      if(version){
+       if(!/^\d+\.\d+\.\d+$/.test(version))throw Error('Use a release version such as 2.8.9.');
+       const path='android/app/build.gradle',source=readFileSync(path,'utf8');
+       if(!/versionName "[^"]+"/.test(source))throw Error('Android version name was not found.');
+       writeFileSync(path,source.replace(/versionName "[^"]+"/,'versionName "'+version+'"'));
+      }
+      JS
    - uses: actions/setup-node@v4
      with:
       node-version: '24'

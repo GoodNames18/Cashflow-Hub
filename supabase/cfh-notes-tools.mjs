@@ -11,7 +11,7 @@ export function nameTotals(items){
  const groups=new Map();
  for(const item of items||[]){if(item.checked||item.divider)continue;const parsed=parseNameAmount(item.text);if(!parsed||parsed.key==='load')continue;
   const group=groups.get(parsed.key)||{cents:0,count:0,item,at:-Infinity};group.cents+=parsed.amount;group.count++;
-  const at=Number(item.addedOrder)||Number(item.createdAt)||0;if(at>=group.at){group.item=item;group.at=at;}groups.set(parsed.key,group);
+  const at=Number(item.createdAt)||0;if(at>=group.at){group.item=item;group.at=at;}groups.set(parsed.key,group);
  }
  return new Map([...groups.values()].filter(g=>g.count>1&&Number.isSafeInteger(g.cents)).map(g=>[g.item.id,'Total ₱'+money.format(g.cents/100)]));
 }
