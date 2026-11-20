@@ -20,6 +20,10 @@ export function createChecklist(host,addButton,{changed,id}){
  style.textContent=`
   #cfhNotesChecklist .cfh-note-check-row{touch-action:pan-y pinch-zoom}
   #cfhNotesChecklist .cfh-check-fixed{padding-top:2px;text-align:center;color:#514a65;font-size:13px}
+  .cfh-check-drag-ghost .cfh-check-drag-text{
+   min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:35vh;overflow:hidden;
+   font:400 16px/24px Arial,sans-serif;color:#1b1844;margin:0;
+  }
   .cfh-check-row-menu{border:0;border-radius:16px;padding:16px;color:#1b1844;background:#fff;width:min(300px,85vw)}
   .cfh-check-row-menu::backdrop{background:#1b184455}
   .cfh-check-row-menu button{display:block;width:100%;margin:4px 0;text-align:left}
@@ -182,8 +186,29 @@ export function createChecklist(host,addButton,{changed,id}){
  function place(x,y){
   if(!moving)return;
   if(!moving.active&&Math.hypot(x-moving.x,y-moving.y)<5)return;
-  if(!moving.active){moving.active=true;moving.row.classList.add('is-moving');moving.ghost=moving.row.cloneNode(true);moving.ghost.classList.add('cfh-check-drag-ghost');moving.ghost.removeAttribute('data-check-id');moving.ghost.querySelector('textarea').value=moving.row.querySelector('textarea').value;moving.ghost.setAttribute('aria-hidden','true');moving.ghost.style.width=moving.row.getBoundingClientRect().width+'px';moving.marker=document.createElement('span');moving.marker.className='cfh-check-drop-marker';moving.marker.setAttribute('aria-hidden','true');document.body.append(moving.ghost,moving.marker);}
-  moving.lastX=x;moving.lastY=y;moving.ghost.style.left=(x+10)+'px';moving.ghost.style.top=(y-15)+'px';
+  if(!moving.active){
+   endSwipe();cancelHold();document.activeElement?.blur();
+   moving.active=true;moving.row.classList.add('is-moving');
+   const source=moving.row.querySelector('textarea'),bounds=moving.row.getBoundingClientRect();
+   moving.ghost=document.createElement('div');moving.ghost.className='cfh-check-drag-ghost';
+   moving.ghost.setAttribute('aria-hidden','true');
+   const text=document.createElement('div');text.className='cfh-check-drag-text';
+   text.textContent=source.value||' ';text.style.cssText=source.style.cssText;
+   // The preview uses ordinary text so Android cannot clip a cloned text field.
+   text.style.height='auto';text.style.padding='0';text.style.width='100%';
+   moving.ghost.append(text);moving.ghost.style.width=bounds.width+'px';
+   moving.ghost.style.background=getComputedStyle(host.closest('#cfhNotesEditorBox')).getPropertyValue('--cfh-note-background')||'#fff';
+   moving.marker=document.createElement('span');moving.marker.className='cfh-check-drop-marker';
+   moving.marker.setAttribute('aria-hidden','true');document.body.append(moving.ghost,moving.marker);
+   moving.offsetX=x-bounds.left;
+  }
+  moving.lastX=x;moving.lastY=y;
+  const viewport=window.visualViewport;
+  const left=viewport?.offsetLeft||0,top=viewport?.offsetTop||0;
+  const width=viewport?.width||window.innerWidth,height=viewport?.height||window.innerHeight;
+  const preview=moving.ghost.getBoundingClientRect();
+  moving.ghost.style.left=Math.max(left+4,Math.min(x-moving.offsetX,left+width-preview.width-4))+'px';
+  moving.ghost.style.top=Math.max(top+4,Math.min(y-15,top+height-preview.height-4))+'px';
   // Keep the captured grip in its original DOM position until pointerup.
   // Reparenting its row during a touch drag can lose Android pointer capture.
   const rows=moving.rows.filter(row=>row!==moving.row),area=host.closest('.cfh-note-editor-content'),bounds=area.getBoundingClientRect();

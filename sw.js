@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v132-textbox-hold';
+const CACHE_NAME = 'cashflow-hub-v132-textbox-hold-drag-fix';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
