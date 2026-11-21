@@ -1,10 +1,13 @@
 import {money,validateRecord} from './cfh-portfolio-model.mjs';
-export function dividendBreakdown(row,tax=row.tax??0){
+// Automatic PSE cash-dividend estimates use 10%; user-entered tax and paid receipts stay intact.
+export function hasEstimatedDividendTax(row){return row.status==='upcoming'&&row.grossEstimate===true&&Number(row.tax||0)===0;}
+export function dividendTax(row){return hasEstimatedDividendTax(row)?money(money(row.shares*row.perShare)*.10):(row.tax??0);}
+export function dividendBreakdown(row,tax=dividendTax(row)){
  const gross=money(row.shares*row.perShare),text=String(tax).trim();
  if(!/^\d+(?:\.\d{1,2})?$/.test(text)||!Number.isFinite(Number(text))||Number(text)<0||Number(text)>gross)throw Error('Enter withholding tax from 0 to the gross amount, with at most two decimal places.');
  return {gross,tax:money(Number(text)),net:money(gross-Number(text))};
 }
-export function expectedDividendNet(row){return row.expectedNetAmount??money(row.shares*row.perShare-row.tax);}
+export function expectedDividendNet(row){return hasEstimatedDividendTax(row)?dividendBreakdown(row).net:(row.expectedNetAmount??money(row.shares*row.perShare-row.tax));}
 export function dividendNet(row){return row.status==='paid'?(row.receivedNetAmount??expectedDividendNet(row)):expectedDividendNet(row);}
 export function latestDividends(records){
  const map=new Map();
@@ -25,7 +28,7 @@ export function confirmDividendReceipt(row,{amount,paidDate,reference='',tax},no
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
  if(!validDate(paidDate)||paidDate>today)throw Error('Choose the actual receipt date, today or earlier.');
  if(typeof reference!=='string'||reference.trim().length>120)throw Error('Reference must be 120 characters or less.');
- const breakdown=tax===undefined?null:dividendBreakdown(row,tax);
+ const breakdown=tax===undefined?(hasEstimatedDividendTax(row)?dividendBreakdown(row):null):dividendBreakdown(row,tax);
  const expectedNetAmount=breakdown?breakdown.net:expectedDividendNet(row),receivedNetAmount=money(Number(text));
  const confirmed={...row,...(breakdown?{tax:breakdown.tax}:{}),status:'paid',recordId:row.recordId||row.id,expectedNetAmount,receivedNetAmount,varianceAmount:money(receivedNetAmount-expectedNetAmount),paidDate,confirmedAt:now.toISOString(),reference:reference.trim(),verification:'user_confirmed'};
  validateRecord(confirmed);return confirmed;

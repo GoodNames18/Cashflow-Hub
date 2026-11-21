@@ -10091,7 +10091,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
               var fieldRows = {};
               var sheetKey = String(sheet || "").toLowerCase().replace(/[^a-z0-9]/g, "");
               var editorLayouts = {
-                konek2card: {hide:["category","description"],order:["date","time","customer","amount","feeEarned"],groups:{dateTime:["date","time"],amountFee:["amount","feeEarned"]}},
+                konek2card: {hide:["category","description"],order:["date","time","customer","amount","feeEarned","details"],groups:{dateTime:["date","time"],amountFee:["amount","feeEarned"]}},
                 rental: {order:["date","time","amount","type","category","description"],groups:{dateTime:["date","time"],typeCategory:["type","category"]}},
                 moneyflow: {order:["date","time","merchant","category","amount","payment","description"],groups:{dateTime:["date","time"],merchantCategory:["merchant","category"],amountPayment:["amount","payment"]}},
                 cashinout: {hide:["description"],order:["date","time","amount","category"],groups:{dateTime:["date","time"],amountCategory:["amount","category"]}},
@@ -10135,6 +10135,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                 }
                 if (field.type === "number") control.step = field.step || "0.01";
                 if (["amount","feeEarned"].includes(field.key)) control.dataset.cfhNumber="true";
+                if (sheetKey === "konek2card" && field.key === "details") { control.maxLength = 200; control.placeholder = "Add details (optional)"; }
                 control.dataset.editKey = field.key;
                 var rawValue = field.value == null ? "" : String(field.value);
                 originalValues[field.key] = rawValue;

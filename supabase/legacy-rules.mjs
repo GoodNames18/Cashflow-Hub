@@ -1120,6 +1120,8 @@ function buildTestAtmRow_(now, amount) {
   return [now, now, 'ATM', Number(amount), '', 'Transfer', 'ATM withdrawal'];
 }
 
+function konekSystemDescription_(row){return String(row&&row[6]||'').split('\nDetails: ')[0].trim();}
+
 function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
   var sourceRows = Array.isArray(rows) ? rows : [];
   var liveStartMs = getKonek2CardEffectiveStartMs_(liveStartAt);
@@ -1182,7 +1184,7 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     var amount = Number(row[3] || 0);
     var feeEarned = getTestEarnedFeeValue_(row);
     var category = String(row[5] || '').trim().toLowerCase();
-    var description = String(row[6] || '').trim().toLowerCase();
+    var description = konekSystemDescription_(row).toLowerCase();
 
     if (category === 'balance adjustment') {
       if (/^money on card adjustment(?: — .+)?$/.test(description)) card += amount;
@@ -1364,7 +1366,7 @@ function getTestRowTimestamp_(row) {
 }
 
 function getTestEarnedFeeValue_(row) {
-  if (String(row && row[5] || '').toLowerCase()==='income' && /^(?:Earned adjustment(?: — .+)?|Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+|Monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/i.test(String(row && row[6] || ''))) return Number(row[3] || 0);
+  if (String(row && row[5] || '').toLowerCase()==='income' && /^(?:Earned adjustment(?: — .+)?|Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+|Monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/i.test(konekSystemDescription_(row))) return Number(row[3] || 0);
   var processing = getTestGcashAapProcessingFromRow_(row);
   if (processing) return processing.feeEarned;
   var aapCalculation = getTestAapCalculationFromRow_(row);
@@ -1377,7 +1379,7 @@ function getTestEarnedFeeValue_(row) {
 
 function getTestGcashAapProcessingFromRow_(row) {
   var category = String(row && row[5] || '').trim().toLowerCase();
-  var description = String(row && row[6] || '').trim();
+  var description = konekSystemDescription_(row);
   if (category !== 'transfer') return null;
 
   var match = description.match(/^AAP GCash to Card — (\d+) people, ₱([\d,]+(?:\.\d{1,2})?) book, ₱([\d,]+(?:\.\d{1,2})?) total fee$/);
@@ -1398,7 +1400,7 @@ function getTestGcashAapProcessingFromRow_(row) {
 function getTestAapCalculationFromRow_(row) {
   var customer = String(row && row[2] || '').trim();
   var category = String(row && row[5] || '').trim().toLowerCase();
-  var description = String(row && row[6] || '').trim();
+  var description = konekSystemDescription_(row);
   if (customer !== TEST_AAP_CUSTOMER_ || category !== 'collection') return null;
 
   var match = description.match(/^AAP(?: (Cash|GCash))? — (\d+) people, ₱([\d,]+(?:\.\d{1,2})?) book, ₱([\d,]+(?:\.\d{1,2})?) total fee$/);
@@ -1429,7 +1431,7 @@ var TEST_LEGACY_FEE_VALUES_ = [7, 12, 22, 32, 52];
 function isTestLoanPaymentRow_(row) {
   var amount = Number(row && row[3] || 0);
   var category = String(row && row[5] || '').trim().toLowerCase();
-  var description = String(row && row[6] || '').trim().toLowerCase();
+  var description = konekSystemDescription_(row).toLowerCase();
   return amount > 0 &&
     (category === 'expense' || category === 'expenses') &&
     (description === 'loan' || /^loan payment(?: \| principal \d+\.\d{2})?$/.test(description));
@@ -1452,7 +1454,7 @@ var TEST_START_HELD_MONEY_;
 function getTestOthersLoanEventFromRow_(row) {
   var customer = String(row && row[2] || '').trim().toLowerCase();
   var category = String(row && row[5] || '').trim().toLowerCase();
-  var description = String(row && row[6] || '').trim();
+  var description = konekSystemDescription_(row);
   var amount = Number(row && row[3] || 0);
   if (customer !== 'others loan' || category !== 'transfer' || amount <= 0) return null;
 
@@ -1473,7 +1475,7 @@ function getTestOthersLoanEventFromRow_(row) {
 function isTestLoanRebateRow_(row) {
   return Number(row && row[3] || 0) > 0 &&
     String(row && row[5] || '').trim().toLowerCase() === 'income' &&
-    String(row && row[6] || '').trim().toLowerCase() === 'loan rebate';
+    konekSystemDescription_(row).toLowerCase() === 'loan rebate';
 }
 
 var TEST_START_SAVINGS_INCLUDED_IN_TOTAL_;
@@ -1495,7 +1497,7 @@ function filterTestTransactionsFromRows_(rows, requestedFilter, liveStartAt) {
     var fee = getTestEarnedFeeValue_(row);
     var category = String(row[5] || "").trim();
     var description = String(row[6] || "").trim();
-    var text = (customer + " " + category + " " + description).toLowerCase();
+    var text = (customer + " " + category + " " + konekSystemDescription_(row)).toLowerCase();
     var matches = false;
     if (filter === "total-money") matches = true;
     else if (filter === "loan-remaining") matches = isTestLoanPaymentRow_(row) || isTestLoanRebateRow_(row);

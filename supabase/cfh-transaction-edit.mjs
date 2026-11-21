@@ -12,6 +12,12 @@ const labels = {
   merchant:'Merchant',payment:'Payment method',customer:'Customer',feeEarned:'Fee earned',
   type:'Type',notes:'Notes'
 };
+function konekDescriptionParts(value){
+ const text=String(value??''),marker='\nDetails: ',at=text.indexOf(marker);
+ if(at>=0)return {base:text.slice(0,at),details:text.slice(at+marker.length)};
+ const match=/^((?:Money on (?:Card|Hand|GCash)|Earned) adjustment)(?: — (.*))?$/i.exec(text);
+ return match?{base:match[1],details:match[2]||''}:{base:text,details:''};
+}
 function manilaParts(value) {
   const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
   const time=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value));
@@ -68,11 +74,13 @@ export function editableTransactionFields(record) {
     values.feeEarned=record.payload?.fee_earned??source[4]??0;
   }
   if(record.tab_key==='rental') values.type=record.payload?.type??source[3]??'';
-  return Object.keys(map).map(key=>({
+  const fields=Object.keys(map).map(key=>({
     key,label:labels[key],type:key==='date'?'date':key==='time'?'time':
       ['amount','feeEarned'].includes(key)?'number':key==='description'||key==='notes'?'textarea':'text',
     value:values[key]??'',step:['amount','feeEarned'].includes(key)?'0.01':undefined
   }));
+  if(record.tab_key==='konek2card')fields.push({key:'details',label:'Description (optional)',type:'textarea',value:konekDescriptionParts(source[6]??record.description).details});
+  return fields;
 }
 export function buildTransactionEdit(record,values={}) {
   const map=fieldsByTab[record?.tab_key];
@@ -83,7 +91,7 @@ export function buildTransactionEdit(record,values={}) {
   const originalTime=sourceParts(source,map.time,record.occurred_at).time;
   const date=String(values.date??originalDate);
   const time=String(values.time??originalTime);
-  const occurred_at=parseManilaDate(date,time);
+  const occurred_at=record.tab_key==='konek2card'&&date===originalDate&&time===originalTime?record.occurred_at:parseManilaDate(date,time);
   if(date!==originalDate) source[map.date]=new Date(date+'T00:00:00+08:00').toISOString();
   if(time!==originalTime) source[map.time]=new Date(date+'T'+time+':00+08:00').toISOString();
   const updated={...record,occurred_at,source_values:source,payload};
@@ -103,6 +111,11 @@ export function buildTransactionEdit(record,values={}) {
     else if(key==='feeEarned') payload.fee_earned=value;
     else if(key==='type') payload.type=value;
     else if(key==='notes') payload.notes=value;
+  }
+  if(record.tab_key==='konek2card'&&'details' in values){
+    const details=String(values.details??'').trim();if(details.length>200||/[\r\n]/.test(details))throw Error('Description must be one line and 200 characters or less.');
+    const original=konekDescriptionParts(source[6]??record.description);
+    if(details!==original.details){const description=original.base+(details?'\nDetails: '+details:'');source[6]=description;updated.description=description;}
   }
   updated.payload=payload;
   return {

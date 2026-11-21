@@ -10,7 +10,7 @@ test('edit fields are sourced from the matching Konek2Card record',()=>{
     source_values:['2026-10-16T10:30:00.000Z','2026-10-16T10:30:00.000Z','Annie',100,5,'Income','Cash-out','preserve']
   };
   const fields=editableTransactionFields(record);
-  assert.deepEqual(fields.map(field=>field.key),['date','time','customer','amount','feeEarned','category','description']);
+  assert.deepEqual(fields.map(field=>field.key),['date','time','customer','amount','feeEarned','category','description','details']);
   assert.equal(fields.find(field=>field.key==='customer').value,'Annie');
 });
 

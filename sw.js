@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v170-dividend-tax-adjustment-details';
+const CACHE_NAME = 'cashflow-hub-v171-upcoming-net-saved-descriptions';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
