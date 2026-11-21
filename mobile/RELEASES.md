@@ -9,3 +9,5 @@ Users install the newly rebuilt rollback APK over the current app without uninst
 Keep the same target release name throughout intermediate builds until its APK is delivered. Website rollbacks also require a fresh service-worker cache name. Keep newer work in Git history for later fixes.
 
 Release 2.8.9 restores the 2.8.7 application code from `5c30a3ffd4bde2f3afb326c0ba154a09fcaea3f4`. Only release metadata, offline cache identity, and rollback-build support differ.
+
+Displayed version numbering: the last component must not exceed 10. After X.Y.10, use X.(Y+1).0 (for example, 3.0.10 → 3.1.0), then continue with 3.1.1. This naming rule does not change the always-increasing Android versionCode.
