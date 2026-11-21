@@ -345,5 +345,6 @@
   "supabase/cfh-notes-navigation.mjs",
   "supabase/cfh-notes-label-manager.mjs",
   "supabase/cfh-balance-ui.mjs",
-  "supabase/cfh-balance-motion.mjs"
+  "supabase/cfh-balance-motion.mjs",
+  "images/pnb-bank-logo.png"
 ]
