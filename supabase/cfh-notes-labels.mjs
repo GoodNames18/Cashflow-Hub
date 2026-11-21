@@ -11,13 +11,14 @@ export function createLabelPicker(host,{getLabels,getSelected,select,create,requ
    const name=document.createElement('span');name.textContent=label.name;
    const check=document.createElement('input');check.type='checkbox';check.checked=getSelected()===label.id;check.setAttribute('aria-label',label.name);check.onchange=()=>apply(check.checked?label.id:'');toggle.append(name,check);row.append(toggle);
    if(requestDelete){
-    const remove=document.createElement('button');remove.type='button';remove.className='cfh-note-label-delete';remove.textContent='Delete';remove.hidden=true;remove.setAttribute('aria-label','Delete label '+label.name);remove.onclick=()=>requestDelete(label);row.append(remove);
+    const remove=document.createElement('button');remove.type='button';remove.className='cfh-note-label-delete';const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d','M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7');icon.append(path);remove.append(icon);remove.hidden=true;remove.setAttribute('aria-label','Delete label '+label.name);remove.onclick=()=>requestDelete(label);row.append(remove);
+    const reveal=()=>{for(const other of list.querySelectorAll('.cfh-note-label-delete')){other.hidden=other!==remove;other.closest('.cfh-note-label-row').classList.toggle('is-delete-visible',other===remove);}remove.hidden=false;};
     let start=null,ignoreUntil=0;
     row.addEventListener('touchstart',e=>{start=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;},{passive:true});
-    row.addEventListener('touchend',e=>{const point=start;start=null;if(!point||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-point.x,dy=Math.abs(e.changedTouches[0].clientY-point.y);if(dx< -45&&-dx>dy*1.5){for(const other of list.querySelectorAll('.cfh-note-label-delete'))other.hidden=other!==remove;remove.hidden=false;ignoreUntil=Date.now()+400;if(e.cancelable)e.preventDefault();e.stopPropagation();}},{passive:false});
+    row.addEventListener('touchend',e=>{const point=start;start=null;if(!point||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-point.x,dy=Math.abs(e.changedTouches[0].clientY-point.y);if(dx>45&&dx>dy*1.5){reveal();ignoreUntil=Date.now()+400;if(e.cancelable)e.preventDefault();e.stopPropagation();}},{passive:false});
     row.addEventListener('touchcancel',()=>{start=null;});
     row.addEventListener('click',e=>{if(Date.now()<ignoreUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
-    row.tabIndex=0;row.setAttribute('aria-label',label.name+'; swipe left or press Delete to show delete button');row.onkeydown=e=>{if(e.key==='Delete'&&e.target===row){e.preventDefault();remove.hidden=false;remove.focus();}};
+    row.tabIndex=0;row.setAttribute('aria-label',label.name+'; swipe right or press Delete to show delete button');row.onkeydown=e=>{if(e.key==='Delete'&&e.target===row){e.preventDefault();reveal();remove.focus();}};
    }
    list.append(row);
   }
@@ -39,7 +40,7 @@ export function createDeleteConfirmation(host,{permanent=false,labelName=null,ca
 export function installOptionsGestures(sheet,{back,dismiss,canGoBack}){
  let start=null,ignoreUntil=0;
  sheet.addEventListener('touchstart',e=>{
-  if(e.touches.length!==1||e.target.closest('input:not([type="checkbox"]),textarea,select')){start=null;return;}
+  if(e.touches.length!==1||e.target.closest('.cfh-note-label-row,input:not([type="checkbox"]),textarea,select')){start=null;return;}
   const touch=e.touches[0],bounds=sheet.getBoundingClientRect();start={x:touch.clientX,y:touch.clientY,top:touch.clientY<bounds.top+80,atTop:sheet.scrollTop<=0};
  },{passive:true});
  sheet.addEventListener('touchend',e=>{

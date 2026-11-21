@@ -494,12 +494,14 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-options-hint{font:13px/1.5 Arial,sans-serif;color:#514a65}
 .cfh-note-options-error{font-size:13px;color:#a3273d}
 #cfhNotesMorePanel .cfh-note-label-list{display:grid;gap:0;max-height:45dvh;overflow:auto;margin-top:8px}
-#cfhNotesMorePanel .cfh-note-label-row{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 4px;touch-action:pan-y}
+#cfhNotesMorePanel .cfh-note-label-row{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 4px;touch-action:pan-y;position:relative}
 #cfhNotesMorePanel .cfh-note-label-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1;min-width:0;min-height:44px;cursor:pointer}
-#cfhNotesMorePanel .cfh-note-label-delete{background:#a3273d;color:#fff;flex:0 0 auto;padding:8px 12px}
+#cfhNotesMorePanel .cfh-note-label-row.is-delete-visible .cfh-note-label-toggle{padding-right:40px;box-sizing:border-box}
+#cfhNotesMorePanel .cfh-note-label-delete{position:absolute;right:-7px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;min-width:44px;height:44px;padding:0;background:transparent;color:#a3273d}
+.cfh-note-label-delete svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #cfhNotesMorePanel .cfh-note-label-delete[hidden]{display:none!important}
 .cfh-note-label-row span{overflow-wrap:anywhere;min-width:0}
-#cfhNotesMorePanel .cfh-note-label-row input{width:22px;height:22px;min-width:22px;padding:0;accent-color:#009d7b;flex:0 0 22px}
+#cfhNotesMorePanel .cfh-note-label-row input{width:22px;height:22px;min-width:22px;padding:0;margin:0;accent-color:#009d7b;flex:0 0 22px}
 #cfhNotesMorePanel .cfh-note-label-create{text-align:left;overflow-wrap:anywhere;min-height:44px}
 .cfh-note-delete-actions{display:flex;gap:12px;margin-top:12px}
 #cfhNotesMorePanel .cfh-note-delete-actions button{flex:1;min-width:0;min-height:46px;border:1px solid #1b184466;border-radius:12px;background:transparent}
