@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v156-local-cash-counter';
+const CACHE_NAME = 'cashflow-hub-v157-compact-daily-cash-counter';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
