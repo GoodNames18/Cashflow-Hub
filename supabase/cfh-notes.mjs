@@ -18,7 +18,7 @@ let drag=null,ignoreNoteClickUntil=0;
 let editorSnapshot=null;
 let createdInEditor=false,activeId=null,draft=null,saveTimer,filter='all',view='grid',sort='custom',selectedColor='yellow',toastTimer,lockedY=0,bodyStyle=null;
 const colors={white:'#ffffff',yellow:'#fff5c2',mint:'#d8f6e9',lavender:'#e9e6fa',rose:'#ffe1e4',blue:'#dcedff'};
-const paths={camera:'M3 7h4l2-3h6l2 3h4v14H3ZM8 13a4 4 0 1 0 8 0 4 4 0 0 0-8 0',pinFilled:'M9 3h6l-1 6 3 4v2h-4v6l-1 2-1-2v-6H7v-2l3-4Z',pin:'M9 3h6l-1 6 3 4v2H7v-2l3-4ZM12 15v7',unarchive:'M3 4h18v4H3ZM5 8v13h14V8M12 18v-7m-3 3 3-3 3 3',listView:'M3 4h18v6H3ZM3 14h18v6H3Z',gridView:'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',close:'M5 5l14 14M19 5L5 19',notes:'M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z',reminders:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4',reminderSet:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4M9 11h6M12 8v6',label:'M3 5h11l7 7-7 7H3Z',add:'M12 4v16M4 12h16',archive:'M3 4h18v4H3ZM5 8v13h14V8M12 10v7m-3-3 3 3 3-3',deleted:'M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',settings:'m10 3 4 0 1 3 3 1 3 3-2 3v3l-3 2-1 3h-5l-1-3-3-1-2-4 2-2V7l4-1ZM9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0',help:'M12 17v.1M9 9a3 3 0 1 1 5 2l-2 2v1M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0',image:'M3 3h18v18H3ZM3 17l6-6 4 4 3-3 5 5M7 7h.1',drawing:'m4 16 12-12 4 4L8 20l-5 1ZM14 6l4 4',audio:'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8',list:'M3 3h18v18H3ZM7 12l3 3 7-7',text:'M3 5h12M9 5v15M15 12h7M18.5 12v8'};
+const paths={check:'M5 12l4 4L19 6',noColor:'M4 4l16 16M9 5l3-3 6 8a7 7 0 0 1-1 9M6 9a7 7 0 0 0 8 12',camera:'M3 7h4l2-3h6l2 3h4v14H3ZM8 13a4 4 0 1 0 8 0 4 4 0 0 0-8 0',pinFilled:'M9 3h6l-1 6 3 4v2h-4v6l-1 2-1-2v-6H7v-2l3-4Z',pin:'M9 3h6l-1 6 3 4v2H7v-2l3-4ZM12 15v7',unarchive:'M3 4h18v4H3ZM5 8v13h14V8M12 18v-7m-3 3 3-3 3 3',listView:'M3 4h18v6H3ZM3 14h18v6H3Z',gridView:'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',close:'M5 5l14 14M19 5L5 19',notes:'M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z',reminders:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4',reminderSet:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4M9 11h6M12 8v6',label:'M3 5h11l7 7-7 7H3Z',add:'M12 4v16M4 12h16',archive:'M3 4h18v4H3ZM5 8v13h14V8M12 10v7m-3-3 3 3 3-3',deleted:'M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',settings:'m10 3 4 0 1 3 3 1 3 3-2 3v3l-3 2-1 3h-5l-1-3-3-1-2-4 2-2V7l4-1ZM9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0',help:'M12 17v.1M9 9a3 3 0 1 1 5 2l-2 2v1M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0',image:'M3 3h18v18H3ZM3 17l6-6 4 4 3-3 5 5M7 7h.1',drawing:'m4 16 12-12 4 4L8 20l-5 1ZM14 6l4 4',audio:'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8',list:'M3 3h18v18H3ZM7 12l3 3 7-7',text:'M3 5h12M9 5v15M15 12h7M18.5 12v8'};
 function svg(name){const n=document.createElementNS('http://www.w3.org/2000/svg','svg');n.setAttribute('viewBox','0 0 24 24');n.setAttribute('aria-hidden','true');const p=document.createElementNS(n.namespaceURI,'path');p.setAttribute('d',paths[name]||paths.notes);if(name==='pinFilled'){p.style.fill='currentColor';p.style.stroke='none';}n.append(p);return n;}
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
 function button(text,fn,cls=''){const b=el('button',cls,text);b.type='button';b.onclick=fn;return b;}
@@ -118,7 +118,7 @@ window.addEventListener('pointercancel',()=>{if(drag?.type==='pointer')finishDra
 window.addEventListener('blur',()=>finishDrag(false));document.addEventListener('visibilitychange',()=>{if(document.hidden)finishDrag(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(drag){e.preventDefault();finishDrag(false);}else if(selection.active&&!$('cfhNotesUtility').open){e.preventDefault();selection.clear();}}});
 
-function utility(title){$('cfhNotesDrawer').close();$('cfhNotesUtilityTitle').textContent=title;$('cfhNotesUtilityBody').replaceChildren();showDialog('cfhNotesUtility');return $('cfhNotesUtilityBody');}
+function utility(title){$('cfhNotesUtility').classList.remove('cfh-note-color-picker');$('cfhNotesUtilityBody').removeAttribute('role');$('cfhNotesUtilityBody').removeAttribute('aria-label');$('cfhNotesDrawer').close();$('cfhNotesUtilityTitle').textContent=title;$('cfhNotesUtilityBody').replaceChildren();showDialog('cfhNotesUtility');return $('cfhNotesUtilityBody');}
 function editLabels(create=false){const host=utility('Labels');const form=el('form'),input=el('input');input.placeholder='New label';input.maxLength=60;input.required=true;const add=button('Create',()=>form.requestSubmit());form.append(input,add);form.onsubmit=e=>{e.preventDefault();const name=input.value.trim(),list=labels();if(!name)return;if(list.some(l=>l.name.toLowerCase()===name.toLowerCase())){toast('That label already exists.');return;}if(saveLabels([...list,{id:uid(),name}]))editLabels(true);};host.append(form);for(const label of labels()){const row=el('div','cfh-notes-label-edit'),text=el('input');text.value=label.name;text.maxLength=60;text.setAttribute('aria-label','Label name');row.append(text,button('Save',()=>{const name=text.value.trim();if(!name)return;if(labels().some(l=>l.id!==label.id&&l.name.toLowerCase()===name.toLowerCase())){toast('That label already exists.');return;}saveLabels(labels().map(l=>l.id===label.id?{...l,name}:l));render();}),button('×',()=>{if(!confirm('Remove this label? Notes will be kept.'))return;if(!write(removeLabel(read(),label.id)))return;if(saveLabels(labels().filter(l=>l.id!==label.id))){if(filter==='label:'+label.id)filter='all';editLabels();render();}}));host.append(row);}if(create)input.focus();}
 function settings(){const host=utility('Notes settings');host.append(el('p','','Notes and attachments sync across Cashflow Hub devices signed into the same account.'));host.append(el('p','','Reminder dates appear in the app. Notes notification delivery is not enabled yet.'));host.append(button('Switch list / grid',()=>{view=view==='grid'?'list':'grid';prefs();render();toast(view==='grid'?'Grid view':'List view');}));}
 function help(){const host=utility('Notes help');for(const t of ['Use the note button to create text, a checklist, an image attachment, a drawing or an audio attachment.','Notes save as you type. Pin important notes, choose a color, assign a label or set a reminder date.','Archived notes are kept separately. Deleted notes stay in Deleted until you restore or permanently delete them.','To report a problem, share the app version and a screenshot in your Cashflow Hub chat.'])host.append(el('p','',t));}
@@ -432,7 +432,7 @@ function optionsPage(title,main=false,backAction=showNoteOptions,background=sele
  noteOptions.dataset.backToMenu=String(['Reminder','Labels','Delete this note?','Delete permanently?','Delete this label?'].includes(title));
  noteOptions.style.setProperty('--cfh-note-background',colors[background]||'#fff');noteOptions.replaceChildren();
  const head=el('div','cfh-note-options-head');
- if(!main&&title!=='Reminder'){const back=button('‹',backAction);back.setAttribute('aria-label','Back to note options');head.append(back);}
+ if(!main&&!['Reminder','Labels'].includes(title)){const back=button('‹',backAction);back.setAttribute('aria-label','Back to note options');head.append(back);}
  head.append(el('h2','',title));noteOptions.append(head);
  const body=el('div','cfh-note-options-body');noteOptions.append(body);return body;
 }
@@ -464,7 +464,7 @@ function showNoteReminder(){
  }});
 }
 function showNoteLabels(){
- const body=optionsPage('Labels');
+ const body=optionsPage('Labels',false,()=>editorPanel());
  createLabelPicker(body,{
   getLabels:labels,getSelected:()=>$('cfhNotesLabel').value,
   select:id=>{const target=$('cfhNotesLabel'),previous=target.value;target.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));target.value=id;if(saveDraft())return true;target.value=previous;draft.labelId=previous;return false;},
@@ -572,7 +572,7 @@ function selectionAction(action,ids){
  if(action==='labels'){
   const notes=targets();if(!notes.length)return;
   const background=notes[0].color||'white';
-  const back=()=>{noteOptions.close();selectionAction('more',ids);};
+  const back=()=>noteOptions.close();
   const create=name=>{const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());if(existing)return existing;const label={id:uid(),name};return saveLabels([...current,label])?label:null;};
   const showLabels=()=>{
    const body=optionsPage('Labels',false,back,background);
@@ -589,8 +589,20 @@ function selectionAction(action,ids){
   };
   showLabels();$('cfhNotesUtility').close();noteOptions.hidden=false;lock();noteOptions.showModal();return;
  }
- const body=utility(action==='more'?'Selected notes':action[0].toUpperCase()+action.slice(1));
- if(action==='color'){for(const [name,value]of Object.entries(colors)){const choice=button(name,()=>done({color:name}),'cfh-selection-color');choice.style.background=value;body.append(choice);}return;}
+ const body=utility(action==='more'?'Selected notes':action==='color'?'Note color':action[0].toUpperCase()+action.slice(1));
+ if(action==='color'){
+  $('cfhNotesUtility').classList.add('cfh-note-color-picker');body.setAttribute('role','group');body.setAttribute('aria-label','Note color');
+  const notes=targets(),current=notes[0]?.color||'white',common=notes.length>0&&notes.every(note=>(note.color||'white')===current);
+  for(const [name,value]of Object.entries(colors)){
+   const checked=common&&name===current,choice=button('',()=>done({color:name}),'cfh-selection-color');
+   choice.style.background=name==='white'?'transparent':value;choice.dataset.noteColorChoice=name;
+   choice.setAttribute('aria-label',name==='white'?'No color':name[0].toUpperCase()+name.slice(1));choice.setAttribute('aria-pressed',String(checked));choice.title=choice.getAttribute('aria-label');
+   if(name==='white')choice.append(svg('noColor'));
+   if(checked){const mark=el('span','cfh-color-choice-check');mark.setAttribute('aria-hidden','true');mark.append(svg('check'));choice.append(mark);}
+   body.append(choice);
+  }
+  return;
+ }
  if(action==='more'){
   const notes=targets();
   if(notes.every(n=>n.deletedAt)){body.append(button('Restore',()=>{if(apply(n=>{return {...changeNoteState(n,'restore'),deletedAt:null};})){$('cfhNotesUtility').close();selection.clear();render();}}));}
@@ -610,6 +622,17 @@ const selectionStyle=el('style');selectionStyle.textContent=`
 .cfh-note-card.is-selected{outline:3px solid #00c99a;outline-offset:-3px;box-shadow:0 0 0 2px #00f8b955}
 .cfh-note-card{-webkit-touch-callout:none;user-select:none}
 .cfh-selection-color{border:1px solid #1b184444!important;color:#1b1844!important;min-height:44px}
+#cfhNotesUtility.cfh-note-color-picker{width:calc(100% - 48px);max-width:340px;border:0;border-radius:24px;padding:24px;background:#17221f;color:#e3ece9}
+#cfhNotesUtility.cfh-note-color-picker h2{font-size:21px;margin:0 0 18px}
+#cfhNotesUtility.cfh-note-color-picker #cfhNotesUtilityBody{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 16px;justify-items:center;padding:8px 0}
+#cfhNotesUtility.cfh-note-color-picker .cfh-selection-color{position:relative;display:grid;place-items:center;width:62px;height:62px;min-width:44px;min-height:44px;padding:0;margin:0;border:1px solid #c8d7d080!important;border-radius:50%;box-sizing:border-box}
+#cfhNotesUtility.cfh-note-color-picker .cfh-selection-color[aria-pressed="true"]{outline:2px solid #00f8b9;outline-offset:2px}
+#cfhNotesUtility.cfh-note-color-picker .cfh-selection-color[data-note-color-choice="white"]{color:#e3ece9!important}
+#cfhNotesUtility.cfh-note-color-picker svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#cfhNotesUtility.cfh-note-color-picker .cfh-color-choice-check{position:absolute;right:-5px;top:-5px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#00f8b9;color:#17221f}
+#cfhNotesUtility.cfh-note-color-picker .cfh-color-choice-check svg{width:16px;height:16px;stroke-width:2.3}
+#cfhNotesUtility.cfh-note-color-picker #cfhNotesUtilityClose{display:none}
+
 #cfhNotesUtility .cfh-note-label-row,#cfhNotesUtility .cfh-note-label-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;width:100%}
 #cfhNotesUtility .cfh-note-label-row input{width:22px;height:22px;margin:0;accent-color:#009d7b}
 #cfhNotesUtility .cfh-note-delete-actions{display:flex;gap:12px}

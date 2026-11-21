@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v163-reminder-indicators-label-sheet';
+const CACHE_NAME = 'cashflow-hub-v164-labels-close-navigation';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
