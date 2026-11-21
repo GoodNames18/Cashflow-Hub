@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v172-negative-adjustment-display';
+const CACHE_NAME = 'cashflow-hub-v173-card-due-day-payments';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
