@@ -1,3 +1,4 @@
+import {formatReminderDate,createReminderDateField} from './cfh-reminder-date.mjs';
 import {createSheetDismissal} from './cfh-sheet-dismiss.mjs';
 import {createNoteSelection,updateSelectedNotes} from './cfh-notes-selection.mjs';
 import {createLabelPicker,createDeleteConfirmation,installOptionsGestures} from './cfh-notes-labels.mjs';
@@ -121,7 +122,7 @@ function utility(title){$('cfhNotesDrawer').close();$('cfhNotesUtilityTitle').te
 function editLabels(create=false){const host=utility('Labels');const form=el('form'),input=el('input');input.placeholder='New label';input.maxLength=60;input.required=true;const add=button('Create',()=>form.requestSubmit());form.append(input,add);form.onsubmit=e=>{e.preventDefault();const name=input.value.trim(),list=labels();if(!name)return;if(list.some(l=>l.name.toLowerCase()===name.toLowerCase())){toast('That label already exists.');return;}if(saveLabels([...list,{id:uid(),name}]))editLabels(true);};host.append(form);for(const label of labels()){const row=el('div','cfh-notes-label-edit'),text=el('input');text.value=label.name;text.maxLength=60;text.setAttribute('aria-label','Label name');row.append(text,button('Save',()=>{const name=text.value.trim();if(!name)return;if(labels().some(l=>l.id!==label.id&&l.name.toLowerCase()===name.toLowerCase())){toast('That label already exists.');return;}saveLabels(labels().map(l=>l.id===label.id?{...l,name}:l));render();}),button('×',()=>{if(!confirm('Remove this label? Notes will be kept.'))return;if(!write(removeLabel(read(),label.id)))return;if(saveLabels(labels().filter(l=>l.id!==label.id))){if(filter==='label:'+label.id)filter='all';editLabels();render();}}));host.append(row);}if(create)input.focus();}
 function settings(){const host=utility('Notes settings');host.append(el('p','','Notes and attachments sync across Cashflow Hub devices signed into the same account.'));host.append(el('p','','Reminder dates appear in the app. Notes notification delivery is not enabled yet.'));host.append(button('Switch list / grid',()=>{view=view==='grid'?'list':'grid';prefs();render();toast(view==='grid'?'Grid view':'List view');}));}
 function help(){const host=utility('Notes help');for(const t of ['Use the note button to create text, a checklist, an image attachment, a drawing or an audio attachment.','Notes save as you type. Pin important notes, choose a color, assign a label or set a reminder date.','Archived notes are kept separately. Deleted notes stay in Deleted until you restore or permanently delete them.','To report a problem, share the app version and a screenshot in your Cashflow Hub chat.'])host.append(el('p','',t));}
-function reminderText(value){const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString('en-PH',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';}
+function reminderText(value){return formatReminderDate(value);}
 function render(){cancelDrag();const host=$('cfhNotesList');if(!host)return;host.replaceChildren();const q=$('cfhNotesSearch').value.trim(),all=read(),positions=new Map(manualIds(all).map((id,i)=>[id,i])),matches=all.filter(n=>noteMatches(n,filter,q)).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||(sort==='custom'?positions.get(a.id)-positions.get(b.id):compareNotes(a,b,sort)));syncSortChoices();host.classList.toggle('is-custom-order',sort==='custom');$('cfhNotesLayout').setAttribute('aria-label',view==='grid'?'Switch to list view':'Switch to grid view');$('cfhNotesLayout').setAttribute('aria-pressed',String(view==='list'));$('cfhNotesLayout').replaceChildren(svg(view==='grid'?'listView':'gridView'));
  selection.refresh(matches);
  if(!matches.length){host.append(el('p','cfh-notes-empty',q?'No matching notes.':filter==='deleted'?'No deleted notes.':filter==='archive'?'No archived notes.':filter==='reminders'?'Notes with reminder dates appear here.':'Your notes will appear here. Tap the note button to start.'));return;}
@@ -451,7 +452,7 @@ function showNoteOptions(){
  if(draft.kind!=='list'){const mode=$('cfhNotesChecklistMode');optionsRow(body,canRestoreChecklist(draft)?'Restore checklist':'Use checklist','list',()=>{editorPanel();mode.onclick();});}
 }
 function reminderFields(body,{value,hasReminder=!!value,save}){
- const label=el('label','','Date and time'),input=el('input');input.type='datetime-local';input.value=value;input.setAttribute('aria-label','Reminder date and time');label.append(input);
+ const label=el('label','','Date and time'),field=createReminderDateField(document,value),input=field.input;label.append(field.element);
  body.append(label,el('p','cfh-note-options-hint','Reminder dates appear in the app. Notification delivery for notes is not enabled.'));
  const error=el('p','cfh-note-options-error');error.setAttribute('role','status');body.append(error);
  body.append(button('Save reminder',()=>{if(input.value&&!Number.isFinite(new Date(input.value).getTime())){error.textContent='Choose a valid date and time.';return;}save(input.value);},'cfh-note-options-primary'));
@@ -518,6 +519,12 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-options-body{display:grid;gap:2px}
 #cfhNotesMorePanel input,#cfhNotesMorePanel select,#cfhNotesMorePanel textarea{box-sizing:border-box;width:100%;min-width:0;padding:12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px Arial,sans-serif}
 #cfhNotesMorePanel label{display:grid;gap:8px}
+#cfhNotesMorePanel .cfh-reminder-date-field{position:relative;display:block;min-width:0}
+#cfhNotesMorePanel .cfh-reminder-date-display{display:block;box-sizing:border-box;width:100%;min-height:46px;padding:12px 34px 12px 12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px/1.4 Arial,sans-serif}
+#cfhNotesMorePanel .cfh-reminder-date-field::after{content:'⌄';position:absolute;right:12px;top:12px;pointer-events:none}
+#cfhNotesMorePanel .cfh-reminder-date-field input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+#cfhNotesMorePanel .cfh-reminder-date-field:focus-within .cfh-reminder-date-display{outline:2px solid #00ad85;outline-offset:2px}
+
 #cfhNotesMorePanel .cfh-note-options-primary{background:#00e5ad;color:#1b1844;font-weight:600}
 .cfh-note-options-hint{font:13px/1.5 Arial,sans-serif;color:#514a65}
 .cfh-note-options-error{font-size:13px;color:#a3273d}

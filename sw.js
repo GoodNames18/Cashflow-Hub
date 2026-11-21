@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v160-reminder-dismiss-animation';
+const CACHE_NAME = 'cashflow-hub-v161-reminder-date-display';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
