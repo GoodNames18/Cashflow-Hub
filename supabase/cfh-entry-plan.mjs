@@ -64,9 +64,16 @@ export function planEntry(params, now = new ManilaDate()) {
     }
     case 'twiceAdd':
     case 'printingAdd': {
-      const entry=params.action==='twiceAdd'?rules.parseTwiceAsNyceEntry_(params.text,params.category):
+      const entry=params.action==='twiceAdd'?(params.account==='PNB'?{amount:cents(params.amount),category:params.category,description:''}:rules.parseTwiceAsNyceEntry_(params.text,params.category)):
         rules.parsePrintingEntry_(params.text,params.category);
       tab=params.action==='twiceAdd'?'twice_as_nyce':'printing';
+      if(params.action==='twiceAdd' && params.account==='PNB') {
+        if(!['Income','Expense'].includes(params.category))throw Error('Choose Income or Expense.');
+        entry.amount=cents(params.amount);
+        const detail=String(params.description||'').trim();
+        if(!detail||detail.length>200||/[\r\n]/.test(detail))throw Error('Enter a description of 200 characters or less.');
+        entry.description='[PNB] '+detail;
+      }
       rows=[[date,date,entry.amount,entry.category,entry.description]];receipt=entry;break;
     }
     case 'gcashQuickAdd':

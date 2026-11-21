@@ -2270,6 +2270,7 @@ function getTwiceAsNyceDashboardData(selectedYear, selectedMonth) {
   var income = 0;
   var totalIncome = 0;
   var totalExpenses = 0;
+  var pnbCents = 90078;
   var expenses = 0;
   var transactions = 0;
   var recentTransactions = [];
@@ -2348,6 +2349,7 @@ function getTwiceAsNyceDashboardData(selectedYear, selectedMonth) {
           continue;
         }
 
+        if (/^\[PNB\] /.test(description)) pnbCents += (isIncome ? 1 : -1) * Math.round(amount * 100);
         if (isIncome) totalIncome += amount;
         else totalExpenses += amount;
 
@@ -2420,7 +2422,8 @@ function getTwiceAsNyceDashboardData(selectedYear, selectedMonth) {
     ),
     income: income,
     totalIncome: totalIncome,
-    totalMoney: totalIncome - totalExpenses,
+    totalMoney: Math.round((900.78 + totalIncome - totalExpenses)*100)/100,
+    bankBalance: pnbCents/100,
     expenses: expenses,
     profit: income - expenses,
     transactions: transactions,

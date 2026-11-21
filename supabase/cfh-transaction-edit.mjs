@@ -64,6 +64,7 @@ export function editableTransactionFields(record) {
     category:source[map.category]??record.category??'',
     description:source[map.description]??record.description??''
   };
+  if(record.tab_key==='twice_as_nyce' && /^\[PNB\] /.test(values.description)) values.description=values.description.slice(6);
   if(record.tab_key==='life_log') values.notes=record.payload?.notes??source[4]??'';
   if(record.tab_key==='money_flow') {
     values.merchant=record.payload?.merchant??source[2]??'';
@@ -98,9 +99,10 @@ export function buildTransactionEdit(record,values={}) {
   for(const [key,index] of Object.entries(map)) {
     if(key==='date'||key==='time'||!(key in values)) continue;
     if(String(values[key]??'')===String(source[index]??'')) continue;
-    const value=['amount','feeEarned'].includes(key)
+    let value=['amount','feeEarned'].includes(key)
       ? moneyValue(values[key],key,{allowZero:key==='feeEarned'})
       : textValue(values[key],key);
+    if(key==='description' && record.tab_key==='twice_as_nyce' && /^\[PNB\] /.test(record.description)) value='[PNB] '+value.replace(/^\[PNB\] /,'');
     source[index]=value;
     if(key==='amount') updated.amount=value;
     else if(key==='category') updated.category=value;
