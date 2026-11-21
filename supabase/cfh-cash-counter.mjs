@@ -1,3 +1,4 @@
+import {formatTextField} from './cfh-number-format.mjs';
 export const denominations = Object.freeze([1000,500,200,100,50,20,10,5,1]);
 export const storageKey = 'cashflow-hub:cash-counter-v1';
 export function normalizeCounts(value) {
@@ -24,7 +25,7 @@ export function mountCashCounter(root, storage, {now = Date.now, schedule = true
   try { saved = JSON.parse(storage.getItem(storageKey)); } catch {}
   let {counts, date} = restoreDailyCount(saved, now());
   const peso = n => '₱' + n.toLocaleString('en-PH');
-  root.innerHTML = `<header class="cash-heading"><div><p>MONEY</p><h1>Cash counter</h1></div><button type="button" id="cashReset">Clear</button></header><section class="cash-summary" aria-label="Counted cash"><span>Total cash</span><strong id="cashTotal" aria-live="polite"></strong><small id="cashPieces"></small></section><div class="cash-columns" aria-hidden="true"><span>Denomination</span><span>Quantity</span><span>Subtotal</span></div><div class="cash-rows">${denominations.map(d=>`<label class="cash-row"><span class="cash-denomination">${peso(d)}</span><input data-cash="${d}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0" aria-label="Quantity of ${d} peso bills or coins"><output data-subtotal="${d}"></output></label>`).join('')}</div><p class="cash-local" id="cashStatus" role="status">Saved on this device · Resets at 12 AM (PH)</p><dialog id="cashConfirm"><h2>Clear cash count?</h2><p>This resets all quantities to zero.</p><div><button type="button" id="cashCancel">Cancel</button><button type="button" id="cashClear">Clear</button></div></dialog>`;
+  root.innerHTML = `<header class="cash-heading"><div><p>MONEY</p><h1>Cash counter</h1></div><button type="button" id="cashReset">Clear</button></header><section class="cash-summary" aria-label="Counted cash"><span>Total cash</span><strong id="cashTotal" aria-live="polite"></strong><small id="cashPieces"></small></section><div class="cash-columns" aria-hidden="true"><span>Denomination</span><span>Quantity</span><span>Subtotal</span></div><div class="cash-rows">${denominations.map(d=>`<label class="cash-row"><span class="cash-denomination">${peso(d)}</span><input data-cash="${d}" type="text" inputmode="numeric" pattern="[0-9,]*" maxlength="7" placeholder="0" aria-label="Quantity of ${d} peso bills or coins"><output data-subtotal="${d}"></output></label>`).join('')}</div><p class="cash-local" id="cashStatus" role="status">Saved on this device · Resets at 12 AM (PH)</p><dialog id="cashConfirm"><h2>Clear cash count?</h2><p>This resets all quantities to zero.</p><div><button type="button" id="cashCancel">Cancel</button><button type="button" id="cashClear">Clear</button></div></dialog>`;
   const status = root.querySelector('#cashStatus');
   function render() {
     root.querySelector('#cashTotal').textContent = peso(cashTotal(counts));
@@ -43,13 +44,13 @@ export function mountCashCounter(root, storage, {now = Date.now, schedule = true
     render(); persist();
   }
   root.querySelectorAll('[data-cash]').forEach(input=>{
-    input.value = counts[input.dataset.cash] || '';
+    input.value = counts[input.dataset.cash] || '';formatTextField(input);
     input.addEventListener('input',()=>{
       const typed = input.value.replace(/[^0-9]/g,'').slice(0,6);
       checkDay();
       input.value = typed;
       counts[input.dataset.cash] = Number(input.value || 0);
-      render(); persist();
+      formatTextField(input);render(); persist();
     });
   });
   const dialog=root.querySelector('#cashConfirm');

@@ -3264,12 +3264,12 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
               <div id="testLoanTitle" class="test-modal-title">LOAN PAYMENT AMOUNT</div>
               <div id="testLoanInstructions" class="test-modal-note">Edit both amounts. Payment must be greater than rebate.</div>
               <label id="testLoanAmountLabel" for="testLoanAmountInput">Payment</label>
-              <input id="testLoanAmountInput" class="quick-custom-input" type="number" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
+              <input id="testLoanAmountInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
               <label id="testLoanRebateLabel" for="testLoanRebateInput">Rebate</label>
-              <input id="testLoanRebateInput" class="quick-custom-input" type="number" inputmode="decimal" min="0.01" step="0.01" aria-label="Loan rebate amount">
+              <input id="testLoanRebateInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" step="0.01" aria-label="Loan rebate amount">
               <div id="testLoanPrincipalField">
                 <label for="testLoanPrincipalInput">Principal paid (optional)</label>
-                <input id="testLoanPrincipalInput" class="quick-custom-input" type="number" inputmode="decimal" min="0.01" step="0.01">
+                <input id="testLoanPrincipalInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" step="0.01">
               </div>
               <div id="testLoanLenderField" hidden>
                 <label for="testLoanLenderInput">Lender (optional)</label>
@@ -3341,19 +3341,19 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                 <div class="test-add-money-adjustments">
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on Card</span><strong id="testAddMoneyCardCurrent">—</strong></span>
-                    <input id="testAddMoneyCardInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on Card adjustment">
+                    <input id="testAddMoneyCardInput" type="text" data-cfh-number="true" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on Card adjustment">
                   </label>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on Hand</span><strong id="testAddMoneyCashCurrent">—</strong></span>
-                    <input id="testAddMoneyCashInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on Hand adjustment">
+                    <input id="testAddMoneyCashInput" type="text" data-cfh-number="true" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on Hand adjustment">
                   </label>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on GCash</span><strong id="testAddMoneyGcashCurrent">—</strong></span>
-                    <input id="testAddMoneyGcashInput" type="number" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
+                    <input id="testAddMoneyGcashInput" type="text" data-cfh-number="true" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
                   </label>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></span>
-                    <input id="testAddMoneyEarnedInput" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
+                    <input id="testAddMoneyEarnedInput" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
                   </label>
                 </div>
               </div>
@@ -3368,21 +3368,21 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
               <div class="balance-check-row" data-balance-check-row="card">
                 <label for="testBalanceCheckCard">Money on Card</label>
                 <span class="balance-check-system">In app: <strong id="testBalanceCheckCardSystem">—</strong></span>
-                <input id="testBalanceCheckCard" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
+                <input id="testBalanceCheckCard" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
                 <span class="balance-check-difference" id="testBalanceCheckCardDifference"></span>
                 <button class="balance-check-review" data-balance-check-review="card" type="button" hidden onclick="reviewTestBalanceCheckTransactions('card')">Review Card transactions</button>
               </div>
               <div class="balance-check-row" data-balance-check-row="cashOnHand">
                 <label for="testBalanceCheckCash">Money on Hand</label>
                 <span class="balance-check-system">In app: <strong id="testBalanceCheckCashSystem">—</strong></span>
-                <input id="testBalanceCheckCash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
+                <input id="testBalanceCheckCash" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
                 <span class="balance-check-difference" id="testBalanceCheckCashDifference"></span>
                 <button class="balance-check-review" data-balance-check-review="cash" type="button" hidden onclick="reviewTestBalanceCheckTransactions('cash')">Review Hand transactions</button>
               </div>
               <div class="balance-check-row" data-balance-check-row="gcash">
                 <label for="testBalanceCheckGcash">Money on GCash</label>
                 <span class="balance-check-system">In app: <strong id="testBalanceCheckGcashSystem">—</strong></span>
-                <input id="testBalanceCheckGcash" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
+                <input id="testBalanceCheckGcash" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" placeholder="Enter actual amount">
                 <span class="balance-check-difference" id="testBalanceCheckGcashDifference"></span>
                 <button class="balance-check-review" data-balance-check-review="gcash" type="button" hidden onclick="reviewTestBalanceCheckTransactions('gcash')">Review GCash transactions</button>
               </div>
@@ -3733,8 +3733,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
     function cfhCalendarCloseMonthPicker() { document.getElementById('cfhMonthPicker').hidden = true; }
     function cfhCalendarApplyMonthPicker() {
-      const month = Number(document.getElementById('cfhMonthSelect').value);
-      const year = Number(document.getElementById('cfhYearInput').value);
+      const month = cfhNumber(document.getElementById('cfhMonthSelect').value);
+      const year = cfhNumber(document.getElementById('cfhYearInput').value);
       if (!Number.isInteger(year) || year < 1900 || year > 2100 || !Number.isInteger(month) || month < 0 || month > 11) return;
       cfhCalendarState.month = new Date(year,month,1);
       cfhCalendarState.selected = new Date(year,month,Math.min(cfhCalendarState.selected.getDate(),new Date(year,month+1,0).getDate()));
@@ -3809,7 +3809,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
     function cfhMetrobankStatementUnlocked(statementKey) {
       return statementKey.slice(0,7) >= '2026-10' &&
-        Number(statementKey.slice(0,4)) <= cfhMetrobankUnlockedThrough();
+        cfhNumber(statementKey.slice(0,4)) <= cfhMetrobankUnlockedThrough();
     }
     function cfhMetrobankEntriesForDate(key) {
       const [y,m] = key.split('-').map(Number);
@@ -3888,7 +3888,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       if(entry.date===key)return true;
       const custom=entry.repeat==='custom',unit=custom?entry.repeatUnit:entry.repeat;
       if(!unit||unit==='none')return false;
-      const interval=custom?Math.max(1,Number(entry.repeatInterval)||1):1;
+      const interval=custom?Math.max(1,cfhNumber(entry.repeatInterval)||1):1;
       const [sy,sm,sd]=entry.date.split('-').map(Number),[y,m,d]=key.split('-').map(Number);
       const days=Math.round((Date.UTC(y,m-1,d)-Date.UTC(sy,sm-1,sd))/86400000);
       if(unit==='daily')return days%interval===0;
@@ -4126,7 +4126,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       const key=form.dataset.savedCardKey||('duplicate-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2)));
       form.dataset.savedCardKey=key;
       const prefs=cfhCardPanelPreferences();
-      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:Number(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:Number(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:true,reminderDays:[7,5,3,2,1,0],confirmedCycles:{}};
+      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:cfhNumber(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:cfhNumber(value('cfhAddDueDays')),start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:true,reminderDays:[7,5,3,2,1,0],confirmedCycles:{}};
       try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save card.');return;}
       const [y,m,d]=start.split('-').map(Number);cfhCalendarState.selected=new Date(y,m-1,d);cfhCalendarState.month=new Date(y,m-1,1);
       await cfhFinishCalendarSave();cfhSaveNavigationState();
@@ -4150,10 +4150,10 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         time: document.getElementById('cfhEventAllDay').checked?'':document.getElementById('cfhEditorTime').value,
         allDay:document.getElementById('cfhEventAllDay').checked,
         deadline:document.getElementById('cfhEventDeadline').value,
-        repeatInterval:Number(document.getElementById('cfhEventInterval').value)||1,
+        repeatInterval:cfhNumber(document.getElementById('cfhEventInterval').value)||1,
         repeatUnit:document.getElementById('cfhEventUnit').value,
         repeatUntil:document.getElementById('cfhEditorRepeat').value==='custom'?document.getElementById('cfhEventRepeatEnd').value:'',
-        amount: (type === 'statement' || type === 'due') && amountValue !== '' ? Number(amountValue) : null,
+        amount: (type === 'statement' || type === 'due') && amountValue !== '' ? cfhNumber(amountValue) : null,
         repeat: document.getElementById('cfhEditorRepeat').value,
         notes: document.getElementById('cfhEditorNotes').value.trim()
       };
@@ -4384,7 +4384,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       cfhCardPanelRender();
     }
     function cfhStatementDayText(value){
-      const day=Number(value);if(!value||!Number.isInteger(day)||day<1||day>31)return '';
+      const day=cfhNumber(value);if(!value||!Number.isInteger(day)||day<1||day>31)return '';
       const suffix=day%100>=11&&day%100<=13?'th':({1:'st',2:'nd',3:'rd'}[day%10]||'th');
       return day+suffix+' of every month';
     }
@@ -4409,9 +4409,9 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
     function cfhTime12Text(value){
       if(!/^\d{2}:\d{2}$/.test(value||''))return '--:-- AM/PM';
-      const hour=Number(value.slice(0,2));return String(hour%12||12).padStart(2,'0')+value.slice(2)+' '+(hour<12?'AM':'PM');
+      const hour=cfhNumber(value.slice(0,2));return String(hour%12||12).padStart(2,'0')+value.slice(2)+' '+(hour<12?'AM':'PM');
     }
-    function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(Number(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
+    function cfhTimePeriod(value){return /^\d{2}:\d{2}$/.test(value||'')?(cfhNumber(value.slice(0,2))<12?'AM':'PM'):'AM/PM';}
     function cfhCardNotificationTime(entry){
       const bank=cfhCardKey(entry);
       const value=bank?(cfhEntryPrefs(entry).notificationTime||(entry.type==='statement-check'?'09:00':'')):entry.time;
@@ -4464,11 +4464,11 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         const prefix=document.createElement('span');prefix.className='cfh-peso-prefix';prefix.textContent='₱';prefix.setAttribute('aria-hidden','true');
         const amount=document.createElement('input');amount.type='text';amount.inputMode='decimal';amount.placeholder='0.00';
         const group=raw=>raw.replace(/^\d+/,digits=>digits.replace(/\B(?=(\d{3})+(?!\d))/g,','));
-        amount.value=bill.amount==null?'':group(Number(bill.amount).toFixed(2));
+        amount.value=bill.amount==null?'':group(cfhNumber(bill.amount).toFixed(2));
         const formatInput=()=>{
           const raw=amount.value.replace(/,/g,''),start=amount.selectionStart;
           const left=amount.value.slice(0,start).replace(/,/g,'').length;
-          const valid=/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})?$/.test(raw)&&Number(raw)<=Number.MAX_SAFE_INTEGER/100;
+          const valid=/^(?:\d+(?:\.\d{0,2})?|\.\d{1,2})?$/.test(raw)&&cfhNumber(raw)<=Number.MAX_SAFE_INTEGER/100;
           amount.setCustomValidity(valid?'':'Enter a positive amount with up to two decimal places.');
           if(!valid)return;
           const next=group(raw);
@@ -4479,7 +4479,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         };
         amount.addEventListener('input',formatInput);
         wrap.append(prefix,amount);label.append(wrap);
-        const readAmount=()=>amount.value===''?null:Number(amount.value.replace(/,/g,''));
+        const readAmount=()=>amount.value===''?null:cfhNumber(amount.value.replace(/,/g,''));
         let savedAmount=bill.amount??null;
         const saveAmount=()=>{
           formatInput();
@@ -4598,7 +4598,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         value.bankName=nameInputs.bankName.value.trim();value.cardName=nameInputs.cardName.value.trim();
         if(!imageInput.disabled&&imageInput.value)value.image=imageInput.value;
         if(entry.cfhDuplicate)value.eventType='both';
-        const statementDay=Number(scheduleInputs.statementDay.value),dueDays=Number(scheduleInputs.dueDays.value);
+        const statementDay=cfhNumber(scheduleInputs.statementDay.value),dueDays=cfhNumber(scheduleInputs.dueDays.value);
         if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
           if(statementDay!==recurring.statementDay||dueDays!==recurring.dueDays)value.scheduleFrom=value.scheduleFrom||cfhCalendarDateKey(new Date()).slice(0,7);
           value.statementDay=statementDay;if(!cfhIsAtomeCard(value))value.dueDays=dueDays;
@@ -4807,7 +4807,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       entries.sort((a,b)=>a.cfhDisplayDate.localeCompare(b.cfhDisplayDate)||(a.time||'').localeCompare(b.time||''));
       schedule.replaceChildren();
       const todayKey=cfhCalendarDateKey(new Date());
-      const isCurrentMonth=view.getFullYear()===Number(todayKey.slice(0,4))&&view.getMonth()===Number(todayKey.slice(5,7))-1;
+      const isCurrentMonth=view.getFullYear()===cfhNumber(todayKey.slice(0,4))&&view.getMonth()===cfhNumber(todayKey.slice(5,7))-1;
       const selectedDateKey=cfhCalendarState.filterSelectedDate&&!cfhCalendarState.selectionCleared&&!query.trim()?cfhCalendarDateKey(cfhCalendarState.selected):null;
       if(selectedDateKey){entries=entries.filter(entry=>entry.cfhDisplayDate===selectedDateKey);label.textContent=cfhCalendarState.selected.toLocaleDateString('en-PH',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
       const monthKey=cfhCalendarDateKey(view).slice(0,7);
@@ -4994,6 +4994,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('cfhEditorOverlay')&&!document.getElementById('cfhEditorOverlay').hidden)cfhEditorClose()});
 
 
+    function cfhNumber(value){return Number(typeof value==='string'?value.replace(/,/g,''):value);}
     let currentAppPage = "gcash";
 
     const CFH_NAV_KEY = 'cashflow-hub:navigation-v2';
@@ -5086,13 +5087,13 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var value = dashboardSelectedMonths[page] || (page === "rental" ? "all" : currentDashboardMonthValue());
       if (page === "rental" && value === "all") return {year:"all",month:"all"};
       var parts = value.split("-");
-      return { year: Number(parts[0]), month: Number(parts[1]) };
+      return { year: cfhNumber(parts[0]), month: cfhNumber(parts[1]) };
     }
 
     function dashboardMonthLabel(value) {
       var parts = String(value || "").split("-");
-      var year = Number(parts[0]);
-      var month = Number(parts[1]);
+      var year = cfhNumber(parts[0]);
+      var month = cfhNumber(parts[1]);
       if (!year || !month) return "";
       return new Date(year, month - 1, 1).toLocaleDateString("en-US", {
         month: "long",
@@ -5119,8 +5120,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var firstValue = firstMonths[page] || "2025-03";
       var firstParts = firstValue.split("-");
       var currentParts = currentDashboardMonthValue().split("-");
-      var cursor = new Date(Number(currentParts[0]), Number(currentParts[1]) - 1, 1);
-      var first = new Date(Number(firstParts[0]), Number(firstParts[1]) - 1, 1);
+      var cursor = new Date(cfhNumber(currentParts[0]), cfhNumber(currentParts[1]) - 1, 1);
+      var first = new Date(cfhNumber(firstParts[0]), cfhNumber(firstParts[1]) - 1, 1);
       var options = [];
 
       while (cursor.getTime() >= first.getTime()) {
@@ -5200,12 +5201,12 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
     // GCASH QUICK QUANTITY PURE HELPERS START
     function normalizeGcashQuickQuantity(value) {
-      var quantity = Math.floor(Number(value) || 1);
+      var quantity = Math.floor(cfhNumber(value) || 1);
       return Math.max(1, quantity);
     }
 
     function calculateGcashQuickTotal(amount, quantity) {
-      return Number(amount || 0) * normalizeGcashQuickQuantity(quantity);
+      return cfhNumber(amount || 0) * normalizeGcashQuickQuantity(quantity);
     }
 
     function buildGcashQuickDisplayAmounts(quantity) {
@@ -6752,7 +6753,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           "konekTransactions"
         )
         .innerText =
-          Number(
+          cfhNumber(
             data.transactions || 0
           ).toLocaleString("en-PH");
 
@@ -6763,12 +6764,12 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
       profit.classList.toggle(
         "income-value",
-        Number(data.profit || 0) >= 0
+        cfhNumber(data.profit || 0) >= 0
       );
 
       profit.classList.toggle(
         "expense-value",
-        Number(data.profit || 0) < 0
+        cfhNumber(data.profit || 0) < 0
       );
 
       renderKonek2CardRecentTransactions(data.recentTransactions || []);
@@ -6870,10 +6871,10 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var raw = String(text || "").replace(/\s+/g, " ").trim();
       if (!raw) throw new Error("Enter customer and cash-out amount.");
 
-      var match = raw.match(/(?:^|\s)(?:\u20B1\s*)?(\d+(?:\.\d+)?)(k)?(?=\s|$)/i);
+      var match = raw.match(/(?:^|\s)(?:\u20B1\s*)?(\d[\d,]*(?:\.\d+)?)(k)?(?=\s|$)/i);
       if (!match) throw new Error("Cash-out amount not found.");
 
-      var amount = Number(match[1]);
+      var amount = cfhNumber(match[1]);
       if (match[2]) amount *= 1000;
 
       var customer = (raw.slice(0, match.index) + " " + raw.slice(match.index + match[0].length))
@@ -6885,7 +6886,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
     function validateTestCashOutAmountClient(amount) {
-      var value = Number(amount);
+      var value = cfhNumber(amount);
       if (!isFinite(value)) throw new Error("Invalid cash-out amount.");
       if (value < 100) throw new Error("Minimum cash-out is \u20B1100.");
       if (value > 10000) throw new Error("Maximum cash-out is \u20B110,000.");
@@ -6903,8 +6904,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
     function buildTestPreviewText(entry) {
       return String(entry.customer || "") +
-        " \u2022 \u20B1" + Number(entry.amount || 0).toLocaleString("en-PH") +
-        " cash-out \u2022 \u20B1" + Number(entry.feeEarned || 0).toLocaleString("en-PH") +
+        " \u2022 \u20B1" + cfhNumber(entry.amount || 0).toLocaleString("en-PH") +
+        " cash-out \u2022 \u20B1" + cfhNumber(entry.feeEarned || 0).toLocaleString("en-PH") +
         " fee earned";
     }
     // TEST CASHOUT PURE HELPERS END
@@ -6915,8 +6916,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var match = raw.match(/^([\d,]+(?:\.\d{1,2})?)\s+(?:\u20B1\s*)?([\d,]+(?:\.\d{1,2})?)$/);
       if (!match) throw new Error("Enter people and total received in either order, for example: 2 2450.");
 
-      var first = Number(match[1].replace(/,/g, ""));
-      var second = Number(match[2].replace(/,/g, ""));
+      var first = cfhNumber(match[1].replace(/,/g, ""));
+      var second = cfhNumber(match[2].replace(/,/g, ""));
       var people = Math.min(first, second);
       var totalReceived = Math.max(first, second);
       if (!isFinite(people) || people <= 0 || people % 1 !== 0) {
@@ -6929,23 +6930,23 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
     function calculateTestAapClient(people, bookTotal) {
-      var totalFee = Number(people) * 5;
-      var systemFee = Number(people) * 2;
-      var feeEarned = Number(people) * 3;
+      var totalFee = cfhNumber(people) * 5;
+      var systemFee = cfhNumber(people) * 2;
+      var feeEarned = cfhNumber(people) * 3;
       return {
         customer: "Batasan M3",
-        people: Number(people),
-        bookTotal: Number(bookTotal),
+        people: cfhNumber(people),
+        bookTotal: cfhNumber(bookTotal),
         totalFee: totalFee,
         systemFee: systemFee,
         feeEarned: feeEarned,
-        cashReceived: Number(bookTotal) + totalFee,
-        appDeduction: Number(bookTotal) + systemFee
+        cashReceived: cfhNumber(bookTotal) + totalFee,
+        appDeduction: cfhNumber(bookTotal) + systemFee
       };
     }
 
     function formatTestAapPesoClient(value) {
-      return "\u20B1" + Number(value || 0).toLocaleString("en-PH", {
+      return "\u20B1" + cfhNumber(value || 0).toLocaleString("en-PH", {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
       });
@@ -7086,7 +7087,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         .forEach(function(button) {
           button.addEventListener("click", function() {
             closeTestAtmModal();
-            saveTestAtmWithdrawal(Number(button.getAttribute("data-atm-amount")));
+            saveTestAtmWithdrawal(cfhNumber(button.getAttribute("data-atm-amount")));
           });
         });
 
@@ -7229,7 +7230,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       setTestActionButtonsDisabled(true);
 
       jsonpRequest(
-        { action: "testCashOut", text: text },
+        { action: "testCashOut", text: text.replace(/(\d),(?=\d)/g,"$1") },
         function(result) {
           setTestActionButtonsDisabled(false);
           if (input) input.value = "";
@@ -7271,7 +7272,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function parseTestTransferNumberClient(value) {
       var token = String(value || "").trim().toLowerCase();
       var kMatch = token.match(/^([0-9]+(?:\.[0-9]+)?)k$/);
-      return kMatch ? Number(kMatch[1]) * 1000 : Number(token);
+      return kMatch ? cfhNumber(kMatch[1]) * 1000 : cfhNumber(token);
     }
 
     function parseTestTransferAmountClient(text) {
@@ -7379,7 +7380,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         var source = document.getElementById(ids[targetId]);
         if (target && source) target.textContent = source.textContent || "—";
       });
-      var total = Number(String((document.getElementById("testTotalMoney") || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+      var total = cfhNumber(String((document.getElementById("testTotalMoney") || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
       [
         { input: "testAddMoneyCardInput", current: "testAddMoneyCardCurrent" },
         { input: "testAddMoneyCashInput", current: "testAddMoneyCashCurrent" },
@@ -7389,24 +7390,24 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         var current = document.getElementById(item.current);
         var source = document.getElementById(ids[item.current]);
         var raw = String(input && input.value || "").trim();
-        var amount = raw ? Number(raw.replace(/[₱,\\s]/g, "")) : 0;
+        var amount = raw ? cfhNumber(raw.replace(/[₱,\\s]/g, "")) : 0;
         if (!Number.isFinite(amount)) amount = 0;
-        var base = Number(String((source || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+        var base = cfhNumber(String((source || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
         if (current) current.textContent = formatPeso(base + amount);
         total += amount;
       });
       var earnedInput = document.getElementById("testAddMoneyEarnedInput");
       var earnedRaw = String(earnedInput && earnedInput.value || "").trim();
-      var earnedAmount = earnedRaw ? Number(earnedRaw.replace(/[₱,\\s]/g, "")) : 0;
+      var earnedAmount = earnedRaw ? cfhNumber(earnedRaw.replace(/[₱,\\s]/g, "")) : 0;
       if (!Number.isFinite(earnedAmount)) earnedAmount = 0;
       total += earnedAmount;
       var earnedTarget = document.getElementById("testAddMoneyTotalEarned");
       var earnedSource = document.getElementById("testTotalEarned");
-      var earnedBase = Number(String((earnedSource || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+      var earnedBase = cfhNumber(String((earnedSource || {}).textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
       if (earnedTarget) earnedTarget.textContent = formatPeso(earnedBase + earnedAmount);
       var cardTarget = document.getElementById("testAddMoneyCardCurrent");
       if (cardTarget && earnedAmount) {
-        var cardPreview = Number(String(cardTarget.textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
+        var cardPreview = cfhNumber(String(cardTarget.textContent || "0").replace(/[₱,\\s]/g, "")) || 0;
         cardTarget.textContent = formatPeso(cardPreview + earnedAmount);
       }
       var totalTarget = document.getElementById("testAddMoneyTotalMoney");
@@ -7432,7 +7433,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function parseSignedBalanceAdjustment(input, label) {
       var raw = String(input && input.value || "").trim().replace(/[₱,\\s]/g, "");
       if (!raw) return null;
-      var value = Number(raw);
+      var value = cfhNumber(raw);
       if (!Number.isFinite(value) || value === 0 || Math.abs(value * 100 - Math.round(value * 100)) > 0.000001) {
         throw new Error(label + " needs a non-zero amount with at most two decimal places.");
       }
@@ -7463,7 +7464,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var amount;
       try {
         if (input.id === "testAddMoneyEarnedInput") {
-          amount = Number(raw.replace(/[₱,\\s]/g, ""));
+          amount = cfhNumber(raw.replace(/[₱,\\s]/g, ""));
           if (!Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
             throw new Error("Total Earned needs a positive amount with at most two decimal places.");
           }
@@ -7586,7 +7587,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         if (input) input.focus();
         return;
       }
-      var values = parts.map(function(part) { return Number(part.replace(/[₱,]/g, "")); });
+      var values = parts.map(function(part) { return cfhNumber(part.replace(/[₱,]/g, "")); });
       if (!values.every(Number.isFinite) || values[0] === values[1]) {
         setTestStatus("❌ Enter two different valid amounts; the higher is interest.", "error");
         if (input) input.focus();
@@ -7610,7 +7611,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function saveTestHoldMoney(action) {
       var input = document.getElementById("testTransactionInput");
       var raw = input ? input.value.trim().replace(/[₱,\s,]/g, "") : "";
-      var amount = Number(raw);
+      var amount = cfhNumber(raw);
       if (!raw || !Number.isFinite(amount) || amount <= 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
         setTestStatus("❌ Enter a positive amount with at most two decimal places.", "error");
         if (input) input.focus();
@@ -7734,9 +7735,9 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
     function updateTestLoanWarning() {
-      var payment = Number(document.getElementById("testLoanAmountInput").value);
-      var rebate = Number(document.getElementById("testLoanRebateInput").value);
-      var card = Number(latestTestDashboardData?.card);
+      var payment = cfhNumber(document.getElementById("testLoanAmountInput").value);
+      var rebate = cfhNumber(document.getElementById("testLoanRebateInput").value);
+      var card = cfhNumber(latestTestDashboardData?.card);
       var next = Math.round((card - payment + rebate) * 100) / 100;
       showTestLoanMessage(testLoanMode === "payment" && payment > rebate && next < 0
         ? "Your card balance will be " + formatPeso(next) + " after this payment and rebate. You can still save it."
@@ -7748,16 +7749,16 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       if (save.disabled) return;
       var other = testLoanMode === "other";
       var add = testLoanMode !== "payment";
-      var payment = document.getElementById("testLoanAmountInput").value;
-      var rebate = document.getElementById("testLoanRebateInput").value;
-      var principal = document.getElementById("testLoanPrincipalInput").value;
+      var payment = document.getElementById("testLoanAmountInput").value.replace(/,/g, "");
+      var rebate = document.getElementById("testLoanRebateInput").value.replace(/,/g, "");
+      var principal = document.getElementById("testLoanPrincipalInput").value.replace(/,/g, "");
       var netToCard;
       if (add) {
-        var amountCents = Math.round(Number(payment) * 100);
-        var feeCents = Math.round(Number(rebate) * 100);
+        var amountCents = Math.round(cfhNumber(payment) * 100);
+        var feeCents = Math.round(cfhNumber(rebate) * 100);
         if (!Number.isSafeInteger(amountCents) || !Number.isSafeInteger(feeCents) ||
-            Math.abs(Number(payment) * 100 - amountCents) > 0.000001 ||
-            Math.abs(Number(rebate) * 100 - feeCents) > 0.000001 ||
+            Math.abs(cfhNumber(payment) * 100 - amountCents) > 0.000001 ||
+            Math.abs(cfhNumber(rebate) * 100 - feeCents) > 0.000001 ||
             amountCents <= 0 || feeCents < 0 || feeCents >= amountCents) {
           showTestLoanMessage("Enter a positive loan amount and fees smaller than the loan amount, with up to two decimals.");
           return;
@@ -7775,7 +7776,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         save.disabled = false;
         setTestActionButtonsDisabled(false);
         if (!add) {
-          try { localStorage.setItem("cashflow-test-loan-values", JSON.stringify({payment:Number(payment), rebate:Number(rebate)})); } catch (error) {}
+          try { localStorage.setItem("cashflow-test-loan-values", JSON.stringify({payment:cfhNumber(payment), rebate:cfhNumber(rebate)})); } catch (error) {}
         }
         closeTestLoanModal();
         if (add) document.getElementById("testTransactionInput").value = "";
@@ -7923,13 +7924,13 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         var item = fields[i];
         var input = document.getElementById(item.input);
         var raw = String(input && input.value || "").trim();
-        var amount = raw === "" ? NaN : Number(raw);
+        var amount = raw === "" ? NaN : cfhNumber(raw);
         if (!Number.isFinite(amount) || amount < 0 || Math.abs(amount * 100 - Math.round(amount * 100)) > 0.000001) {
           showResult("Enter a valid actual amount, with up to two decimal places, for each account.", "mismatch");
           if (input) input.focus();
           return;
         }
-        var systemAmount = Number(data[item.key]);
+        var systemAmount = cfhNumber(data[item.key]);
         if (!Number.isFinite(systemAmount)) { showResult("Could not read the current " + item.name + " balance. Refresh and try again.", "mismatch"); return; }
         var difference = Math.round((amount - systemAmount + Number.EPSILON) * 100) / 100;
         systemTotal += systemAmount;
@@ -7996,7 +7997,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       });
       var gcashBalance = document.getElementById("testGcash");
       if (gcashBalance) {
-        gcashBalance.classList.toggle("expense-value", Number(data.gcash) < 0);
+        gcashBalance.classList.toggle("expense-value", cfhNumber(data.gcash) < 0);
       }
 
       testRecentTransactionsCache = data.recentTransactions || [];
@@ -8034,8 +8035,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         else if (item.category) metaParts.push(item.category);
 
         var customer = item.customer || item.description || item.category || TEST_DISPLAY_NAME;
-        var amount = Number(item.amount || 0);
-        var fee = Number(item.feeEarned || 0);
+        var amount = cfhNumber(item.amount || 0);
+        var fee = cfhNumber(item.feeEarned || 0);
         var category = String(item.category || "").toLowerCase();
         var description = String(item.description || "").toLowerCase();
         var amountText = "";
@@ -8135,21 +8136,21 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             month: lifeLogSelectedMonth
           },
           function(data) {
-            lifeLogSelectedYear = Number(data.selectedYear || lifeLogSelectedYear);
-            lifeLogSelectedMonth = Number(data.selectedMonth || lifeLogSelectedMonth);
+            lifeLogSelectedYear = cfhNumber(data.selectedYear || lifeLogSelectedYear);
+            lifeLogSelectedMonth = cfhNumber(data.selectedMonth || lifeLogSelectedMonth);
             dashboardSelectedMonths.lifeLog = String(lifeLogSelectedYear) + "-" + String(lifeLogSelectedMonth).padStart(2, "0");
             document.getElementById("lifeLogMonthLabel").innerText = data.monthLabel || "";
             var counts = data.counts || {};
-            document.getElementById("lifeLogTotalLogs").innerText = Number(data.totalLogs || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogHealthCount").innerText = Number(counts.Health || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogGroomingCount").innerText = Number(counts.Grooming || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogHomeCount").innerText = Number(counts.Home || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogDeviceCount").innerText = Number(counts.Device || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogCarCount").innerText = Number(counts.Car || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogTravelCount").innerText = Number(counts.Travel || 0).toLocaleString("en-PH");
-            document.getElementById("lifeLogOtherCount").innerText = Number(counts.Other || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogTotalLogs").innerText = cfhNumber(data.totalLogs || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogHealthCount").innerText = cfhNumber(counts.Health || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogGroomingCount").innerText = cfhNumber(counts.Grooming || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogHomeCount").innerText = cfhNumber(counts.Home || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogDeviceCount").innerText = cfhNumber(counts.Device || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogCarCount").innerText = cfhNumber(counts.Car || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogTravelCount").innerText = cfhNumber(counts.Travel || 0).toLocaleString("en-PH");
+            document.getElementById("lifeLogOtherCount").innerText = cfhNumber(counts.Other || 0).toLocaleString("en-PH");
             document.getElementById("lifeLogCommonIssue").innerText = data.mostCommonHealthIssue || "No Health logs";
-            document.getElementById("lifeLogCommonCount").innerText = data.mostCommonHealthCount ? Number(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
+            document.getElementById("lifeLogCommonCount").innerText = data.mostCommonHealthCount ? cfhNumber(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
             document.getElementById("lifeLogLatestHealth").innerText = data.latestHealthLog || "No Health logs";
             document.getElementById("lifeLogLatestHealthDate").innerText = data.latestHealthDate || "";
             lifeLogRecentEntriesCache = data.recentEntries || [];
@@ -8410,7 +8411,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             }
 
             cache.transactions = cache.transactions.concat(data.transactions || []);
-            cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
+            cache.nextCursor = cfhNumber(data.nextCursor || cache.nextCursor);
             cache.hasMore = !!data.hasMore;
 
             if (activeBusinessTransactionFilters[pageName] === category) {
@@ -8538,7 +8539,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           "twiceTransactions"
         )
         .innerText =
-          Number(
+          cfhNumber(
             data.transactions || 0
           ).toLocaleString(
             "en-PH"
@@ -8554,12 +8555,12 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
       profit.classList.toggle(
         "income-value",
-        Number(data.profit || 0) >= 0
+        cfhNumber(data.profit || 0) >= 0
       );
 
       profit.classList.toggle(
         "expense-value",
-        Number(data.profit || 0) < 0
+        cfhNumber(data.profit || 0) < 0
       );
 
       businessRecentTransactionsCache.twice = data.recentTransactions || [];
@@ -8781,11 +8782,11 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       document.getElementById("rentalInsta360Income").innerText = formatPeso(insta360.income);
       document.getElementById("rentalInsta360Expenses").innerText = formatPeso(insta360.expenses);
       document.getElementById("rentalInsta360TotalMoney").innerText = formatPeso(insta360.totalMoney);
-      document.getElementById("rentalInsta360Transactions").innerText = Number(insta360.transactions || 0).toLocaleString("en-PH");
+      document.getElementById("rentalInsta360Transactions").innerText = cfhNumber(insta360.transactions || 0).toLocaleString("en-PH");
       document.getElementById("rentalChairTableIncome").innerText = formatPeso(chairTable.income);
       document.getElementById("rentalChairTableExpenses").innerText = formatPeso(chairTable.expenses);
       document.getElementById("rentalChairTableTotalMoney").innerText = formatPeso(chairTable.totalMoney);
-      document.getElementById("rentalChairTableTransactions").innerText = Number(chairTable.transactions || 0).toLocaleString("en-PH");
+      document.getElementById("rentalChairTableTransactions").innerText = cfhNumber(chairTable.transactions || 0).toLocaleString("en-PH");
       rentalRecentTransactionsCache = data.recentTransactions || [];
       if (!activeRentalTransactionFilter) {
         document.getElementById("rentalTransactionsTitle").innerText = "Recent Transactions";
@@ -8928,11 +8929,11 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var modal=document.getElementById('installmentModal');modal.hidden=true;modal.style.display='none';
     }
     function previewInstallment() {
-      var total=Number(document.getElementById('installmentTotal').value);
-      var months=Number(document.getElementById('installmentMonths').value);
+      var total=cfhNumber(document.getElementById('installmentTotal').value);
+      var months=cfhNumber(document.getElementById('installmentMonths').value);
       var date=document.getElementById('installmentDate').value;
       document.getElementById('installmentPreview').textContent=total>0&&Number.isInteger(months)&&months>0&&months<=120?
-        formatPeso(Math.floor(total*100/months)/100)+' per month. Posts on day '+(date?Number(date.slice(-2)):'—')+' each month. The last payment adjusts any centavo difference.':'';
+        formatPeso(Math.floor(total*100/months)/100)+' per month. Posts on day '+(date?cfhNumber(date.slice(-2)):'—')+' each month. The last payment adjusts any centavo difference.':'';
     }
     function saveInstallment(event) {
       event.preventDefault();
@@ -8940,7 +8941,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       if(button.disabled)return;
       button.disabled=true;status.textContent='Saving…';
       jsonpRequest({action:'installmentCreate',item:document.getElementById('installmentItem').value.trim(),
-        total:document.getElementById('installmentTotal').value,months:document.getElementById('installmentMonths').value,
+        total:document.getElementById('installmentTotal').value.replace(/,/g,''),months:document.getElementById('installmentMonths').value,
         firstDate:document.getElementById('installmentDate').value},
         function(result){button.disabled=false;closeInstallmentModal();document.getElementById('installmentForm').reset();
           document.getElementById('moneyFlowStatus').textContent='✓ Installment scheduled. Payments post on their due dates.';
@@ -9081,7 +9082,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           "printingTransactions"
         )
         .innerText =
-          Number(
+          cfhNumber(
             data.transactions || 0
           ).toLocaleString(
             "en-PH"
@@ -9097,12 +9098,12 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
       profit.classList.toggle(
         "income-value",
-        Number(data.profit || 0) >= 0
+        cfhNumber(data.profit || 0) >= 0
       );
 
       profit.classList.toggle(
         "expense-value",
-        Number(data.profit || 0) < 0
+        cfhNumber(data.profit || 0) < 0
       );
 
       businessRecentTransactionsCache.printing = data.recentTransactions || [];
@@ -9325,7 +9326,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             }
 
             cache.transactions = cache.transactions.concat(data.transactions || []);
-            cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
+            cache.nextCursor = cfhNumber(data.nextCursor || cache.nextCursor);
             cache.hasMore = !!data.hasMore;
 
             if (activeGcashTransactionFilter === category) {
@@ -9707,7 +9708,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         }
         function count(id, value) {
           var node = document.getElementById(id);
-          if (node) node.textContent = Number(value || 0).toLocaleString("en-PH");
+          if (node) node.textContent = cfhNumber(value || 0).toLocaleString("en-PH");
         }
         if (page === "gcash") {
           money("gcashMonthlyIncomeOnly", data.totalIncome);
@@ -9733,7 +9734,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           if (issue) issue.textContent = data.mostCommonHealthIssue || "No Health logs";
           var issueCount = document.getElementById("lifeLogCommonCount");
           if (issueCount) issueCount.textContent = data.mostCommonHealthCount ?
-            Number(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
+            cfhNumber(data.mostCommonHealthCount).toLocaleString("en-PH") + " times" : "";
           var latest = document.getElementById("lifeLogLatestHealth");
           if (latest) latest.textContent = data.latestHealthLog || "No Health logs";
           var date = document.getElementById("lifeLogLatestHealthDate");
@@ -9908,14 +9909,14 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             var text = String(value == null ? "" : value).trim();
             var match = text.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
             if (match) {
-              var hour12 = Number(match[1]), minute12 = Number(match[2]);
+              var hour12 = cfhNumber(match[1]), minute12 = cfhNumber(match[2]);
               if (hour12 < 1 || hour12 > 12 || minute12 > 59) return "";
               var hour24 = hour12 % 12 + (match[3].toUpperCase() === "PM" ? 12 : 0);
               return String(hour24).padStart(2, "0") + ":" + String(minute12).padStart(2, "0");
             }
             match = text.match(/^(\d{1,2}):(\d{2})$/);
             if (!match) return "";
-            var hour = Number(match[1]), minute = Number(match[2]);
+            var hour = cfhNumber(match[1]), minute = cfhNumber(match[2]);
             if (hour > 23 || minute > 59) return "";
             return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
           }
@@ -9923,7 +9924,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             var time = to24Hour(value);
             if (!time) return String(value == null ? "" : value);
             var parts = time.split(":");
-            var hour = Number(parts[0]);
+            var hour = cfhNumber(parts[0]);
             return String(hour % 12 || 12) + ":" + parts[1] + (hour >= 12 ? " PM" : " AM");
           }
           function openTransactionTimePicker(control) {
@@ -9969,9 +9970,9 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             }
             var parts = (to24Hour(control.value) || "12:00").split(":");
             picker.showModal();
-            var selectedHour = setupWheel(hour, Array.from({length: 12}, function(_, i) { return String(i + 1); }), String(Number(parts[0]) % 12 || 12));
+            var selectedHour = setupWheel(hour, Array.from({length: 12}, function(_, i) { return String(i + 1); }), String(cfhNumber(parts[0]) % 12 || 12));
             var selectedMinute = setupWheel(minute, Array.from({length: 60}, function(_, i) { return String(i).padStart(2, "0"); }), parts[1]);
-            var selectedPeriod = setupWheel(period, ["AM", "PM"], Number(parts[0]) >= 12 ? "PM" : "AM");
+            var selectedPeriod = setupWheel(period, ["AM", "PM"], cfhNumber(parts[0]) >= 12 ? "PM" : "AM");
             document.getElementById("transactionTimeCancel").onclick = function() { picker.close(); };
             document.getElementById("transactionTimeDone").onclick = function() {
               control.value = selectedHour() + ":" + selectedMinute() + " " + selectedPeriod();
@@ -9985,7 +9986,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           function formatAmount(value) {
             var raw = cleanAmount(value);
             if (!raw) return "";
-            var number = Number(raw);
+            var number = cfhNumber(raw);
             return Number.isFinite(number)
               ? new Intl.NumberFormat("en-PH", {useGrouping:true,minimumFractionDigits:0,maximumFractionDigits:2}).format(number)
               : String(value);
@@ -9994,7 +9995,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
             var text = String(value == null ? "" : value).trim();
             if (key === "time") return to24Hour(text) || text;
             if (key === "amount" || key === "feeEarned") {
-              var number = Number(cleanAmount(text));
+              var number = cfhNumber(cleanAmount(text));
               return Number.isFinite(number) ? number.toFixed(2) : cleanAmount(text);
             }
             return text;
@@ -10116,6 +10117,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                   control.type = field.type;
                 }
                 if (field.type === "number") control.step = field.step || "0.01";
+                if (["amount","feeEarned"].includes(field.key)) control.dataset.cfhNumber="true";
                 control.dataset.editKey = field.key;
                 var rawValue = field.value == null ? "" : String(field.value);
                 originalValues[field.key] = rawValue;
@@ -10126,9 +10128,6 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                   control.textContent = control.value || "Choose time";
                   control.addEventListener("click", function() { openTransactionTimePicker(control); });
                 } else if (field.key === "amount" || field.key === "feeEarned") {
-                  control.addEventListener("focus", function() {
-                    control.value = cleanAmount(control.value);
-                  });
                   control.addEventListener("blur", function() {
                     control.value = formatAmount(control.value);
                   });
@@ -10219,7 +10218,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                     seen.add(entry);
                     if (entry === item) {
                       items.splice(i, 1);
-                    } else if (Number(entry.rowNumber) > Number(item.rowNumber)) {
+                    } else if (cfhNumber(entry.rowNumber) > cfhNumber(item.rowNumber)) {
                       entry.rowNumber--;
                     }
                   }
@@ -10351,7 +10350,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var quantityDisplay = document.getElementById("gcashQuickQuantity");
 
       gcashQuickQuantity = normalizeGcashQuickQuantity(gcashQuickQuantity);
-      quantityDisplay.textContent = gcashQuickQuantity;
+      quantityDisplay.textContent = gcashQuickQuantity.toLocaleString("en-PH");
       var displayAmounts = buildGcashQuickDisplayAmounts(gcashQuickQuantity);
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button, index) {
@@ -10370,13 +10369,13 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function selectGcashQuickAmount(amount) {
       if (!selectedGcashQuickCategory) return;
 
-      selectedGcashQuickAmount = Number(amount) || 0;
+      selectedGcashQuickAmount = cfhNumber(amount) || 0;
 
       document.querySelectorAll(".quick-amount-button")
         .forEach(function(button) {
           button.classList.toggle(
             "selected",
-            Number(button.dataset.baseAmount) === selectedGcashQuickAmount
+            cfhNumber(button.dataset.baseAmount) === selectedGcashQuickAmount
           );
         });
 
@@ -10391,7 +10390,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
     function changeGcashQuickQuantity(change) {
       gcashQuickQuantity = normalizeGcashQuickQuantity(
-        gcashQuickQuantity + Number(change || 0)
+        gcashQuickQuantity + cfhNumber(change || 0)
       );
 
       setGcashQuickQuantityControlsDisabled(false);
@@ -11053,7 +11052,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           "allTransactions"
         )
         .innerText =
-          Number(
+          cfhNumber(
             data.allTransactions || 0
           )
           .toLocaleString(
@@ -11089,7 +11088,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
       balance.classList.toggle(
         "income-value",
-        Number(
+        cfhNumber(
           data.balance
         ) >= 0
       );
@@ -11097,7 +11096,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
       balance.classList.toggle(
         "expense-value",
-        Number(
+        cfhNumber(
           data.balance
         ) < 0
       );
@@ -11250,7 +11249,7 @@ moneyFlowRecentTransactionsCache = transactions;
           cache.loading = false;
           if (options.cacheMap[options.key] !== cache || !options.isActive()) return;
           cache.transactions = cache.transactions.concat(data.transactions || []);
-          cache.nextCursor = Number(data.nextCursor || cache.nextCursor);
+          cache.nextCursor = cfhNumber(data.nextCursor || cache.nextCursor);
           cache.hasMore = !!data.hasMore;
           options.render(cache.transactions.slice(0, cache.visibleCount), !firstDisplay);
           if (firstDisplay) {
@@ -11329,8 +11328,8 @@ moneyFlowRecentTransactionsCache = transactions;
 
     function changeLifeLogMonth(value) {
       var parts = String(value || "").split("-");
-      lifeLogSelectedYear = Number(parts[0]) || new Date().getFullYear();
-      lifeLogSelectedMonth = Number(parts[1]) || (new Date().getMonth() + 1);
+      lifeLogSelectedYear = cfhNumber(parts[0]) || new Date().getFullYear();
+      lifeLogSelectedMonth = cfhNumber(parts[1]) || (new Date().getMonth() + 1);
       activeLifeLogTransactionFilter = "";
       lifeLogTransactionHistoryCache = {};
       loadLifeLogDashboard();
@@ -11362,7 +11361,7 @@ moneyFlowRecentTransactionsCache = transactions;
 
       return (
         "\u20B1" +
-        Number(
+        cfhNumber(
           value || 0
         )
         .toLocaleString(
@@ -11439,7 +11438,7 @@ window.cfhRefreshTestTab = function(page) {
  <form id="installmentForm" style="width:min(420px,100%);max-height:85dvh;overflow:auto;background:white;border:1px solid var(--secondary);border-radius:18px;padding:20px;display:grid;gap:12px" onsubmit="saveInstallment(event)">
   <h2 style="margin:0">Installment</h2>
   <label>Item<input id="installmentItem" class="quick-custom-input" maxlength="120" placeholder="iPhone 18 Pro Max" required></label>
-  <label>Total amount (including interest)<input id="installmentTotal" class="quick-custom-input" type="number" min=".01" step=".01" required oninput="previewInstallment()"></label>
+  <label>Total amount (including interest)<input id="installmentTotal" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min=".01" step=".01" required oninput="previewInstallment()"></label>
   <label>Number of months<input id="installmentMonths" class="quick-custom-input" type="number" min="1" max="120" step="1" required oninput="previewInstallment()"></label>
   <label>First payment date<input id="installmentDate" class="quick-custom-input" type="date" min="2000-01-01" max="2100-01-01" required oninput="previewInstallment()"></label>
   <p id="installmentPreview" style="margin:0"></p>
@@ -11500,23 +11499,23 @@ window.cfhRefreshTestTab = function(page) {
  <label>Stock / coin symbol<input name="symbol" id="cfhPortfolioSymbol" placeholder="e.g. AREIT" maxlength="20" pattern="[A-Za-z0-9][A-Za-z0-9.\-]{0,19}" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cfhPortfolioSuggestions" required></label>
  <div id="cfhPortfolioSuggestions" role="listbox" aria-label="Stock symbols" hidden></div>
  <label>Purchase date<span class="cfh-purchase-date"><span id="cfhPurchaseDateText" aria-hidden="true">Choose date</span><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg><input name="date" type="date" aria-label="Purchase date" required></span></label>
- <div class="cfh-portfolio-form-row"><label>Shares / units<input name="shares" type="number" min="0.00000001" step="1" inputmode="decimal" required></label><label>Price per share / unit (₱)<input name="price" type="number" min="0.00000001" step="any" inputmode="decimal" required></label></div>
+ <div class="cfh-portfolio-form-row"><label>Shares / units<input name="shares" type="text" data-cfh-number="true" inputmode="decimal" min="0.00000001" step="1" inputmode="decimal" required></label><label>Price per share / unit (₱)<input name="price" type="text" data-cfh-number="true" inputmode="decimal" min="0.00000001" step="any" inputmode="decimal" required></label></div>
  <label id="cfhPurchaseTypeLabel">Purchase type<select name="purchaseType"><option value="market">Market purchase</option><option value="ipo">IPO allocation</option></select></label>
- <label><span id="cfhFeeLabel">Estimated fees (₱)</span><input name="fees" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Enter invoice fee" aria-describedby="cfhFeeHelp" required></label>
+ <label><span id="cfhFeeLabel">Estimated fees (₱)</span><input name="fees" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" inputmode="decimal" placeholder="Enter invoice fee" aria-describedby="cfhFeeHelp" required></label>
  <small id="cfhFeeHelp" role="status"></small><button id="cfhUseFeeEstimate" type="button">Use estimate</button>
  <div class="cfh-portfolio-total"><span>Total invested</span><strong id="cfhPortfolioTotal">₱0.00</strong></div><label>Notes (optional)<textarea name="notes" maxlength="500" rows="2" placeholder="Add a note"></textarea></label><p id="cfhPortfolioFormStatus" role="status"></p>
  </div><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioModal">Cancel</button><button type="submit">Save</button></div><small>Records an existing purchase in your portfolio.</small>
 </form></div>
-<div id="cfhPortfolioValueModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioValueForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioValueTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioValueTitle">Record latest price</h2><button type="button" data-portfolio-close="cfhPortfolioValueModal" aria-label="Close">×</button></div><input name="kind" type="hidden"><label>Broker<input name="broker" maxlength="80" required></label><label id="cfhPortfolioValueSymbol">Stock / coin symbol<input name="symbol" maxlength="20"></label><label><span id="cfhPortfolioValuePriceLabel">Latest price (₱)</span><input name="price" type="number" min="0" step="any" inputmode="decimal" required></label><p id="cfhPortfolioValueStatus" role="status"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioValueModal">Cancel</button><button type="submit">Save</button></div><small>Use the value shown by your broker.</small></form></div>
-<div id="cfhDividendReceiptModal" class="cfh-portfolio-overlay" hidden><form id="cfhDividendReceiptForm" class="cfh-portfolio-dialog cfh-dividend-receipt-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhDividendReceiptTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhDividendReceiptTitle">Confirm Received</h2><button type="button" data-portfolio-close="cfhDividendReceiptModal" aria-label="Close">×</button></div><strong id="cfhDividendReceiptIdentity"></strong><p>Check the dividend credit in your broker's history, then confirm the actual amount.</p><div class="cfh-dividend-detail-row"><span>Expected amount</span><strong id="cfhDividendReceiptExpected"></strong></div><label>Amount actually received (₱)<input name="amount" type="number" min="0.01" max="1000000000000" step="0.01" inputmode="decimal" required></label><label>Actual receipt date<span class="cfh-dividend-receipt-date"><span id="cfhDividendReceiptDateText"></span><input name="paidDate" type="date" required aria-label="Actual receipt date"></span></label><div class="cfh-dividend-detail-row"><span>Difference</span><strong id="cfhDividendReceiptDifference"></strong></div><label>Reference (optional)<input name="reference" maxlength="120" autocomplete="off"></label><p id="cfhDividendReceiptStatus" role="alert"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhDividendReceiptModal">Cancel</button><button type="submit">Confirm Received</button></div></form></div>
+<div id="cfhPortfolioValueModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioValueForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioValueTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioValueTitle">Record latest price</h2><button type="button" data-portfolio-close="cfhPortfolioValueModal" aria-label="Close">×</button></div><input name="kind" type="hidden"><label>Broker<input name="broker" maxlength="80" required></label><label id="cfhPortfolioValueSymbol">Stock / coin symbol<input name="symbol" maxlength="20"></label><label><span id="cfhPortfolioValuePriceLabel">Latest price (₱)</span><input name="price" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="any" inputmode="decimal" required></label><p id="cfhPortfolioValueStatus" role="status"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioValueModal">Cancel</button><button type="submit">Save</button></div><small>Use the value shown by your broker.</small></form></div>
+<div id="cfhDividendReceiptModal" class="cfh-portfolio-overlay" hidden><form id="cfhDividendReceiptForm" class="cfh-portfolio-dialog cfh-dividend-receipt-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhDividendReceiptTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhDividendReceiptTitle">Confirm Received</h2><button type="button" data-portfolio-close="cfhDividendReceiptModal" aria-label="Close">×</button></div><strong id="cfhDividendReceiptIdentity"></strong><p>Check the dividend credit in your broker's history, then confirm the actual amount.</p><div class="cfh-dividend-detail-row"><span>Expected amount</span><strong id="cfhDividendReceiptExpected"></strong></div><label>Amount actually received (₱)<input name="amount" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" max="1000000000000" step="0.01" inputmode="decimal" required></label><label>Actual receipt date<span class="cfh-dividend-receipt-date"><span id="cfhDividendReceiptDateText"></span><input name="paidDate" type="date" required aria-label="Actual receipt date"></span></label><div class="cfh-dividend-detail-row"><span>Difference</span><strong id="cfhDividendReceiptDifference"></strong></div><label>Reference (optional)<input name="reference" maxlength="120" autocomplete="off"></label><p id="cfhDividendReceiptStatus" role="alert"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhDividendReceiptModal">Cancel</button><button type="submit">Confirm Received</button></div></form></div>
 <div id="cfhPortfolioDividendModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioDividendForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioDividendTitle">
  <div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioDividendTitle">Record dividend</h2></div><p>Enter the dividend details from your broker.</p>
  <input type="hidden" name="asset" value="stock">
  <label>Broker<select name="broker" id="cfhDividendBroker" required><option value="">Choose broker</option></select></label>
  <label>Stock symbol<input id="cfhDividendSymbol" name="symbol" maxlength="20" placeholder="e.g. AREIT" pattern="[A-Za-z0-9][A-Za-z0-9.\-]{0,19}" required></label>
- <div class="cfh-portfolio-form-row"><label>Eligible shares<input name="shares" type="number" min="0.00000001" step="any" inputmode="decimal" required></label><label>Dividend per share (₱)<input name="perShare" type="number" min="0.00000001" step="any" inputmode="decimal" required></label></div>
+ <div class="cfh-portfolio-form-row"><label>Eligible shares<input name="shares" type="text" data-cfh-number="true" inputmode="decimal" min="0.00000001" step="any" inputmode="decimal" required></label><label>Dividend per share (₱)<input name="perShare" type="text" data-cfh-number="true" inputmode="decimal" min="0.00000001" step="any" inputmode="decimal" required></label></div>
  <div class="cfh-portfolio-form-row"><label>Payment date<input name="paymentDate" type="date" required></label><label>Status<select name="status" required><option value="upcoming">Upcoming</option><option value="paid">Paid</option></select></label></div>
- <label>Tax withheld (optional, ₱)<input name="tax" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label>
+ <label>Tax withheld (optional, ₱)<input name="tax" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label>
  <div class="cfh-portfolio-total"><span>Net dividend</span><strong id="cfhPortfolioDividendTotal">₱0.00</strong></div>
  <label>Notes (optional)<textarea name="notes" maxlength="500" rows="2" placeholder="Add a note"></textarea></label><p id="cfhPortfolioDividendFormStatus" role="status"></p>
  <div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioDividendModal">Cancel</button><button type="submit">Save dividend</button></div>
@@ -11748,6 +11747,7 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 })();
 </script>
 
+<script type="module" src="supabase/cfh-number-format.mjs"></script>
 <script type="module" src="supabase/cfh-notes.mjs?v=notes2"></script>
 <div class="cfh-editor-overlay" id="cfhEditorOverlay" hidden onclick="if(event.target===this)cfhEditorClose()">
  <div class="cfh-editor-panel" role="dialog" aria-modal="true" aria-labelledby="cfhEditorTitle">
@@ -11771,7 +11771,7 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
    <div id="cfhEditorCardTypeWrap" hidden><label for="cfhEditorCardType">Card schedule</label><select id="cfhEditorCardType" onchange="cfhEditorType(this.value)"><option value="statement">Statement Date</option><option value="due">Due Date</option></select></div>
    <label for="cfhEditorName">Title</label><input id="cfhEditorName" maxlength="120" placeholder="Enter title" required>
    <div class="cfh-editor-row"><div><label for="cfhEditorDate">Date</label><input id="cfhEditorDate" type="date" required></div><div><label for="cfhEditorTime">Time (optional)</label><div class="cfh-notification-time-row"><input id="cfhEditorTime" type="time" oninput="cfhEditorTimeDisplay()" onchange="cfhEditorTimeDisplay()"><span id="cfhEditorTimeText" class="cfh-time-period">--:--</span></div></div></div>
-   <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+   <div id="cfhEditorAmountWrap"><label for="cfhEditorAmount">Amount (optional, ₱)</label><input id="cfhEditorAmount" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
    <label for="cfhEditorRepeat">Repeat</label><select id="cfhEditorRepeat" onchange="cfhEventFieldsUpdate()"><option value="none">Does not repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option><option value="custom">Custom…</option></select>
 <div id="cfhEventCustomRepeat" hidden><div class="cfh-editor-row"><div><label for="cfhEventInterval">Repeat every</label><input id="cfhEventInterval" type="number" min="1" max="999" value="1"></div><div><label for="cfhEventUnit">Unit</label><select id="cfhEventUnit"><option value="daily">Days</option><option value="weekly">Weeks</option><option value="monthly">Months</option><option value="yearly">Years</option></select></div></div><label for="cfhEventRepeatEnd">Repeat until (optional)</label><input id="cfhEventRepeatEnd" type="date"></div>
 
@@ -11906,7 +11906,7 @@ setInterval(()=>cfhPushSync(),60000);
  <section class="cfh-money-screen" role="dialog" aria-modal="true" aria-labelledby="cfhMoneyTitle">
   <header class="cfh-money-title"><button type="button" id="cfhMoneyBack" aria-label="Back to portfolio">←</button><h2 id="cfhMoneyTitle">Manage Money</h2><span></span></header>
   <div id="cfhMoneyCard" class="cfh-money-card"><div class="cfh-money-profile"><span id="cfhMoneyLogo" class="cfh-money-logo"></span><span id="cfhMoneyBrokerName">All Brokers</span><select id="cfhMoneyBroker" aria-label="Switch broker profile"><option value="">All Brokers</option> <option>COL Financial</option><option>DragonFi</option><option>DragonFi Lite (Maya)</option></select><span class="cfh-money-switch-icon" aria-hidden="true">⇄</span></div><div class="cfh-money-cash-label">Cash Balance</div><strong id="cfhMoneyBalance">₱0.00</strong><div class="cfh-money-actions"><button type="button" data-money-action="deposit">Deposit</button><button type="button" data-money-action="withdraw">Withdraw</button><button type="button" data-money-action="transfer">Transfer</button></div></div>
-  <form id="cfhMoneyForm" class="cfh-money-form" hidden><h3 id="cfhMoneyActionTitle">Deposit</h3><label><span id="cfhMoneyFromLabel">Broker</span><select id="cfhMoneyFrom" required></select></label><small id="cfhMoneyAvailable"></small><label id="cfhMoneyToWrap">To broker<select id="cfhMoneyTo"></select></label><label>Amount (₱)<input id="cfhMoneyAmount" type="number" inputmode="decimal" min="0.01" max="1000000000000" step="0.01" required placeholder="0.00"></label><p id="cfhMoneyFormStatus" role="alert"></p><div class="cfh-money-form-actions"><button type="button" id="cfhMoneyCancel">Cancel</button><button type="submit" id="cfhMoneySave">Save</button></div></form>
+  <form id="cfhMoneyForm" class="cfh-money-form" hidden><h3 id="cfhMoneyActionTitle">Deposit</h3><label><span id="cfhMoneyFromLabel">Broker</span><select id="cfhMoneyFrom" required></select></label><small id="cfhMoneyAvailable"></small><label id="cfhMoneyToWrap">To broker<select id="cfhMoneyTo"></select></label><label>Amount (₱)<input id="cfhMoneyAmount" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" max="1000000000000" step="0.01" required placeholder="0.00"></label><p id="cfhMoneyFormStatus" role="alert"></p><div class="cfh-money-form-actions"><button type="button" id="cfhMoneyCancel">Cancel</button><button type="submit" id="cfhMoneySave">Save</button></div></form>
   <div class="cfh-money-history-title"><h3>History</h3><select id="cfhMoneyFilter" aria-label="Filter cash history"><option value="all">All records</option><option value="deposit">Deposits</option><option value="withdraw">Withdrawals</option><option value="transfer">Transfers</option></select></div><div id="cfhMoneyHistory"></div>
  </section>
 </div>

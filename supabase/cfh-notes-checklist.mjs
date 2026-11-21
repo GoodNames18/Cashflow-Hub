@@ -1,3 +1,4 @@
+import {formatTextField} from './cfh-number-format.mjs';
 import {checklistMathResults} from './cfh-notes-math.mjs';
 import {nameTotals} from './cfh-notes-tools.mjs';
 import {applyNoteFormat} from './cfh-notes-content.mjs';
@@ -328,6 +329,7 @@ export function createChecklist(host,addButton,{changed,id}){
   if(item.checked&&item.format?.u)text.style.textDecorationLine='underline line-through';
   check.onchange=()=>{item.checked=check.checked;changed();render(note);rowFor(item)?.querySelector('input')?.focus({preventScroll:true});};
   text.oninput=(event={})=>{
+   if(!event.isComposing)formatTextField(text,true);
    completion=null;
    if(!event.isComposing&&!event.inputType?.startsWith('delete')&&text.selectionStart===text.value.length&&text.selectionEnd===text.value.length){
     const result=checklistNameCompletion(text.value,note.items,item.id);

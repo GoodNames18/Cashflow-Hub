@@ -34,7 +34,7 @@ function labels(){try{const list=notesSync.pref('labels');if(Array.isArray(list)
 function saveLabels(list){try{notesSync.savePref('labels',list);return true;}catch{toast('Could not save labels.');return false;}}
 function toast(text){$('cfhNotesToast').textContent=text;$('cfhNotesToast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('cfhNotesToast').hidden=true,3500);}
 function lock(){if(bodyStyle!==null)return;lockedY=window.scrollY;bodyStyle=document.body.getAttribute('style')||'';Object.assign(document.body.style,{position:'fixed',top:-lockedY+'px',width:'100%',overflow:'hidden'});}
-function unlock(){if(['cfhNotesDrawer','cfhNotesCreateMenu','cfhNotesUtility','cfhNotesDrawing','cfhNotesRecording','cfhNotesImageViewer','cfhNotesSortMenu'].some(id=>$(id).open)||!$('cfhNotesEditor').hidden)return;if(bodyStyle!==null){document.body.setAttribute('style',bodyStyle);bodyStyle=null;window.scrollTo(0,lockedY);}}
+function unlock(){if(['cfhNotesMorePanel','cfhNotesDrawer','cfhNotesCreateMenu','cfhNotesUtility','cfhNotesDrawing','cfhNotesRecording','cfhNotesImageViewer','cfhNotesSortMenu'].some(id=>$(id).open)||!$('cfhNotesEditor').hidden)return;if(bodyStyle!==null){document.body.setAttribute('style',bodyStyle);bodyStyle=null;window.scrollTo(0,lockedY);}}
 function showDialog(id){lock();$(id).showModal();}
 function outsideClose(d){d.addEventListener('click',e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();});d.addEventListener('close',unlock);}
 for(const id of ['cfhNotesDrawer','cfhNotesCreateMenu','cfhNotesUtility','cfhNotesSortMenu'])outsideClose($(id));
@@ -414,15 +414,19 @@ const footerStyle=el('style');footerStyle.textContent=`
 // Note actions use a modal bottom sheet, independent of the formatting footer.
 const oldMorePanel=$('cfhNotesMorePanel'),moreFields=el('div');moreFields.hidden=true;
 moreFields.append(...oldMorePanel.childNodes);$('cfhNotesEditorBox').append(moreFields);
-const noteOptions=el('dialog','cfh-note-options');noteOptions.id='cfhNotesMorePanel';noteOptions.hidden=true;noteOptions.setAttribute('aria-label','Note options');oldMorePanel.replaceWith(noteOptions);
+let optionsBackAction=showNoteOptions;
+const noteOptions=el('dialog','cfh-note-options');noteOptions.id='cfhNotesMorePanel';noteOptions.hidden=true;noteOptions.setAttribute('aria-label','Note options');oldMorePanel.replaceWith(noteOptions);const noteOptionsHome=noteOptions.parentNode;
 outsideClose(noteOptions);noteOptions.addEventListener('close',()=>{noteOptions.hidden=true;$('cfhNotesMoreButton').setAttribute('aria-expanded','false');});
 Object.assign(paths,{search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM15 15l6 6',copy:'M8 3h13v15H8ZM3 7v15h13',share:'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8 10l7-4M8 14l7 4'});
-function optionsPage(title,main=false){
+function optionsPage(title,main=false,backAction=showNoteOptions,background=selectedColor){
+ optionsBackAction=backAction;
+ const parent=$('cfhNotesEditor').hidden?document.body:noteOptionsHome;if(noteOptions.parentNode!==parent)parent.append(noteOptions);
+ noteOptions.setAttribute('aria-label',title);
  noteOptions.dataset.labelsPage=String(title==='Labels');
  noteOptions.dataset.backToMenu=String(['Reminder','Labels','Delete this note?','Delete permanently?','Delete this label?'].includes(title));
- noteOptions.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');noteOptions.replaceChildren();
+ noteOptions.style.setProperty('--cfh-note-background',colors[background]||'#fff');noteOptions.replaceChildren();
  const head=el('div','cfh-note-options-head');
- if(!main){const back=button('‹',showNoteOptions);back.setAttribute('aria-label','Back to note options');head.append(back);}
+ if(!main){const back=button('‹',backAction);back.setAttribute('aria-label','Back to note options');head.append(back);}
  head.append(el('h2','',title));noteOptions.append(head);
  const body=el('div','cfh-note-options-body');noteOptions.append(body);return body;
 }
@@ -441,11 +445,17 @@ function showNoteOptions(){
  if(draft.deletedAt)optionsRow(body,'Restore','unarchive',()=>stateAction('restore'));
  if(draft.kind!=='list'){const mode=$('cfhNotesChecklistMode');optionsRow(body,canRestoreChecklist(draft)?'Restore checklist':'Use checklist','list',()=>{editorPanel();mode.onclick();});}
 }
-function showNoteReminder(){
- const body=optionsPage('Reminder'),label=el('label','','Date and time'),input=el('input');input.type='datetime-local';input.value=$('cfhNotesReminder').value;label.append(input);body.append(label,el('p','cfh-note-options-hint','Reminder dates appear in the app. Notification delivery for notes is not enabled.'));
+function reminderFields(body,{value,hasReminder=!!value,save}){
+ const label=el('label','','Date and time'),input=el('input');input.type='datetime-local';input.value=value;input.setAttribute('aria-label','Reminder date and time');label.append(input);
+ body.append(label,el('p','cfh-note-options-hint','Reminder dates appear in the app. Notification delivery for notes is not enabled.'));
  const error=el('p','cfh-note-options-error');error.setAttribute('role','status');body.append(error);
- body.append(button('Save reminder',()=>{if(input.value&&!Number.isFinite(new Date(input.value).getTime())){error.textContent='Choose a valid date and time.';return;}$('cfhNotesReminder').value=input.value;if(saveDraft()){toast(input.value?'Reminder saved.':'Reminder removed.');showNoteOptions();}},'cfh-note-options-primary'));
- if(input.value)body.append(button('Remove reminder',()=>{$('cfhNotesReminder').value='';if(saveDraft())showNoteOptions();}));
+ body.append(button('Save reminder',()=>{if(input.value&&!Number.isFinite(new Date(input.value).getTime())){error.textContent='Choose a valid date and time.';return;}save(input.value);},'cfh-note-options-primary'));
+ if(hasReminder)body.append(button('Remove reminder',()=>save('')));
+}
+function showNoteReminder(){
+ reminderFields(optionsPage('Reminder'),{value:$('cfhNotesReminder').value,save:value=>{
+  $('cfhNotesReminder').value=value;if(saveDraft()){toast(value?'Reminder saved.':'Reminder removed.');showNoteOptions();}
+ }});
 }
 function showNoteLabels(){
  const body=optionsPage('Labels');
@@ -517,7 +527,7 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-find-preview{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 Arial,sans-serif}
 `;document.head.append(noteOptionsStyle);
 
-installOptionsGestures(noteOptions,{back:showNoteOptions,dismiss:()=>editorPanel(),canGoBack:()=>noteOptions.dataset.backToMenu==='true',canSwipeFromFields:()=>noteOptions.dataset.labelsPage==='true'});
+installOptionsGestures(noteOptions,{back:()=>optionsBackAction(),dismiss:()=>{$('cfhNotesEditor').hidden?noteOptions.close():editorPanel();},canGoBack:()=>noteOptions.dataset.backToMenu==='true',canSwipeFromFields:()=>noteOptions.dataset.labelsPage==='true'});
 
 const noteFind=createNoteFind($('cfhNotesEditorBox'),{getNote:()=>draft,saveNote:saveDraft,closePanels:()=>editorPanel(),loadMedia});
 
@@ -528,14 +538,20 @@ function selectionAction(action,ids){
  const apply=patch=>{if(!write(updateSelectedNotes(read(),ids,patch)))return false;render();return true;};
  const done=patch=>{if(apply(patch))$('cfhNotesUtility').close();};
  if(action==='pin'){const pinned=!targets().every(note=>note.pinned);apply({pinned});return;}
+ if(action==='reminder'){
+  const notes=targets();if(!notes.length)return;
+  const first=notes[0].reminder||'',value=notes.every(n=>(n.reminder||'')===first)?first:'';
+  const back=()=>{noteOptions.close();selectionAction('more',ids);};
+  const body=optionsPage('Reminder',false,back,notes[0].color||'white');
+  reminderFields(body,{value,hasReminder:notes.some(n=>n.reminder),save:reminder=>{
+   if(apply({reminder})){noteOptions.close();toast(reminder?'Reminder saved.':'Reminder removed.');}
+  }});
+  $('cfhNotesUtility').close();noteOptions.hidden=false;lock();noteOptions.showModal();return;
+ }
  const body=utility(action==='more'?'Selected notes':action[0].toUpperCase()+action.slice(1));
  if(action==='color'){for(const [name,value]of Object.entries(colors)){const choice=button(name,()=>done({color:name}),'cfh-selection-color');choice.style.background=value;body.append(choice);}return;}
  if(action==='labels'){
   createLabelPicker(body,{getLabels:labels,getSelected:()=>{const notes=targets(),label=notes[0]?.labelId||'';return notes.every(n=>(n.labelId||'')===label)?label:'';},select:labelId=>apply({labelId}),create:name=>{const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());if(existing)return existing;const label={id:uid(),name};return saveLabels([...current,label])?label:null;}});return;
- }
- if(action==='reminder'){
-  const input=el('input');input.type='datetime-local';input.setAttribute('aria-label','Reminder for selected notes');const notes=targets(),value=notes[0]?.reminder||'';input.value=notes.every(n=>(n.reminder||'')===value)?value:'';
-  const hint=el('p','','Reminder dates appear in the app. Notification delivery for notes is not enabled.');body.append(input,hint,button('Save reminder',()=>{if(!input.value||!Number.isFinite(new Date(input.value).getTime())){hint.textContent='Choose a valid reminder date and time.';return;}done({reminder:input.value});}),button('Remove reminder',()=>done({reminder:''})));return;
  }
  if(action==='more'){
   const notes=targets();

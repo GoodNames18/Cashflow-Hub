@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v158-note-drag-selection-pin-icons';
+const CACHE_NAME = 'cashflow-hub-v159-number-format-matching-reminders';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
