@@ -29,8 +29,8 @@ export function createLabelPicker(host,{getLabels,getSelected,select,create,requ
  input.oninput=()=>{status.textContent='';draw();};input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();list.querySelector('.cfh-note-label-create')?.click();}};
  host.append(input,list,status);draw();return {input,refresh:draw};
 }
-export function createDeleteConfirmation(host,{permanent=false,labelName=null,cancel,remove}){
- const message=document.createElement('p');message.textContent=labelName!==null?'Delete “'+labelName+'”? Notes will be kept.':permanent?'Permanently delete this note? This cannot be undone.':'Delete this note? You can restore it from Deleted.';
+export function createDeleteConfirmation(host,{permanent=false,labelName=null,count=1,cancel,remove}){
+ const message=document.createElement('p');message.textContent=labelName!==null?'Delete “'+labelName+'”? Notes will be kept.':count>1?(permanent?'Permanently delete these '+count+' notes? This cannot be undone.':'Delete these '+count+' notes? You can restore them from Deleted.'):permanent?'Permanently delete this note? This cannot be undone.':'Delete this note? You can restore it from Deleted.';
  const actions=document.createElement('div');actions.className='cfh-note-delete-actions';
  for(const [text,action] of [['Cancel',cancel],['Delete',remove]]){const button=document.createElement('button');button.type='button';button.textContent=text;if(text==='Delete')button.className='cfh-note-delete-confirm';button.onclick=action;actions.append(button);}
  host.append(message,actions);

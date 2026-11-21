@@ -44,3 +44,16 @@ export function canRestoreChecklist(note){
  const original=note.items.map(item=>(item.checked?'☑ ':'☐ ')+(item.text||'')).join('\n');
  return contentText(noteContent(note)).trim()===original.trim();
 }
+
+// Save a batch only after every attachment has been copied successfully.
+export async function copyNoteBatch(sources,deps){
+ const copies=[];
+ try{
+  for(const source of sources)copies.push(await copyNoteData(source,deps));
+  if(copies.length&&!deps.commit(copies))throw Error('Could not save the copies.');
+  return copies;
+ }catch(error){
+  await Promise.allSettled(copies.flatMap(note=>(note.attachments||[]).map(media=>deps.removeMedia(media.id))));
+  throw error;
+ }
+}

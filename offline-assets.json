@@ -340,5 +340,6 @@
   "supabase/cfh-cash-counter.mjs",
   "supabase/cfh-number-format.mjs",
   "supabase/cfh-sheet-dismiss.mjs",
-  "supabase/cfh-reminder-date.mjs"
+  "supabase/cfh-reminder-date.mjs",
+  "supabase/cfh-notes-menu.mjs"
 ]

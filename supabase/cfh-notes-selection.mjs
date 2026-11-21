@@ -16,7 +16,7 @@ export function createNoteSelection(page,{icon,action}){
  const close=button('Clear selection',()=>clear(),'close');bar.append(close,count);
  const pin=button('Pin selected notes',()=>action('pin',[...selected]),'pin');bar.append(pin);
  const reminder=button('Reminder for selected notes',()=>action('reminder',[...selected]),'reminders');reminder.dataset.noteAction='reminder';bar.append(reminder);
- for(const [name,symbol] of [['Color','palette'],['Labels','label'],['More','more']])bar.append(button(name+' for selected notes',()=>action(name.toLowerCase(),[...selected]),symbol));
+ for(const [name,symbol] of [['Color','palette'],['Labels','label'],['More','more']]){const control=button(name+' for selected notes',()=>action(name.toLowerCase(),[...selected]),symbol);if(name==='More'){control.dataset.noteAction='more';control.setAttribute('aria-haspopup','menu');control.setAttribute('aria-expanded','false');}bar.append(control);}
  head.before(bar);
  function paint(){
   page.classList.toggle('cfh-notes-selecting',!!selected.size);bar.hidden=!selected.size;head.hidden=!!selected.size;count.textContent=String(selected.size)+' selected';const allPinned=selected.size>0&&latest.filter(n=>selected.has(n.id)).every(n=>n.pinned);pin.setAttribute('aria-label',allPinned?'Unpin selected notes':'Pin selected notes');pin.setAttribute('aria-pressed',String(allPinned));pin.replaceChildren(icon(allPinned?'pinFilled':'pin'));
