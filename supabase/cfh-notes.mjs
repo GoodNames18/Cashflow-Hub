@@ -520,10 +520,13 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 #cfhNotesMorePanel input,#cfhNotesMorePanel select,#cfhNotesMorePanel textarea{box-sizing:border-box;width:100%;min-width:0;padding:12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px Arial,sans-serif}
 #cfhNotesMorePanel label{display:grid;gap:8px}
 #cfhNotesMorePanel .cfh-reminder-date-field{position:relative;display:block;min-width:0}
-#cfhNotesMorePanel .cfh-reminder-date-display{display:block;box-sizing:border-box;width:100%;min-height:46px;padding:12px 34px 12px 12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px/1.4 Arial,sans-serif}
-#cfhNotesMorePanel .cfh-reminder-date-field::after{content:'⌄';position:absolute;right:12px;top:12px;pointer-events:none}
+#cfhNotesMorePanel .cfh-reminder-date-display{display:block;box-sizing:border-box;width:100%;min-height:46px;padding:12px;border:1px solid #1b184433;border-radius:10px;background:#ffffff77;color:#1b1844;font:16px/1.4 Arial,sans-serif}
 #cfhNotesMorePanel .cfh-reminder-date-field input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
 #cfhNotesMorePanel .cfh-reminder-date-field:focus-within .cfh-reminder-date-display{outline:2px solid #00ad85;outline-offset:2px}
+#cfhNotesMorePanel[data-reminder-page="true"] .cfh-note-options-body{gap:10px}
+#cfhNotesMorePanel[data-reminder-page="true"] .cfh-note-options-hint,#cfhNotesMorePanel[data-reminder-page="true"] .cfh-note-options-error,#cfhNotesMorePanel[data-reminder-page="true"] .cfh-note-options-body button{margin:0}
+#cfhNotesMorePanel[data-reminder-page="true"] .cfh-note-options-error:empty{display:none}
+
 
 #cfhNotesMorePanel .cfh-note-options-primary{background:#00e5ad;color:#1b1844;font-weight:600}
 .cfh-note-options-hint{font:13px/1.5 Arial,sans-serif;color:#514a65}
