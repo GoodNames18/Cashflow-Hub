@@ -4548,9 +4548,9 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         amount.addEventListener('change',saveAmount);
         form.onsubmit=e=>{e.preventDefault();saveAmount();};
         const paid=document.createElement('button');paid.type='button';paid.textContent='💳';paid.title=past?'Mark as unpaid':'Mark as paid';paid.setAttribute('aria-label',paid.title);paid.setAttribute('aria-pressed',String(past));
-        paid.onclick=()=>{formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:!past,reminderId:entry.id}))cfhCardPanelClose();};
+        paid.onclick=()=>{const current=cfhCardBill(entry),marked=current.paid??(due<cfhCalendarTodayKey());formatInput();if(amount.reportValidity()&&cfhSaveCardBill(entry,{amount:readAmount(),paid:!marked,reminderId:entry.id}))cfhCardPanelClose();};
         row.append(label,paid);form.append(row);dialog.append(form);
-        const refreshPayments=()=>{const latest=cfhCardBill(entry);paid.disabled=!!latest.payments?.length;paid.setAttribute('aria-pressed',String(latest.payments?.length?cfhBillPaymentSummary(latest).remaining===0:(latest.paid??past)));paid.title=paid.disabled?'Status follows recorded payments':past?'Mark as unpaid':'Mark as paid';cfhRenderBillPayments(entry,paymentHost,refreshPayments);};
+        const refreshPayments=()=>{const latest=cfhCardBill(entry),marked=latest.payments?.length?cfhBillPaymentSummary(latest).remaining===0:(latest.paid??past);paid.disabled=!!latest.payments?.length;paid.setAttribute('aria-pressed',String(marked));paid.title=paid.disabled?'Status follows recorded payments':marked?'Mark as unpaid':'Mark as paid';paid.setAttribute('aria-label',paid.title);cfhRenderBillPayments(entry,paymentHost,refreshPayments);};
         const paymentHost=document.createElement('section');paymentHost.className='cfh-card-payments';dialog.append(paymentHost);refreshPayments();
       }
       const reminderBell=toggle(cfhBellEnabled(entry.id),'Reminders for this event',()=>{cfhToggleBell(entry.id);cfhCardPanelRender();});
