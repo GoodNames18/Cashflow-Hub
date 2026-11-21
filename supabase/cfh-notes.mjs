@@ -18,7 +18,7 @@ let drag=null,ignoreNoteClickUntil=0;
 let editorSnapshot=null;
 let createdInEditor=false,activeId=null,draft=null,saveTimer,filter='all',view='grid',sort='custom',selectedColor='yellow',toastTimer,lockedY=0,bodyStyle=null;
 const colors={white:'#ffffff',yellow:'#fff5c2',mint:'#d8f6e9',lavender:'#e9e6fa',rose:'#ffe1e4',blue:'#dcedff'};
-const paths={camera:'M3 7h4l2-3h6l2 3h4v14H3ZM8 13a4 4 0 1 0 8 0 4 4 0 0 0-8 0',pinFilled:'M9 3h6l-1 6 3 4v2h-4v6l-1 2-1-2v-6H7v-2l3-4Z',pin:'M9 3h6l-1 6 3 4v2H7v-2l3-4ZM12 15v7',unarchive:'M3 4h18v4H3ZM5 8v13h14V8M12 18v-7m-3 3 3-3 3 3',listView:'M3 4h18v6H3ZM3 14h18v6H3Z',gridView:'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',close:'M5 5l14 14M19 5L5 19',notes:'M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z',reminders:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4',label:'M3 5h11l7 7-7 7H3Z',add:'M12 4v16M4 12h16',archive:'M3 4h18v4H3ZM5 8v13h14V8M12 10v7m-3-3 3 3 3-3',deleted:'M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',settings:'m10 3 4 0 1 3 3 1 3 3-2 3v3l-3 2-1 3h-5l-1-3-3-1-2-4 2-2V7l4-1ZM9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0',help:'M12 17v.1M9 9a3 3 0 1 1 5 2l-2 2v1M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0',image:'M3 3h18v18H3ZM3 17l6-6 4 4 3-3 5 5M7 7h.1',drawing:'m4 16 12-12 4 4L8 20l-5 1ZM14 6l4 4',audio:'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8',list:'M3 3h18v18H3ZM7 12l3 3 7-7',text:'M3 5h12M9 5v15M15 12h7M18.5 12v8'};
+const paths={camera:'M3 7h4l2-3h6l2 3h4v14H3ZM8 13a4 4 0 1 0 8 0 4 4 0 0 0-8 0',pinFilled:'M9 3h6l-1 6 3 4v2h-4v6l-1 2-1-2v-6H7v-2l3-4Z',pin:'M9 3h6l-1 6 3 4v2H7v-2l3-4ZM12 15v7',unarchive:'M3 4h18v4H3ZM5 8v13h14V8M12 18v-7m-3 3 3-3 3 3',listView:'M3 4h18v6H3ZM3 14h18v6H3Z',gridView:'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',close:'M5 5l14 14M19 5L5 19',notes:'M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z',reminders:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4',reminderSet:'M6 8a6 6 0 0 1 12 0v7l2 3H4l2-3ZM10 21h4M9 11h6M12 8v6',label:'M3 5h11l7 7-7 7H3Z',add:'M12 4v16M4 12h16',archive:'M3 4h18v4H3ZM5 8v13h14V8M12 10v7m-3-3 3 3 3-3',deleted:'M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7',settings:'m10 3 4 0 1 3 3 1 3 3-2 3v3l-3 2-1 3h-5l-1-3-3-1-2-4 2-2V7l4-1ZM9 12a3 3 0 1 0 6 0 3 3 0 0 0-6 0',help:'M12 17v.1M9 9a3 3 0 1 1 5 2l-2 2v1M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0',image:'M3 3h18v18H3ZM3 17l6-6 4 4 3-3 5 5M7 7h.1',drawing:'m4 16 12-12 4 4L8 20l-5 1ZM14 6l4 4',audio:'M9 5a3 3 0 0 1 6 0v7a3 3 0 0 1-6 0ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8',list:'M3 3h18v18H3ZM7 12l3 3 7-7',text:'M3 5h12M9 5v15M15 12h7M18.5 12v8'};
 function svg(name){const n=document.createElementNS('http://www.w3.org/2000/svg','svg');n.setAttribute('viewBox','0 0 24 24');n.setAttribute('aria-hidden','true');const p=document.createElementNS(n.namespaceURI,'path');p.setAttribute('d',paths[name]||paths.notes);if(name==='pinFilled'){p.style.fill='currentColor';p.style.stroke='none';}n.append(p);return n;}
 function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
 function button(text,fn,cls=''){const b=el('button',cls,text);b.type='button';b.onclick=fn;return b;}
@@ -442,7 +442,7 @@ function showNoteOptions(){
  const date=new Date(draft.updatedAt||draft.createdAt||NaN);
  const edited=Number.isFinite(date.getTime())?'Edited '+new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric'}).format(date):'Edited date unavailable';
  const body=optionsPage(edited,true);
- optionsRow(body,'Reminder','reminders',showNoteReminder);
+ const reminderRow=optionsRow(body,'Reminder',draft.reminder?'reminderSet':'reminders',showNoteReminder);reminderRow.setAttribute('aria-description',draft.reminder?'Reminder set':'No reminder');
  optionsRow(body,'Find in note','search',showFindInNote);
  optionsRow(body,'Make a copy','copy',duplicateOpenNote);
  optionsRow(body,'Send','share',showSendNote);
@@ -569,11 +569,28 @@ function selectionAction(action,ids){
   }});
   $('cfhNotesUtility').close();noteOptions.hidden=false;lock();noteOptions.showModal();return;
  }
+ if(action==='labels'){
+  const notes=targets();if(!notes.length)return;
+  const background=notes[0].color||'white';
+  const back=()=>{noteOptions.close();selectionAction('more',ids);};
+  const create=name=>{const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());if(existing)return existing;const label={id:uid(),name};return saveLabels([...current,label])?label:null;};
+  const showLabels=()=>{
+   const body=optionsPage('Labels',false,back,background);
+   createLabelPicker(body,{getLabels:labels,getSelected:()=>{const notes=targets(),label=notes[0]?.labelId||'';return notes.every(n=>(n.labelId||'')===label)?label:'';},select:labelId=>apply({labelId}),create,requestDelete:showDelete});
+  };
+  const showDelete=label=>{
+   const body=optionsPage('Delete this label?',false,showLabels,background);
+   createDeleteConfirmation(body,{labelName:label.name,cancel:showLabels,remove:()=>{
+    const current=labels();if(!current.some(l=>l.id===label.id)){showLabels();return;}
+    const previous=read();if(!write(removeLabel(previous,label.id)))return;
+    if(!saveLabels(current.filter(l=>l.id!==label.id))){write(previous);return;}
+    if(filter==='label:'+label.id)filter='all';render();showLabels();toast('Label deleted. Notes kept.');
+   }});
+  };
+  showLabels();$('cfhNotesUtility').close();noteOptions.hidden=false;lock();noteOptions.showModal();return;
+ }
  const body=utility(action==='more'?'Selected notes':action[0].toUpperCase()+action.slice(1));
  if(action==='color'){for(const [name,value]of Object.entries(colors)){const choice=button(name,()=>done({color:name}),'cfh-selection-color');choice.style.background=value;body.append(choice);}return;}
- if(action==='labels'){
-  createLabelPicker(body,{getLabels:labels,getSelected:()=>{const notes=targets(),label=notes[0]?.labelId||'';return notes.every(n=>(n.labelId||'')===label)?label:'';},select:labelId=>apply({labelId}),create:name=>{const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());if(existing)return existing;const label={id:uid(),name};return saveLabels([...current,label])?label:null;}});return;
- }
  if(action==='more'){
   const notes=targets();
   if(notes.every(n=>n.deletedAt)){body.append(button('Restore',()=>{if(apply(n=>{return {...changeNoteState(n,'restore'),deletedAt:null};})){$('cfhNotesUtility').close();selection.clear();render();}}));}

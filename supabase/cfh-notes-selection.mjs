@@ -3,6 +3,11 @@ export function updateSelectedNotes(notes,ids,patch,now=Date.now()){
  const selected=new Set(ids);
  return notes.map(note=>selected.has(note.id)?{...note,...(typeof patch==='function'?patch(note):patch),updatedAt:now}:note);
 }
+export function selectedReminderState(notes,ids){
+ const selected=new Set(ids),targets=notes.filter(note=>selected.has(note.id));
+ const count=targets.filter(note=>!!note.reminder).length;
+ return !count?'none':count===targets.length?'all':'some';
+}
 export function createNoteSelection(page,{icon,action}){
  let latest=[];const selected=new Set(),head=page.querySelector('.cfh-notes-head');
  const bar=document.createElement('header');bar.className='cfh-notes-selection';bar.hidden=true;bar.setAttribute('aria-label','Selected notes');
@@ -10,10 +15,12 @@ export function createNoteSelection(page,{icon,action}){
  const count=document.createElement('span');count.setAttribute('role','status');
  const close=button('Clear selection',()=>clear(),'close');bar.append(close,count);
  const pin=button('Pin selected notes',()=>action('pin',[...selected]),'pin');bar.append(pin);
- for(const [name,symbol] of [['Reminder','reminders'],['Color','palette'],['Labels','label'],['More','more']])bar.append(button(name+' for selected notes',()=>action(name.toLowerCase(),[...selected]),symbol));
+ const reminder=button('Reminder for selected notes',()=>action('reminder',[...selected]),'reminders');reminder.dataset.noteAction='reminder';bar.append(reminder);
+ for(const [name,symbol] of [['Color','palette'],['Labels','label'],['More','more']])bar.append(button(name+' for selected notes',()=>action(name.toLowerCase(),[...selected]),symbol));
  head.before(bar);
  function paint(){
   page.classList.toggle('cfh-notes-selecting',!!selected.size);bar.hidden=!selected.size;head.hidden=!!selected.size;count.textContent=String(selected.size)+' selected';const allPinned=selected.size>0&&latest.filter(n=>selected.has(n.id)).every(n=>n.pinned);pin.setAttribute('aria-label',allPinned?'Unpin selected notes':'Pin selected notes');pin.setAttribute('aria-pressed',String(allPinned));pin.replaceChildren(icon(allPinned?'pinFilled':'pin'));
+  const state=selectedReminderState(latest,selected);reminder.replaceChildren(icon(state==='none'?'reminders':'reminderSet'));reminder.setAttribute('aria-pressed',state==='some'?'mixed':String(state==='all'));reminder.setAttribute('aria-label','Reminder for selected notes'+(state==='some'?' — some have reminders':state==='all'?' — reminders set':''));
   for(const card of page.querySelectorAll('[data-note-id]')){const active=selected.has(card.dataset.noteId);card.classList.toggle('is-selected',active);card.setAttribute('aria-pressed',String(active));}
  }
  function clear(){selected.clear();paint();}

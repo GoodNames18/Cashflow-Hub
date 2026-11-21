@@ -11,3 +11,11 @@ test('checklist math uses previous variables, recalculates dependencies and neve
  const before=JSON.stringify(items),result=checklistMathResults(items);assert.equal(result.get('a')[0].text,'12');assert.equal(result.get('b')[0].text,'11,931');assert.equal(displayMathResults(items[4].text,result.get('c')),'400/4*3 = 300 g');assert.equal(result.get('d')[0].text,'₱0.30');assert.equal(result.has('e'),false);assert.equal(result.has('empty'),false);assert.equal(JSON.stringify(items),before);
  items[0].text='x = 4';assert.equal(checklistMathResults(items).get('a')[0].text,'8');items[0].text='';assert.equal(checklistMathResults(items).has('a'),false);
 });
+
+test('reminder selection distinguishes none, all and mixed and updates after save/remove',async()=>{
+ const {selectedReminderState}=await import('../../supabase/cfh-notes-selection.mjs');
+ const notes=[{id:'a',reminder:'',createdAt:1,items:[{id:'r',createdAt:2,text:'Keep'}]},{id:'b',reminder:'2026-11-22T09:00'},{id:'c',reminder:''}];
+ assert.equal(selectedReminderState(notes,[]),'none');assert.equal(selectedReminderState(notes,['missing']),'none');assert.equal(selectedReminderState(notes,['a']),'none');assert.equal(selectedReminderState(notes,['b']),'all');assert.equal(selectedReminderState(notes,['a','b']),'some');
+ const saved=updateSelectedNotes(notes,['a','b'],{reminder:'2026-11-23T09:00'},99);assert.equal(selectedReminderState(saved,['a','b']),'all');assert.equal(saved[0].createdAt,1);assert.equal(saved[0].items,notes[0].items);assert.equal(saved[2],notes[2]);
+ const removed=updateSelectedNotes(saved,['a','b'],{reminder:''},100);assert.equal(selectedReminderState(removed,['a','b']),'none');assert.equal(removed[0].items[0].createdAt,2);
+});
