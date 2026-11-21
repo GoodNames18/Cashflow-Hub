@@ -91,3 +91,11 @@ export function displayNoteMath(text){
  }
  return text;
 }
+
+// Evaluate checklist rows together so variables can be used by later rows.
+export function checklistMathResults(items=[]){
+ const rows=items.map(item=>item.divider?'':String(item.text||'')),text=rows.join('\n'),results=noteMathResults(text),byId=new Map();let offset=0,index=0;
+ for(let i=0;i<items.length;i++){const end=offset+rows[i].length,list=[];while(index<results.length&&results[index].offset<=end){if(results[index].offset>=offset)list.push({...results[index],offset:results[index].offset-offset});index++;}if(list.length)byId.set(items[i].id,list);offset=end+1;}
+ return byId;
+}
+export function displayMathResults(text,results=[]){for(const result of [...results].reverse()){const suffix=text.slice(result.offset);text=text.slice(0,result.offset)+' '+result.text+(/^[^\s]/.test(suffix)?' ':'')+suffix;}return text;}

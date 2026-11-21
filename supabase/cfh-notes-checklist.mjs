@@ -1,3 +1,4 @@
+import {checklistMathResults} from './cfh-notes-math.mjs';
 import {nameTotals} from './cfh-notes-tools.mjs';
 import {applyNoteFormat} from './cfh-notes-content.mjs';
 import {createChecklistItem,reorderVisibleNotes,setChecklistText,ensureChecklistOrder} from './cfh-notes-model.mjs';
@@ -43,6 +44,8 @@ export function createChecklist(host,addButton,{changed,id}){
   #cfhNotesChecklist .cfh-check-entry textarea{flex:1 1 120px;min-width:0;width:120px}
   #cfhNotesChecklist .is-editing .cfh-check-entry{padding-right:28px}
   #cfhNotesChecklist .is-editing .cfh-check-entry textarea{padding-right:0}
+  #cfhNotesChecklist .cfh-check-math-result{font:600 16px/24px Arial,sans-serif;color:#087959;white-space:pre-wrap;overflow-wrap:anywhere}
+  #cfhNotesChecklist .cfh-check-math-result[hidden]{display:none}
   #cfhNotesChecklist .cfh-check-name-total{font:11px/1.5 Arial,sans-serif;color:#007b61;white-space:nowrap}
   #cfhNotesChecklist .cfh-check-name-total[hidden]{display:none}
 
@@ -288,7 +291,7 @@ export function createChecklist(host,addButton,{changed,id}){
   }
   return grip;
  }
- function refreshTotals(){const totals=nameTotals(note?.items);for(const row of host.querySelectorAll('[data-check-id]')){const label=row.querySelector('.cfh-check-name-total');if(label){label.textContent=totals.get(row.dataset.checkId)||'';label.hidden=!label.textContent;}}}
+ function refreshTotals(){const calculations=checklistMathResults(note?.items);for(const row of host.querySelectorAll('[data-check-id]')){const output=row.querySelector('.cfh-check-math-result'),field=row.querySelector('textarea'),values=calculations.get(row.dataset.checkId)||[];if(!output||!field)continue;output.textContent=values.map(v=>v.text).join(' · ');output.hidden=!values.length;if(values.length){const font=getComputedStyle(field).font,key=field.value+'|'+font;if(field.dataset.mathMeasured===key)continue;field.dataset.mathMeasured=key;const measure=document.createElement('span');measure.textContent=field.value;measure.style.cssText='position:fixed;visibility:hidden;white-space:pre;font:'+font;document.body.append(measure);const width=Math.max(24,measure.getBoundingClientRect().width+4);measure.remove();field.style.flex='0 1 '+width+'px';field.style.width=width+'px';field.style.maxWidth='100%';}else{delete field.dataset.mathMeasured;field.style.removeProperty('flex');field.style.removeProperty('width');field.style.removeProperty('max-width');}}const totals=nameTotals(note?.items);for(const row of host.querySelectorAll('[data-check-id]')){const label=row.querySelector('.cfh-check-name-total');if(label){label.textContent=totals.get(row.dataset.checkId)||'';label.hidden=!label.textContent;}}}
  function makeRow(item,blankFor=null){
   const row=document.createElement('div');row.className='cfh-note-check-row'+(item.checked?' is-checked':'');row.dataset.checkId=item.id;
   const fixed=!!(item.pinned||item.divider||blankFor);
@@ -383,7 +386,7 @@ export function createChecklist(host,addButton,{changed,id}){
   text.setAttribute('aria-description',timestamp.textContent);
   const timestampSlot=document.createElement('span');timestampSlot.className='cfh-check-timestamp-slot';
   timestampSlot.append(timestamp);
-  const entry=document.createElement('div');entry.className='cfh-check-entry';const total=document.createElement('span');total.className='cfh-check-name-total';total.hidden=true;entry.append(text,total);row.append(grip,check,entry,removeButton,timestampSlot);queueFit();return row;
+  const entry=document.createElement('div');entry.className='cfh-check-entry';const total=document.createElement('span');total.className='cfh-check-name-total';total.hidden=true;const math=document.createElement('output');math.className='cfh-check-math-result';math.setAttribute('aria-label','Calculation result');math.hidden=true;entry.append(text,math,total);row.append(grip,check,entry,removeButton,timestampSlot);queueFit();return row;
  }
  function render(current){
   endSwipe();cancelHold();cancelMove();blanks.clear();if(note!==current)manualBlankId=null;note=current;host.replaceChildren();if(note?.kind!=='list'){addButton.hidden=true;return;}

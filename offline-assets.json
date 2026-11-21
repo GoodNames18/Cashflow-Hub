@@ -307,6 +307,7 @@
   "supabase/cfh-notes.mjs",
   "supabase/cfh-notes-find.mjs",
   "supabase/cfh-notes-labels.mjs",
+  "supabase/cfh-notes-selection.mjs",
   "supabase/cfh-notes-math.mjs",
   "supabase/cfh-notes-sync.mjs",
   "supabase/cfh-offline-queue.mjs",

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v154-label-left-delete-right-back';
+const CACHE_NAME = 'cashflow-hub-v155-note-selection-checklist-math';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
