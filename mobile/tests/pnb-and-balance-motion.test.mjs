@@ -34,7 +34,7 @@ test('balance animation skips first paint, cache replay, refresh and month switc
  f.motion.arm('gcash');f.key='2026-10';f.values={cash:50};f.motion.render('gcash');assert.equal(f.badges.length,1);assert.equal(f.paints.cash,50);
 });
 test('rapid signed changes finish at exact cents and reduced motion paints immediately',()=>{
- const f=animationFixture();f.motion.render('konek');f.motion.arm('konek');f.values={cash:110};f.motion.render('konek');f.tick(300);const halfway=f.paints.cash;assert(halfway>100&&halfway<110);
+ const f=animationFixture();f.motion.render('konek');f.motion.arm('konek');f.values={cash:110};f.motion.render('konek');f.tick(300);const halfway=f.paints.cash;assert(halfway>100&&halfway<110);f.motion.render('konek');assert.equal(f.paints.cash,halfway);
  f.motion.arm('konek');f.values={cash:-.25};f.motion.render('konek');assert.equal(f.paints.cash,halfway);assert.deepEqual(f.badges.at(-1),['cash',-110.25]);f.tick(600);assert.equal(f.paints.cash,-.25);
  f.reduced=true;f.motion.arm('konek');f.values={cash:.01};f.motion.render('konek');assert.equal(f.paints.cash,.01);assert.equal(f.badges.length,2);
  f.reduced=false;f.hidden=true;f.motion.arm('konek');f.values={cash:999};f.motion.render('konek');assert.equal(f.badges.length,2);assert.equal(f.paints.cash,999);

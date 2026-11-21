@@ -12,6 +12,7 @@ window.cfhBalanceMotion={arm:params=>motion.arm(writeDashboard(params)),render:p
 // Cached dashboards can paint before this module finishes loading. Seed their baseline.
 Object.keys(pageIds).forEach(page=>motion.render(page));
 const dialog=document.getElementById('twiceBankDialog'),form=document.getElementById('twiceBankForm'),kind=document.getElementById('twiceBankKind'),amount=document.getElementById('twiceBankAmount'),detail=document.getElementById('twiceBankDescription'),status=document.getElementById('twiceBankStatus'),save=document.getElementById('twiceBankSave'),cancel=document.getElementById('twiceBankCancel');
+amount.setAttribute('data-cfh-number','true');amount.setAttribute('step','0.01');amount.setAttribute('min','0.01');
 let category='Income',saving=false;
 window.openTwiceBankEntry=value=>{
  if(saving)return;category=value==='Expense'?'Expense':'Income';form.reset();status.textContent='';document.getElementById('twiceBankHeading').textContent=category==='Income'?'PNB income':'PNB expense';save.textContent=category==='Income'?'Save income':'Save expense';kind.replaceChildren(...(category==='Income'?['Shopee withdrawal','Other income']:['Supplies / stocks','Other expense']).map(text=>{const option=document.createElement('option');option.textContent=text;option.value=text;return option;}));dialog.showModal();amount.focus();

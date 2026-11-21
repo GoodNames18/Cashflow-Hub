@@ -10,7 +10,9 @@ export function createBalanceMotion({readValues,paint,showDelta,visible,period,n
   let changed=false;
   for(const [id,value] of Object.entries(values)){
    if(!Number.isFinite(value))continue;
-   const previous=old?.values[id],job=stop(id);
+   const previous=old?.values[id],active=running.get(id);
+   if(active && old.key===key && value===previous && visible(page)){paint(id,active.value);continue;}
+   const job=stop(id);
    if(!animate||!Number.isFinite(previous)||value===previous){paint(id,value);continue;}
    changed=true;
    if(reduced()){paint(id,value);continue;}
