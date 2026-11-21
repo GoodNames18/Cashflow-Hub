@@ -1,6 +1,8 @@
 // Keep the search controls available at the current scroll position after scrolling stops.
 export function installNotesSearchScroll(page,{window:win=page.ownerDocument.defaultView,delay=180}={}){
  const head=page.querySelector('.cfh-notes-head'),doc=page.ownerDocument;
+ const spacer=doc.createElement('div');spacer.className='cfh-notes-head-spacer';spacer.setAttribute('aria-hidden','true');head.before(spacer);
+ const measure=()=>{spacer.hidden=head.hidden;spacer.style.height=((head.offsetHeight||54)+20)+'px';};
  let timer;
  const show=()=>{win.clearTimeout(timer);head.classList.remove('is-scrolling');head.inert=false;};
  const scroll=event=>{
@@ -13,8 +15,10 @@ export function installNotesSearchScroll(page,{window:win=page.ownerDocument.def
  };
  win.addEventListener('scroll',scroll,{capture:true,passive:true});
  head.addEventListener('focusin',show);
- const observer=new win.MutationObserver(show);
+ const reset=()=>{show();measure();};
+ const observer=new win.MutationObserver(reset);
  observer.observe(page,{attributes:true,attributeFilter:['hidden','class']});
  observer.observe(head,{attributes:true,attributeFilter:['hidden']});
- return {show,destroy(){show();observer.disconnect();win.removeEventListener('scroll',scroll,true);head.removeEventListener('focusin',show);}};
+ measure();win.addEventListener('resize',measure);
+ return {show,destroy(){spacer.remove();win.removeEventListener('resize',measure);show();observer.disconnect();win.removeEventListener('scroll',scroll,true);head.removeEventListener('focusin',show);}};
 }
