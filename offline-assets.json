@@ -338,5 +338,6 @@
   "supabase/cfh-notes-tools.mjs",
   "supabase/cfh-notes-repair.mjs",
   "supabase/cfh-cash-counter.mjs",
-  "supabase/cfh-number-format.mjs"
+  "supabase/cfh-number-format.mjs",
+  "supabase/cfh-sheet-dismiss.mjs"
 ]
