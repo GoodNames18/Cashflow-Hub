@@ -342,5 +342,6 @@
   "supabase/cfh-sheet-dismiss.mjs",
   "supabase/cfh-reminder-date.mjs",
   "supabase/cfh-notes-menu.mjs",
-  "supabase/cfh-notes-navigation.mjs"
+  "supabase/cfh-notes-navigation.mjs",
+  "supabase/cfh-notes-label-manager.mjs"
 ]
