@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v175-pnb-logo';
+const CACHE_NAME = 'cashflow-hub-v176-bank-card-alignment';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
