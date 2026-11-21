@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v150-toggle-checked-items-in-find';
+const CACHE_NAME = 'cashflow-hub-v151-label-picker-delete-confirmation';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
