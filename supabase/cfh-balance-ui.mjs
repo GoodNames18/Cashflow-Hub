@@ -9,6 +9,8 @@ const motion=createBalanceMotion({period,visible:page=>{const node=document.getE
  const card=document.getElementById(id)?.closest('.metric-card');if(!card||!delta)return;card.querySelector('.cfh-balance-delta')?.remove();const badge=document.createElement('span');badge.className='cfh-balance-delta'+(delta<0?' is-negative':'');badge.textContent=(delta<0?'−':'+')+peso(Math.abs(delta));badge.setAttribute('aria-hidden','true');card.append(badge);setTimeout(()=>badge.remove(),1200);
 },reduced:()=>matchMedia('(prefers-reduced-motion: reduce)').matches,frame:fn=>requestAnimationFrame(fn),cancel:id=>cancelAnimationFrame(id)});
 window.cfhBalanceMotion={arm:params=>motion.arm(writeDashboard(params)),render:page=>motion.render(page)};
+// Cached dashboards can paint before this module finishes loading. Seed their baseline.
+Object.keys(pageIds).forEach(page=>motion.render(page));
 const dialog=document.getElementById('twiceBankDialog'),form=document.getElementById('twiceBankForm'),kind=document.getElementById('twiceBankKind'),amount=document.getElementById('twiceBankAmount'),detail=document.getElementById('twiceBankDescription'),status=document.getElementById('twiceBankStatus'),save=document.getElementById('twiceBankSave'),cancel=document.getElementById('twiceBankCancel');
 let category='Income',saving=false;
 window.openTwiceBankEntry=value=>{
