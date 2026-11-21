@@ -1185,13 +1185,13 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     var description = String(row[6] || '').trim().toLowerCase();
 
     if (category === 'balance adjustment') {
-      if (description === 'money on card adjustment') card += amount;
-      else if (description === 'money on hand adjustment') cashOnHand += amount;
-      else if (description === 'money on gcash adjustment') gcash += amount;
+      if (/^money on card adjustment(?: — .+)?$/.test(description)) card += amount;
+      else if (/^money on hand adjustment(?: — .+)?$/.test(description)) cashOnHand += amount;
+      else if (/^money on gcash adjustment(?: — .+)?$/.test(description)) gcash += amount;
       continue;
     }
 
-    if (category === 'income' && description === 'earned adjustment') {
+    if (category === 'income' && /^earned adjustment(?: — .+)?$/.test(description)) {
       card += amount;
       continue;
     }
@@ -1364,7 +1364,7 @@ function getTestRowTimestamp_(row) {
 }
 
 function getTestEarnedFeeValue_(row) {
-  if (String(row && row[5] || '').toLowerCase()==='income' && /^(?:Earned adjustment|Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+|Monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/i.test(String(row && row[6] || ''))) return Number(row[3] || 0);
+  if (String(row && row[5] || '').toLowerCase()==='income' && /^(?:Earned adjustment(?: — .+)?|Monthly interest \| Gross [0-9.]+ \| Tax [0-9.]+|Monthly interest — ₱[0-9.]+ interest, ₱[0-9.]+ tax)$/i.test(String(row && row[6] || ''))) return Number(row[3] || 0);
   var processing = getTestGcashAapProcessingFromRow_(row);
   if (processing) return processing.feeEarned;
   var aapCalculation = getTestAapCalculationFromRow_(row);

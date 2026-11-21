@@ -3342,18 +3342,22 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on Card</span><strong id="testAddMoneyCardCurrent">—</strong></span>
                     <input id="testAddMoneyCardInput" type="text" data-cfh-number="true" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on Card adjustment">
+                    <input id="testAddMoneyCardDescription" type="text" maxlength="200" placeholder="Description (optional)" aria-label="Money on Card adjustment description" style="grid-column:1/-1;width:100%;box-sizing:border-box">
                   </label>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on Hand</span><strong id="testAddMoneyCashCurrent">—</strong></span>
                     <input id="testAddMoneyCashInput" type="text" data-cfh-number="true" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on Hand adjustment">
+                    <input id="testAddMoneyCashDescription" type="text" maxlength="200" placeholder="Description (optional)" aria-label="Money on Hand adjustment description" style="grid-column:1/-1;width:100%;box-sizing:border-box">
                   </label>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Money on GCash</span><strong id="testAddMoneyGcashCurrent">—</strong></span>
                     <input id="testAddMoneyGcashInput" type="text" data-cfh-number="true" inputmode="decimal" step="0.01" placeholder="Enter + or − amount" aria-label="Money on GCash adjustment">
+                    <input id="testAddMoneyGcashDescription" type="text" maxlength="200" placeholder="Description (optional)" aria-label="Money on GCash adjustment description" style="grid-column:1/-1;width:100%;box-sizing:border-box">
                   </label>
                   <label class="test-add-money-adjust-row">
                     <span class="test-add-money-adjust-label"><span>Total Earned</span><strong id="testAddMoneyTotalEarned">—</strong></span>
                     <input id="testAddMoneyEarnedInput" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" step="0.01" placeholder="Enter earned amount" aria-label="Add to Total Earned">
+                    <input id="testAddMoneyEarnedDescription" type="text" maxlength="200" placeholder="Description (optional)" aria-label="Total Earned adjustment description" style="grid-column:1/-1;width:100%;box-sizing:border-box">
                   </label>
                 </div>
               </div>
@@ -7064,10 +7068,17 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           var field = document.getElementById(id);
           if (!field) return;
           field.addEventListener("input", updateTestAddMoneyModalValues);
-          field.addEventListener("blur", function(event) {
-            if (event.relatedTarget && event.relatedTarget.id === "testAddMoneySaveButton") return;
-            saveTestAddMoneyField(field);
-          });
+          var details = document.getElementById(id.replace("Input", "Description"));
+          var saveAfterLeavingRow = function(event) {
+            var next = event.relatedTarget;
+            if (next === field || next === details || (next && next.id === "testAddMoneySaveButton")) return;
+            setTimeout(function() {
+              if (document.activeElement === field || document.activeElement === details || document.activeElement === addMoneySaveButton) return;
+              saveTestAddMoneyField(field);
+            }, 0);
+          };
+          field.addEventListener("blur", saveAfterLeavingRow);
+          if (details) details.addEventListener("blur", saveAfterLeavingRow);
         });
 
       [
@@ -7418,7 +7429,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var modal = document.getElementById("testAddMoneyModal");
       if (!modal) return;
       ["testAddMoneyCardInput", "testAddMoneyCashInput", "testAddMoneyGcashInput", "testAddMoneyEarnedInput"]
-        .forEach(function(id) { var input = document.getElementById(id); if (input) input.value = ""; });
+        .forEach(function(id) { var input = document.getElementById(id); if (input) input.value = ""; var details=document.getElementById(id.replace("Input","Description"));if(details)details.value=""; });
       updateTestAddMoneyModalValues();
       if (modal.parentNode !== document.body) document.body.appendChild(modal);
       modal.hidden = false;
@@ -7461,6 +7472,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       }[input.id];
       var raw = String(input.value || "").trim();
       if (!raw) { if (onComplete) onComplete(true); return; }
+      var descriptionInput = document.getElementById(input.id.replace("Input", "Description"));
+      var description = String(descriptionInput && descriptionInput.value || "").trim();
       var amount;
       try {
         if (input.id === "testAddMoneyEarnedInput") {
@@ -7481,15 +7494,18 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       }
 
       var params = input.id === "testAddMoneyEarnedInput"
-        ? { action: "testEarnedAdjustment", amount: amount }
-        : { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount }] };
+        ? { action: "testEarnedAdjustment", amount: amount, description: description }
+        : { action: "testBalanceAdjustment", adjustments: [{ balance: field.balance, amount: amount, description: description }] };
       var label = input.id === "testAddMoneyEarnedInput" ? "Total Earned" : field.label;
       input.dataset.saving = "true";
       input.disabled = true;
+      if (descriptionInput) descriptionInput.disabled = true;
       setTestStatus("Saving " + label + "...", "preview");
       jsonpRequest(params, function(result) {
         input.value = "";
+        if (descriptionInput) descriptionInput.value = "";
         input.disabled = false;
+        if (descriptionInput) descriptionInput.disabled = false;
         delete input.dataset.saving;
         markTestDashboardLoaded_(result.dashboard);
         updateTestAddMoneyModalValues();
@@ -7497,6 +7513,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         if (onComplete) onComplete(true);
       }, function(error) {
         input.disabled = false;
+        if (descriptionInput) descriptionInput.disabled = false;
         delete input.dataset.saving;
         setTestStatus("❌ " + error.message, "error");
         if (onComplete) onComplete(false);
@@ -11507,7 +11524,7 @@ window.cfhRefreshTestTab = function(page) {
  </div><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioModal">Cancel</button><button type="submit">Save</button></div><small>Records an existing purchase in your portfolio.</small>
 </form></div>
 <div id="cfhPortfolioValueModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioValueForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioValueTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioValueTitle">Record latest price</h2><button type="button" data-portfolio-close="cfhPortfolioValueModal" aria-label="Close">×</button></div><input name="kind" type="hidden"><label>Broker<input name="broker" maxlength="80" required></label><label id="cfhPortfolioValueSymbol">Stock / coin symbol<input name="symbol" maxlength="20"></label><label><span id="cfhPortfolioValuePriceLabel">Latest price (₱)</span><input name="price" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="any" inputmode="decimal" required></label><p id="cfhPortfolioValueStatus" role="status"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhPortfolioValueModal">Cancel</button><button type="submit">Save</button></div><small>Use the value shown by your broker.</small></form></div>
-<div id="cfhDividendReceiptModal" class="cfh-portfolio-overlay" hidden><form id="cfhDividendReceiptForm" class="cfh-portfolio-dialog cfh-dividend-receipt-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhDividendReceiptTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhDividendReceiptTitle">Confirm Received</h2><button type="button" data-portfolio-close="cfhDividendReceiptModal" aria-label="Close">×</button></div><strong id="cfhDividendReceiptIdentity"></strong><p>Check the dividend credit in your broker's history, then confirm the actual amount.</p><div class="cfh-dividend-detail-row"><span>Expected amount</span><strong id="cfhDividendReceiptExpected"></strong></div><label>Amount actually received (₱)<input name="amount" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" max="1000000000000" step="0.01" inputmode="decimal" required></label><label>Actual receipt date<span class="cfh-dividend-receipt-date"><span id="cfhDividendReceiptDateText"></span><input name="paidDate" type="date" required aria-label="Actual receipt date"></span></label><div class="cfh-dividend-detail-row"><span>Difference</span><strong id="cfhDividendReceiptDifference"></strong></div><label>Reference (optional)<input name="reference" maxlength="120" autocomplete="off"></label><p id="cfhDividendReceiptStatus" role="alert"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhDividendReceiptModal">Cancel</button><button type="submit">Confirm Received</button></div></form></div>
+<div id="cfhDividendReceiptModal" class="cfh-portfolio-overlay" hidden><form id="cfhDividendReceiptForm" class="cfh-portfolio-dialog cfh-dividend-receipt-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhDividendReceiptTitle"><div class="cfh-portfolio-modal-heading"><h2 id="cfhDividendReceiptTitle">Confirm Received</h2><button type="button" data-portfolio-close="cfhDividendReceiptModal" aria-label="Close">×</button></div><strong id="cfhDividendReceiptIdentity"></strong><p>Check the dividend credit in your broker's history, then confirm the actual amount.</p><div class="cfh-dividend-detail-row"><span>Gross amount</span><strong id="cfhDividendReceiptGross"></strong></div><label>Withholding tax (₱)<input name="tax" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" required></label><div class="cfh-dividend-detail-row"><span>Expected net after tax</span><strong id="cfhDividendReceiptExpected"></strong></div><label>Amount actually received (₱)<input name="amount" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" max="1000000000000" step="0.01" inputmode="decimal" required></label><label>Actual receipt date<span class="cfh-dividend-receipt-date"><span id="cfhDividendReceiptDateText"></span><input name="paidDate" type="date" required aria-label="Actual receipt date"></span></label><div class="cfh-dividend-detail-row"><span>Difference</span><strong id="cfhDividendReceiptDifference"></strong></div><label>Reference (optional)<input name="reference" maxlength="120" autocomplete="off"></label><p id="cfhDividendReceiptStatus" role="alert"></p><div class="cfh-portfolio-actions"><button type="button" data-portfolio-close="cfhDividendReceiptModal">Cancel</button><button type="submit">Confirm Received</button></div></form></div>
 <div id="cfhPortfolioDividendModal" class="cfh-portfolio-overlay" hidden><form id="cfhPortfolioDividendForm" class="cfh-portfolio-dialog" role="dialog" aria-modal="true" aria-labelledby="cfhPortfolioDividendTitle">
  <div class="cfh-portfolio-modal-heading"><h2 id="cfhPortfolioDividendTitle">Record dividend</h2></div><p>Enter the dividend details from your broker.</p>
  <input type="hidden" name="asset" value="stock">

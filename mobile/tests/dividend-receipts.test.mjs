@@ -36,3 +36,14 @@ test('equal timestamp updates converge on the confirmed receipt and old paid ent
  assert.throws(()=>validateRecord({...paid,varianceAmount:0}),/difference/);
  assert.throws(()=>validateRecord({...paid,status:'upcoming'}),/confirmed/);
 });
+
+test('editable withholding tax confirms actual net without changing the dividend schedule',()=>{
+ const row={...pending,symbol:'MREIT',shares:100,perShare:.2762,grossEstimate:true};
+ const paid=confirmDividendReceipt(row,{amount:'24.86',tax:'2.76',paidDate:'2026-10-20'},now);
+ assert.equal(paid.tax,2.76);assert.equal(paid.expectedNetAmount,24.86);assert.equal(paid.receivedNetAmount,24.86);assert.equal(paid.varianceAmount,0);assert.equal(row.tax,0);assert.equal(row.status,'upcoming');assert.equal(paid.paymentDate,row.paymentDate);assert.equal(dividendNet(paid),24.86);
+ const different=confirmDividendReceipt(row,{amount:'24.80',tax:'2.76',paidDate:'2026-10-20'},now);assert.equal(different.varianceAmount,-.06);
+});
+test('withholding rejects invalid, negative, excess and imprecise tax amounts',()=>{
+ for(const tax of ['', '-1','100.01','1.001','NaN'])assert.throws(()=>confirmDividendReceipt(pending,{amount:'90',tax,paidDate:'2026-10-20'},now),/withholding tax/);
+ const noTax=confirmDividendReceipt(pending,{amount:'100',tax:'0',paidDate:'2026-10-20'},now);assert.equal(noTax.tax,0);assert.equal(noTax.expectedNetAmount,100);
+});

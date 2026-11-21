@@ -14,6 +14,11 @@ function signedCents(value) {
     throw new Error('Enter a non-zero adjustment with at most two decimal places.');
   return Math.round(amount*100)/100;
 }
+function adjustmentDescription(prefix,value){
+ const detail=String(value??'').trim();
+ if(detail.length>200||/[\r\n]/.test(detail))throw Error('Adjustment description must be one line and 200 characters or less.');
+ return prefix+(detail?' — '+detail:'');
+}
 export function rowRecord(tab, row) {
   let amount = null, category = '', description = '', payload = {sheet:sheets[tab]};
   if (tab==='life_log') {
@@ -105,7 +110,7 @@ export function planEntry(params, now = new ManilaDate()) {
         seen.add(balance);
         const amount=signedCents(item.amount);
         const label=labels[balance];
-        return [date,date,'Adjustment',amount,'','Balance Adjustment',label+' adjustment'];
+        return [date,date,'Adjustment',amount,'','Balance Adjustment',adjustmentDescription(label+' adjustment',item.description)];
       });
       tab='konek2card';
       receipt={adjustments:adjustments.map(item=>({balance:String(item.balance).toLowerCase(),amount:signedCents(item.amount)}))};
@@ -114,8 +119,9 @@ export function planEntry(params, now = new ManilaDate()) {
     case 'testEarnedAdjustment': {
       const amount=cents(params.amount);
       tab='konek2card';
-      rows=[[date,date,'Adjustment',amount,amount,'Income','Earned adjustment']];
-      receipt={amount,category:'Income',description:'Earned adjustment'};
+      const description=adjustmentDescription('Earned adjustment',params.description);
+      rows=[[date,date,'Adjustment',amount,amount,'Income',description]];
+      receipt={amount,category:'Income',description};
       break;
     }
     case 'testOthersLoan': {

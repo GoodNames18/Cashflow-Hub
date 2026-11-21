@@ -47,3 +47,17 @@ test('earned adjustments require a positive amount with at most two decimal plac
   for (const amount of [0,-1,1.001])
     assert.throws(()=>planEntry({action:'testEarnedAdjustment',amount}),/positive amount/);
 });
+
+test('custom adjustment details preserve balance routing and the complete sheet row',()=>{
+ configureKonekSeed({reset_at:'2026-09-20T16:00:00Z',bank_card:100,gcash:40,cash_on_hand:60,held_money:0,loan_remaining:500,others_loan:200,savings_included_in_total:0});
+ const {records}=planEntry({action:'testBalanceAdjustment',adjustments:[{balance:'cash',amount:-10,description:' corrected cash count '},{balance:'card',amount:20,description:'Bank reconciliation'},{balance:'gcash',amount:5,description:'Wallet count'}]},new ManilaDate('2026-10-18T12:00:00+08:00'));
+ assert.equal(records[0].description,'Money on Hand adjustment — corrected cash count');assert.equal(records[0].source_values[6],records[0].description);
+ const rows=records.map(r=>r.source_values.map((v,i)=>i<2?new ManilaDate(v):v));const result=computeTestDashboardFromRows_(rows);
+ assert.equal(result.cashOnHand,50);assert.equal(result.card,120);assert.equal(result.gcash,45);assert.equal(result.totalMoney,215);assert.equal(result.totalEarned,0);
+ const earned=planEntry({action:'testEarnedAdjustment',amount:25.5,description:'Fee correction'},new ManilaDate('2026-10-18T12:00:00+08:00'));
+ const all=[...rows,...earned.records.map(r=>r.source_values.map((v,i)=>i<2?new ManilaDate(v):v))];const updated=computeTestDashboardFromRows_(all);
+ assert.equal(updated.card,145.5);assert.equal(updated.totalEarned,25.5);assert.equal(updated.thisWeekEarned,25.5);assert.equal(earned.records[0].source_values[6],'Earned adjustment — Fee correction');
+});
+test('adjustment details reject overlong and multiline descriptions',()=>{
+ for(const description of ['x'.repeat(201),'first\nsecond']){assert.throws(()=>planEntry({action:'testBalanceAdjustment',adjustments:[{balance:'cash',amount:1,description}]}),/200 characters/);assert.throws(()=>planEntry({action:'testEarnedAdjustment',amount:1,description}),/200 characters/);}
+});

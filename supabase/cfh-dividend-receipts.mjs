@@ -1,4 +1,9 @@
 import {money,validateRecord} from './cfh-portfolio-model.mjs';
+export function dividendBreakdown(row,tax=row.tax??0){
+ const gross=money(row.shares*row.perShare),text=String(tax).trim();
+ if(!/^\d+(?:\.\d{1,2})?$/.test(text)||!Number.isFinite(Number(text))||Number(text)<0||Number(text)>gross)throw Error('Enter withholding tax from 0 to the gross amount, with at most two decimal places.');
+ return {gross,tax:money(Number(text)),net:money(gross-Number(text))};
+}
 export function expectedDividendNet(row){return row.expectedNetAmount??money(row.shares*row.perShare-row.tax);}
 export function dividendNet(row){return row.status==='paid'?(row.receivedNetAmount??expectedDividendNet(row)):expectedDividendNet(row);}
 export function latestDividends(records){
@@ -12,7 +17,7 @@ export function latestDividends(records){
 }
 export function dividendReceiptState(row,today){return row.status==='paid'?'paid':row.paymentDate<today?'overdue':row.paymentDate===today?'due':'expected';}
 function validDate(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;}
-export function confirmDividendReceipt(row,{amount,paidDate,reference=''},now=new Date()){
+export function confirmDividendReceipt(row,{amount,paidDate,reference='',tax},now=new Date()){
  validateRecord(row);
  if(row.status!=='upcoming')throw Error('This dividend has already been confirmed.');
  const text=String(amount).trim();
@@ -20,7 +25,8 @@ export function confirmDividendReceipt(row,{amount,paidDate,reference=''},now=ne
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
  if(!validDate(paidDate)||paidDate>today)throw Error('Choose the actual receipt date, today or earlier.');
  if(typeof reference!=='string'||reference.trim().length>120)throw Error('Reference must be 120 characters or less.');
- const expectedNetAmount=expectedDividendNet(row),receivedNetAmount=money(Number(text));
- const confirmed={...row,status:'paid',recordId:row.recordId||row.id,expectedNetAmount,receivedNetAmount,varianceAmount:money(receivedNetAmount-expectedNetAmount),paidDate,confirmedAt:now.toISOString(),reference:reference.trim(),verification:'user_confirmed'};
+ const breakdown=tax===undefined?null:dividendBreakdown(row,tax);
+ const expectedNetAmount=breakdown?breakdown.net:expectedDividendNet(row),receivedNetAmount=money(Number(text));
+ const confirmed={...row,...(breakdown?{tax:breakdown.tax}:{}),status:'paid',recordId:row.recordId||row.id,expectedNetAmount,receivedNetAmount,varianceAmount:money(receivedNetAmount-expectedNetAmount),paidDate,confirmedAt:now.toISOString(),reference:reference.trim(),verification:'user_confirmed'};
  validateRecord(confirmed);return confirmed;
 }
