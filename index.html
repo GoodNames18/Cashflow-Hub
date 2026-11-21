@@ -2275,6 +2275,14 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
 @media(prefers-reduced-motion:reduce){.cfh-bottom-nav,#cfhCryptoNav{transition:none}}
 
 </style>
+<style>
+body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:none!important}
+#cfhCashPage[hidden]{display:none!important}#cfhCashPage{max-width:520px;margin:0 auto;padding:24px 18px 120px;color:#1B1844;box-sizing:border-box;font-family:Arial,sans-serif}
+.cash-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.cash-heading p{font-size:11px;letter-spacing:2px;margin:0 0 6px;color:#706b85}.cash-heading h1{font-size:27px;margin:0}.cash-heading button{border:0;border-radius:12px;background:#eae6fa;color:#1B1844;padding:11px 16px;font-size:14px;margin:0}
+.cash-summary{background:#1B1844;color:white;border-radius:24px;padding:25px 24px;display:grid;gap:10px}.cash-summary>span{color:#d5cfea;font-size:14px}.cash-summary strong{color:#00F8B9;font-size:clamp(28px,8vw,40px);overflow-wrap:anywhere}.cash-summary small{color:#d5cfea;font-size:12px}
+.cash-columns,.cash-row{display:grid;grid-template-columns:minmax(80px,1fr) 76px minmax(90px,1.2fr);gap:10px;align-items:center}.cash-columns{font-size:11px;color:#706b85;padding:24px 14px 10px}.cash-columns span:last-child{text-align:right}.cash-rows{background:#fff;border:1px solid #e6e1f0;border-radius:18px;overflow:hidden}.cash-row{padding:12px 14px;border-bottom:1px solid #f0edf7;min-height:44px}.cash-row:last-child{border:0}.cash-denomination{font-weight:700;font-size:15px}.cash-row input{min-width:0;width:100%;box-sizing:border-box;height:42px;border:1px solid #dbd5eb;border-radius:10px;background:#f8f6fd;color:#1B1844;text-align:center;font-size:17px;padding:6px;margin:0}.cash-row input:focus{outline:2px solid #00b38a;outline-offset:1px}.cash-row output{text-align:right;font-size:14px;overflow-wrap:anywhere}.cash-local{font-size:12px;text-align:center;line-height:1.5;color:#706b85;margin:16px 0}
+#cashConfirm{width:calc(100% - 40px);max-width:360px;box-sizing:border-box;border:0;border-radius:22px;padding:24px;color:#1B1844}#cashConfirm::backdrop{background:#1b184466}#cashConfirm h2{font-size:21px;margin:0 0 12px}#cashConfirm p{font-size:14px;line-height:1.5}#cashConfirm>div{display:flex;gap:12px;margin-top:20px}#cashConfirm button{flex:1;margin:0;padding:12px;border:0;border-radius:10px;background:#eae6fa;color:#1B1844;font-size:15px}#cashConfirm #cashClear{background:#00F8B9}
+</style>
 </head>
 
 <body>
@@ -4988,7 +4996,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     let currentAppPage = "gcash";
 
     const CFH_NAV_KEY = 'cashflow-hub:navigation-v2';
-    const CFH_VALID_PAGES = ['gcash','lifeLog','rental','printing','twice','test','expenses','calendar','crypto'];
+    const CFH_VALID_PAGES = ['money','gcash','lifeLog','rental','printing','twice','test','expenses','calendar','crypto'];
     function cfhSaveNavigationState() {
       try {
         const state = {page:currentAppPage,home:window.cfhLastHomePage || 'gcash',scrollY:window.scrollY,month:cfhCalendarDateKey(cfhCalendarState.month),selected:cfhCalendarDateKey(cfhCalendarState.selected),savedAt:Date.now()};
@@ -5015,7 +5023,7 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
         if (month) cfhCalendarState.month = new Date(month.getFullYear(),month.getMonth(),1);
         if (selected) cfhCalendarState.selected = selected;
         cfhCalendarState.filterSelectedDate=false;cfhCalendarState.selectionCleared=true;
-        window.cfhLastHomePage = CFH_VALID_PAGES.includes(state.home) && !['calendar','crypto'].includes(state.home) ? state.home : 'gcash';
+        window.cfhLastHomePage = CFH_VALID_PAGES.includes(state.home) && !['calendar','crypto','money'].includes(state.home) ? state.home : 'gcash';
         const isReload = performance.getEntriesByType('navigation')[0]?.type === 'reload';
         const explicitReload = legacy && Date.now()-legacy.savedAt < 60000;
         if (!isReload && !explicitReload) {
@@ -5573,10 +5581,13 @@ body.cfh-crypto-active:not(.cfh-main-nav-revealed) #cfhPortfolioPage{padding-bot
     function showAppPage(pageName, animate = true) {
       // Calendar is separate from the Home carousel; never slide through Home to reach it.
       if (pageName === "calendar" || currentAppPage === "calendar") animate = false;
+      document.body.classList.toggle('cfh-cash-active',pageName==='money');
+      const cashPage=document.getElementById('cfhCashPage');if(cashPage)cashPage.hidden=pageName!=='money';
       document.body.classList.toggle('cfh-crypto-active',pageName==='crypto');
       const portfolioPage=document.getElementById('cfhPortfolioPage');if(portfolioPage)portfolioPage.hidden=pageName!=='crypto';
       document.body.classList.toggle('cfh-notes-active',pageName==='notes');
       const notesPage=document.getElementById('cfhNotesPage');if(notesPage)notesPage.hidden=pageName!=='notes';
+      if(pageName==='money'){currentAppPage='money';document.body.classList.remove('cfh-calendar-active');cfhSaveNavigationState();window.cfhSyncBottomNav?.();window.scrollTo(0,0);return;}
       if(pageName==='notes'){currentAppPage='notes';document.body.classList.remove('cfh-calendar-active');window.cfhNotesRender?.();cfhSaveNavigationState();window.cfhSyncBottomNav?.();window.scrollTo(0,0);return;}
       if(pageName==='crypto'){
         currentAppPage='crypto';document.body.classList.remove('cfh-calendar-active');
@@ -11712,22 +11723,24 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 <input id="cfhNotesImageFile" type="file" accept="image/*" multiple hidden><input id="cfhNotesAudioFile" type="file" accept="audio/*" hidden>
 <div id="cfhNotesToast" role="status" hidden></div>
 
+<main id="cfhCashPage" hidden aria-label="Cash counter"></main>
+<script type="module" src="supabase/cfh-cash-counter.mjs"></script>
 <nav class="cfh-bottom-nav" aria-label="Main bottom navigation">
 <button type="button" data-cfh-dest="home" aria-current="page" aria-label="Home"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10h-7v-7h-4v7H3z"/></svg></span><span>Home</span></button>
 <button type="button" data-cfh-dest="calendar" aria-label="Calendar"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span><span>Calendar</span></button>
 <button type="button" data-cfh-dest="crypto" aria-label="Crypto"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="m3 17 6-7 5 4 7-9"/><path d="M16 5h5v5"/></svg></span><span>Crypto</span></button>
 <button type="button" data-cfh-dest="add" class="cfh-nav-add" aria-label="Add preview"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></span><span>Add</span></button>
 <button type="button" data-cfh-dest="notes" class="cfh-nav-notes" aria-label="Notes"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z"/></svg></span><span>Notes</span></button>
-<button type="button" data-cfh-dest="money" aria-label="Money preview"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="15" rx="2"/><path d="M2 10h20M17 16h2"/></svg></span><span>Money</span></button>
+<button type="button" data-cfh-dest="money" aria-label="Money"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="15" rx="2"/><path d="M2 10h20M17 16h2"/></svg></span><span>Money</span></button>
 <button type="button" data-cfh-dest="more" aria-label="More preview"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span>More</span></button>
 </nav>
 <script>
 (function(){
  var bar=document.querySelector('.cfh-bottom-nav');if(!bar)return;
- function sync(){var selected=(typeof currentAppPage!=='undefined'&&['calendar','crypto','notes'].includes(currentAppPage))?currentAppPage:'home';var fab=document.querySelector('.cfh-calendar-fab');if(fab)fab.hidden=selected!=='calendar';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+ function sync(){var selected=(typeof currentAppPage!=='undefined'&&['calendar','crypto','notes','money'].includes(currentAppPage))?currentAppPage:'home';var fab=document.querySelector('.cfh-calendar-fab');if(fab)fab.hidden=selected!=='calendar';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
  window.cfhSyncBottomNav=sync;
  var toastTimer;
- bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'||dest==='crypto'||dest==='notes'){if(typeof showAppPage==='function')showAppPage(dest==='home'?(window.cfhLastHomePage||'gcash'):dest);sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
+ bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'||dest==='crypto'||dest==='notes'||dest==='money'){if(typeof showAppPage==='function')showAppPage(dest==='home'?(window.cfhLastHomePage||'gcash'):dest);sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
  document.addEventListener('click',function(e){if(e.target.closest('.app-tab'))setTimeout(sync,0)});
  document.addEventListener('touchend',function(){setTimeout(sync,100)}, {passive:true});
  sync();
