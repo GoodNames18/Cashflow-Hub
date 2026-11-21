@@ -7,7 +7,9 @@ export function formatAmount(value) {
  return integer.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(fraction===undefined?'':'.'+fraction);
 }
 export function formatNoteNumbers(value) {
- const text=String(value),protectedRanges=[];
+ const text=String(value).replace(/\b(\d[\d,]{0,4})([\/-])(?=\d{0,2}(?:[\/-]|\b|$))/g,(match,year,separator)=>{
+  const raw=year.replace(/,/g,'');return raw.length===4&&Number(raw)>=1900&&Number(raw)<=2200?raw+separator:match;
+ }),protectedRanges=[];
  // Dates, times, phone numbers, account/card identifiers and mixed-letter IDs.
  const protect=/(?:\b\d{1,4}[\/-]\d{1,2}(?:[\/-]\d{1,4})?\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|\b(?:phone|mobile|tel|account|card|id|reference|ref)\s*[:#-]?\s*[\d, -]+|\b[A-Za-z]+\d[\w-]*|\b\d+[A-Za-z][\w-]*)/gi;
  for(const m of text.matchAll(protect))protectedRanges.push([m.index,m.index+m[0].length]);

@@ -46,9 +46,12 @@ export function mountCashCounter(root, storage, {now = Date.now, schedule = true
   root.querySelectorAll('[data-cash]').forEach(input=>{
     input.value = counts[input.dataset.cash] || '';formatTextField(input);
     input.addEventListener('input',()=>{
-      const typed = input.value.replace(/[^0-9]/g,'').slice(0,6);
+      const before=input.value,start=input.selectionStart,end=input.selectionEnd;
+      const typed = before.replace(/[^0-9]/g,'').slice(0,6);
+      const position=p=>Math.min(6,before.slice(0,p).replace(/[^0-9]/g,'').length);
       checkDay();
       input.value = typed;
+      if(start!==null)input.setSelectionRange(position(start),position(end));
       counts[input.dataset.cash] = Number(input.value || 0);
       formatTextField(input);render(); persist();
     });

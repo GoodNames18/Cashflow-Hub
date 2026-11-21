@@ -13,3 +13,8 @@ test('comma-formatted finance inputs retain exact amounts in calculations',()=>{
  assert.equal(cashMovement([],{asset:'stock',action:'deposit',broker:'COL Financial',amount:String(numberValue('12,500.50'))},'cash').price,12500.5);
  assert.equal(estimatePurchaseFees({asset:'stock',broker:'COL Financial',date:'2026-11-21',shares:'1,000',price:'1,000'}).amount,2950);
 });
+
+test('typing a date removes grouping previously inserted into its year',()=>{
+ let text='';for(const char of '2026-11-21')text=formatNoteNumbers(text+char);
+ assert.equal(text,'2026-11-21');
+});
