@@ -1,4 +1,4 @@
-import {createLabelPicker,createDeleteConfirmation} from './cfh-notes-labels.mjs';
+import {createLabelPicker,createDeleteConfirmation,installOptionsGestures} from './cfh-notes-labels.mjs';
 import {copyNoteData,noteShareText,canRestoreChecklist} from './cfh-notes-tools.mjs';
 import {createNoteFind} from './cfh-notes-find.mjs';
 import {createNoteHistory} from './cfh-notes-history.mjs';
@@ -412,6 +412,7 @@ const noteOptions=el('dialog','cfh-note-options');noteOptions.id='cfhNotesMorePa
 outsideClose(noteOptions);noteOptions.addEventListener('close',()=>{noteOptions.hidden=true;$('cfhNotesMoreButton').setAttribute('aria-expanded','false');});
 Object.assign(paths,{search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM15 15l6 6',copy:'M8 3h13v15H8ZM3 7v15h13',share:'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8 10l7-4M8 14l7 4'});
 function optionsPage(title,main=false){
+ noteOptions.dataset.backToMenu=String(['Reminder','Labels','Delete this note?','Delete permanently?','Delete this label?'].includes(title));
  noteOptions.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');noteOptions.replaceChildren();
  const head=el('div','cfh-note-options-head');
  if(!main){const back=button('‹',showNoteOptions);back.setAttribute('aria-label','Back to note options');head.append(back);}
@@ -444,8 +445,21 @@ function showNoteLabels(){
  createLabelPicker(body,{
   getLabels:labels,getSelected:()=>$('cfhNotesLabel').value,
   select:id=>{const target=$('cfhNotesLabel'),previous=target.value;target.replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));target.value=id;if(saveDraft())return true;target.value=previous;draft.labelId=previous;return false;},
+  requestDelete:showDeleteLabel,
   create:name=>{const current=labels(),existing=current.find(l=>l.name.toLocaleLowerCase()===name.toLocaleLowerCase());if(existing)return existing;const label={id:uid(),name};return saveLabels([...current,label])?label:null;}
  });
+}
+function showDeleteLabel(label){
+ const body=optionsPage('Delete this label?'),noteId=draft?.id;
+ createDeleteConfirmation(body,{labelName:label.name,cancel:showNoteLabels,remove:()=>{
+  if(!draft||draft.id!==noteId||!saveDraft())return;
+  const current=labels();if(!current.some(l=>l.id===label.id)){showNoteLabels();return;}
+  if(!write(removeLabel(read(),label.id)))return;
+  if(draft.labelId===label.id){draft.labelId='';$('cfhNotesLabel').value='';editorSnapshot=JSON.stringify(draft);}
+  if(!saveLabels(current.filter(l=>l.id!==label.id)))return;
+  const selected=$('cfhNotesLabel').value;$('cfhNotesLabel').replaceChildren(new Option('No label',''),...labels().map(l=>new Option(l.name,l.id)));$('cfhNotesLabel').value=selected;
+  if(filter==='label:'+label.id)filter='all';render();showNoteLabels();toast('Label deleted. Notes kept.');
+ }});
 }
 async function duplicateOpenNote(){
  if(!draft||!saveDraft())return;const source=structuredClone(draft),body=optionsPage('Making a copy');body.append(el('p','','Copying note and attachments…'));
@@ -480,32 +494,20 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-options-hint{font:13px/1.5 Arial,sans-serif;color:#514a65}
 .cfh-note-options-error{font-size:13px;color:#a3273d}
 #cfhNotesMorePanel .cfh-note-label-list{display:grid;gap:0;max-height:45dvh;overflow:auto;margin-top:8px}
-#cfhNotesMorePanel .cfh-note-label-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:2px 4px;cursor:pointer}
+#cfhNotesMorePanel .cfh-note-label-row{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 4px;touch-action:pan-y}
+#cfhNotesMorePanel .cfh-note-label-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1;min-width:0;min-height:44px;cursor:pointer}
+#cfhNotesMorePanel .cfh-note-label-delete{background:#a3273d;color:#fff;flex:0 0 auto;padding:8px 12px}
+#cfhNotesMorePanel .cfh-note-label-delete[hidden]{display:none!important}
 .cfh-note-label-row span{overflow-wrap:anywhere;min-width:0}
 #cfhNotesMorePanel .cfh-note-label-row input{width:22px;height:22px;min-width:22px;padding:0;accent-color:#009d7b;flex:0 0 22px}
 #cfhNotesMorePanel .cfh-note-label-create{text-align:left;overflow-wrap:anywhere;min-height:44px}
-.cfh-note-delete-actions{display:flex;justify-content:flex-end;gap:8px}
-#cfhNotesMorePanel .cfh-note-delete-confirm{color:#a3273d;font-weight:600}
+.cfh-note-delete-actions{display:flex;gap:12px;margin-top:12px}
+#cfhNotesMorePanel .cfh-note-delete-actions button{flex:1;min-width:0;min-height:46px;border:1px solid #1b184466;border-radius:12px;background:transparent}
+#cfhNotesMorePanel .cfh-note-delete-actions .cfh-note-delete-confirm{background:#a3273d;border-color:#a3273d;color:#fff;font-weight:600}
 .cfh-note-options-controls{display:flex;flex-wrap:wrap;gap:5px}
 .cfh-note-find-preview{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 Arial,sans-serif}
 `;document.head.append(noteOptionsStyle);
 
-// Dismiss from the backdrop or with a downward swipe from the sheet's top.
-let optionsSwipe=null,optionsIgnoreClickUntil=0;
-noteOptions.addEventListener('touchstart',event=>{
- if(event.touches.length!==1){optionsSwipe=null;return;}
- const touch=event.touches[0],bounds=noteOptions.getBoundingClientRect();
- const interactive=event.target.closest('input,textarea,select');
- optionsSwipe=!interactive&&noteOptions.scrollTop<=0?{x:touch.clientX,y:touch.clientY,top:touch.clientY<bounds.top+80}:null;
-},{passive:true});
-noteOptions.addEventListener('touchend',event=>{
- const start=optionsSwipe;optionsSwipe=null;if(!start||!event.changedTouches.length)return;
- const touch=event.changedTouches[0],dy=touch.clientY-start.y,dx=Math.abs(touch.clientX-start.x);
- if(dy>(start.top?55:90)&&dy>dx*1.5){optionsIgnoreClickUntil=Date.now()+400;if(event.cancelable)event.preventDefault();editorPanel();}
-},{passive:false});
-noteOptions.addEventListener('click',event=>{if(Date.now()<optionsIgnoreClickUntil){event.preventDefault();event.stopImmediatePropagation();}},true);
-noteOptions.addEventListener('touchcancel',()=>{optionsSwipe=null;});
-// A downward trackpad/mouse scroll closes a sheet already at its top edge.
-noteOptions.addEventListener('wheel',event=>{if(event.deltaY< -45&&noteOptions.scrollTop<=0&&!event.target.closest('input,textarea,select'))editorPanel();},{passive:true});
+installOptionsGestures(noteOptions,{back:showNoteOptions,dismiss:()=>editorPanel(),canGoBack:()=>noteOptions.dataset.backToMenu==='true'});
 
 const noteFind=createNoteFind($('cfhNotesEditorBox'),{getNote:()=>draft,saveNote:saveDraft,closePanels:()=>editorPanel(),loadMedia});
