@@ -8059,7 +8059,10 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         var amountText = "";
         var amountClass = "transaction-amount";
 
-        if (description === "cash-out" || fee > 0) {
+        if (category === "balance adjustment") {
+          amountText = (amount < 0 ? "\u2212" : "+") + formatPeso(Math.abs(amount));
+          amountClass += amount < 0 ? " expense-value" : " income-value";
+        } else if (description === "cash-out" || fee > 0) {
           if (amount > 0) {
             amountText = formatPeso(amount) + (fee > 0 ? " \u2022 +" + formatPeso(fee) + " fee" : "");
           } else {

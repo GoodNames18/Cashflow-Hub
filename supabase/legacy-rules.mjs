@@ -1514,7 +1514,7 @@ function filterTestTransactionsFromRows_(rows, requestedFilter, liveStartAt) {
       timestamp: ts, dateValue: row[0], timeValue: row[1] instanceof Date ? row[1] : "",
       customer: customer, amount: (filter === "total-earned" || filter === "this-week-earned") ? fee : amount,
       feeEarned: fee, category: category, description: description,
-      isExpense: category.toLowerCase() === "expense" || category.toLowerCase() === "expenses",
+      isExpense: category.toLowerCase() === "expense" || category.toLowerCase() === "expenses" || (category.toLowerCase() === "balance adjustment" && Number(row[3]) < 0),
       rowNumber: row.sourceRowNumber, rowFingerprint: row.sourceFingerprint
     };
   }).filter(Boolean).sort(function(a,b){ return b.timestamp - a.timestamp; });

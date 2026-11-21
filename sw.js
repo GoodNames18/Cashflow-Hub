@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v171-upcoming-net-saved-descriptions';
+const CACHE_NAME = 'cashflow-hub-v172-negative-adjustment-display';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
