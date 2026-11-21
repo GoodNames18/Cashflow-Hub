@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v166-selected-note-dropdown';
+const CACHE_NAME = 'cashflow-hub-v167-notes-navigation';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

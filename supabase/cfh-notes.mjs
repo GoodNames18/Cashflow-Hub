@@ -1,3 +1,4 @@
+import {installNotesSearchScroll} from './cfh-notes-navigation.mjs';
 import {createSelectionMenu} from './cfh-notes-menu.mjs';
 import {formatReminderDate,createReminderDateField} from './cfh-reminder-date.mjs';
 import {createSheetDismissal} from './cfh-sheet-dismiss.mjs';
@@ -43,12 +44,13 @@ function outsideClose(d,dismiss=()=>d.close()){d.addEventListener('click',e=>{if
 for(const id of ['cfhNotesDrawer','cfhNotesCreateMenu','cfhNotesUtility','cfhNotesSortMenu'])outsideClose($(id));
 function filterNotes(value){selection.clear();filter=value;$('cfhNotesDrawer').close();render();}
 function drawer(){const host=$('cfhNotesDrawerItems');host.replaceChildren();function row(label,icon,value){const b=button('',()=>filterNotes(value),'cfh-notes-drawer-row');b.append(svg(icon),el('span','',label));if(filter===value)b.setAttribute('aria-current','page');host.append(b);}
- row('Notes','notes','all');row('Reminders','reminders','reminders');host.append(el('hr'));const heading=el('div','cfh-notes-label-heading');heading.append(el('span','','Labels'),button('Edit',editLabels));host.append(heading);for(const label of labels())row(label.name,'label','label:'+label.id);const add=button('',()=>editLabels(true),'cfh-notes-drawer-row');add.append(svg('add'),el('span','','Create new label'));host.append(add,el('hr'));row('Archive','archive','archive');row('Deleted','deleted','deleted');for(const [text,icon,fn]of [['Settings','settings',settings],['Help & feedback','help',help]]){const b=button('',fn,'cfh-notes-drawer-row');b.append(svg(icon),el('span','',text));host.append(b);}showDialog('cfhNotesDrawer');$('cfhNotesMenuButton').setAttribute('aria-expanded','true');}
+ row('Notes','notes','all');row('Reminders','reminders','reminders');host.append(el('hr'));const heading=button('Labels',()=>editLabels(),'cfh-notes-label-heading');heading.setAttribute('aria-label','Manage labels');host.append(heading);for(const label of labels()){row(label.name,'label','label:'+label.id);host.lastElementChild.classList.add('cfh-notes-label-row');}const add=button('',()=>editLabels(true),'cfh-notes-drawer-row cfh-notes-label-row');add.append(svg('add'),el('span','','Create new label'));host.append(add,el('hr'));row('Archive','archive','archive');row('Deleted','deleted','deleted');for(const [text,icon,fn]of [['Settings','settings',settings],['Help & feedback','help',help]]){const b=button('',fn,'cfh-notes-drawer-row');b.append(svg(icon),el('span','',text));host.append(b);}showDialog('cfhNotesDrawer');$('cfhNotesMenuButton').setAttribute('aria-expanded','true');}
 function menus(which){const menu=$('cfhNotesSortMenu');if(which==='sort'){cancelDrag();if(menu.open)menu.close();else{syncSortChoices();showDialog('cfhNotesSortMenu');$('cfhNotesSortButton').setAttribute('aria-expanded','true');}return;}if(menu.open)menu.close();if(which==='menu')drawer();}
 Object.assign(paths,{palette:'M12 3a9 9 0 1 0 0 18h2a2 2 0 0 0 0-4h-1a2 2 0 0 1 0-4h4a4 4 0 0 0 4-4c0-4-5-6-9-6ZM7 8h.01M11 6h.01M16 8h.01M6 13h.01',more:'M12 4v.01M12 12v.01M12 20v.01'});
 $('cfhNotesMoreButton').replaceChildren(svg('more'));
 const selection=createNoteSelection($('cfhNotesPage'),{icon:svg,action:selectionAction});
 const selectionMenu=createSelectionMenu(document);
+installNotesSearchScroll($('cfhNotesPage'));
 function manualIds(notes=read()){
  let saved;try{saved=notesSync.pref('order');}catch{}
  if(!Array.isArray(saved)){

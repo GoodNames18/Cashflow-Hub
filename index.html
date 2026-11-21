@@ -11692,6 +11692,20 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 
 [data-note-math-result]{color:#087959;font-weight:600;white-space:pre-wrap}
 </style>
+<style>
+/* Notes search and drawer controls override the app-wide button spacing. */
+#cfhNotesPage .cfh-notes-head{position:sticky;top:calc(8px + env(safe-area-inset-top));z-index:20;box-sizing:border-box;transition:transform .18s ease,opacity .18s ease;transform:translateY(0);opacity:1}
+#cfhNotesPage .cfh-notes-head.is-scrolling{transform:translateY(calc(-100% - 24px - env(safe-area-inset-top)));opacity:0;pointer-events:none}
+#cfhNotesPage .cfh-notes-head .cfh-notes-control{box-sizing:border-box;flex:0 0 40px;width:40px;height:40px;min-height:40px;margin:0;line-height:1;align-self:center}
+#cfhNotesPage .cfh-notes-head .cfh-notes-control svg{display:block;flex-shrink:0}
+#cfhNotesDrawer{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+#cfhNotesDrawer .cfh-notes-drawer-row{box-sizing:border-box;margin:0}
+#cfhNotesDrawer .cfh-notes-label-row{min-height:44px;padding-top:9px;padding-bottom:9px}
+#cfhNotesDrawer .cfh-notes-label-heading{display:block;width:100%;min-height:44px;margin:0;padding:8px 16px;border:0;border-radius:10px;background:transparent;color:#78738c;text-align:left;font-size:13px}
+#cfhNotesDrawer .cfh-notes-label-heading:hover,#cfhNotesDrawer .cfh-notes-label-heading:focus-visible{background:#f0edf9;color:#1B1844}
+@media(max-width:360px){#cfhNotesPage .cfh-notes-head .cfh-notes-control{flex-basis:36px;width:36px}}
+@media(prefers-reduced-motion:reduce){#cfhNotesPage .cfh-notes-head{transition:none}}
+</style>
 <main id="cfhNotesPage" hidden aria-label="Notes">
  <header class="cfh-notes-head">
   <button type="button" id="cfhNotesMenuButton" class="cfh-notes-control" aria-label="Notes menu" aria-expanded="false" aria-controls="cfhNotesDrawer" onclick="cfhNotesMenu('menu')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
