@@ -532,6 +532,10 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-options-hint{font:13px/1.5 Arial,sans-serif;color:#514a65}
 .cfh-note-options-error{font-size:13px;color:#a3273d}
 #cfhNotesMorePanel .cfh-note-label-list{display:grid;gap:0;max-height:45dvh;overflow:auto;margin-top:8px}
+#cfhNotesMorePanel[data-labels-page="true"]{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+#cfhNotesMorePanel[data-labels-page="true"] .cfh-note-options-error{margin:0}
+#cfhNotesMorePanel[data-labels-page="true"] .cfh-note-options-error:empty{display:none}
+
 #cfhNotesMorePanel .cfh-note-label-row{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 4px;touch-action:pan-y;position:relative}
 #cfhNotesMorePanel .cfh-note-label-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1;min-width:0;min-height:44px;cursor:pointer}
 #cfhNotesMorePanel .cfh-note-label-row.is-delete-visible .cfh-note-label-toggle{padding-right:40px;box-sizing:border-box}
