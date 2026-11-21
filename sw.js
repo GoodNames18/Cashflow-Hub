@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v153-label-right-swipe-trash-icon';
+const CACHE_NAME = 'cashflow-hub-v154-label-left-delete-right-back';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

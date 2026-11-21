@@ -15,10 +15,10 @@ export function createLabelPicker(host,{getLabels,getSelected,select,create,requ
     const reveal=()=>{for(const other of list.querySelectorAll('.cfh-note-label-delete')){other.hidden=other!==remove;other.closest('.cfh-note-label-row').classList.toggle('is-delete-visible',other===remove);}remove.hidden=false;};
     let start=null,ignoreUntil=0;
     row.addEventListener('touchstart',e=>{start=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;},{passive:true});
-    row.addEventListener('touchend',e=>{const point=start;start=null;if(!point||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-point.x,dy=Math.abs(e.changedTouches[0].clientY-point.y);if(dx>45&&dx>dy*1.5){reveal();ignoreUntil=Date.now()+400;if(e.cancelable)e.preventDefault();e.stopPropagation();}},{passive:false});
+    row.addEventListener('touchend',e=>{const point=start;start=null;if(!point||!e.changedTouches.length)return;const dx=e.changedTouches[0].clientX-point.x,dy=Math.abs(e.changedTouches[0].clientY-point.y);if(dx< -45&&-dx>dy*1.5){reveal();ignoreUntil=Date.now()+400;if(e.cancelable)e.preventDefault();e.stopPropagation();}},{passive:false});
     row.addEventListener('touchcancel',()=>{start=null;});
     row.addEventListener('click',e=>{if(Date.now()<ignoreUntil){e.preventDefault();e.stopImmediatePropagation();}},true);
-    row.tabIndex=0;row.setAttribute('aria-label',label.name+'; swipe right or press Delete to show delete button');row.onkeydown=e=>{if(e.key==='Delete'&&e.target===row){e.preventDefault();reveal();remove.focus();}};
+    row.tabIndex=0;row.setAttribute('aria-label',label.name+'; swipe left or press Delete to show delete button');row.onkeydown=e=>{if(e.key==='Delete'&&e.target===row){e.preventDefault();reveal();remove.focus();}};
    }
    list.append(row);
   }
@@ -37,17 +37,18 @@ export function createDeleteConfirmation(host,{permanent=false,labelName=null,ca
 }
 
 // Horizontal navigation does not interfere with scrolling or text-field gestures.
-export function installOptionsGestures(sheet,{back,dismiss,canGoBack}){
+export function installOptionsGestures(sheet,{back,dismiss,canGoBack,canSwipeFromFields=()=>false}){
  let start=null,ignoreUntil=0;
  sheet.addEventListener('touchstart',e=>{
-  if(e.touches.length!==1||e.target.closest('.cfh-note-label-row,input:not([type="checkbox"]),textarea,select')){start=null;return;}
-  const touch=e.touches[0],bounds=sheet.getBoundingClientRect();start={x:touch.clientX,y:touch.clientY,top:touch.clientY<bounds.top+80,atTop:sheet.scrollTop<=0};
+  const field=!!e.target.closest('input:not([type="checkbox"]),textarea,select');
+  if(e.touches.length!==1||(field&&!canSwipeFromFields())){start=null;return;}
+  const touch=e.touches[0],bounds=sheet.getBoundingClientRect();start={x:touch.clientX,y:touch.clientY,top:touch.clientY<bounds.top+80,atTop:sheet.scrollTop<=0,field};
  },{passive:true});
  sheet.addEventListener('touchend',e=>{
   const point=start;start=null;if(!point||!e.changedTouches.length)return;
   const touch=e.changedTouches[0],dx=touch.clientX-point.x,dy=touch.clientY-point.y;
   const goBack=canGoBack()&&dx>55&&dx>Math.abs(dy)*1.5;
-  const close=point.atTop&&dy>(point.top?55:90)&&dy>Math.abs(dx)*1.5;
+  const close=!point.field&&point.atTop&&dy>(point.top?55:90)&&dy>Math.abs(dx)*1.5;
   if(goBack||close){ignoreUntil=Date.now()+400;if(e.cancelable)e.preventDefault();if(goBack)back();else dismiss();}
  },{passive:false});
  sheet.addEventListener('touchcancel',()=>{start=null;});

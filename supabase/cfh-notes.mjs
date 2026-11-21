@@ -412,6 +412,7 @@ const noteOptions=el('dialog','cfh-note-options');noteOptions.id='cfhNotesMorePa
 outsideClose(noteOptions);noteOptions.addEventListener('close',()=>{noteOptions.hidden=true;$('cfhNotesMoreButton').setAttribute('aria-expanded','false');});
 Object.assign(paths,{search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM15 15l6 6',copy:'M8 3h13v15H8ZM3 7v15h13',share:'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM8 10l7-4M8 14l7 4'});
 function optionsPage(title,main=false){
+ noteOptions.dataset.labelsPage=String(title==='Labels');
  noteOptions.dataset.backToMenu=String(['Reminder','Labels','Delete this note?','Delete permanently?','Delete this label?'].includes(title));
  noteOptions.style.setProperty('--cfh-note-background',colors[selectedColor]||'#fff');noteOptions.replaceChildren();
  const head=el('div','cfh-note-options-head');
@@ -497,7 +498,7 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 #cfhNotesMorePanel .cfh-note-label-row{display:flex;align-items:center;gap:8px;min-height:44px;padding:2px 4px;touch-action:pan-y;position:relative}
 #cfhNotesMorePanel .cfh-note-label-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1;min-width:0;min-height:44px;cursor:pointer}
 #cfhNotesMorePanel .cfh-note-label-row.is-delete-visible .cfh-note-label-toggle{padding-right:40px;box-sizing:border-box}
-#cfhNotesMorePanel .cfh-note-label-delete{position:absolute;right:-7px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;min-width:44px;height:44px;padding:0;background:transparent;color:#a3273d}
+#cfhNotesMorePanel .cfh-note-label-delete{position:absolute;right:-7px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;min-width:44px;height:44px;padding:0;margin:0;line-height:1;box-sizing:border-box;background:transparent;color:#a3273d}
 .cfh-note-label-delete svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #cfhNotesMorePanel .cfh-note-label-delete[hidden]{display:none!important}
 .cfh-note-label-row span{overflow-wrap:anywhere;min-width:0}
@@ -510,6 +511,6 @@ const noteOptionsStyle=el('style');noteOptionsStyle.textContent=`
 .cfh-note-find-preview{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 Arial,sans-serif}
 `;document.head.append(noteOptionsStyle);
 
-installOptionsGestures(noteOptions,{back:showNoteOptions,dismiss:()=>editorPanel(),canGoBack:()=>noteOptions.dataset.backToMenu==='true'});
+installOptionsGestures(noteOptions,{back:showNoteOptions,dismiss:()=>editorPanel(),canGoBack:()=>noteOptions.dataset.backToMenu==='true',canSwipeFromFields:()=>noteOptions.dataset.labelsPage==='true'});
 
 const noteFind=createNoteFind($('cfhNotesEditorBox'),{getNote:()=>draft,saveNote:saveDraft,closePanels:()=>editorPanel(),loadMedia});
