@@ -13,7 +13,7 @@ export function createNoteSelection(page,{icon,action}){
  for(const [name,symbol] of [['Reminder','reminders'],['Color','palette'],['Labels','label'],['More','more']])bar.append(button(name+' for selected notes',()=>action(name.toLowerCase(),[...selected]),symbol));
  head.before(bar);
  function paint(){
-  page.classList.toggle('cfh-notes-selecting',!!selected.size);bar.hidden=!selected.size;head.hidden=!!selected.size;count.textContent=String(selected.size)+' selected';const allPinned=selected.size>0&&latest.filter(n=>selected.has(n.id)).every(n=>n.pinned);pin.setAttribute('aria-label',allPinned?'Unpin selected notes':'Pin selected notes');pin.setAttribute('aria-pressed',String(allPinned));
+  page.classList.toggle('cfh-notes-selecting',!!selected.size);bar.hidden=!selected.size;head.hidden=!!selected.size;count.textContent=String(selected.size)+' selected';const allPinned=selected.size>0&&latest.filter(n=>selected.has(n.id)).every(n=>n.pinned);pin.setAttribute('aria-label',allPinned?'Unpin selected notes':'Pin selected notes');pin.setAttribute('aria-pressed',String(allPinned));pin.replaceChildren(icon(allPinned?'pinFilled':'pin'));
   for(const card of page.querySelectorAll('[data-note-id]')){const active=selected.has(card.dataset.noteId);card.classList.toggle('is-selected',active);card.setAttribute('aria-pressed',String(active));}
  }
  function clear(){selected.clear();paint();}
