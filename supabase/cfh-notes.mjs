@@ -1,5 +1,5 @@
 import {createLabelManager,installLabelManagerStyles} from './cfh-notes-label-manager.mjs';
-import {installNotesSearchScroll} from './cfh-notes-navigation.mjs';
+import {installNotesSearchScroll,installNotesDrawerGestures} from './cfh-notes-navigation.mjs';
 import {createSelectionMenu} from './cfh-notes-menu.mjs';
 import {formatReminderDate,createReminderDateField} from './cfh-reminder-date.mjs';
 import {createSheetDismissal} from './cfh-sheet-dismiss.mjs';
@@ -52,6 +52,7 @@ $('cfhNotesMoreButton').replaceChildren(svg('more'));
 const selection=createNoteSelection($('cfhNotesPage'),{icon:svg,action:selectionAction});
 const selectionMenu=createSelectionMenu(document);
 installNotesSearchScroll($('cfhNotesPage'));
+installNotesDrawerGestures($('cfhNotesPage'),$('cfhNotesDrawer'),{open:()=>{cancelDrag();drawer();}});
 function manualIds(notes=read()){
  let saved;try{saved=notesSync.pref('order');}catch{}
  if(!Array.isArray(saved)){

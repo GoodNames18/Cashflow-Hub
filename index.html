@@ -2298,6 +2298,19 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 .pnb-balance-card img{width:20px;height:20px;object-fit:contain;vertical-align:middle}
 .cfh-bank-dialog{border:0;border-radius:24px;width:min(420px,calc(100% - 32px));padding:24px;color:#1b1844;background:var(--card-bg,#fff);box-sizing:border-box}.cfh-bank-dialog::backdrop{background:#1b184466}.cfh-bank-dialog h2{margin:0 0 20px}.cfh-bank-dialog label{display:block;margin:12px 0 6px}.cfh-bank-dialog input,.cfh-bank-dialog select{box-sizing:border-box;width:100%;padding:12px;border:1px solid #b7b6ca;border-radius:12px;font:inherit;background:#fff;color:#1b1844}.cfh-bank-actions{display:flex;gap:10px;margin-top:20px}.cfh-bank-actions button{flex:1;padding:12px;border:0;border-radius:12px;font:inherit;background:#e9e7f8;color:#1b1844}.cfh-bank-actions button[type=submit]{background:#00d9a6}.cfh-bank-status{font-size:14px;color:#b42318;min-height:20px;margin-top:10px}
 .metric-card{position:relative}.cfh-balance-delta{position:absolute;right:12px;top:8px;pointer-events:none;font-size:16px;font-weight:700;z-index:2;color:#00886b;animation:cfh-balance-float 1.15s ease-out forwards;background:var(--card-bg,#fff);border-radius:8px;padding:2px 5px}.cfh-balance-delta.is-negative{color:#b42318}@keyframes cfh-balance-float{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}75%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}@media(prefers-reduced-motion:reduce){.cfh-balance-delta{animation:none}}
+</style><style>
+#cfhNotesPage{touch-action:pan-y}
+#cfhNotesList>.cfh-notes-section-title:first-child{margin-top:6px}
+#cfhNotesDrawer.is-closing::backdrop{animation:cfhNotesBackdropOut .2s ease-in forwards}
+@keyframes cfhNotesBackdropOut{to{background:transparent}}
+#cfhCashPage [hidden]{display:none!important}
+.money-tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 16px;padding:2px;overscroll-behavior-x:contain}
+.money-tabs::-webkit-scrollbar{display:none}
+.money-tabs button{flex:0 0 auto;margin:0;padding:10px 12px;min-height:42px;border:0;border-radius:12px;background:#eeebf8;color:#1B1844;font:600 13px Arial,sans-serif;white-space:nowrap}
+.money-tabs button[aria-selected="true"]{background:#00F8B9}
+.money-tabs button:focus-visible{outline:2px solid #1B1844;outline-offset:-2px}
+.money-card-empty{margin:12px 0;padding:22px;border-radius:16px;background:#eeebf8;color:#706b85}
+@media(prefers-reduced-motion:reduce){#cfhNotesDrawer.is-closing::backdrop{animation:none}}
 </style></head>
 
 <body>
@@ -11754,7 +11767,7 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 <input id="cfhNotesImageFile" type="file" accept="image/*" multiple hidden><input id="cfhNotesAudioFile" type="file" accept="audio/*" hidden>
 <div id="cfhNotesToast" role="status" hidden></div>
 
-<main id="cfhCashPage" hidden aria-label="Cash counter"></main>
+<main id="cfhCashPage" hidden aria-label="Money"></main>
 <script type="module" src="supabase/cfh-cash-counter.mjs"></script>
 <nav class="cfh-bottom-nav" aria-label="Main bottom navigation">
 <button type="button" data-cfh-dest="home" aria-current="page" aria-label="Home"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10h-7v-7h-4v7H3z"/></svg></span><span>Home</span></button>

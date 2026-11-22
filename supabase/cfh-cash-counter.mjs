@@ -76,7 +76,17 @@ export function mountCashCounter(root, storage, {now = Date.now, schedule = true
   armReset();
   return () => { win.clearTimeout(timer); doc.removeEventListener('visibilitychange',resume); win.removeEventListener('pageshow',resume); win.removeEventListener('focus',resume); };
 }
+export function mountMoneyPage(root,storage,options={}){
+ const tabs=[['hsbc','HSBC Live+ Visa'],['cash','Cash Counter'],['eastwest','EastWest Platinum Visa']];
+ root.setAttribute('aria-label','Money');
+ root.innerHTML=`<nav class="money-tabs" role="tablist" aria-label="Money sections">${tabs.map(([id,name])=>`<button type="button" role="tab" id="moneyTab-${id}" aria-controls="moneyPanel-${id}" aria-selected="${id==='cash'}" tabindex="${id==='cash'?0:-1}" data-money-tab="${id}">${name}</button>`).join('')}</nav>${tabs.map(([id,name])=>`<section role="tabpanel" id="moneyPanel-${id}" aria-labelledby="moneyTab-${id}" ${id==='cash'?'':'hidden'}>${id==='cash'?'':`<header class="cash-heading"><h1>${name}</h1></header><p class="money-card-empty">No card entries yet.</p>`}</section>`).join('')}`;
+ const cleanup=mountCashCounter(root.querySelector('#moneyPanel-cash'),storage,options);
+ const buttons=[...root.querySelectorAll('[data-money-tab]')];
+ function select(id,focus=false){for(const b of buttons){const active=b.dataset.moneyTab===id;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;root.querySelector('#moneyPanel-'+b.dataset.moneyTab).hidden=!active;if(active){if(focus)b.focus();b.scrollIntoView?.({block:'nearest',inline:'nearest'});}}}
+ for(const b of buttons){b.onclick=()=>select(b.dataset.moneyTab);b.onkeydown=event=>{const i=buttons.indexOf(b);let next;if(event.key==='ArrowRight')next=(i+1)%buttons.length;if(event.key==='ArrowLeft')next=(i+buttons.length-1)%buttons.length;if(event.key==='Home')next=0;if(event.key==='End')next=buttons.length-1;if(next!==undefined){event.preventDefault();select(buttons[next].dataset.moneyTab,true);}};}
+ return cleanup;
+}
 if (typeof document !== 'undefined') {
-  const root=document.getElementById('cfhCashPage');
-  if(root) { let storage; try { storage=window.localStorage; } catch {} mountCashCounter(root,storage); }
+ const root=document.getElementById('cfhCashPage');
+ if(root){let storage;try{storage=window.localStorage;}catch{}mountMoneyPage(root,storage);}
 }
