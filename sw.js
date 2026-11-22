@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v177-money-tabs-notes-drawer';
+const CACHE_NAME = 'cashflow-hub-v178-narrow-notes-drawer';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
