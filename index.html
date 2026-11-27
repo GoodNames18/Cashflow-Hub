@@ -3280,15 +3280,21 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           <div id="testLoanModal" class="test-modal" hidden>
             <div class="test-modal-card" role="dialog" aria-modal="true" aria-labelledby="testLoanTitle">
               <div id="testLoanTitle" class="test-modal-title">LOAN PAYMENT AMOUNT</div>
-              <div id="testLoanInstructions" class="test-modal-note">Edit both amounts. Payment must be greater than rebate.</div>
+              <div id="testLoanInstructions" class="test-modal-note">Payment reduces Card money. Pledge credit adds it back; use 0 if none.</div>
               <label id="testLoanAmountLabel" for="testLoanAmountInput">Payment</label>
               <input id="testLoanAmountInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="50.01" step="0.01" aria-label="Loan payment amount">
               <label id="testLoanRebateLabel" for="testLoanRebateInput">Rebate</label>
-              <input id="testLoanRebateInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" step="0.01" aria-label="Loan rebate amount">
+              <input id="testLoanRebateInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" aria-label="Pledge credit (0 if none)">
               <div id="testLoanPrincipalField">
                 <label for="testLoanPrincipalInput">Principal paid (optional)</label>
-                <input id="testLoanPrincipalInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0.01" step="0.01">
+                <input id="testLoanPrincipalInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01">
               </div>
+              <div id="testLoanRemainingField">
+                <label for="testLoanRemainingInput">Remaining loan after payment (optional)</label>
+                <input id="testLoanRemainingInput" class="quick-custom-input" type="text" data-cfh-number="true" inputmode="decimal" min="0" step="0.01" placeholder="From your loan statement">
+                <small>Use this OR Principal paid. Leave both blank if unknown.</small>
+              </div>
+              <p id="testLoanSummary" class="test-modal-note" role="status" style="white-space:pre-line"></p>
               <div id="testLoanLenderField" hidden>
                 <label for="testLoanLenderInput">Lender (optional)</label>
                 <input id="testLoanLenderInput" class="quick-custom-input" type="text" maxlength="80">
@@ -7106,7 +7112,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       });
       var loanAmountInput = document.getElementById("testLoanAmountInput");
       var loanRebateInput = document.getElementById("testLoanRebateInput");
-      [loanAmountInput, loanRebateInput].forEach(function(input) {
+      [loanAmountInput, loanRebateInput, document.getElementById("testLoanPrincipalInput"), document.getElementById("testLoanRemainingInput")].forEach(function(input) {
         if (input) input.addEventListener("input", updateTestLoanWarning);
       });
       if (loanRebateInput) loanRebateInput.addEventListener("keydown", function(event) {
@@ -7760,7 +7766,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       try {
         var saved = JSON.parse(localStorage.getItem("cashflow-test-loan-values"));
         if (saved && Number.isFinite(saved.payment) && Number.isFinite(saved.rebate) &&
-            saved.rebate > 0 && saved.payment > saved.rebate) return saved;
+            saved.rebate >= 0 && saved.payment > saved.rebate) return saved;
       } catch (error) {}
       return { payment: 415, rebate: 50 };
     }
@@ -7781,18 +7787,21 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       modal.dataset.mode = testLoanMode;
       document.getElementById("testLoanInstructions").textContent = add
         ? "Leave Loan Fees blank if nothing was deducted upfront."
-        : "Edit both amounts. Payment must be greater than rebate.";
+        : "Payment reduces Card money. Pledge credit adds it back. Enter principal OR a confirmed remaining loan balance to update Loan Remaining.";
       document.getElementById("testLoanAmountLabel").textContent = add ? "Loan Amount" : "Payment";
-      document.getElementById("testLoanRebateLabel").textContent = add ? "Loan Fees (optional)" : "Rebate";
+      document.getElementById("testLoanRebateLabel").textContent = add ? "Loan Fees (optional)" : "Pledge credit (0 if none)";
       document.getElementById("testLoanAmountInput").value = add ? "" : values.payment;
       document.getElementById("testLoanAmountInput").min = "0.01";
       document.getElementById("testLoanRebateInput").value = add ? "" : values.rebate;
       document.getElementById("testLoanAmountInput").setAttribute("aria-label", add ? "Loan Amount" : "Loan payment amount");
       var feeInput = document.getElementById("testLoanRebateInput");
       feeInput.setAttribute("aria-label", add ? "Loan Fees (optional)" : "Loan rebate amount");
-      feeInput.min = add ? "0" : "0.01";
-      feeInput.placeholder = add ? "0.00" : "";
+      feeInput.min = "0";
+      feeInput.placeholder = "0.00";
       document.getElementById("testLoanPrincipalInput").value = "";
+      document.getElementById("testLoanRemainingInput").value = "";
+      document.getElementById("testLoanRemainingField").hidden = add;
+      document.getElementById("testLoanSummary").hidden = add;
       document.getElementById("testLoanPrincipalField").hidden = add;
       document.getElementById("testLoanSaveButton").textContent = add ? "Save Loan" : "Save Payment";
       document.getElementById("testLoanLenderField").hidden = testLoanMode !== "other";
@@ -7821,13 +7830,18 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
     function updateTestLoanWarning() {
-      var payment = cfhNumber(document.getElementById("testLoanAmountInput").value);
-      var rebate = cfhNumber(document.getElementById("testLoanRebateInput").value);
-      var card = cfhNumber(latestTestDashboardData?.card);
-      var next = Math.round((card - payment + rebate) * 100) / 100;
-      showTestLoanMessage(testLoanMode === "payment" && payment > rebate && next < 0
-        ? "Your card balance will be " + formatPeso(next) + " after this payment and rebate. You can still save it."
-        : "");
+      var summary=document.getElementById("testLoanSummary");
+      if(testLoanMode!=="payment"){summary.hidden=true;showTestLoanMessage("");return;}
+      summary.hidden=false;
+      if(!window.cfhValidateLoanPayment){summary.textContent="Preparing loan calculator…";return;}
+      try {
+        var entry=window.cfhValidateLoanPayment({amount:document.getElementById("testLoanAmountInput").value,rebate:document.getElementById("testLoanRebateInput").value,principal:document.getElementById("testLoanPrincipalInput").value,remainingAfter:document.getElementById("testLoanRemainingInput").value,loanBefore:latestTestDashboardData?.loanRemaining});
+        var knownCard=Number.isFinite(Number(latestTestDashboardData?.card)),knownLoan=Number.isFinite(Number(latestTestDashboardData?.loanRemaining));
+        var card=Number(latestTestDashboardData?.card),loan=Number(latestTestDashboardData?.loanRemaining);
+        var next=Math.round((card-entry.netDeduction)*100)/100;
+        summary.textContent="Payment −"+formatPeso(entry.payment)+" · Pledge credit +"+formatPeso(entry.rebate)+"\nNet Card deduction: "+formatPeso(entry.netDeduction)+(knownCard?"\nMoney on Card: "+formatPeso(card)+" → "+formatPeso(next):"")+(entry.principal||entry.remainingAfter!==undefined?"\nLoan Remaining: "+(knownLoan?formatPeso(loan)+" → "+formatPeso(Math.max(0,loan-entry.principal)):"Refresh the dashboard first."):"\nLoan Remaining stays unchanged — principal not supplied.");
+        showTestLoanMessage(knownCard&&next<0?"Card money will be negative. Verify the bank's available balance before saving.":"");
+      } catch(error){summary.textContent="Enter the payment and any pledge credit. Leave credit blank or use 0 if none.";showTestLoanMessage(error.message);}
     }
 
     function saveTestLoanAmount() {
@@ -7854,8 +7868,11 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       var params = other
         ? {action:"testOthersLoan", loanAction:"add", principal:payment, fee:rebate, lender:document.getElementById("testLoanLenderInput").value}
         : add ? {action:"testKonekLoanAdd", principal:payment, netToCard:netToCard}
-        : {action:"testLoan", amount:payment, rebate:rebate, principal:principal};
-      if (!add && (!payment || !rebate)) { showTestLoanMessage("Enter both amounts before saving."); return; }
+        : {action:"testLoan", loanVersion:2, amount:payment, rebate:rebate, principal:principal, remainingAfter:document.getElementById("testLoanRemainingInput").value.replace(/,/g,""), loanBefore:latestTestDashboardData?.loanRemaining};
+      if (!add) {
+        if(!window.cfhValidateLoanPayment){showTestLoanMessage("Loan calculator is loading. Please try again.");return;}
+        try{window.cfhValidateLoanPayment(params);}catch(error){showTestLoanMessage(error.message);return;}
+      }
       save.disabled = true;
       setTestActionButtonsDisabled(true);
       jsonpRequest(params, function(result) {
@@ -7866,7 +7883,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         }
         closeTestLoanModal();
         if (add) document.getElementById("testTransactionInput").value = "";
-        setTestStatus(add ? (other ? "Other loan added: " : "Konek2Card loan added: ") + new Intl.NumberFormat("en-PH", {style:"currency", currency:"PHP"}).format(amountCents / 100) : "Konek2Card loan payment recorded.", "success");
+        setTestStatus(add ? (other ? "Other loan added: " : "Konek2Card loan added: ") + new Intl.NumberFormat("en-PH", {style:"currency", currency:"PHP"}).format(amountCents / 100) : "Loan payment recorded. Card −"+formatPeso(result.netDeduction)+". "+(result.principal?"Loan reduced by "+formatPeso(result.principal)+".":"Loan Remaining unchanged; no principal supplied."), "success");
         markTestDashboardLoaded_(result.dashboard);
       }, function(error) {
         save.disabled = false;
@@ -8149,6 +8166,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           amountText = formatPeso(amount);
         }
 
+        var loanParts=window.cfhLoanPaymentParts?.(item.description);
+        if(loanParts?.atomic){amountText="−"+formatPeso(amount+loanParts.rebate)+(loanParts.rebate?" · +"+formatPeso(loanParts.rebate)+" credit":"")+" (net −"+formatPeso(amount)+")";amountClass="transaction-amount expense-value";}
         return (
           '<div class="transaction-row">' +
             '<div>' +
@@ -10103,7 +10122,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
               var fieldRows = {};
               var sheetKey = String(sheet || "").toLowerCase().replace(/[^a-z0-9]/g, "");
               var editorLayouts = {
-                konek2card: {hide:["category","description"],order:["date","time","customer","amount","feeEarned","details"],groups:{dateTime:["date","time"],amountFee:["amount","feeEarned"]}},
+                konek2card: {hide:["category","description"],order:["date","time","customer","amount","pledgeCredit","principalPaid","feeEarned","details"],groups:{dateTime:["date","time"],amountFee:["amount","pledgeCredit","feeEarned"]}},
                 rental: {order:["date","time","amount","type","category","description"],groups:{dateTime:["date","time"],typeCategory:["type","category"]}},
                 moneyflow: {order:["date","time","merchant","category","amount","payment","description"],groups:{dateTime:["date","time"],merchantCategory:["merchant","category"],amountPayment:["amount","payment"]}},
                 cashinout: {hide:["description"],order:["date","time","amount","category"],groups:{dateTime:["date","time"],amountCategory:["amount","category"]}},
@@ -10138,7 +10157,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                   control.type = "button";
                   control.className = "transaction-time-trigger";
                   control.setAttribute("aria-haspopup", "dialog");
-                } else if (field.key === "amount" || field.key === "feeEarned") {
+                } else if (["amount","feeEarned","principalPaid","pledgeCredit"].includes(field.key)) {
                   control.type = "text";
                   control.inputMode = "decimal";
                   control.autocomplete = "off";
@@ -10146,18 +10165,19 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                   control.type = field.type;
                 }
                 if (field.type === "number") control.step = field.step || "0.01";
-                if (["amount","feeEarned"].includes(field.key)) control.dataset.cfhNumber="true";
+                if (["amount","feeEarned","principalPaid","pledgeCredit"].includes(field.key)) control.dataset.cfhNumber="true";
                 if (sheetKey === "konek2card" && field.key === "details") { control.maxLength = 200; control.placeholder = "Add details (optional)"; }
+                if(["principalPaid","pledgeCredit"].includes(field.key))control.min="0";
                 control.dataset.editKey = field.key;
                 var rawValue = field.value == null ? "" : String(field.value);
                 originalValues[field.key] = rawValue;
                 control.value = field.key === "time" ? to12Hour(rawValue)
-                  : (field.key === "amount" || field.key === "feeEarned") ? formatAmount(rawValue)
+                  : (["amount","feeEarned","principalPaid","pledgeCredit"].includes(field.key)) ? formatAmount(rawValue)
                   : rawValue;
                 if (field.key === "time") {
                   control.textContent = control.value || "Choose time";
                   control.addEventListener("click", function() { openTransactionTimePicker(control); });
-                } else if (field.key === "amount" || field.key === "feeEarned") {
+                } else if (["amount","feeEarned","principalPaid","pledgeCredit"].includes(field.key)) {
                   control.addEventListener("blur", function() {
                     control.value = formatAmount(control.value);
                   });
@@ -11958,6 +11978,7 @@ setInterval(()=>cfhPushSync(),60000);
 </div>
 
 <dialog id="twiceBankDialog" class="cfh-bank-dialog" aria-labelledby="twiceBankHeading"><form id="twiceBankForm"><h2 id="twiceBankHeading">PNB income</h2><label for="twiceBankKind">Type</label><select id="twiceBankKind"></select><label for="twiceBankAmount">Amount</label><input id="twiceBankAmount" inputmode="decimal" autocomplete="off" required placeholder="₱0.00"><label for="twiceBankDescription">Description (optional)</label><input id="twiceBankDescription" maxlength="160" autocomplete="off" placeholder="Add details"><div class="cfh-bank-status" id="twiceBankStatus" role="status"></div><div class="cfh-bank-actions"><button type="button" id="twiceBankCancel">Cancel</button><button type="submit" id="twiceBankSave">Save income</button></div></form></dialog>
+<script type="module" src="supabase/cfh-loan.mjs"></script>
 <script type="module" src="supabase/cfh-balance-ui.mjs"></script>
 </body>
 </html>

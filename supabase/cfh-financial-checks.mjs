@@ -7,6 +7,7 @@ export function checkKonekEntry(plan,params,balance) {
     case 'testCashOut': enough('cashOnHand',amount,'Not enough Cash on Hand — borrow first.');break;
     case 'testAtmWithdraw': enough('card',amount,'Not enough Card balance.');break;
     case 'testLoan':
+      if(receipt.expectedLoanRemaining!==undefined && Math.round(Number(balance.loanRemaining)*100)!==Math.round(receipt.expectedLoanRemaining*100))throw Error('Loan balance changed. Refresh and enter the remaining balance again.');
       if(receipt.principal>0)enough('loanRemaining',receipt.principal,'Principal paid exceeds Loan Remaining.');
       break;
     case 'testHoldMoney':

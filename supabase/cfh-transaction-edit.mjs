@@ -1,3 +1,4 @@
+import {loanPaymentParts,validateLoanPayment,loanPaymentDescription,loanUserDetails} from './cfh-loan.mjs';
 const fieldsByTab = {
   life_log: {date:0,time:1,category:2,description:3,notes:4},
   money_flow: {date:0,time:1,merchant:2,description:3,category:4,amount:5,payment:6},
@@ -14,7 +15,7 @@ const labels = {
 };
 function konekDescriptionParts(value){
  const text=String(value??''),marker='\nDetails: ',at=text.indexOf(marker);
- if(at>=0)return {base:text.slice(0,at),details:text.slice(at+marker.length)};
+ if(at>=0)return {base:text.slice(0,at),details:loanUserDetails(text.slice(at+marker.length))};
  const match=/^((?:Money on (?:Card|Hand|GCash)|Earned) adjustment)(?: — (.*))?$/i.exec(text);
  return match?{base:match[1],details:match[2]||''}:{base:text,details:''};
 }
@@ -71,6 +72,7 @@ export function editableTransactionFields(record) {
     values.payment=record.payload?.payment_method??source[6]??'';
   }
   if(record.tab_key==='konek2card') {
+    const loan=loanPaymentParts(source[6]??record.description);if(loan?.atomic)values.amount=Math.round((Number(record.amount)+loan.rebate)*100)/100;
     values.customer=record.payload?.customer??source[2]??'';
     values.feeEarned=record.payload?.fee_earned??source[4]??0;
   }
@@ -81,6 +83,10 @@ export function editableTransactionFields(record) {
     value:values[key]??'',step:['amount','feeEarned'].includes(key)?'0.01':undefined
   }));
   if(record.tab_key==='konek2card')fields.push({key:'details',label:'Description (optional)',type:'textarea',value:konekDescriptionParts(source[6]??record.description).details});
+  if(record.tab_key==='konek2card'){
+    const loan=loanPaymentParts(source[6]??record.description);
+    if(loan){fields.splice(fields.findIndex(f=>f.key==='feeEarned'),1);fields.find(f=>f.key==='amount').label='Payment (gross)';fields.push({key:'principalPaid',label:'Principal paid (optional)',type:'number',value:loan.principal||'',step:'0.01'});if(loan.atomic)fields.push({key:'pledgeCredit',label:'Pledge credit (0 if none)',type:'number',value:loan.rebate,step:'0.01'});}
+  }
   return fields;
 }
 export function buildTransactionEdit(record,values={}) {
@@ -118,6 +124,18 @@ export function buildTransactionEdit(record,values={}) {
     const details=String(values.details??'').trim();if(details.length>200||/[\r\n]/.test(details))throw Error('Description must be one line and 200 characters or less.');
     const original=konekDescriptionParts(source[6]??record.description);
     if(details!==original.details){const description=original.base+(details?'\nDetails: '+details:'');source[6]=description;updated.description=description;}
+  }
+  if(record.tab_key==='konek2card'){
+    const loan=loanPaymentParts(record.source_values?.[6]??record.description);
+    if(loan){
+      if(!/^expenses?$/i.test(updated.category)||Number(payload.fee_earned||0)!==0)throw Error('Loan payments must remain expenses and cannot earn a fee.');
+      const gross='amount' in values?values.amount:loan.atomic?Math.round((Number(record.amount)+loan.rebate)*100)/100:updated.amount;
+      const payment=validateLoanPayment({amount:gross,rebate:loan.atomic?(values.pledgeCredit??loan.rebate):0,principal:values.principalPaid??loan.principal});
+      const details=konekDescriptionParts(source[6]??updated.description).details;
+      const base=loan.atomic?loanPaymentDescription(payment):'Loan payment'+(payment.principal?' | Principal '+payment.principal.toFixed(2):'');
+      if(loan.atomic)updated.amount=source[3]=payment.netDeduction;
+      updated.description=source[6]=base+(details?(loan.atomic?' — ':'\nDetails: ')+details:'');
+    }
   }
   updated.payload=payload;
   return {

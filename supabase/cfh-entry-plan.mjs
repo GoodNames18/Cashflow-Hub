@@ -1,3 +1,4 @@
+import {validateLoanPayment,loanPaymentDescription} from './cfh-loan.mjs';
 import * as rules from './legacy-rules.mjs?v=moneyflow-digits1';
 import { ManilaDate } from './manila-date.mjs?v=calendar3';
 const sheets = {life_log:'Life Log',twice_as_nyce:'TwiceAsNyce',printing:'Printing Business',
@@ -150,11 +151,12 @@ export function planEntry(params, now = new ManilaDate()) {
       receipt={principal,netToCard};break;
     }
     case 'testLoan': {
-      const entry=rules.validateTestLoanAmount_(params.amount,params.rebate);
-      entry.principal=String(params.principal??'').trim()===''?0:cents(params.principal);
-      if(entry.principal>entry.payment)throw new Error('Principal paid cannot exceed the payment.');
-      tab='konek2card';rows=rules.buildTestLoanRows_(date,entry.payment,entry.rebate);
-      if(entry.principal)rows[0][6]+=' | Principal '+entry.principal.toFixed(2);
+      const atomic=Number(params.loanVersion)===2;
+      const entry=atomic?validateLoanPayment(params):rules.validateTestLoanAmount_(params.amount,params.rebate);
+      if(!atomic){entry.principal=String(params.principal??'').trim()===''?0:cents(params.principal);if(entry.principal>entry.payment)throw Error('Principal paid cannot exceed the payment.');}
+      tab='konek2card';
+      rows=atomic?[[date,date,'Me',entry.netDeduction,'','Expense',loanPaymentDescription(entry)]]:rules.buildTestLoanRows_(date,entry.payment,entry.rebate);
+      if(!atomic&&entry.principal)rows[0][6]+=' | Principal '+entry.principal.toFixed(2);
       receipt=entry;break;
     }
     case 'testAtmWithdraw': {

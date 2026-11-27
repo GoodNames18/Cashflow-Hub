@@ -1,3 +1,4 @@
+import {loanPaymentParts,validateLoanPayment} from './cfh-loan.mjs';
 import { ManilaDate as Date } from './manila-date.mjs?v=calendar3';
 import { currentRows, SpreadsheetApp, Utilities, Session, PropertiesService } from './rules-environment.mjs?v=transaction-order4';
 // Business rules extracted from the current user-supplied Code.gs.
@@ -1094,18 +1095,15 @@ function buildTestOthersLoanRow_(now, entry) {
 function buildTestLoanRows_(now, amount, rebate) {
   return [
     [now, now, 'Me', amount, '', 'Expense', 'Loan payment'],
-    [now, now, 'Me', rebate, '', 'Income', 'Loan rebate']
+    ...(rebate > 0 ? [[now, now, 'Me', rebate, '', 'Income', 'Loan rebate']] : [])
   ];
 }
 
 function validateTestLoanAmount_(amount, rebate) {
-  var value = amount === undefined || amount === null || String(amount).trim() === '' ? 415 : Number(amount);
-  var rebateValue = rebate === undefined || rebate === null || String(rebate).trim() === '' ? 50 : Number(rebate);
-  if (!isFinite(value) || !isFinite(rebateValue) || rebateValue <= 0 || value <= rebateValue ||
-      Math.round(value * 100) !== value * 100 || Math.round(rebateValue * 100) !== rebateValue * 100) {
-    throw new Error('Loan payment must be greater than the rebate. Both need valid amounts with at most two decimal places.');
-  }
-  return { payment: value, rebate: rebateValue };
+ var payment = amount === undefined || amount === null || String(amount).trim() === '' ? 415 : amount;
+ var credit = rebate === undefined || rebate === null || String(rebate).trim() === '' ? 50 : rebate;
+ var entry=validateLoanPayment({amount:payment,rebate:credit});
+ return {payment:entry.payment,rebate:entry.rebate};
 }
 
 function validateTestAtmAmount_(amount) {
@@ -1310,9 +1308,9 @@ function computeTestDashboardFromRows_(rows, liveStartAt, asOfDate) {
     }
 
     if (isTestLoanPaymentRow_(row)) {
-      card -= amount;
-      var principalPaid = /^loan payment \| principal (\d+\.\d{2})$/.exec(description);
-      if (principalPaid) loanRemaining = Math.max(0, loanRemaining - Number(principalPaid[1]));
+      var paymentParts = loanPaymentParts(description);
+      card -= amount; // Atomic rows store the net card debit; their description retains gross and credit.
+      loanRemaining = Math.max(0, loanRemaining - paymentParts.principal);
       continue;
     }
 
@@ -1434,7 +1432,7 @@ function isTestLoanPaymentRow_(row) {
   var description = konekSystemDescription_(row).toLowerCase();
   return amount > 0 &&
     (category === 'expense' || category === 'expenses') &&
-    (description === 'loan' || /^loan payment(?: \| principal \d+\.\d{2})?$/.test(description));
+    !!loanPaymentParts(description);
 }
 
 var TEST_BALANCE_RESET_AT_;
@@ -1500,7 +1498,7 @@ function filterTestTransactionsFromRows_(rows, requestedFilter, liveStartAt) {
     var text = (customer + " " + category + " " + konekSystemDescription_(row)).toLowerCase();
     var matches = false;
     if (filter === "total-money") matches = true;
-    else if (filter === "loan-remaining") matches = isTestLoanPaymentRow_(row) || isTestLoanRebateRow_(row);
+    else if (filter === "loan-remaining") matches = isTestLoanPaymentRow_(row) || isTestLoanRebateRow_(row) || /^konek2card loan add \| card \d+\.\d{2}$/i.test(konekSystemDescription_(row));
     else if (filter === "total-earned") matches = fee > 0;
     else if (filter === "this-week-earned") matches = fee > 0 && (boundaryIndex === -1 || index < boundaryIndex);
     else if (filter === "others-loan") matches = !!getTestOthersLoanEventFromRow_(row);
