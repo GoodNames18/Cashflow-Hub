@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v187-more-calendar';
+const CACHE_NAME = 'cashflow-hub-v188-calendar-settings';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

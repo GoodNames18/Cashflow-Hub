@@ -2203,13 +2203,18 @@ body.cfh-calendar-active .app-tabs{display:none!important}
 
 body.cfh-more-active .app-shell,body.cfh-more-active #cfhHomeSyncStatus{display:none!important}
 #cfhMorePage{width:100%;max-width:420px;margin:0 auto;padding:12px 0 calc(110px + env(safe-area-inset-bottom));color:var(--text)}
-#cfhMorePage[hidden]{display:none!important}
+#cfhMorePage[hidden],#cfhMorePage .cfh-push-panel[hidden]{display:none!important}
 #cfhMoreTitle{font-size:26px;margin:8px 8px 18px}
-#cfhMorePage .cfh-more-calendar{padding:18px}
-#cfhMoreCalendarTitle{font-size:20px;margin:0 0 12px}
-#cfhMorePage hr{border:0;border-top:1px solid var(--line);margin:0 0 16px}
-#cfhMorePage .cfh-schedule-past-toggle,#cfhMorePage .cfh-reminder-settings-button{width:100%;margin:0 0 12px}
-#cfhMorePage .cfh-push-panel{margin:0 0 12px}
+#cfhMorePage .cfh-settings-list{padding:0;overflow:hidden}
+#cfhMorePage summary{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;cursor:pointer;font-weight:700;list-style:none}
+#cfhMorePage summary::-webkit-details-marker{display:none}
+#cfhMorePage summary:focus-visible{outline:2px solid var(--primary);outline-offset:-4px}
+#cfhMorePage summary svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+#cfhMorePage details[open] summary svg{transform:rotate(90deg)}
+#cfhMorePage .cfh-settings-calendar{display:grid;gap:12px;border-top:1px solid var(--line);padding:16px 18px}
+#cfhMorePage .cfh-schedule-past-toggle,#cfhMorePage .cfh-reminder-settings-button{width:100%;margin:0}
+#cfhMorePage .cfh-push-panel{margin:0}
+#cfhMorePage .cfh-reminder-settings-button + .cfh-push-panel:not([hidden]){margin-top:12px}
 #cfhDueDateExportStatus:empty{display:none}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
@@ -3553,16 +3558,21 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
 
 <section id="cfhMorePage" hidden aria-labelledby="cfhMoreTitle">
- <h1 id="cfhMoreTitle">More</h1>
- <section class="cfh-calendar-card cfh-more-calendar" aria-labelledby="cfhMoreCalendarTitle">
-  <h2 id="cfhMoreCalendarTitle">Calendar</h2>
-  <hr>
-              <button type="button" class="cfh-schedule-past-toggle" onclick="cfhExportCardDueDates(this)" title="Export 12 months of upcoming unpaid card due dates">Export Card Due Dates (.ics)</button>
-              <div id="cfhDueDateExportStatus" class="dashboard-message" role="status"></div>
-
-  <div id="cfhMoreCalendarSync"></div>
-  <div id="cfhMoreCalendarReminders"></div>
- </section>
+  <h1 id="cfhMoreTitle">Settings</h1>
+  <details class="cfh-calendar-card cfh-settings-list">
+    <summary>
+      Calendar
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </summary>
+    <div class="cfh-settings-calendar">
+      <div id="cfhMoreCalendarSync"></div>
+      <div id="cfhMoreCalendarReminders"></div>
+      <div>
+        <button type="button" class="cfh-schedule-past-toggle" onclick="cfhExportCardDueDates(this)" title="Export 12 months of upcoming unpaid card due dates">Export Card Due Dates (.ics)</button>
+        <div id="cfhDueDateExportStatus" class="dashboard-message" role="status"></div>
+      </div>
+    </div>
+  </details>
 </section>
 
   <div id="dashboardMonthModal" class="month-modal" hidden>
@@ -11891,7 +11901,7 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 <button type="button" data-cfh-dest="add" class="cfh-nav-add" aria-label="Add preview"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></span><span>Add</span></button>
 <button type="button" data-cfh-dest="notes" class="cfh-nav-notes" aria-label="Notes"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z"/></svg></span><span>Notes</span></button>
 <button type="button" data-cfh-dest="money" aria-label="Money"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="15" rx="2"/><path d="M2 10h20M17 16h2"/></svg></span><span>Money</span></button>
-<button type="button" data-cfh-dest="more" aria-label="More"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span>More</span></button>
+<button type="button" data-cfh-dest="more" aria-label="Settings"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M8 5v4m8 1v4m-6 1v4"/></svg></span><span>Settings</span></button>
 </nav>
 <script>
 (function(){
