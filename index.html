@@ -2200,6 +2200,17 @@ body.cfh-calendar-active .app-tabs{display:none!important}
     #testLoanModal #testLoanSaveButton { background:var(--primary,#00f8b9); color:#1b1844; }
     #testLoanModal #testLoanCancelButton { background:#ece9fa; color:#1b1844; }
 
+
+body.cfh-more-active .app-shell,body.cfh-more-active #cfhHomeSyncStatus{display:none!important}
+#cfhMorePage{width:100%;max-width:420px;margin:0 auto;padding:12px 0 calc(110px + env(safe-area-inset-bottom));color:var(--text)}
+#cfhMorePage[hidden]{display:none!important}
+#cfhMoreTitle{font-size:26px;margin:8px 8px 18px}
+#cfhMorePage .cfh-more-calendar{padding:18px}
+#cfhMoreCalendarTitle{font-size:20px;margin:0 0 12px}
+#cfhMorePage hr{border:0;border-top:1px solid var(--line);margin:0 0 16px}
+#cfhMorePage .cfh-schedule-past-toggle,#cfhMorePage .cfh-reminder-settings-button{width:100%;margin:0 0 12px}
+#cfhMorePage .cfh-push-panel{margin:0 0 12px}
+#cfhDueDateExportStatus:empty{display:none}
 </style>
 <link rel="preload" as="image" href="./images/Metrobank%20Travel%20Signature%20Visa.png?v=f340b943">
 <style>
@@ -2311,7 +2322,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 <style>
 .pnb-balance-card img{width:20px;height:20px;object-fit:contain;vertical-align:middle}
 .cfh-bank-dialog{border:0;border-radius:24px;width:min(420px,calc(100% - 32px));padding:24px;color:#1b1844;background:var(--card-bg,#fff);box-sizing:border-box}.cfh-bank-dialog::backdrop{background:#1b184466}.cfh-bank-dialog h2{margin:0 0 20px}.cfh-bank-dialog label{display:block;margin:12px 0 6px}.cfh-bank-dialog input,.cfh-bank-dialog select{box-sizing:border-box;width:100%;padding:12px;border:1px solid #b7b6ca;border-radius:12px;font:inherit;background:#fff;color:#1b1844}.cfh-bank-actions{display:flex;gap:10px;margin-top:20px}.cfh-bank-actions button{flex:1;padding:12px;border:0;border-radius:12px;font:inherit;background:#e9e7f8;color:#1b1844}.cfh-bank-actions button[type=submit]{background:#00d9a6}.cfh-bank-status{font-size:14px;color:#b42318;min-height:20px;margin-top:10px}
-.metric-card{position:relative}.cfh-balance-delta{position:absolute;right:12px;top:8px;pointer-events:none;font-size:16px;font-weight:700;z-index:2;color:#00F8B9;-webkit-text-stroke:0.5px #1B1844;paint-order:stroke fill;animation:cfh-balance-float 3s ease-out forwards;background:none;border:0;border-radius:0;padding:0;box-shadow:none}.cfh-balance-delta.is-negative{color:#00F8B9}@keyframes cfh-balance-float{0%{opacity:0;transform:translateY(8px)}5%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}@media(prefers-reduced-motion:reduce){.cfh-balance-delta{animation:none}}
+.metric-card{position:relative}.cfh-balance-delta{position:absolute;right:12px;top:8px;pointer-events:none;font-size:16px;font-weight:700;z-index:2;color:#00F8B9;-webkit-text-stroke:0;animation:cfh-balance-float 3s ease-out forwards;background:none;border:0;border-radius:0;padding:0;box-shadow:none}.cfh-balance-delta.is-negative{color:#00F8B9}@keyframes cfh-balance-float{0%{opacity:0;transform:translateY(8px)}5%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}@media(prefers-reduced-motion:reduce){.cfh-balance-delta{animation:none}}
 </style><style>
 #cfhNotesPage{touch-action:pan-y}
 #cfhNotesList>.cfh-notes-section-title:first-child{margin-top:6px}
@@ -3531,8 +3542,6 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                 <h2>Schedule</h2>
                 <span id="cfhCalendarSelectedLabel" class="dashboard-message"></span>
               </div>
-              <button type="button" class="cfh-schedule-past-toggle" onclick="cfhExportCardDueDates(this)" title="Export 12 months of upcoming unpaid card due dates">Export Card Due Dates (.ics)</button>
-              <div id="cfhDueDateExportStatus" class="dashboard-message" role="status"></div>
               <div id="cfhCalendarSchedule" class="cfh-schedule-empty">No events scheduled.</div>
             </div>
           </div>
@@ -3541,6 +3550,20 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
   </main>
 
+
+
+<section id="cfhMorePage" hidden aria-labelledby="cfhMoreTitle">
+ <h1 id="cfhMoreTitle">More</h1>
+ <section class="cfh-calendar-card cfh-more-calendar" aria-labelledby="cfhMoreCalendarTitle">
+  <h2 id="cfhMoreCalendarTitle">Calendar</h2>
+  <hr>
+              <button type="button" class="cfh-schedule-past-toggle" onclick="cfhExportCardDueDates(this)" title="Export 12 months of upcoming unpaid card due dates">Export Card Due Dates (.ics)</button>
+              <div id="cfhDueDateExportStatus" class="dashboard-message" role="status"></div>
+
+  <div id="cfhMoreCalendarSync"></div>
+  <div id="cfhMoreCalendarReminders"></div>
+ </section>
+</section>
 
   <div id="dashboardMonthModal" class="month-modal" hidden>
     <div class="month-modal-panel" role="dialog" aria-modal="true" aria-labelledby="dashboardMonthModalTitle">
@@ -5094,7 +5117,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     let currentAppPage = "gcash";
 
     const CFH_NAV_KEY = 'cashflow-hub:navigation-v2';
-    const CFH_VALID_PAGES = ['money','gcash','lifeLog','rental','printing','twice','test','expenses','calendar','crypto'];
+    const CFH_VALID_PAGES = ['more','money','gcash','lifeLog','rental','printing','twice','test','expenses','calendar','crypto'];
     function cfhSaveNavigationState() {
       try {
         const state = {page:currentAppPage,home:window.cfhLastHomePage || 'gcash',scrollY:window.scrollY,month:cfhCalendarDateKey(cfhCalendarState.month),selected:cfhCalendarDateKey(cfhCalendarState.selected),savedAt:Date.now()};
@@ -5121,7 +5144,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         if (month) cfhCalendarState.month = new Date(month.getFullYear(),month.getMonth(),1);
         if (selected) cfhCalendarState.selected = selected;
         cfhCalendarState.filterSelectedDate=false;cfhCalendarState.selectionCleared=true;
-        window.cfhLastHomePage = CFH_VALID_PAGES.includes(state.home) && !['calendar','crypto','money'].includes(state.home) ? state.home : 'gcash';
+        window.cfhLastHomePage = CFH_VALID_PAGES.includes(state.home) && !['calendar','crypto','money','more'].includes(state.home) ? state.home : 'gcash';
         const isReload = performance.getEntriesByType('navigation')[0]?.type === 'reload';
         const explicitReload = legacy && Date.now()-legacy.savedAt < 60000;
         if (!isReload && !explicitReload) {
@@ -5679,12 +5702,15 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function showAppPage(pageName, animate = true) {
       // Calendar is separate from the Home carousel; never slide through Home to reach it.
       if (pageName === "calendar" || currentAppPage === "calendar") animate = false;
+      document.body.classList.toggle('cfh-more-active',pageName==='more');
+      const morePage=document.getElementById('cfhMorePage');if(morePage)morePage.hidden=pageName!=='more';
       document.body.classList.toggle('cfh-cash-active',pageName==='money');
       const cashPage=document.getElementById('cfhCashPage');if(cashPage)cashPage.hidden=pageName!=='money';
       document.body.classList.toggle('cfh-crypto-active',pageName==='crypto');
       const portfolioPage=document.getElementById('cfhPortfolioPage');if(portfolioPage)portfolioPage.hidden=pageName!=='crypto';
       document.body.classList.toggle('cfh-notes-active',pageName==='notes');
       const notesPage=document.getElementById('cfhNotesPage');if(notesPage)notesPage.hidden=pageName!=='notes';
+      if(pageName==='more'){currentAppPage='more';document.body.classList.remove('cfh-calendar-active');cfhSaveNavigationState();window.cfhSyncBottomNav?.();window.scrollTo(0,0);return;}
       if(pageName==='money'){currentAppPage='money';document.body.classList.remove('cfh-calendar-active');cfhSaveNavigationState();window.cfhSyncBottomNav?.();window.scrollTo(0,0);return;}
       if(pageName==='notes'){currentAppPage='notes';document.body.classList.remove('cfh-calendar-active');window.cfhNotesRender?.();cfhSaveNavigationState();window.cfhSyncBottomNav?.();window.scrollTo(0,0);return;}
       if(pageName==='crypto'){
@@ -11865,15 +11891,15 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 <button type="button" data-cfh-dest="add" class="cfh-nav-add" aria-label="Add preview"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></span><span>Add</span></button>
 <button type="button" data-cfh-dest="notes" class="cfh-nav-notes" aria-label="Notes"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21h6M10 17h4M8.5 14.2a7 7 0 1 1 7 0c-.8.6-1.2 1.3-1.4 2.8H9.9c-.2-1.5-.6-2.2-1.4-2.8Z"/></svg></span><span>Notes</span></button>
 <button type="button" data-cfh-dest="money" aria-label="Money"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="15" rx="2"/><path d="M2 10h20M17 16h2"/></svg></span><span>Money</span></button>
-<button type="button" data-cfh-dest="more" aria-label="More preview"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span>More</span></button>
+<button type="button" data-cfh-dest="more" aria-label="More"><span class="cfh-nav-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span><span>More</span></button>
 </nav>
 <script>
 (function(){
  var bar=document.querySelector('.cfh-bottom-nav');if(!bar)return;
- function sync(){var selected=(typeof currentAppPage!=='undefined'&&['calendar','crypto','notes','money'].includes(currentAppPage))?currentAppPage:'home';var fab=document.querySelector('.cfh-calendar-fab');if(fab)fab.hidden=selected!=='calendar';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+ function sync(){var selected=(typeof currentAppPage!=='undefined'&&['calendar','crypto','notes','money','more'].includes(currentAppPage))?currentAppPage:'home';var fab=document.querySelector('.cfh-calendar-fab');if(fab)fab.hidden=selected!=='calendar';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
  window.cfhSyncBottomNav=sync;
  var toastTimer;
- bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'||dest==='crypto'||dest==='notes'||dest==='money'){if(typeof showAppPage==='function')showAppPage(dest==='home'?(window.cfhLastHomePage||'gcash'):dest);sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
+ bar.addEventListener('click',function(e){var btn=e.target.closest('button[data-cfh-dest]');if(!btn)return;var dest=btn.dataset.cfhDest;if(dest==='calendar'||dest==='home'||dest==='crypto'||dest==='notes'||dest==='money'||dest==='more'){if(typeof showAppPage==='function')showAppPage(dest==='home'?(window.cfhLastHomePage||'gcash'):dest);sync();return}var toast=document.querySelector('.cfh-nav-toast');if(!toast){toast=document.createElement('div');toast.className='cfh-nav-toast';toast.setAttribute('role','status');document.body.appendChild(toast)}toast.textContent=btn.textContent.trim()+' — coming soon';clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.remove()},2200)});
  document.addEventListener('click',function(e){if(e.target.closest('.app-tab'))setTimeout(sync,0)});
  document.addEventListener('touchend',function(){setTimeout(sync,100)}, {passive:true});
  sync();
@@ -11996,12 +12022,12 @@ async function cfhDisablePush(){
  }catch(e){cfhPushStatus('Could not disable notifications. Please retry.');}
 }
 function cfhPushMount(){
- const target=document.getElementById('cfhCalendarSchedule');if(!target||document.getElementById('cfhPushPanel'))return;
+ const target=document.getElementById('cfhMoreCalendarReminders');if(!target||document.getElementById('cfhPushPanel'))return;
  const panel=document.createElement('div');panel.id='cfhPushPanel';panel.className='cfh-push-panel';
  panel.innerHTML='<strong>Notifications</strong><p id="cfhPushStatus" role="status">Enable notifications on this device to receive reminders.</p><div><button type="button" onclick="cfhEnablePush()">Enable notifications</button><button type="button" onclick="cfhTestPush()">Test</button><button type="button" onclick="cfhDisablePush()">Disable</button></div>';
  const toggle=document.createElement('button');toggle.id='cfhReminderSettingsButton';toggle.type='button';toggle.textContent='Reminders';toggle.className='cfh-reminder-settings-button';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','cfhPushPanel');
  panel.hidden=true;toggle.onclick=()=>{panel.hidden=!panel.hidden;toggle.setAttribute('aria-expanded',String(!panel.hidden));};
- target.before(toggle,panel);
+ target.append(toggle,panel);
  if(window.CFH_NATIVE)cfhPushStatus('Enable native reminders on this device.');else if(!cfhPushSupported())cfhPushStatus('Push notifications are unavailable in this browser.');
  else if(localStorage.getItem('cfh-push-enabled')==='true')cfhPushSync(true);
 }

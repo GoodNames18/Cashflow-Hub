@@ -8,7 +8,8 @@ export async function startCalendarSync(client,owner) {
  const panel=document.createElement('div');panel.className='cfh-push-panel';panel.id='cfhCloudPanel';
  panel.innerHTML='<strong>Calendar sync</strong><p role="status">Connecting your saved schedules…</p><button type="button">Sync now</button><p data-external aria-live="polite"></p>';
  const schedule=document.getElementById('cfhCalendarSchedule');
- if(schedule?.before)schedule.before(panel);else schedule?.prepend(panel);
+ const moreSync=document.getElementById('cfhMoreCalendarSync');
+ if(moreSync)moreSync.append(panel);else if(schedule?.before)schedule.before(panel);else schedule?.prepend(panel);
  const status=text=>panel.querySelector('[role=status]').textContent=text;
  function persist(){originalSet.call(localStorage,META,JSON.stringify(meta));}
  function backup(){if(!localStorage.getItem(BACKUP))originalSet.call(localStorage,BACKUP,JSON.stringify(Object.fromEntries(KEYS.map(k=>[k,localStorage.getItem(k)]))));}
