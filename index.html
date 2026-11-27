@@ -7768,32 +7768,56 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
     function bindTestLoanButton(button) {
-      var timer, consumed = false, startX, startY;
-      function cancel() { clearTimeout(timer); }
-      button.addEventListener("pointerdown", function(event) {
-        if (button.disabled || event.button > 0 || event.isPrimary === false) return;
-        cancel(); consumed = false; startX = event.clientX; startY = event.clientY;
-        timer = setTimeout(function() { consumed = true; openTestLoanModal(); }, 650);
-      });
-      button.addEventListener("pointermove", function(event) {
-        if (Math.hypot(event.clientX - startX, event.clientY - startY) > 10) { cancel(); consumed = true; }
-      });
-      button.addEventListener("pointerup", cancel);
-      ["pointercancel", "pointerleave"].forEach(function(type) {
-        button.addEventListener(type, function() { cancel(); consumed = true; });
-      });
-      button.addEventListener("contextmenu", function(event) {
-        event.preventDefault(); cancel(); consumed = true;
-        if (!button.disabled) openTestLoanModal();
-      });
-      button.addEventListener("click", function(event) {
-        cancel();
-        if (consumed && event.detail !== 0) { event.preventDefault(); consumed = false; return; }
-        consumed = false;
-        if (button.disabled) return;
+      var timer, active = false, consumed = false, startX, startY, suppressClickUntil = 0;
+      function cancelTimer() { clearTimeout(timer); }
+      function recordPayment() {
+        if (button.disabled || document.getElementById("testLoanSaveButton").disabled) return;
         openTestLoanModal();
         document.getElementById("testLoanModal").hidden = true;
+        setTestStatus("Recording loan payment…", "preview");
         saveTestLoanAmount();
+      }
+      button.addEventListener("pointerdown", function(event) {
+        if (button.disabled || event.button > 0 || event.isPrimary === false) return;
+        cancelTimer(); active = true; consumed = false;
+        startX = event.clientX; startY = event.clientY;
+        timer = setTimeout(function() {
+          if (!active) return;
+          consumed = true; suppressClickUntil = Date.now() + 1200;
+          openTestLoanModal();
+        }, 650);
+      });
+      button.addEventListener("pointermove", function(event) {
+        if (active && Math.hypot(event.clientX - startX, event.clientY - startY) > 10) {
+          cancelTimer(); consumed = true;
+        }
+      });
+      button.addEventListener("pointerup", function(event) {
+        if (!active) return;
+        cancelTimer(); active = false;
+        if (consumed) { suppressClickUntil = Date.now() + 1200; return; }
+        if (event.pointerType === "touch" || event.pointerType === "pen") {
+          suppressClickUntil = Date.now() + 1200;
+          recordPayment();
+        }
+      });
+      ["pointercancel", "pointerleave"].forEach(function(type) {
+        button.addEventListener(type, function() {
+          if (!active) return;
+          cancelTimer(); active = false; consumed = true;
+          suppressClickUntil = Date.now() + 1200;
+        });
+      });
+      button.addEventListener("contextmenu", function(event) {
+        event.preventDefault(); cancelTimer();
+        if (!consumed && !button.disabled) openTestLoanModal();
+        consumed = true; suppressClickUntil = Date.now() + 1200;
+      });
+      button.addEventListener("click", function(event) {
+        cancelTimer();
+        if (Date.now() < suppressClickUntil) { event.preventDefault(); return; }
+        consumed = false; active = false;
+        recordPayment();
       });
       button.setAttribute("aria-label", "Record loan payment. Hold to change payment details.");
       button.title = "Tap to record payment · Hold to change details";
