@@ -18,7 +18,7 @@ export function createBalanceMotion({readValues,paint,showDelta,visible,period,n
    if(reduced()){paint(id,value);continue;}
    showDelta(id,Math.round((value-previous)*100)/100);
    const start=job?.value??previous,started=now(),next={value:start,frame:null};
-   const tick=()=>{if(running.get(id)!==next)return;const progress=Math.min(1,(now()-started)/600);next.value=start+(value-start)*(1-Math.pow(1-progress,3));paint(id,progress===1?value:next.value);if(progress<1)next.frame=frame(tick);else running.delete(id);};
+   const tick=()=>{if(running.get(id)!==next)return;const progress=Math.min(1,(now()-started)/1000);next.value=start+(value-start)*(1-Math.pow(1-progress,3));paint(id,progress===1?value:next.value);if(progress<1)next.frame=frame(tick);else running.delete(id);};
    running.set(id,next);paint(id,start);next.frame=frame(tick);
   }
   if(changed||!old||old.key!==key||!visible(page)||ticket?.until<now())pending.delete(page);

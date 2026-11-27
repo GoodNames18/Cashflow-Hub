@@ -30,12 +30,12 @@ test('PNB rejects invalid amounts, categories, and descriptions',()=>{
 function animationFixture(){let time=0,key='2026-11',values={cash:100},hidden=false,reduce=false,seq=0;const jobs=new Map(),paints={},badges=[];const motion=createBalanceMotion({readValues:()=>({...values}),paint:(id,v)=>paints[id]=v,showDelta:(id,v)=>badges.push([id,v]),visible:()=>!hidden,period:()=>key,now:()=>time,reduced:()=>reduce,frame:fn=>{jobs.set(++seq,fn);return seq;},cancel:id=>jobs.delete(id)});return {motion,paints,badges,set values(v){values=v;},set key(v){key=v;},set hidden(v){hidden=v;},set reduced(v){reduce=v;},tick(ms){time+=ms;const callbacks=[...jobs.values()];jobs.clear();callbacks.forEach(f=>f());}};}
 test('balance animation skips first paint, cache replay, refresh and month switches',()=>{
  const f=animationFixture();f.motion.render('gcash');f.values={cash:110};f.motion.render('gcash');assert.equal(f.badges.length,0);
- f.motion.arm('gcash');f.motion.render('gcash');assert.equal(f.badges.length,0);f.values={cash:120};f.motion.render('gcash');assert.deepEqual(f.badges,[['cash',10]]);f.tick(600);assert.equal(f.paints.cash,120);f.motion.render('gcash');assert.equal(f.badges.length,1);
+ f.motion.arm('gcash');f.motion.render('gcash');assert.equal(f.badges.length,0);f.values={cash:120};f.motion.render('gcash');assert.deepEqual(f.badges,[['cash',10]]);f.tick(600);assert(f.paints.cash<120);f.tick(400);assert.equal(f.paints.cash,120);f.motion.render('gcash');assert.equal(f.badges.length,1);
  f.motion.arm('gcash');f.key='2026-10';f.values={cash:50};f.motion.render('gcash');assert.equal(f.badges.length,1);assert.equal(f.paints.cash,50);
 });
 test('rapid signed changes finish at exact cents and reduced motion paints immediately',()=>{
  const f=animationFixture();f.motion.render('konek');f.motion.arm('konek');f.values={cash:110};f.motion.render('konek');f.tick(300);const halfway=f.paints.cash;assert(halfway>100&&halfway<110);f.motion.render('konek');assert.equal(f.paints.cash,halfway);
- f.motion.arm('konek');f.values={cash:-.25};f.motion.render('konek');assert.equal(f.paints.cash,halfway);assert.deepEqual(f.badges.at(-1),['cash',-110.25]);f.tick(600);assert.equal(f.paints.cash,-.25);
+ f.motion.arm('konek');f.values={cash:-.25};f.motion.render('konek');assert.equal(f.paints.cash,halfway);assert.deepEqual(f.badges.at(-1),['cash',-110.25]);f.tick(1000);assert.equal(f.paints.cash,-.25);
  f.reduced=true;f.motion.arm('konek');f.values={cash:.01};f.motion.render('konek');assert.equal(f.paints.cash,.01);assert.equal(f.badges.length,2);
  f.reduced=false;f.hidden=true;f.motion.arm('konek');f.values={cash:999};f.motion.render('konek');assert.equal(f.badges.length,2);assert.equal(f.paints.cash,999);
 });

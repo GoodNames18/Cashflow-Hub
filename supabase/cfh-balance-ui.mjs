@@ -7,7 +7,13 @@ const period=page=>JSON.stringify(window.dashboardMonthParams?.(page)||{});
 const motion=createBalanceMotion({period,visible:page=>{const node=document.getElementById(pageIds[page]);return !!node&&node.getClientRects().length>0;},readValues:page=>{
  const values={};document.getElementById(pageIds[page])?.querySelectorAll('.metric-value[id]').forEach(node=>{if(node.textContent.includes('₱'))values[node.id]=number(node.textContent);});return values;
 },paint:(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=peso(value);},showDelta:(id,delta)=>{
- const card=document.getElementById(id)?.closest('.metric-card');if(!card||!delta)return;card.querySelector('.cfh-balance-delta')?.remove();const badge=document.createElement('span');badge.className='cfh-balance-delta'+(delta<0?' is-negative':'');badge.textContent=(delta<0?'−':'+')+peso(Math.abs(delta));badge.setAttribute('aria-hidden','true');card.append(badge);setTimeout(()=>badge.remove(),5000);
+ const card=document.getElementById(id)?.closest('.metric-card');if(!card||!delta)return;const badge=document.createElement('span');badge.className='cfh-balance-delta'+(delta<0?' is-negative':'');badge.textContent=(delta<0?'−':'+')+peso(Math.abs(delta));badge.setAttribute('aria-hidden','true');
+ const colors=['#00F8B9','#1B1844','#E6E6FA'];
+ badge.style.color=colors[Math.floor(Math.random()*colors.length)];
+ const slot=Number(card.dataset.balanceDeltaSequence||0)%4;
+ card.dataset.balanceDeltaSequence=String(slot+1);
+ badge.style.top=(8+slot*16)+'px';badge.style.right=(12+slot*4)+'px';
+ card.append(badge);setTimeout(()=>badge.remove(),3000);
 },reduced:()=>matchMedia('(prefers-reduced-motion: reduce)').matches,frame:fn=>requestAnimationFrame(fn),cancel:id=>cancelAnimationFrame(id)});
 window.cfhBalanceMotion={arm:params=>motion.arm(writeDashboard(params)),render:page=>motion.render(page)};
 // Cached dashboards can paint before this module finishes loading. Seed their baseline.
