@@ -7918,7 +7918,13 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         : {action:"testLoan", loanVersion:2, amount:payment, rebate:rebate, principal:principal, remainingAfter:document.getElementById("testLoanRemainingInput").value.replace(/,/g,""), loanBefore:latestTestDashboardData?.loanRemaining};
       if (!add) {
         if(!window.cfhValidateLoanPayment){showTestLoanMessage("Loan calculator is loading. Please try again.");return;}
-        try{window.cfhValidateLoanPayment(params);}catch(error){showTestLoanMessage(error.message);return;}
+        try {
+          var validatedLoan = window.cfhValidateLoanPayment(params);
+          // One request saves the payment and credit together using the original two-row format.
+          delete params.loanVersion;
+          params.principal = validatedLoan.principal || "";
+          params.rebate = validatedLoan.rebate;
+        } catch(error) { showTestLoanMessage(error.message); return; }
       }
       save.disabled = true;
       setTestActionButtonsDisabled(true);
@@ -7930,7 +7936,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         }
         closeTestLoanModal();
         if (add) document.getElementById("testTransactionInput").value = "";
-        setTestStatus(add ? (other ? "Other loan added: " : "Konek2Card loan added: ") + new Intl.NumberFormat("en-PH", {style:"currency", currency:"PHP"}).format(amountCents / 100) : "Loan payment recorded. Card −"+formatPeso(result.netDeduction)+". "+(result.principal?"Loan reduced by "+formatPeso(result.principal)+".":"Loan Remaining unchanged; no principal supplied."), "success");
+        setTestStatus(add ? (other ? "Other loan added: " : "Konek2Card loan added: ") + new Intl.NumberFormat("en-PH", {style:"currency", currency:"PHP"}).format(amountCents / 100) : "Loan payment recorded. Card −"+formatPeso(cfhNumber(payment)-cfhNumber(rebate))+". "+(result.principal?"Loan reduced by "+formatPeso(result.principal)+".":"Loan Remaining unchanged; no principal supplied."), "success");
         markTestDashboardLoaded_(result.dashboard);
       }, function(error) {
         save.disabled = false;
@@ -8178,7 +8184,16 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
       recentBox.className = "";
       recentBox._displayedTransactions = transactions;
-      recentBox.innerHTML = transactions.map(function(item) {
+      var displayTransactions = [];
+      transactions.forEach(function(item) {
+        var parts = window.cfhLoanPaymentParts?.(item.description);
+        if (parts?.atomic) {
+          // Older combined payments display as two lines without changing saved balances.
+          if (parts.rebate) displayTransactions.push(Object.assign({}, item, {amount:parts.rebate, feeEarned:0, category:"Income", description:"Loan rebate"}));
+          displayTransactions.push(Object.assign({}, item, {amount:cfhNumber(item.amount)+parts.rebate, feeEarned:0, category:"Expense", description:"Loan payment"}));
+        } else displayTransactions.push(item);
+      });
+      recentBox.innerHTML = displayTransactions.map(function(item) {
         var metaParts = [];
         if (item.date) metaParts.push(item.date);
         if (item.time) metaParts.push(item.time);
@@ -8213,8 +8228,6 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           amountText = formatPeso(amount);
         }
 
-        var loanParts=window.cfhLoanPaymentParts?.(item.description);
-        if(loanParts?.atomic){amountText="−"+formatPeso(amount+loanParts.rebate)+(loanParts.rebate?" · +"+formatPeso(loanParts.rebate)+" credit":"")+" (net −"+formatPeso(amount)+")";amountClass="transaction-amount expense-value";}
         return (
           '<div class="transaction-row">' +
             '<div>' +
