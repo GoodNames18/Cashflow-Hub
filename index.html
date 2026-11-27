@@ -3300,8 +3300,10 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                 <input id="testLoanLenderInput" class="quick-custom-input" type="text" maxlength="80">
               </div>
               <p id="testLoanWarning" class="test-modal-note" aria-live="polite" hidden></p>
+              <div class="loan-modal-actions">
               <button id="testLoanSaveButton" class="test-modal-cancel" type="button">SAVE AMOUNT</button>
-              <button id="testLoanCancelButton" class="test-modal-cancel" type="button">CANCEL</button>
+              <button id="testLoanCancelButton" class="test-modal-cancel" type="button">Cancel</button>
+              </div>
             </div>
           </div>
           <div id="testAtmModal" class="test-modal" hidden>
@@ -7068,34 +7070,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         addButton.addEventListener("click", saveTestCashOut);
       }
       if (loanButton) {
-        var loanPressTimer, loanLongPressed = false;
-        loanButton.addEventListener("pointerdown", function(event) {
-          if (loanButton.disabled || event.button > 0) return;
-          loanLongPressed = false;
-          clearTimeout(loanPressTimer);
-          loanPressTimer = setTimeout(function() {
-            loanLongPressed = true;
-            openTestLoanModal();
-          }, 650);
-        });
-        ["pointerup", "pointercancel", "pointerleave"].forEach(function(type) {
-          loanButton.addEventListener(type, function() { clearTimeout(loanPressTimer); });
-        });
-        loanButton.addEventListener("contextmenu", function(event) {
-          event.preventDefault();
-          clearTimeout(loanPressTimer);
-          loanLongPressed = true;
-          openTestLoanModal();
-        });
-        loanButton.addEventListener("click", function(event) {
-          if (loanLongPressed) {
-            event.preventDefault();
-            loanLongPressed = false;
-          } else {
-            openTestLoanModal();
-          }
-        });
-        loanButton.setAttribute("aria-label", "Konek2Card loan payment");
+        bindTestLoanButton(loanButton);
       }
       var loanSaveButton = document.getElementById("testLoanSaveButton");
       var loanCancelButton = document.getElementById("testLoanCancelButton");
@@ -7778,16 +7753,48 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       if (type === "other") openTestLoanModal("other");
     }
 
+    function bindTestLoanButton(button) {
+      var timer, consumed = false, startX, startY;
+      function cancel() { clearTimeout(timer); }
+      button.addEventListener("pointerdown", function(event) {
+        if (button.disabled || event.button > 0 || event.isPrimary === false) return;
+        cancel(); consumed = false; startX = event.clientX; startY = event.clientY;
+        timer = setTimeout(function() { consumed = true; openTestLoanModal(); }, 650);
+      });
+      button.addEventListener("pointermove", function(event) {
+        if (Math.hypot(event.clientX - startX, event.clientY - startY) > 10) { cancel(); consumed = true; }
+      });
+      button.addEventListener("pointerup", cancel);
+      ["pointercancel", "pointerleave"].forEach(function(type) {
+        button.addEventListener(type, function() { cancel(); consumed = true; });
+      });
+      button.addEventListener("contextmenu", function(event) {
+        event.preventDefault(); cancel(); consumed = true;
+        if (!button.disabled) openTestLoanModal();
+      });
+      button.addEventListener("click", function(event) {
+        cancel();
+        if (consumed && event.detail !== 0) { event.preventDefault(); consumed = false; return; }
+        consumed = false;
+        if (button.disabled) return;
+        openTestLoanModal();
+        document.getElementById("testLoanModal").hidden = true;
+        saveTestLoanAmount();
+      });
+      button.setAttribute("aria-label", "Record loan payment. Hold to change payment details.");
+      button.title = "Tap to record payment · Hold to change details";
+    }
+
     function openTestLoanModal(mode) {
       testLoanMode = mode === "add" || mode === "other" ? mode : "payment";
       var add = testLoanMode !== "payment";
       var values = getTestLoanValues();
       var modal = document.getElementById("testLoanModal");
-      document.getElementById("testLoanTitle").textContent = testLoanMode === "other" ? "ADD OTHER LOAN" : add ? "ADD KONEK2CARD LOAN" : "KONEK2CARD LOAN PAYMENT";
+      document.getElementById("testLoanTitle").textContent = testLoanMode === "other" ? "ADD OTHER LOAN" : add ? "ADD KONEK2CARD LOAN" : "Loan payment";
       modal.dataset.mode = testLoanMode;
       document.getElementById("testLoanInstructions").textContent = add
         ? "Leave Loan Fees blank if nothing was deducted upfront."
-        : "Payment reduces Card money. Pledge credit adds it back. Enter principal OR a confirmed remaining loan balance to update Loan Remaining.";
+        : "Payment minus pledge credit is deducted from Card money. Leave loan balance details blank if unknown.";
       document.getElementById("testLoanAmountLabel").textContent = add ? "Loan Amount" : "Payment";
       document.getElementById("testLoanRebateLabel").textContent = add ? "Loan Fees (optional)" : "Pledge credit (0 if none)";
       document.getElementById("testLoanAmountInput").value = add ? "" : values.payment;
@@ -7815,6 +7822,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           if (testLoanMode === "other") document.getElementById("testLoanLenderInput").value = entry.lender;
         } catch (error) {}
       }
+      if (modal.parentNode !== document.body) document.body.appendChild(modal);
       modal.hidden = false;
       updateTestLoanWarning();
     }
@@ -7824,6 +7832,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
     function showTestLoanMessage(text) {
+      if (document.getElementById("testLoanModal").hidden) setTestStatus(text, "error");
       var message = document.getElementById("testLoanWarning");
       message.textContent = text;
       message.hidden = !text;
