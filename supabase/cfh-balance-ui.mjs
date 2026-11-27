@@ -8,8 +8,7 @@ const motion=createBalanceMotion({period,visible:page=>{const node=document.getE
  const values={};document.getElementById(pageIds[page])?.querySelectorAll('.metric-value[id]').forEach(node=>{if(node.textContent.includes('₱'))values[node.id]=number(node.textContent);});return values;
 },paint:(id,value)=>{const node=document.getElementById(id);if(node)node.textContent=peso(value);},showDelta:(id,delta)=>{
  const card=document.getElementById(id)?.closest('.metric-card');if(!card||!delta)return;const badge=document.createElement('span');badge.className='cfh-balance-delta'+(delta<0?' is-negative':'');badge.textContent=(delta<0?'−':'+')+peso(Math.abs(delta));badge.setAttribute('aria-hidden','true');
- const colors=['#00F8B9','#1B1844','#E6E6FA'];
- badge.style.color=colors[Math.floor(Math.random()*colors.length)];
+ badge.style.color='#00F8B9';
  const slot=Number(card.dataset.balanceDeltaSequence||0)%4;
  card.dataset.balanceDeltaSequence=String(slot+1);
  badge.style.top=(8+slot*16)+'px';badge.style.right=(12+slot*4)+'px';

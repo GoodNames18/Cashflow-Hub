@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v185-overlapping-money-motion';
+const CACHE_NAME = 'cashflow-hub-v186-mint-money-stroke';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
