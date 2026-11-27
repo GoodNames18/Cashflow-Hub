@@ -1,3 +1,4 @@
+import {parseTwiceAsNyceEntry_} from './legacy-rules.mjs?v=moneyflow-digits1';
 import {createBalanceMotion,writeDashboard} from './cfh-balance-motion.mjs';
 const pageIds={twice:'twicePage',printing:'printingPage',gcash:'gcashPage',konek:'testPage',rental:'rentalPage',moneyFlow:'expensesPage'};
 const peso=value=>'₱'+Number(value).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -11,17 +12,16 @@ const motion=createBalanceMotion({period,visible:page=>{const node=document.getE
 window.cfhBalanceMotion={arm:params=>motion.arm(writeDashboard(params)),render:page=>motion.render(page)};
 // Cached dashboards can paint before this module finishes loading. Seed their baseline.
 Object.keys(pageIds).forEach(page=>motion.render(page));
-const dialog=document.getElementById('twiceBankDialog'),form=document.getElementById('twiceBankForm'),kind=document.getElementById('twiceBankKind'),amount=document.getElementById('twiceBankAmount'),detail=document.getElementById('twiceBankDescription'),status=document.getElementById('twiceBankStatus'),save=document.getElementById('twiceBankSave'),cancel=document.getElementById('twiceBankCancel');
-amount.setAttribute('data-cfh-number','true');amount.setAttribute('step','0.01');amount.setAttribute('min','0.01');
-let category='Income',saving=false;
-window.openTwiceBankEntry=value=>{
- if(saving)return;category=value==='Expense'?'Expense':'Income';form.reset();status.textContent='';document.getElementById('twiceBankHeading').textContent=category==='Income'?'PNB income':'PNB expense';save.textContent=category==='Income'?'Save income':'Save expense';kind.replaceChildren(...(category==='Income'?['Shopee withdrawal','Other income']:['Supplies / stocks','Other expense']).map(text=>{const option=document.createElement('option');option.textContent=text;option.value=text;return option;}));dialog.showModal();amount.focus();
+
+let twiceSaving=false;
+window.cfhSaveTwiceEntry=category=>{
+ const input=document.getElementById('twiceTransactionInput'),status=document.getElementById('twiceStatus');
+ if(twiceSaving)return;
+ let entry;
+ try { entry=parseTwiceAsNyceEntry_(input.value,category); } catch(error) {status.textContent=error.message;return;}
+ twiceSaving=true;window.setTwiceEntryButtonsDisabled(true);status.textContent='Saving…';
+ const finish=()=>{twiceSaving=false;window.setTwiceEntryButtonsDisabled(false);};
+ window.jsonpRequest({action:'twiceAdd',account:'PNB',category:entry.category,amount:entry.amount,description:entry.description||entry.category},result=>{
+  finish();input.value='';status.textContent='✓ '+result.category+' '+peso(result.amount)+' added';window.loadTwiceAsNyceDashboard();
+ },error=>{finish();status.textContent=error?.message||'Could not save. Please retry.';});
 };
-cancel.onclick=()=>{if(!saving)dialog.close();};dialog.addEventListener('cancel',event=>{if(saving)event.preventDefault();});dialog.addEventListener('click',event=>{if(event.target===dialog&&!saving){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
-form.addEventListener('submit',event=>{
- event.preventDefault();if(saving)return;const value=number(amount.value);if(!Number.isFinite(value)||value<=0||Math.abs(value*100-Math.round(value*100))>0.000001){status.textContent='Enter a positive amount with up to two decimal places.';return;}
- const description=kind.value+(detail.value.trim()?' — '+detail.value.trim():'');if(description.length>200){status.textContent='Please shorten the description.';return;}
- saving=true;save.disabled=cancel.disabled=true;amount.disabled=kind.disabled=detail.disabled=true;status.textContent='Saving…';
- const finish=()=>{saving=false;save.disabled=cancel.disabled=false;amount.disabled=kind.disabled=detail.disabled=false;};
- window.jsonpRequest({action:'twiceAdd',account:'PNB',category,amount:value,description},result=>{finish();dialog.close();const message=document.getElementById('twiceStatus');message.textContent='✓ '+(category==='Income'?'Income':'Expense')+' '+peso(result.amount)+' saved';window.loadTwiceAsNyceDashboard();},error=>{finish();status.textContent=error?.message||String(error)||'Could not save. Please retry.';});
-});

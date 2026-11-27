@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v183-loan-separate-entries';
+const CACHE_NAME = 'cashflow-hub-v184-twice-text-entry';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

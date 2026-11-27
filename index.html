@@ -2521,11 +2521,13 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
 
             <div class="quick-entry">
 
+              <input id="twiceTransactionInput" class="quick-custom-input" type="text" inputmode="text" enterkeyhint="done" maxlength="200" placeholder="Enter transaction">
+
               <div class="printing-entry-grid">
                 <button
                   class="twice-entry-button printing-entry-button printing-income-button"
                   type="button"
-                  onclick="openTwiceBankEntry('Income')"
+                  onclick="saveTwiceAsNyceEntry('Income')"
                 >
                   Income
                 </button>
@@ -2533,7 +2535,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                 <button
                   class="twice-entry-button printing-entry-button printing-expense-button"
                   type="button"
-                  onclick="openTwiceBankEntry('Expense')"
+                  onclick="saveTwiceAsNyceEntry('Expense')"
                 >
                   Expenses
                 </button>
@@ -8392,7 +8394,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
 
-    function saveTwiceAsNyceEntry(category) { window.openTwiceBankEntry(category); }
+    function saveTwiceAsNyceEntry(category) { if (window.cfhSaveTwiceEntry) window.cfhSaveTwiceEntry(category); else document.getElementById("twiceStatus").textContent="Preparing entry form… Please try again."; }
 
     function getBusinessTransactionConfig(pageName) {
       if (pageName === "printing") {
@@ -8686,6 +8688,12 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     }
 
 
+    function cleanTwiceDescription(value) {
+      var text = String(value || "");
+      if (!/^\[PNB\]\s*/i.test(text)) return text;
+      return text.replace(/^\[PNB\]\s*/i, "").replace(/^(?:Shopee withdrawal|Supplies \/ stocks|Other income|Other expense)\s*—\s*/i, "");
+    }
+
     function renderTwiceAsNyceRecentTransactions(
       recentTransactions,
       showAll,
@@ -8755,7 +8763,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
                 "<div>" +
                   '<div class="transaction-name">' +
                     escapeHtml(
-                      item.description ||
+                      cleanTwiceDescription(item.description) ||
                       item.category ||
                       "TwiceAsNyce"
                     ) +
