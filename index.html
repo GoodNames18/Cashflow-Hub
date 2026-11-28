@@ -1585,7 +1585,7 @@
 
 
     /* Calendar page: isolated UI styles */
-    .cfh-calendar-shell { padding: 12px 12px 96px; }
+    .cfh-calendar-shell { padding: 12px 12px 70px; }
     .cfh-calendar-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:0 4px 18px rgba(0,0,0,.04); }
     .cfh-calendar-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
     .cfh-calendar-title { font-size:20px; font-weight:800; color:var(--text); }
@@ -4156,7 +4156,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.setAttribute('aria-label','Remove payment '+formatPeso(payment.amount)+' on '+payment.date);remove.onclick=()=>{if(confirm('Remove this payment? Total Due will stay unchanged.')&&cfhRemoveBillPayment(entry,payment.id))changed();};row.append(text,remove);host.append(row);
       }
       const form=document.createElement('form');form.className='cfh-bill-payment-form';
-      const amountLabel=document.createElement('label');amountLabel.textContent='Payment amount';const amount=document.createElement('input');amount.type='text';amount.inputMode='decimal';amount.dataset.cfhNumber='true';amount.placeholder='0.00';amount.required=true;amount.setAttribute('aria-label','Payment amount');amountLabel.append(amount);
+      const amountLabel=document.createElement('label');amountLabel.textContent='Payment amount';const amount=document.createElement('input');amount.type='number';amount.inputMode='decimal';amount.min='0.01';amount.step='0.01';amount.placeholder='0.00';amount.required=true;amount.setAttribute('aria-label','Payment amount');amountLabel.append(amount);
       const dateLabel=document.createElement('label');dateLabel.textContent='Payment date';const date=document.createElement('input');date.type='date';date.required=true;date.value=cfhCalendarTodayKey();date.max=cfhCalendarTodayKey();date.setAttribute('aria-label','Payment date');dateLabel.append(cfhWeekdayDateField(date));
       const add=document.createElement('button');add.type='submit';add.textContent='Add payment';const status=document.createElement('small');status.setAttribute('role','alert');
       form.append(amountLabel,dateLabel,add,status);form.onsubmit=e=>{e.preventDefault();try{if(cfhAddBillPayment(entry,amount.value,date.value))changed();else status.textContent='Could not save payment. Your entry is still here.';}catch(error){status.textContent=error.message;}};host.append(form);
