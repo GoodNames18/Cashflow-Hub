@@ -1585,7 +1585,8 @@
 
 
     /* Calendar page: isolated UI styles */
-    .cfh-calendar-shell { padding: 12px 12px 68px; }
+    .cfh-calendar-shell { padding:12px 12px 0; }
+    #calendarPage { padding-bottom:0; }
     .cfh-calendar-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:0 4px 18px rgba(0,0,0,.04); }
     .cfh-calendar-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
     .cfh-calendar-title { font-size:20px; font-weight:800; color:var(--text); }
@@ -1627,6 +1628,7 @@
 .cfh-bottom-nav .cfh-nav-add .cfh-nav-icon{height:52px;width:54px;border-radius:17px;box-shadow:0 3px 11px #00f8b94a}
 .cfh-bottom-nav .cfh-nav-add svg{width:29px;height:29px}
 .app-shell{padding-bottom:calc(98px + env(safe-area-inset-bottom))!important}
+body.cfh-calendar-active .app-shell{padding-bottom:calc(var(--cfh-bottom-nav-height, 98px) + var(--cfh-calendar-side-gap, 24px))!important}
 .cfh-nav-toast{position:fixed;bottom:calc(103px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:61;background:#1B1844;color:white;border-radius:12px;padding:11px 15px;font:13px Arial,sans-serif;max-width:calc(100% - 30px);text-align:center;box-shadow:0 4px 15px #0003}
 
 /* Calendar add editor: UI only; no transaction or persistence hooks */
@@ -11915,6 +11917,18 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
 <script>
 (function(){
  var bar=document.querySelector('.cfh-bottom-nav');if(!bar)return;
+ const schedule=document.querySelector('#calendarPage .cfh-schedule');
+ const updateCalendarGap=()=>{
+   document.body.style.setProperty('--cfh-bottom-nav-height',bar.getBoundingClientRect().height+'px');
+   if(!schedule?.getClientRects().length)return;
+   const gap=schedule.getBoundingClientRect().left-bar.getBoundingClientRect().left;
+   document.body.style.setProperty('--cfh-calendar-side-gap',Math.max(0,gap)+'px');
+ };
+ const calendarSpacingObserver=new ResizeObserver(updateCalendarGap);
+ calendarSpacingObserver.observe(bar);
+ if(schedule)calendarSpacingObserver.observe(schedule);
+ window.addEventListener('resize',updateCalendarGap);
+
  function sync(){var selected=(typeof currentAppPage!=='undefined'&&['calendar','crypto','notes','money','more'].includes(currentAppPage))?currentAppPage:'home';var fab=document.querySelector('.cfh-calendar-fab');if(fab)fab.hidden=selected!=='calendar';bar.querySelectorAll('button').forEach(function(b){if(b.dataset.cfhDest===selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
  window.cfhSyncBottomNav=sync;
  var toastTimer;

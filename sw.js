@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v192-fixed-due-day';
+const CACHE_NAME = 'cashflow-hub-v193-calendar-outer-gap';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
