@@ -1585,7 +1585,7 @@
 
 
     /* Calendar page: isolated UI styles */
-    .cfh-calendar-shell { padding: 12px 12px 70px; }
+    .cfh-calendar-shell { padding: 12px 12px 68px; }
     .cfh-calendar-card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px; box-shadow:0 4px 18px rgba(0,0,0,.04); }
     .cfh-calendar-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
     .cfh-calendar-title { font-size:20px; font-weight:800; color:var(--text); }
@@ -3877,7 +3877,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       const [y,m,d] = statementKey.split('-').map(Number);
       const due = cfhCardDueBaseDate('metrobank',statementKey.slice(0,7),statementKey);
       // Weekends are predictable; unannounced special holidays are not.
-      while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
+      if(!cfhCardScheduleSettings('metrobank',statementKey.slice(0,7)).fixedDueDay)while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
       return {key:cfhCalendarDateKey(due),confirmed:false};
     }
     // Keep October 2026 onward. Unlock the following calendar year each December 1.
@@ -4047,7 +4047,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function cfhCardScheduleSettings(bank,cycle){
       const prefs=cfhScopedPrefs(bank,cycle||'');
       const use=!cycle||!prefs.scheduleFrom||cycle>=prefs.scheduleFrom;
-      return {statementDay:use&&Number.isInteger(prefs.statementDay)?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21),fixedDueDay:use&&Number.isInteger(prefs.fixedDueDay)&&prefs.fixedDueDay>=1&&prefs.fixedDueDay<=31?prefs.fixedDueDay:null};
+      return {statementDay:use&&(prefs.statementDay===null||Number.isInteger(prefs.statementDay))?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21),fixedDueDay:use&&Number.isInteger(prefs.fixedDueDay)&&prefs.fixedDueDay>=1&&prefs.fixedDueDay<=31?prefs.fixedDueDay:null};
     }
     function cfhCardStatementDate(bank,year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7);
@@ -4061,7 +4061,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       const scheduled=cfhCardStatementDate('eastwest',year,month);
       const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(scheduled));
       const [y,m,d]=statement.split('-').map(Number);
-      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(cfhCardDueBaseDate('eastwest',cycle,statement)));
+      const baseDue=cfhCardDueBaseDate('eastwest',cycle,statement);
+      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhCardScheduleSettings('eastwest',cycle).fixedDueDay?baseDue:cfhEastwestBankingDate(baseDue));
       return {cycle,statement,due,check:cfhEastwestStatementCheck(scheduled),statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
     }
     function cfhEastwestConfirmDate(entry){
@@ -4206,6 +4207,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       document.getElementById('cfhAddDueLabel').textContent=atome?'Due day (next month)':'Due after (days)';
       if(atome&&!due.readOnly){due.dataset.previous=due.value;}
       due.value=atome?'3':due.readOnly?(due.dataset.previous||''):due.value;due.readOnly=atome;fixed.disabled=atome;due.disabled=!atome&&fixed.value!=='';due.required=!due.disabled;
+      document.getElementById('cfhAddStatementDay').required=!due.disabled;
     }
     function cfhAddCardPreview(fillNames=false){
       const photo=document.getElementById('cfhAddCardPhoto'),value=document.getElementById('cfhAddCardImage').value;
@@ -4249,7 +4251,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       const key=form.dataset.savedCardKey||('duplicate-'+(window.crypto?.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2)));
       form.dataset.savedCardKey=key;
       const prefs=cfhCardPanelPreferences();
-      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:cfhNumber(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:(cfhNumber(value('cfhAddDueDays'))||24),fixedDueDay:!cfhIsAtomeCard({bankName,cardName})&&value('cfhAddFixedDueDay')!==''?cfhNumber(value('cfhAddFixedDueDay')):null,start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:true,reminderDays:[7,5,3,2,1,0],confirmedCycles:{}};
+      prefs[key]={sourceBank:'eastwest',eventType:'both',bankName,cardName,image:value('cfhAddCardImage'),statementDay:value('cfhAddStatementDay')===''?null:cfhNumber(value('cfhAddStatementDay')),dueDays:cfhIsAtomeCard({bankName,cardName})?24:(cfhNumber(value('cfhAddDueDays'))||24),fixedDueDay:!cfhIsAtomeCard({bankName,cardName})&&value('cfhAddFixedDueDay')!==''?cfhNumber(value('cfhAddFixedDueDay')):null,start,end,notificationTime:value('cfhAddCardTime'),remindersEnabled:true,reminderDays:[7,5,3,2,1,0],confirmedCycles:{}};
       try{localStorage.setItem(CFH_CARD_PANEL_KEY,JSON.stringify(prefs));}catch(e){alert('Could not save card.');return;}
       const [y,m,d]=start.split('-').map(Number);cfhCalendarState.selected=new Date(y,m-1,d);cfhCalendarState.month=new Date(y,m-1,1);
       await cfhFinishCalendarSave();cfhSaveNavigationState();
@@ -4458,6 +4460,11 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
     function cfhDuplicateCycle(bank,year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7),prefs=cfhScopedPrefs(bank,cycle);
       const override=(prefs.confirmedCycles||{})[cycle]||{};
+      const settings=cfhCardScheduleSettings(bank,cycle);
+      if(settings.statementDay===null&&settings.fixedDueDay&&!cfhIsAtomeCard(prefs)){
+        const day=Math.min(settings.fixedDueDay,new Date(year,month+1,0).getDate());
+        return {cycle,statement:null,due:cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(new Date(year,month,day))};
+      }
       if(cfhIsAtomeCard(prefs))return {cycle,statement:cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhCardStatementDate(bank,year,month)),due:cfhEastwestValidDate(override.due)?override.due:cfhAtomeDueDate(year,month)};
       const adjust=date=>{
         if(prefs.sourceBank==='eastwest')return cfhEastwestBankingDate(date);
@@ -4465,8 +4472,8 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         return date;
       };
       const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(prefs.sourceBank==='eastwest'?adjust(cfhCardStatementDate(bank,year,month)):cfhCardStatementDate(bank,year,month));
-      const [y,m,d]=statement.split('-').map(Number);
-      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(adjust(cfhCardDueBaseDate(bank,cycle,statement)));
+      const baseDue=cfhCardDueBaseDate(bank,cycle,statement);
+      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(settings.fixedDueDay?baseDue:adjust(baseDue));
       return {cycle,statement,due};
     }
     function cfhDuplicateEntriesForDate(key){
@@ -4625,7 +4632,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       const reminderTimeLabel=savedReminderTime?(()=>{const [h,m]=savedReminderTime.split(':').map(Number);return (h%12||12)+':'+String(m).padStart(2,'0')+' '+(h>=12?'PM':'AM');})():'';
       if(!cfhIsPaidDue(entry))addRow('Enable Reminders',reminderTimeLabel?"You'll receive notifications at "+reminderTimeLabel+" on the selected days.":'Set the notification time in Manage Card for the selected days.',reminderBell);
       const recurring=cfhCardScheduleSettings(bank,cfhEntryCycle(entry));
-      addRow('Recurring Schedule','Monthly statement day: '+recurring.statementDay+(recurring.fixedDueDay?'; fixed due day: '+recurring.fixedDueDay+'. ':'; due +'+recurring.dueDays+' calendar days. ')+(ew?'Banking-day adjustments apply.':'Due dates adjust for weekends.'));
+      addRow('Recurring Schedule',(recurring.statementDay===null?'No statement schedule':'Monthly statement day: '+recurring.statementDay)+(recurring.fixedDueDay?'; fixed due day: '+recurring.fixedDueDay+'. ':'; due +'+recurring.dueDays+' calendar days. ')+(recurring.fixedDueDay?'':ew?'Banking-day adjustments apply.':'Due dates adjust for weekends.'));
       const rangeForm=document.createElement('form');rangeForm.className='cfh-card-range';
       const rangeTitle=document.createElement('strong');rangeTitle.textContent='Schedule Date Range';rangeForm.append(rangeTitle);
       const range=cfhCardScheduleRange(bank,cfhEntryCycle(entry));
@@ -4706,7 +4713,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
       scheduleInputs.fixedDueDay.addEventListener('input',updateAtomeFields);
       updateAtomeFields();
       nameInputs.bankName.addEventListener('input',updateAtomeFields);nameInputs.cardName.addEventListener('input',updateAtomeFields);
-      const fixedHint=document.createElement('small');fixedHint.textContent='Fixed due day uses the next occurrence after the statement; short months use their last day.';scheduleForm.append(scheduleFields,fixedHint);settings.append(scheduleForm);
+      const fixedHint=document.createElement('small');fixedHint.textContent='A fixed due day stays on that date, including weekends and holidays. Short months use their last day. Leave the statement day blank for a due-only schedule.';scheduleForm.append(scheduleFields,fixedHint);settings.append(scheduleForm);
       const timeForm=document.createElement('form');timeForm.className='cfh-card-range';
       const timeLabel=document.createElement('label');timeLabel.textContent='Notification time';
       const timeInput=document.createElement('input');timeInput.type='time';timeInput.required=true;timeInput.value=cfhCardNotificationTime(entry);const timeRow=document.createElement('div');timeRow.className='cfh-notification-time-row';
@@ -4726,8 +4733,9 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
         if(entry.cfhDuplicate)value.eventType='both';
         const fixedInput=scheduleInputs.fixedDueDay;fixedInput.setCustomValidity(fixedInput.value!==''&&(!Number.isInteger(Number(fixedInput.value))||Number(fixedInput.value)<1||Number(fixedInput.value)>31)?'Enter a day from 1 to 31, or leave blank.':'');if(!fixedInput.checkValidity())return;
         const fixedDueDay=cfhIsAtomeCard(value)||fixedInput.value===''?null:Number(fixedInput.value);
-        const statementDay=cfhNumber(scheduleInputs.statementDay.value),dueDays=cfhNumber(scheduleInputs.dueDays.value);
-        if(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
+        const statementDay=entry.cfhDuplicate&&fixedDueDay&&scheduleInputs.statementDay.value===''?null:cfhNumber(scheduleInputs.statementDay.value);
+        const dueDays=fixedDueDay?recurring.dueDays:cfhNumber(scheduleInputs.dueDays.value);
+        if((statementDay===null||(Number.isInteger(statementDay)&&statementDay>=1&&statementDay<=31))&&Number.isInteger(dueDays)&&dueDays>=1&&dueDays<=60){
           if(statementDay!==recurring.statementDay||dueDays!==recurring.dueDays||fixedDueDay!==recurring.fixedDueDay)value.scheduleFrom=value.scheduleFrom||cfhCalendarDateKey(new Date()).slice(0,7);
           value.statementDay=statementDay;value.fixedDueDay=fixedDueDay;if(!cfhIsAtomeCard(value))value.dueDays=dueDays;
         }
@@ -11932,7 +11940,7 @@ body.cfh-note-dragging{user-select:none;-webkit-user-select:none;overscroll-beha
     <div id="cfhAddCardFields" hidden>
       <div class="cfh-editor-row"><div><label>Bank name</label><input id="cfhAddBank" maxlength="80" required oninput="cfhAddAtomeRule()"></div><div><label>Card name</label><input id="cfhAddCardName" maxlength="80" required oninput="cfhAddAtomeRule()"></div></div>
       <label>Card image</label><select id="cfhAddCardImage" required onchange="cfhAddCardPreview(true)"></select><img id="cfhAddCardPhoto" alt="Selected card" hidden>
-      <div class="cfh-editor-row"><div><label>Statement day</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" required></div></div>
+      <div class="cfh-editor-row"><div><label>Statement day (optional with fixed due day)</label><input id="cfhAddStatementDay" type="number" min="1" max="31" step="1" required></div><div><label id="cfhAddDueLabel">Due after (days)</label><input id="cfhAddDueDays" type="number" min="1" max="60" step="1" required></div></div>
       <label for="cfhAddFixedDueDay">Fixed due day (optional)</label><input id="cfhAddFixedDueDay" type="number" min="1" max="31" step="1" placeholder="Leave blank to use Due after" oninput="cfhAddAtomeRule()">
       <h3>Schedule Date Range</h3><div class="cfh-editor-row"><div><label>Start date</label><input id="cfhAddCardStart" type="date" required></div><div><label>End date</label><input id="cfhAddCardEnd" type="date" required></div></div>
       <label>Notification time</label><div class="cfh-notification-time-row"><input id="cfhAddCardTime" type="time" oninput="document.getElementById('cfhAddTimePeriod').textContent=cfhTime12Text(this.value)"><span id="cfhAddTimePeriod" class="cfh-time-period">AM/PM</span></div>

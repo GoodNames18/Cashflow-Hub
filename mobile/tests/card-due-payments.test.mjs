@@ -23,11 +23,24 @@ test('notification and external-calendar reader use fixed days and remaining bal
  assert.equal(read()('2026-12-08','export')[0].amount,3000);assert.equal(read()('2026-12-09','export').length,0);card.bills['2026-11'].payments.push({id:'p2',date:'2026-11-21',amount:3000});assert.equal(read()('2026-12-08','export').length,0);assert.equal(read()('2026-12-08').length,0);
 });
 
-test('fixed due day respects weekend shifts, edit scope, explicit overrides and Atome',()=>{
+test('fixed due day skips weekend shifts, edit scope, explicit overrides and Atome',()=>{
  const card={sourceBank:'metrobank',bankName:'Test',cardName:'Card',statementDay:18,dueDays:21,fixedDueDay:6,start:'2026-01-01',end:'2028-12-31',notificationTime:'09:00'};
  const prefs={metrobank:{start:'2000-01-01',end:'2000-01-02'},eastwest:{start:'2000-01-01',end:'2000-01-02'},'duplicate-card':card};const read=()=>createNotificationReader({cfh_card_panel_preferences_v1:JSON.stringify(prefs)});
- assert.equal(read()('2026-12-06','export').length,0);assert.equal(read()('2026-12-07','export').length,1);
+ assert.equal(read()('2026-12-06','export').length,1);assert.equal(read()('2026-12-07','export').length,0);
  card.fixedDueDay=null;card.scopedEdits=[{scope:'future',cycle:'2026-12',patch:{fixedDueDay:8}}];assert.equal(read()('2026-12-09','export').length,1);assert.equal(read()('2027-01-08','export').length,1);
  card.fixedDueDay=8;card.scopedEdits=[];card.confirmedCycles={'2026-11':{due:'2026-12-15'}};assert.equal(read()('2026-12-15','export').length,1);assert.equal(read()('2026-12-08','export').length,0);
  card.bankName='Atome';card.confirmedCycles={};assert.equal(read()('2026-12-03','export').length,1);assert.equal(read()('2026-12-08','export').length,0);
+});
+
+test('fixed due day supports schedules without statements and stays on the 5th',()=>{
+ const prefs={metrobank:{start:'2000-01-01',end:'2000-01-02'},eastwest:{start:'2000-01-01',end:'2000-01-02'},'duplicate-card':{sourceBank:'eastwest',bankName:'Test',cardName:'Card',statementDay:null,fixedDueDay:5,start:'2026-12-01',end:'2027-03-31',notificationTime:'09:00'}};
+ const read=()=>createNotificationReader({cfh_card_panel_preferences_v1:JSON.stringify(prefs)});
+ assert.equal(read()('2026-12-05','export').length,1);
+ assert.equal(read()('2026-12-07','export').length,0);
+ const f=fixture(),{ctx}=f;f.prefs=prefs;
+ ctx.cfhCalendarDateKey=date=>date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+ vm.runInContext(html.slice(html.indexOf('function cfhIsAtomeCard('),html.indexOf('function cfhDuplicateEntriesForDate(')),ctx);
+ assert.equal(ctx.cfhDuplicateCycle('duplicate-card',2026,11).statement,null);
+ prefs['duplicate-card'].statementDay=25;
+ assert.equal(read()('2027-02-05','export').length,1);
 });

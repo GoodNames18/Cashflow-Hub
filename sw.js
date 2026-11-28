@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v191-calendar-payment-spacing';
+const CACHE_NAME = 'cashflow-hub-v192-fixed-due-day';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{

@@ -34,7 +34,8 @@ export function createNotificationReader(snapshot:Record<string,string>){
       const scheduled=cfhCardStatementDate('eastwest',year,month);
       const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhEastwestBankingDate(scheduled));
       const [y,m,d]=statement.split('-').map(Number);
-      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhEastwestBankingDate(cfhCardDueBaseDate('eastwest',cycle,statement)));
+      const baseDue=cfhCardDueBaseDate('eastwest',cycle,statement);
+      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(cfhCardScheduleSettings('eastwest',cycle).fixedDueDay?baseDue:cfhEastwestBankingDate(baseDue));
       return {cycle,statement,due,check:cfhEastwestStatementCheck(scheduled),statementConfirmed:cfhEastwestValidDate(override.statement),dueConfirmed:cfhEastwestValidDate(override.due)};
     }
     function cfhEastwestValidDate(key){
@@ -67,7 +68,7 @@ export function createNotificationReader(snapshot:Record<string,string>){
     function cfhCardScheduleSettings(bank,cycle){
       const prefs=cfhScopedPrefs(bank,cycle||'');
       const use=!cycle||!prefs.scheduleFrom||cycle>=prefs.scheduleFrom;
-      return {statementDay:use&&Number.isInteger(prefs.statementDay)?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21),fixedDueDay:use&&Number.isInteger(prefs.fixedDueDay)&&prefs.fixedDueDay>=1&&prefs.fixedDueDay<=31?prefs.fixedDueDay:null};
+      return {statementDay:use&&(prefs.statementDay===null||Number.isInteger(prefs.statementDay))?prefs.statementDay:(bank==='eastwest'?15:18),dueDays:use&&Number.isInteger(prefs.dueDays)?prefs.dueDays:(bank==='eastwest'?24:21),fixedDueDay:use&&Number.isInteger(prefs.fixedDueDay)&&prefs.fixedDueDay>=1&&prefs.fixedDueDay<=31?prefs.fixedDueDay:null};
     }
     function cfhScopedPrefs(bank,cycle){
       const cacheKey=JSON.stringify([bank,cycle]);if(scoped.has(cacheKey))return scoped.get(cacheKey);
@@ -119,6 +120,11 @@ export function createNotificationReader(snapshot:Record<string,string>){
     function cfhDuplicateCycleUncached(bank,year,month){
       const cycle=cfhCalendarDateKey(new Date(year,month,1)).slice(0,7),prefs=cfhScopedPrefs(bank,cycle);
       const override=(prefs.confirmedCycles||{})[cycle]||{};
+      const settings=cfhCardScheduleSettings(bank,cycle);
+      if(settings.statementDay===null&&settings.fixedDueDay&&!cfhIsAtomeCard(prefs)){
+        const day=Math.min(settings.fixedDueDay,new Date(year,month+1,0).getDate());
+        return {cycle,statement:null,due:cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(new Date(year,month,day))};
+      }
       if(cfhIsAtomeCard(prefs))return {cycle,statement:cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(cfhCardStatementDate(bank,year,month)),due:cfhEastwestValidDate(override.due)?override.due:cfhAtomeDueDate(year,month)};
       const adjust=date=>{
         if(prefs.sourceBank==='eastwest')return cfhEastwestBankingDate(date);
@@ -126,8 +132,8 @@ export function createNotificationReader(snapshot:Record<string,string>){
         return date;
       };
       const statement=cfhEastwestValidDate(override.statement)?override.statement:cfhCalendarDateKey(prefs.sourceBank==='eastwest'?adjust(cfhCardStatementDate(bank,year,month)):cfhCardStatementDate(bank,year,month));
-      const [y,m,d]=statement.split('-').map(Number);
-      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(adjust(cfhCardDueBaseDate(bank,cycle,statement)));
+      const baseDue=cfhCardDueBaseDate(bank,cycle,statement);
+      const due=cfhEastwestValidDate(override.due)?override.due:cfhCalendarDateKey(settings.fixedDueDay?baseDue:adjust(baseDue));
       return {cycle,statement,due};
     }
     function cfhAtomeDueDate(year,month){return cfhCalendarDateKey(new Date(year,month+1,3));}
@@ -224,7 +230,7 @@ export function createNotificationReader(snapshot:Record<string,string>){
       const [y,m,d] = statementKey.split('-').map(Number);
       const due = cfhCardDueBaseDate('metrobank',statementKey.slice(0,7),statementKey);
       // Weekends are predictable; unannounced special holidays are not.
-      while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
+      if(!cfhCardScheduleSettings('metrobank',statementKey.slice(0,7)).fixedDueDay)while (due.getDay()===0 || due.getDay()===6) due.setDate(due.getDate()+1);
       return {key:cfhCalendarDateKey(due),confirmed:false};
     }
     function cfhMetrobankOverrides() { try { return readJSON(CFH_METROBANK_OVERRIDE_KEY)||{}; } catch(e){return {};} }
