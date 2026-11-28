@@ -9874,6 +9874,7 @@ body.cfh-cash-active .app-shell,body.cfh-cash-active #cfhHomeSyncStatus{display:
           money(prefix + "Expenses", data.expenses);
           money(prefix + "Profit", data.profit);
           money(prefix + "TotalMoney", data.totalMoney);
+          if (page === "twice") money("twiceBankBalance", data.bankBalance);
           count(prefix + "Transactions", data.transactions);
         } else if (page === "lifeLog") {
           var counts = data.counts || {};
