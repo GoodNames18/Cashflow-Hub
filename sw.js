@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cashflow-hub-v188-calendar-settings';
+const CACHE_NAME = 'cashflow-hub-v189-balance-colors';
 const BASE=new URL('./',self.location.href);
 const assetURL=path=>new URL(path,BASE).href;
 self.addEventListener('install',event=>{
